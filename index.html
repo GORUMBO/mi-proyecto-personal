@@ -2883,7 +2883,10 @@ function secCentro(){
   <details><summary>Supabase gratis y respaldo</summary><div class="card">
     <div class="ok"><b>Sincronización preparada:</b> Windows guarda localmente y, cuando hay internet, comparte el respaldo con el iPhone. Solo inicia sesión con el mismo correo en ambos dispositivos.</div><p class="muted">La URL y la clave pública ya están configuradas. La primera vez debes crear tu cuenta y ejecutar el SQL incluido en Supabase.</p>
     <div class="grid"><input id="supabaseUrl" placeholder="https://tu-proyecto.supabase.co"><input id="supabaseKey" type="password" placeholder="sb_publishable_..."><input id="cloudEmail" type="email" placeholder="Correo"><input id="cloudPassword" type="password" placeholder="Contraseña"></div>
-    <div class="row"><button class="btn" onclick="saveCloudConfig()">Guardar configuración</button><button class="btn" onclick="testCloudConnection()">Probar conexión</button><button class="btn" onclick="cloudSignUp()">Crear cuenta</button><button class="btn primary" onclick="cloudSignIn()">Entrar</button><button class="btn primary" onclick="cloudSave()">Subir respaldo</button><button class="btn" onclick="cloudLoad()">Recuperar nube</button><button class="btn" onclick="cloudSignOut()">Salir</button></div><div id="cloudStatus"></div>
+    <div class="row" style="margin-top:6px"><button class="btn" onclick="saveCloudConfig()">Guardar configuración</button><button class="btn" onclick="testCloudConnection()">Probar conexión</button></div>
+    <p class="muted" style="margin:10px 0 2px">👤 <b>Primera vez:</b> escribe correo y contraseña, pulsa <b>Crear cuenta</b>, confirma desde tu correo y luego <b>Entrar</b>. Si ya tienes cuenta, solo <b>Entrar</b>.</p>
+    <div class="row" style="margin-top:4px"><span class="muted" style="align-self:center;font-weight:800">Cuenta:</span><button class="btn" id="btnCrearCuenta" onclick="cloudSignUp()">📝 Crear cuenta</button><button class="btn primary" id="btnEntrar" onclick="cloudSignIn()">🔑 Entrar</button><button class="btn" id="btnReenviar" onclick="cloudResendConfirm()">✉️ Reenviar confirmación</button></div>
+    <div class="row" style="margin-top:8px"><span class="muted" style="align-self:center;font-weight:800">Respaldo:</span><button class="btn primary" onclick="cloudSave()">☁️ Subir respaldo</button><button class="btn" onclick="cloudLoad()">⬇️ Recuperar nube</button><button class="btn" onclick="cloudSignOut()">🚪 Salir</button></div><div id="cloudStatus"></div>
     <hr style="border:none;border-top:1px solid var(--b);margin:14px 0"><button class="btn" onclick="exportData()">Descargar JSON</button><input type="file" id="centerImportFile" accept=".json"><button class="btn" onclick="importCenterBackup()">Restaurar archivo</button>
   </div></details>
   <details><summary>PIN y privacidad</summary><div class="card"><div class="grid"><input id="newAppPin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN de 4–6 números"><button class="btn primary" onclick="setAppPin()">Guardar PIN</button><button class="btn" onclick="removeAppPin()">Quitar PIN</button><button class="btn" onclick="setupPasskey()">Configurar Face ID / passkey</button></div><p class="muted">WebAuthn funciona únicamente por HTTPS y depende del dispositivo. El PIN local no sustituye el cifrado del sistema.</p></div></details>
@@ -6555,13 +6558,109 @@ async function testCloudConnection(){
     cloudStatus('Conexión válida. El siguiente paso es crear cuenta o iniciar sesión.');
   }catch(error){cloudStatus('Conexión fallida: '+error.message,false)}
 }
-function renderCloudConfig(){let c=getCloudConfig();let u=document.getElementById('supabaseUrl'),k=document.getElementById('supabaseKey');if(u&&!u.value)u.value=c.url||'';if(k&&!k.value)k.value=c.key||'';let s=getCloudSession();if(s)cloudStatus('Sesión activa: '+(s.user?.email||'usuario'))}
+function renderCloudConfig(){let c=getCloudConfig();let u=document.getElementById('supabaseUrl'),k=document.getElementById('supabaseKey');if(u&&!u.value)u.value=c.url||'';if(k&&!k.value)k.value=c.key||'';let s=getCloudSession();if(s)cloudStatus('Sesión activa: '+(s.user?.email||'usuario'));setTimeout(()=>{try{_tickConfirmCooldown()}catch(e){}},0)}
+// Traduce los errores de Supabase Auth a mensajes claros en español.
+function traducirAuthError(data,status){
+  let code=(data&&(data.error_code||data.code)||'').toLowerCase();
+  let msg=(data&&(data.msg||data.error_description||data.message||data.error)||'').toLowerCase();
+  if(/rate limit|over_email_send|too many|429/.test(code+' '+msg)||status===429)
+    return '⏳ Se enviaron demasiados correos en poco tiempo. Espera unos minutos antes de intentar de nuevo.';
+  if(/already|exists|registered/.test(code+' '+msg))
+    return 'Esa cuenta ya existe. Usa "Entrar" o, si no confirmaste tu correo, "Reenviar confirmación".';
+  if(/invalid.login|invalid_credentials|invalid_grant|incorrect/.test(code+' '+msg))
+    return 'Correo o contraseña incorrectos.';
+  if(/email.not.confirmed|not_confirmed/.test(code+' '+msg))
+    return 'Debes confirmar tu correo antes de entrar. Revisa tu bandeja y spam.';
+  if(/weak.password|password.*short|password_too/.test(code+' '+msg))
+    return 'La contraseña es muy corta (usa al menos 6 caracteres).';
+  if(/invalid.*email|email_address_invalid|validation/.test(code+' '+msg))
+    return 'El correo no es válido.';
+  if(/signup.*disabled|signups_not_allowed/.test(code+' '+msg))
+    return 'El registro está deshabilitado en el servidor.';
+  return data&&(data.msg||data.error_description||data.message)||'Error de Supabase.';
+}
 async function supabaseAuth(path,body){
   let c=getCloudConfig();if(!c.url||!c.key)throw Error('Guarda URL y clave pública primero.');
-  let r=await fetch(c.url+'/auth/v1/'+path,{method:'POST',headers:{apikey:c.key,'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await r.json();if(!r.ok)throw Error(data.msg||data.error_description||data.message||'Error Supabase');return data;
+  let r=await fetch(c.url+'/auth/v1/'+path,{method:'POST',headers:{apikey:c.key,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  let data=await r.json().catch(()=>({}));
+  if(!r.ok){let err=Error(traducirAuthError(data,r.status));err.code=(data.error_code||data.code||'');err.status=r.status;throw err;}
+  return data;
 }
-async function cloudSignUp(){try{saveCloudConfig();let data=await supabaseAuth('signup',{email:$('#cloudEmail').value,password:$('#cloudPassword').value});if(data.access_token)safeStorage.set('pp_cloud_session',JSON.stringify(data));cloudStatus(data.access_token?'Cuenta creada y conectada.':'Cuenta creada. Revisa el correo para confirmar.')}catch(e){cloudStatus(e.message,false)}}
-async function cloudSignIn(){try{saveCloudConfig();let data=await supabaseAuth('token?grant_type=password',{email:$('#cloudEmail').value,password:$('#cloudPassword').value});safeStorage.set('pp_cloud_session',JSON.stringify(data));cloudStatus('Sesión iniciada: '+data.user.email);setTimeout(cloudStartupSync,300)}catch(e){cloudStatus(e.message,false)}}
+// ---- Control de reenvío de correos: evita solicitudes duplicadas y respeta un cooldown ----
+let _authBusy=false,_confirmCooldownT=null;
+const CONFIRM_COOLDOWN_MS=60000; // 60 s entre envíos de correo de confirmación
+function _confirmCooldownLeft(){let last=+(safeStorage.get('pp_last_confirm_email')||0)||0;return Math.max(0,CONFIRM_COOLDOWN_MS-(Date.now()-last));}
+function _startConfirmCooldown(){safeStorage.set('pp_last_confirm_email',String(Date.now()));_tickConfirmCooldown();}
+function _setAuthBtns(disabled){['btnCrearCuenta','btnEntrar','btnReenviar'].forEach(id=>{let b=document.getElementById(id);if(b)b.disabled=disabled;});}
+function _tickConfirmCooldown(){
+  let left=_confirmCooldownLeft();
+  ['btnCrearCuenta','btnReenviar'].forEach(id=>{let b=document.getElementById(id);if(!b)return;
+    if(!b._orig)b._orig=b.textContent.replace(/\s*\(\d+\)\s*$/,'');
+    if(left>0){b.disabled=true;b.textContent=b._orig+' ('+Math.ceil(left/1000)+')';}
+    else{if(!_authBusy)b.disabled=false;b.textContent=b._orig;}
+  });
+  clearTimeout(_confirmCooldownT);
+  if(left>0)_confirmCooldownT=setTimeout(_tickConfirmCooldown,500);
+}
+async function cloudSignUp(){
+  if(_authBusy)return;
+  let email=($('#cloudEmail').value||'').trim(),pass=$('#cloudPassword').value||'';
+  if(!email||!pass){cloudStatus('Escribe correo y contraseña primero.',false);return;}
+  // No volver a llamar signUp si ya sabemos que la cuenta existe.
+  if((safeStorage.get('pp_signup_known')||'')===email){
+    cloudStatus('Esa cuenta ya existe. Usa "Entrar" o "Reenviar confirmación".',false);return;
+  }
+  let cd=_confirmCooldownLeft();
+  if(cd>0){cloudStatus('Espera '+Math.ceil(cd/1000)+' s antes de pedir otro correo.',false);return;}
+  _authBusy=true;_setAuthBtns(true);
+  try{
+    saveCloudConfig();
+    let data=await supabaseAuth('signup',{email,password:pass});
+    if(data.access_token){
+      safeStorage.set('pp_cloud_session',JSON.stringify(data));safeStorage.set('pp_signup_known','');
+      cloudStatus('Cuenta creada y conectada.');setTimeout(cloudStartupSync,300);
+    }else if(Array.isArray(data.identities)&&data.identities.length===0){
+      // Supabase (anti-enumeración) devuelve 200 con identities vacío si el correo ya está registrado.
+      safeStorage.set('pp_signup_known',email);
+      cloudStatus('Esa cuenta ya existe. Si no confirmaste tu correo usa "Reenviar confirmación"; si ya lo confirmaste usa "Entrar".',false);
+    }else{
+      cloudStatus('✅ Correo enviado. Revisa tu bandeja y spam para confirmar tu cuenta.');
+      _startConfirmCooldown();
+    }
+  }catch(e){
+    if(/already|exists|registered/i.test((e.code||'')+' '+(e.message||''))){safeStorage.set('pp_signup_known',email);cloudStatus(e.message,false);}
+    else if(/rate|429|demasiados/i.test((e.code||'')+' '+(e.message||''))){cloudStatus(e.message,false);_startConfirmCooldown();}
+    else cloudStatus(e.message,false);
+  }finally{_authBusy=false;_setAuthBtns(false);_tickConfirmCooldown();}
+}
+async function cloudResendConfirm(){
+  if(_authBusy)return;
+  let email=($('#cloudEmail').value||'').trim();
+  if(!email){cloudStatus('Escribe tu correo para reenviar la confirmación.',false);return;}
+  let cd=_confirmCooldownLeft();
+  if(cd>0){cloudStatus('Espera '+Math.ceil(cd/1000)+' s antes de reenviar el correo.',false);return;}
+  _authBusy=true;_setAuthBtns(true);
+  try{
+    saveCloudConfig();
+    await supabaseAuth('resend',{type:'signup',email});
+    cloudStatus('✅ Correo de confirmación reenviado. Revisa tu bandeja y spam.');
+    _startConfirmCooldown();
+  }catch(e){cloudStatus(e.message,false);if(/rate|429|demasiados/i.test((e.code||'')+' '+(e.message||'')))_startConfirmCooldown();}
+  finally{_authBusy=false;_setAuthBtns(false);_tickConfirmCooldown();}
+}
+async function cloudSignIn(){
+  if(_authBusy)return;
+  let email=($('#cloudEmail').value||'').trim(),pass=$('#cloudPassword').value||'';
+  if(!email||!pass){cloudStatus('Escribe correo y contraseña primero.',false);return;}
+  _authBusy=true;_setAuthBtns(true);
+  try{
+    saveCloudConfig();
+    let data=await supabaseAuth('token?grant_type=password',{email,password:pass});
+    safeStorage.set('pp_cloud_session',JSON.stringify(data));safeStorage.set('pp_signup_known','');
+    cloudStatus('Sesión iniciada: '+data.user.email);setTimeout(cloudStartupSync,300);
+  }catch(e){cloudStatus(e.message,false);}
+  finally{_authBusy=false;_setAuthBtns(false);_tickConfirmCooldown();}
+}
 async function refreshCloudSession(){
   let c=getCloudConfig(),s=getCloudSession();
   if(!s?.refresh_token)return s;
