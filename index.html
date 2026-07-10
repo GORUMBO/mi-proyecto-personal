@@ -6521,10 +6521,14 @@ function showAppTutorial(force=false){
   box.innerHTML='<div class="card" style="width:min(560px,100%)"><h2>Proyecto Personal</h2><ol><li>Inicio resume tu día.</li><li>Centro reúne calendario, nube, búsqueda y ajustes.</li><li>Salud contiene recetas, nevera y contador.</li><li>Fitness guarda rutinas, peso, pasos y fotos.</li><li>Dinero organiza gastos, presupuesto y compras.</li></ol><button class="btn primary" style="width:100%" onclick="closeAppTutorial()">Entendido</button></div>';
 }
 function closeAppTutorial(){state.uiSettings.tutorialDone=true;save();let b=document.getElementById('appTutorial');if(b)b.remove()}
-const PP_DEFAULT_CLOUD={url:'https://yvdggqcjyxoqlpkulswz.supabase.co',key:'sb_publishable_jm9B5W1SvlZ5B9GaLWZnPw_NHOx-0He'};
+const PP_DEFAULT_CLOUD={url:'https://fzkpgrvqncqnmvagbjaf.supabase.co',key:'sb_publishable_v3rxA0aQmdf1Ol4vTTQKqQ_xUDl-b4u'};
+// URLs de proyectos anteriores: si un dispositivo guardó una config vieja, se migra al proyecto dedicado.
+const PP_LEGACY_CLOUD_URLS=['https://yvdggqcjyxoqlpkulswz.supabase.co'];
 function getCloudConfig(){
   try{
     let saved=JSON.parse(safeStorage.get('pp_cloud_config')||'{}');
+    // Migración: descartar configuración que apunte a un proyecto anterior.
+    if(saved.url&&PP_LEGACY_CLOUD_URLS.includes(saved.url)){saved={};safeStorage.set('pp_cloud_config',JSON.stringify(PP_DEFAULT_CLOUD));}
     return {url:saved.url||PP_DEFAULT_CLOUD.url,key:saved.key||PP_DEFAULT_CLOUD.key};
   }catch(e){return {...PP_DEFAULT_CLOUD}}
 }
@@ -6577,9 +6581,9 @@ async function cloudStartupSync(){
     if(!remote){await cloudSave(true);return}
     let localTime=Date.parse(state.lastModified||0)||0,remoteTime=Date.parse(remote.data?.lastModified||remote.updated_at||0)||0;
     if(remoteTime>localTime && !(state.offlineChanges>0)){
-      state=remote.data;safeStorage.set('pp_full',JSON.stringify(state));persistStateIDB(JSON.stringify(state));render();updateSyncBadge('Nube al día','#d9f5e7');
+      state=remote.data;safeStorage.set('pp_full',JSON.stringify(state));persistStateIDB(JSON.stringify(state));render();updateSyncBadge('Sincronizado','#d9f5e7');
     }else if(localTime>remoteTime||state.offlineChanges>0){await cloudSave(true)}
-    else updateSyncBadge('Nube al día','#d9f5e7');
+    else updateSyncBadge('Sincronizado','#d9f5e7');
   }catch(e){console.warn('Sincronización inicial pendiente',e);updateSyncBadge('Pendiente','#ffd27d')}
 }
 async function cloudRest(path,options={}){
@@ -6595,7 +6599,39 @@ function scheduleAutoSync(){
   if(!session){updateSyncBadge('Local','#d9f5e7');return}
   updateSyncBadge('Pendiente · '+state.offlineChanges,'#fff0a8');clearTimeout(_autoSyncTimer);_autoSyncTimer=setTimeout(()=>cloudSave(true),2500);
 }
-async function cloudSave(silent=false){if(_syncing)return;_syncing=true;try{let s=getCloudSession();updateSyncBadge('Sincronizando','#fff0a8');await cloudRest('personal_backups?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:s.user.id,data:state,updated_at:new Date().toISOString()})});state.offlineChanges=0;safeStorage.set('pp_full',JSON.stringify(state));updateSyncBadge('Nube al día','#d9f5e7');if(!silent)cloudStatus('Respaldo guardado en Supabase.')}catch(e){updateSyncBadge('Pendiente · '+state.offlineChanges,'#ffd27d');if(!silent)cloudStatus(e.message,false)}finally{_syncing=false}}
+async function cloudSave(silent=false){if(_syncing)return;_syncing=true;try{let s=getCloudSession();updateSyncBadge('Sincronizando','#fff0a8');await cloudRest('personal_backups?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:s.user.id,data:state,updated_at:new Date().toISOString()})});await mirrorGranular(s.user.id).catch(err=>console.warn('Espejo granular pendiente',err));state.offlineChanges=0;safeStorage.set('pp_full',JSON.stringify(state));updateSyncBadge('Sincronizado','#d9f5e7');if(!silent)cloudStatus('Datos sincronizados en Supabase.')}catch(e){updateSyncBadge('Pendiente · '+state.offlineChanges,'#ffd27d');if(!silent)cloudStatus(e.message,false)}finally{_syncing=false}}
+// Espeja el estado local a las tablas granulares (peso, comidas, calorías, proteína, ejercicios, pasos, gastos, ajustes).
+// Best-effort: cualquier fallo aquí no afecta al respaldo principal (personal_backups).
+async function mirrorGranular(uid){
+  let now=new Date().toISOString();
+  // Tablas de lista: se reemplaza el contenido del usuario por su estado local actual.
+  let listas={
+    peso:(state.weight||[]),
+    comidas:(state.meals||[]),
+    ejercicios:(state.workoutLog||[]),
+    pasos:(state.walks||[]),
+    gastos:(state.expenses||[])
+  };
+  for(let tabla in listas){
+    try{
+      await cloudRest(tabla+'?user_id=eq.'+encodeURIComponent(uid),{method:'DELETE',headers:{Prefer:'return=minimal'}});
+      let filas=listas[tabla].map((item,i)=>({user_id:uid,client_id:(item&&item.id!=null?String(item.id):tabla[0]+i),data:item,updated_at:now}));
+      if(filas.length)await cloudRest(tabla,{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(filas)});
+    }catch(e){console.warn('Espejo '+tabla+' pendiente',e);}
+  }
+  // Calorías y proteína: total del día actual derivado de las comidas (se acumula un registro por día).
+  try{
+    let hoy=todayISO(),m=(state.meals||[]);
+    let kcal=m.reduce((a,x)=>a+(+x.k||0),0),prot=m.reduce((a,x)=>a+(+x.p||0),0);
+    await cloudRest('calorias?on_conflict=user_id,client_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:uid,client_id:hoy,data:{dia:hoy,kcal:Math.round(kcal)},updated_at:now})});
+    await cloudRest('proteina?on_conflict=user_id,client_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:uid,client_id:hoy,data:{dia:hoy,g:Math.round(prot)},updated_at:now})});
+  }catch(e){console.warn('Espejo calorías/proteína pendiente',e);}
+  // Ajustes: una sola fila por usuario con la configuración.
+  try{
+    let ajustes={uiSettings:state.uiSettings,fitSettings:state.fitSettings,profile:state.profile,expenseSettings:state.expenseSettings,expenseTemplates:state.expenseTemplates};
+    await cloudRest('ajustes?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:uid,data:ajustes,updated_at:now})});
+  }catch(e){console.warn('Espejo ajustes pendiente',e);}
+}
 async function cloudLoad(){try{let s=getCloudSession(),rows=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');if(!rows?.[0])throw Error('Todavía no existe respaldo.');let remote=rows[0],localDate=state.lastModified||'sin fecha',remoteDate=remote.data.lastModified||remote.updated_at;if(!confirm(`Local: ${localDate}\\nNube: ${remoteDate}\\n\\nUsar la versión de la nube y reemplazar la local?`))return;state=remote.data;save();render();cloudStatus('Respaldo recuperado: '+remote.updated_at)}catch(e){cloudStatus(e.message,false)}}
 function cloudSignOut(){safeStorage.set('pp_cloud_session','');cloudStatus('Sesión cerrada.')}
 async function cloudUploadProgressPhoto(photo){
@@ -6605,8 +6641,8 @@ async function cloudUploadProgressPhoto(photo){
     if(!r.ok)throw Error(await r.text());photo.cloudPath=path;safeStorage.set('pp_full',JSON.stringify(state));updateSyncBadge('Foto en nube','#d9f5e7');
   }catch(e){console.warn('Foto pendiente de nube',e)}
 }
-window.addEventListener('online',()=>{updateSyncBadge('Conectado','#d9f5e7');if(state.offlineChanges)cloudSave(true)});
-window.addEventListener('offline',()=>updateSyncBadge('Sin conexión','#ffd27d'));
+window.addEventListener('online',()=>{if(state.offlineChanges&&getCloudSession()){updateSyncBadge('Pendiente · '+state.offlineChanges,'#fff0a8');cloudSave(true)}else updateSyncBadge(getCloudSession()?'Sincronizado':'Local',getCloudSession()?'#d9f5e7':'#d9f5e7')});
+window.addEventListener('offline',()=>updateSyncBadge('Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:''),'#ffd27d'));
 window.addEventListener('load',()=>setTimeout(cloudStartupSync,1200));
 
 let _progressPhotoData='';
@@ -6715,7 +6751,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();updateSyncBadge(getCloudSession()?(navigator.onLine?'Nube conectada':'Sin conexión'):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
+function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
