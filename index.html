@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='45.1.0';
+  window.HM_APP_VERSION='45.2.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -573,7 +573,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'45.1.0';
+state.appVersion=window.HM_APP_VERSION||'45.2.0';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   // v45: usuarios con datos previos ya cuentan como registrados (no se les muestra el registro inicial).
@@ -599,9 +599,26 @@ let _tabHistory = [];
 // ===== MODO PERSONAL (sencillo) vs PROFESIONAL (todo) =====
 var PERSONAL_TABS = ['🍱 Contador','🍽️ Recetas','🥗 Nevera','💪 Ejercicio','⚖️ Peso','💳 Gastos','🧭 Centro','❤️ Ligar'];
 var PERSONAL_GROUPS = ['inicio','salud','fitness','dinero','ajustes'];
-function isPersonalMode(){ return (state.uiSettings.mode||'personal')==='personal'; }
+// ===== v45.2 Fase F: modo privado del dueño (rubenalanfloo) =====
+var PP_OWNER_EMAILS=['rubenalanfloo@gmail.com'];
+var PP_OWNER_ONLY_TABS=['🧤 Trabajo','🚗 Vehículos','🏡 Casa','👕 Ropa','🧴 Piel','❤️ Ligar','📊 Base datos'];
+// Dueño = sesión de Supabase con el correo del dueño. Se recuerda (sincronizado) para no bloquearlo sin conexión.
+function ppIsOwner(){
+  try{
+    var s=(typeof getCloudSession==='function')?getCloudSession():null;
+    if(s&&s.user&&s.user.email){
+      var own=PP_OWNER_EMAILS.indexOf(String(s.user.email).toLowerCase())>=0;
+      state._isOwner=own; return own;
+    }
+  }catch(e){}
+  return state._isOwner!==false; // sin sesión: lo recordado; por defecto dueño (usuario actual)
+}
+// Quita del DOM (no solo con CSS) lo marcado owner-only cuando el usuario no es el dueño.
+function ppApplyOwnerVisibility(){ if(ppIsOwner())return; try{document.querySelectorAll('.owner-only').forEach(function(e){e.remove();});}catch(e){} }
+function isPersonalMode(){ if(!ppIsOwner()) return true; return (state.uiSettings.mode||'personal')==='personal'; }
 function tabAllowed(tabName){
-  if(!isPersonalMode()) return true; // pro = todo
+  if(!ppIsOwner() && PP_OWNER_ONLY_TABS.includes(tabName)) return false; // privado del dueño
+  if(!isPersonalMode()) return true; // pro = todo (solo dueño)
   return PERSONAL_TABS.includes(tabName);
 }
 function groupAllowed(gid){
@@ -641,10 +658,10 @@ function initNav(){
       color:${g.id=='inicio'?'#15704f':'#fff'};
       box-shadow:${g.id=='inicio'?'0 2px 8px rgba(0,0,0,0.12)':'none'}"
     >${g.label}</button>`
-  ).join('') + `<button onclick="toggleAppMode()" id="modeToggleBtn" title="Cambia entre modo sencillo y modo con todo"
+  ).join('') + (ppIsOwner()? `<button onclick="toggleAppMode()" id="modeToggleBtn" title="Cambia entre modo sencillo y modo con todo"
       style="border:none;border-radius:14px;padding:9px 14px;font-weight:900;font-size:13px;white-space:nowrap;cursor:pointer;margin-left:8px;
       background:${isPersonalMode()?'rgba(255,255,255,0.18)':'#ffd27d'};color:${isPersonalMode()?'#fff':'#15704f'}"
-    >${isPersonalMode()?'👤 Personal':'⭐ Profesional'}</button>`;
+    >${isPersonalMode()?'👤 Personal':'⭐ Profesional'}</button>` : '');
   showGroup(groupAllowed(_activeGroup)?_activeGroup:'inicio',false);
 }
 
@@ -7248,7 +7265,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(!getCloudSession())maybeShowOnboarding();},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
+function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(!getCloudSession())maybeShowOnboarding();},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -10121,7 +10138,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'45.1.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'45.2.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10701,7 +10718,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='45.1.0';
+    window.HM_APP_VERSION='45.2.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -10830,7 +10847,7 @@ tryLoadIDB();
       <div class="settings-main-actions">
         <button class="btn primary" onclick="hmv413MarkBackup&&hmv413MarkBackup();exportData&&exportData()">⬇️ Descargar respaldo</button>
         <button class="btn" onclick="openTab('👤 Perfil')">👤 Perfil y metas</button>
-        <button class="btn" onclick="togglePersonalMode&&togglePersonalMode()">${(state.uiSettings&&state.uiSettings.mode)==='pro'?'👤 Cambiar a personal':'⭐ Cambiar a profesional'}</button>
+        ${ppIsOwner()?`<button class="btn" onclick="togglePersonalMode&&togglePersonalMode()">${(state.uiSettings&&state.uiSettings.mode)==='pro'?'👤 Cambiar a personal':'⭐ Cambiar a profesional'}</button>`:''}
         <button class="btn" onclick="openTab('📊 Base datos')">📊 Base de datos</button>
       </div>
       <div class="settings-mini-status">
@@ -10843,7 +10860,9 @@ tryLoadIDB();
       <details class="settings-clean-details"><summary>👁️ Mostrar u ocultar secciones</summary><div class="card"><p class="muted">Desmarca lo que no ocupes. No se borra, solo se esconde.</p><div id="visibleSectionsOut"></div></div></details>
       <details class="settings-clean-details" ontoggle="if(this.open){try{ppCheckUpdates(false)}catch(e){}}"><summary>📥 Actualizaciones</summary><div class="card"><div id="actualizacionesOut"></div></div></details>
       <details class="settings-clean-details"><summary>💾 Respaldo y nube</summary><div class="card">${(typeof hmv413BackupPanel==='function')?hmv413BackupPanel():''}<div class="grid"><button class="btn" onclick="checkForAppUpdate&&checkForAppUpdate()">Buscar actualización</button><button class="btn" onclick="openTab('📊 Base datos')">Importar / exportar</button></div><div id="updateCheckStatus"></div></div></details>
-      <details class="settings-clean-details"><summary>🧰 Herramientas avanzadas que casi no se usan</summary><div class="card"><p class="muted">Calendario, mapa de conexión, inventario, alertas largas y herramientas técnicas quedaron aquí. Ábrelo solo cuando lo necesites.</p>${v4124OldSecCentro?v4124OldSecCentro():''}</div></details>`;
+      ${ppIsOwner()?'':`<details class="settings-clean-details" open><summary>☁️ Cuenta y sincronización</summary><div class="card"><p class="muted">Inicia sesión con tu correo para guardar y sincronizar tus datos entre dispositivos.</p><div class="grid"><input id="cloudEmail" type="email" placeholder="Correo"><input id="cloudPassword" type="password" placeholder="Contraseña"></div><div class="row" style="margin-top:6px"><button class="btn" id="btnCrearCuenta" onclick="cloudSignUp()">📝 Crear cuenta</button><button class="btn primary" id="btnEntrar" onclick="cloudSignIn()">🔑 Entrar</button><button class="btn" id="btnReenviar" onclick="cloudResendConfirm()">✉️ Reenviar</button><button class="btn" onclick="cloudSignOut()">🚪 Salir</button></div><div class="row" style="margin-top:6px"><button class="btn primary" onclick="syncNow()">🔄 Sincronizar ahora</button></div><div id="cloudStatus"></div><div id="syncEstado" style="margin-top:8px"></div></div></details>`}
+      ${ppIsOwner()?`<details class="settings-clean-details owner-only"><summary>🔒 Herramientas privadas (dueño)</summary><div class="card"><p class="muted">Sección visible solo para tu cuenta. Aquí puedes ir agregando pruebas y herramientas internas.</p><div class="grid"><button class="btn" onclick="openTab('📊 Base datos')">📊 Base de datos</button><button class="btn" onclick="openTab('🧤 Trabajo')">🧤 Trabajo</button><button class="btn" onclick="openTab('❤️ Ligar')">❤️ Ligar</button></div><div class="ok" style="margin-top:8px">Cuenta dueño verificada: ${safeText((getCloudSession()&&getCloudSession().user&&getCloudSession().user.email)||'sin sesión')}</div></div></details>`:''}
+      ${ppIsOwner()?`<details class="settings-clean-details owner-only"><summary>🧰 Herramientas avanzadas que casi no se usan</summary><div class="card"><p class="muted">Calendario, mapa de conexión, inventario, alertas largas y herramientas técnicas quedaron aquí. Ábrelo solo cuando lo necesites.</p>${v4124OldSecCentro?v4124OldSecCentro():''}</div></details>`:''}`;
     };
 
     // Add compact visual styles without touching the rest of the app.
