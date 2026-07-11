@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='45.2.3';
+  window.HM_APP_VERSION='46.0.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -573,7 +573,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'45.2.3';
+state.appVersion=window.HM_APP_VERSION||'46.0.0';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   // v45: usuarios con datos previos ya cuentan como registrados (no se les muestra el registro inicial).
@@ -6784,7 +6784,106 @@ function buildSmartShopping(){
   out.innerHTML=`<div class="ok"><b>Lista estimada ${money(spent)} / ${money(budget)}</b></div><div class="grid">${picks.map(x=>`<div class="mini"><b>${x.qty}× ${safeText(x.n)}</b><br>${Math.round(x.k*x.qty)} kcal · P ${(x.p*x.qty).toFixed(1)}g · ${money(x.cost*x.qty)}</div>`).join('')}</div>`;
 }
 function toggleDarkMode(){state.uiSettings.dark=!state.uiSettings.dark;save();applyUiSettings()}
-function applyUiSettings(){document.body.classList.toggle('dark',!!state.uiSettings.dark);state.uiSettings.hiddenTabs.forEach(t=>{let i=tabs.indexOf(t),el=document.getElementById('tab_'+i);if(el)el.classList.add('section-hidden')});renderVisibleSections()}
+function applyUiSettings(){document.body.classList.toggle('dark',!!state.uiSettings.dark);try{applyTheme()}catch(e){}state.uiSettings.hiddenTabs.forEach(t=>{let i=tabs.indexOf(t),el=document.getElementById('tab_'+i);if(el)el.classList.add('section-hidden')});renderVisibleSections()}
+// ===== v46 Fase G: apariencia (temas/color), foto de perfil, bienvenida, ajustes unificados =====
+var PP_THEMES={
+  maui:{nombre:'🌺 Verde Maui',g:'#15704f',accent:'#0f8a76'},
+  oceano:{nombre:'🌊 Océano',g:'#12659e',accent:'#0a4d8c'},
+  atardecer:{nombre:'🌅 Atardecer',g:'#c2562b',accent:'#a8431f'},
+  uva:{nombre:'🍇 Uva',g:'#6b3fa0',accent:'#512d80'},
+  rosa:{nombre:'🌸 Rosa',g:'#b0356a',accent:'#8a2b55'},
+  carbon:{nombre:'⚫ Carbón',g:'#2f3a44',accent:'#465563'}
+};
+function applyTheme(){
+  var t=PP_THEMES[(state.uiSettings&&state.uiSettings.theme)||'maui']||PP_THEMES.maui;
+  var accent=(state.uiSettings&&state.uiSettings.accent)||t.g;
+  var root=document.documentElement;
+  root.style.setProperty('--g',accent);
+  root.style.setProperty('--accent',t.accent);
+}
+function setTheme(key){ state.uiSettings.theme=key; state.uiSettings.accent=''; save(); applyUiSettings(); try{render()}catch(e){} try{showGroup('ajustes',false)}catch(e){} }
+function showWelcome(){
+  if(document.getElementById('welcomeToast'))return;
+  var name=(state.profile&&state.profile.nombre)?(', '+state.profile.nombre):'';
+  var el=document.createElement('div');el.id='welcomeToast';
+  el.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:var(--g,#15704f);color:#fff;padding:12px 22px;border-radius:16px;font-weight:800;font-size:16px;z-index:22000;box-shadow:0 6px 20px rgba(0,0,0,.25);text-align:center;max-width:90%';
+  el.innerHTML='👋 Hola'+safeText(name)+'<br><span style="font-weight:600;font-size:13px">¡Bienvenido!</span>';
+  document.body.appendChild(el);
+  setTimeout(function(){el.style.transition='opacity .5s';el.style.opacity='0';setTimeout(function(){el.remove();},500);},2600);
+}
+function afterLoginSuccess(){
+  state.lastLogin=new Date().toISOString();
+  try{save()}catch(e){}
+  try{render()}catch(e){}
+  try{showGroup('inicio',false)}catch(e){}
+  setTimeout(showWelcome,350);
+}
+function setProfilePhoto(input){
+  var f=input&&input.files&&input.files[0]; if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var max=256,sc=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');
+      c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      state.profile=state.profile||{}; state.profile.photo=c.toDataURL('image/jpeg',0.8); state.profile.avatar='';
+      save(); quickSaved(); try{render()}catch(e){} try{showGroup('ajustes',false)}catch(e){}
+    };
+    img.src=e.target.result;
+  };
+  rd.readAsDataURL(f);
+}
+function setAvatar(emo){ state.profile=state.profile||{}; state.profile.avatar=emo; state.profile.photo=''; save(); quickSaved(); try{render()}catch(e){} try{showGroup('ajustes',false)}catch(e){} }
+function profileAvatarHTML(size){
+  size=size||64; var p=state.profile||{};
+  if(p.photo)return '<img src="'+p.photo+'" alt="foto" style="width:'+size+'px;height:'+size+'px;border-radius:50%;object-fit:cover;border:2px solid var(--g)">';
+  var emo=p.avatar||'🌺';
+  return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:var(--g2);display:grid;place-items:center;font-size:'+Math.round(size*0.5)+'px;border:2px solid var(--g)">'+emo+'</div>';
+}
+function quickSaved(){ try{save()}catch(e){} var e2=document.getElementById('ajustesSavedMsg'); if(e2){e2.textContent='✓ Cambio guardado'; e2.style.opacity='1'; clearTimeout(e2._t); e2._t=setTimeout(function(){e2.style.opacity='0';},1600);} }
+function accordion(el){ try{ if(el&&el.open){ var root=el.closest('#ajustesUnificados')||document; root.querySelectorAll('details.acc').forEach(function(d){ if(d!==el) d.open=false; }); } }catch(e){} }
+function fmtFecha(iso){ if(!iso)return 'aún no'; var d=new Date(iso); return isNaN(d)?String(iso):d.toLocaleString('es-US'); }
+function renderAjustesUnificados(){
+  var p=state.profile||(state.profile={});
+  var themeKey=(state.uiSettings&&state.uiSettings.theme)||'maui';
+  var avatars=['🌺','😎','💪','🥑','🏝️','🐢','🔥','⭐','🍍','🌊'];
+  return '<div id="ajustesUnificados">'
+    +'<div class="card" style="border:2px solid #9dd5b4;background:#f7fff9;display:flex;gap:12px;align-items:center">'
+      +'<div>'+profileAvatarHTML(64)+'</div>'
+      +'<div style="flex:1"><b style="font-size:17px">'+safeText(p.nombre||'Tu perfil')+'</b><br><span class="muted" style="font-size:12px">Último inicio de sesión: '+fmtFecha(state.lastLogin)+'</span><br><span class="muted" style="font-size:12px">Último guardado: '+safeText((typeof hmv413LastSavedText==="function")?hmv413LastSavedText():"guardado local")+'</span></div>'
+    +'</div>'
+    +'<div id="ajustesSavedMsg" style="opacity:0;transition:opacity .3s;color:#10623f;font-weight:800;text-align:center;height:18px;margin:4px 0">✓ Cambio guardado</div>'
+    +'<details class="settings-clean-details acc" ontoggle="accordion(this)" open><summary>👤 Información personal</summary><div class="card">'
+      +'<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><span>'+profileAvatarHTML(56)+'</span>'
+        +'<label class="btn" style="margin:0">📷 Subir foto<input type="file" accept="image/*" style="display:none" onchange="setProfilePhoto(this)"></label></div>'
+      +'<p class="muted" style="margin:8px 0 4px;font-size:12px">O elige un avatar:</p>'
+      +'<div class="row" style="gap:6px;flex-wrap:wrap">'+avatars.map(function(a){return '<button class="btn'+((p.avatar===a&&!p.photo)?' primary':'')+'" style="font-size:20px;min-width:44px" onclick="setAvatar(\''+a+'\')">'+a+'</button>';}).join('')+'</div>'
+      +'<div class="grid" style="margin-top:10px"><div><label>Nombre</label><input value="'+safeText(p.nombre||'')+'" onchange="state.profile.nombre=this.value;quickSaved()"></div>'
+        +'<div><label>Preferencias de comida</label><input value="'+safeText(p.preferencias||'')+'" placeholder="Ej: sin cerdo, poco picante" onchange="state.profile.preferencias=this.value;quickSaved()"></div>'
+        +'<div><label>Restricciones / alergias</label><input value="'+safeText(p.restricciones||'')+'" placeholder="Ej: sin lactosa, sin nuez" onchange="state.profile.restricciones=this.value;quickSaved()"></div></div>'
+    +'</div></details>'
+    +'<details class="settings-clean-details acc" ontoggle="accordion(this)"><summary>🎨 Apariencia y diseño</summary><div class="card">'
+      +'<p class="muted" style="margin:0 0 8px">Elige el color y diseño de la app:</p>'
+      +'<div class="row" style="gap:8px;flex-wrap:wrap">'+Object.keys(PP_THEMES).map(function(k){var t=PP_THEMES[k];return '<button class="btn'+(themeKey===k?' primary':'')+'" style="border-left:14px solid '+t.g+'" onclick="setTheme(\''+k+'\')">'+t.nombre+'</button>';}).join('')+'</div>'
+      +'<div class="row" style="gap:8px;margin-top:12px"><button class="btn" onclick="toggleDarkMode()">'+((state.uiSettings&&state.uiSettings.dark)?'☀️ Desactivar modo nocturno':'🌙 Activar modo nocturno')+'</button></div>'
+    +'</div></details>'
+    +'<details class="settings-clean-details acc" ontoggle="accordion(this)"><summary>📊 Datos rápidos (comida y metas)</summary><div class="card"><div class="grid">'
+      +'<div><label>Peso (lb)</label><input type="number" step=".1" inputmode="decimal" value="'+(p.peso||150)+'" onchange="state.profile.peso=+this.value;quickSaved()"></div>'
+      +'<div><label>Estatura (cm)</label><input type="number" inputmode="numeric" value="'+(p.altura||170)+'" onchange="state.profile.altura=+this.value;quickSaved()"></div>'
+      +'<div><label>Objetivo</label><select onchange="state.profile.objetivo=this.value;quickSaved()">'+['ganar peso','ganar músculo','mantener','bajar grasa'].map(function(o){return '<option'+(p.objetivo===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'
+      +'<div><label>Pasos por día</label><input type="number" step="500" inputmode="numeric" value="'+(p.pasosDia||18000)+'" onchange="state.profile.pasosDia=+this.value;quickSaved()"></div>'
+      +'<div><label>Presupuesto comida/semana ($)</label><input type="number" inputmode="numeric" value="'+((state.expenseSettings&&state.expenseSettings.foodLimit)||700)+'" onchange="state.expenseSettings=state.expenseSettings||{};state.expenseSettings.foodLimit=+this.value;quickSaved()"></div>'
+    +'</div><button class="btn" style="margin-top:8px" onclick="openTab(\'🍽️ Recetas\')">🍳 Configurar Mi cocina</button></div></details>'
+    +'<details class="settings-clean-details acc" ontoggle="accordion(this)"><summary>🔔 Notificaciones</summary><div class="card">'
+      +'<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" '+((state.uiSettings&&state.uiSettings.notif)?'checked':'')+' onchange="state.uiSettings.notif=this.checked;quickSaved()"> Avisos y recordatorios dentro de la app</label>'
+    +'</div></details>'
+    +'<details class="settings-clean-details acc" ontoggle="accordion(this)"><summary>☁️ Cuenta</summary><div class="card">'
+      +'<p class="muted" style="margin:0 0 8px">Sesión: '+safeText((getCloudSession()&&getCloudSession().user&&getCloudSession().user.email)||'sin sesión')+'</p>'
+      +'<div class="row" style="gap:8px"><button class="btn primary" onclick="syncNow()">🔄 Sincronizar ahora</button><button class="btn" onclick="cloudSignOut()">🚪 Salir</button></div>'
+    +'</div></details>'
+  +'</div>';
+}
 function renderVisibleSections(){
   let el=document.getElementById('visibleSectionsOut');if(!el)return;
   el.innerHTML=tabs.filter(t=>!t.includes('Inicio')&&!t.includes('Centro')).map(t=>`<label class="check mini"><input type="checkbox" ${state.uiSettings.hiddenTabs.includes(t)?'':'checked'} onchange="setSectionVisible('${t.replace(/'/g,"\\'")}',this.checked)">${t}</label>`).join('');
@@ -6898,7 +6997,7 @@ async function cloudSignUp(){
     let data=await supabaseAuth('signup',{email,password:pass});
     if(data.access_token){
       safeStorage.set('pp_cloud_session',JSON.stringify(data));safeStorage.set('pp_signup_known','');
-      cloudStatus('Cuenta creada y conectada.');setTimeout(cloudStartupSync,300);
+      cloudStatus('Cuenta creada y conectada.');setTimeout(cloudStartupSync,300);afterLoginSuccess();
     }else if(Array.isArray(data.identities)&&data.identities.length===0){
       // Supabase (anti-enumeración) devuelve 200 con identities vacío si el correo ya está registrado.
       safeStorage.set('pp_signup_known',email);
@@ -6937,7 +7036,7 @@ async function cloudSignIn(){
     saveCloudConfig();
     let data=await supabaseAuth('token?grant_type=password',{email,password:pass});
     safeStorage.set('pp_cloud_session',JSON.stringify(data));safeStorage.set('pp_signup_known','');
-    cloudStatus('Sesión iniciada: '+data.user.email);setTimeout(cloudStartupSync,300);
+    cloudStatus('Sesión iniciada: '+data.user.email);setTimeout(cloudStartupSync,300);afterLoginSuccess();
   }catch(e){cloudStatus(e.message,false);}
   finally{_authBusy=false;_setAuthBtns(false);_tickConfirmCooldown();}
 }
@@ -7239,14 +7338,14 @@ async function loginScreenSubmit(mode){
     saveCloudConfig();
     if(mode==='signup'){
       var d=await supabaseAuth('signup',{email,password:pass});
-      if(d&&d.access_token){safeStorage.set('pp_cloud_session',JSON.stringify(d));closeLoginScreen();setTimeout(function(){cloudStartupSync();},200);}
+      if(d&&d.access_token){safeStorage.set('pp_cloud_session',JSON.stringify(d));closeLoginScreen();setTimeout(function(){cloudStartupSync();afterLoginSuccess();},200);}
       else{setSt('✅ Correo enviado. Confirma tu cuenta desde tu bandeja y luego pulsa Entrar.',true);}
     }else if(mode==='resend'){
       await supabaseAuth('resend',{type:'signup',email});setSt('✅ Correo de confirmación reenviado. Revisa tu bandeja y spam.',true);
     }else{
       var data=await supabaseAuth('token?grant_type=password',{email,password:pass});
       safeStorage.set('pp_cloud_session',JSON.stringify(data));
-      closeLoginScreen();setTimeout(function(){cloudStartupSync();try{render()}catch(e){}},150);
+      closeLoginScreen();setTimeout(function(){cloudStartupSync();afterLoginSuccess();},150);
     }
   }catch(e){setSt((e&&e.message)||'No se pudo. Revisa correo y contraseña.',false);}
 }
@@ -10240,7 +10339,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'45.2.3';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'46.0.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10820,7 +10919,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='45.2.3';
+    window.HM_APP_VERSION='46.0.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -10946,6 +11045,7 @@ tryLoadIDB();
         </div>
         <span class="settings-status ${rec.yes?'need':'ok'}">${rec.yes?'Respaldo recomendado':'Todo tranquilo'}</span>
       </div>
+      ${renderAjustesUnificados()}
       <div class="settings-main-actions">
         <button class="btn primary" onclick="hmv413MarkBackup&&hmv413MarkBackup();exportData&&exportData()">⬇️ Descargar respaldo</button>
         <button class="btn" onclick="openTab('👤 Perfil')">👤 Perfil y metas</button>

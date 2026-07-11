@@ -1,8 +1,23 @@
 {
-  "latest": "45.2.3",
+  "latest": "46.0.0",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.0.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Bienvenida al iniciar sesion y ajustes unificados",
+        "Informacion personal: foto/avatar, ultimo inicio de sesion y ultimo guardado",
+        "Apariencia: temas de color, diseno y modo nocturno",
+        "Ajustes rapidos con guardado automatico y una seccion abierta a la vez"
+      ],
+      "cambios": [
+        "El boton Salir esta en Ajustes y regresa al inicio"
+      ],
+      "errores": []
+    },
     {
       "version": "45.2.3",
       "date": "2026-07-11",
