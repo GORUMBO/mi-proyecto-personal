@@ -1,8 +1,23 @@
 {
-  "latest": "45.2.1",
+  "latest": "45.2.2",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "45.2.2",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "La pantalla de Iniciar sesion aparece al abrir la app si no has iniciado sesion",
+        "¿Olvidaste tu contraseña? envia un correo para restablecerla"
+      ],
+      "cambios": [
+        "Recuperacion por correo (por telefono requiere activar SMS en Supabase)"
+      ],
+      "errores": [
+        "Antes no aparecia la pantalla de inicio al abrir"
+      ]
+    },
     {
       "version": "45.2.1",
       "date": "2026-07-11",
