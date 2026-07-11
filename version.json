@@ -1,8 +1,22 @@
 {
-  "latest": "45.2.0",
+  "latest": "45.2.1",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "45.2.1",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Pantalla de Iniciar sesión al cerrar sesión"
+      ],
+      "cambios": [
+        "El botón Salir ahora muestra la pantalla de inicio de sesión"
+      ],
+      "errores": [
+        "Antes no aparecía nada al pulsar Salir"
+      ]
+    },
     {
       "version": "45.2.0",
       "date": "2026-07-11",

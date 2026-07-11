@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='45.2.0';
+  window.HM_APP_VERSION='45.2.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -573,7 +573,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'45.2.0';
+state.appVersion=window.HM_APP_VERSION||'45.2.1';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   // v45: usuarios con datos previos ya cuentan como registrados (no se les muestra el registro inicial).
@@ -7147,7 +7147,49 @@ async function mirrorGranular(uid){
   }catch(e){console.warn('Espejo ajustes pendiente',e);}
 }
 async function cloudLoad(){try{let s=getCloudSession(),rows=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');if(!rows?.[0])throw Error('Todavía no existe respaldo.');let remote=rows[0],localDate=state.lastModified||'sin fecha',remoteDate=remote.data.lastModified||remote.updated_at;if(!confirm(`Local: ${localDate}\\nNube: ${remoteDate}\\n\\nUsar la versión de la nube y reemplazar la local?`))return;state=remote.data;save();render();cloudStatus('Respaldo recuperado: '+remote.updated_at)}catch(e){cloudStatus(e.message,false)}}
-function cloudSignOut(){safeStorage.set('pp_cloud_session','');_startupSynced=false;PP_SYNC.downloaded=null;setSync('nosession');cloudStatus('Sesión cerrada.')}
+function cloudSignOut(){safeStorage.set('pp_cloud_session','');_startupSynced=false;PP_SYNC.downloaded=null;setSync('nosession');cloudStatus('Sesión cerrada.');try{render()}catch(e){}showLoginScreen();}
+// Pantalla de inicio de sesión (aparece al Salir o cuando no hay sesión).
+function showLoginScreen(){
+  if(document.getElementById('loginScreen'))return;
+  var box=document.createElement('div');box.id='loginScreen';
+  box.style.cssText='position:fixed;inset:0;background:linear-gradient(160deg,#15704f,#0c3f2c);z-index:24000;display:grid;place-items:center;padding:18px;overflow:auto';
+  box.innerHTML='<div class="card" style="width:min(460px,100%);text-align:center">'
+    +'<div style="font-size:42px">🌺</div>'
+    +'<h2 style="margin:6px 0">Iniciar sesión</h2>'
+    +'<p class="muted">Entra con tu correo para sincronizar tus datos entre iPhone, Chrome y Windows.</p>'
+    +'<div style="text-align:left"><label>Correo</label><input id="loginEmail" type="email" autocomplete="email" placeholder="tu@correo.com" style="width:100%"></div>'
+    +'<div style="text-align:left;margin-top:8px"><label>Contraseña</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••" style="width:100%"></div>'
+    +'<div id="loginStatus" style="margin-top:8px"></div>'
+    +'<button class="btn primary" style="width:100%;min-height:50px;font-size:16px;margin-top:12px" onclick="loginScreenSubmit(\'signin\')">🔑 Entrar</button>'
+    +'<div class="row" style="gap:8px;margin-top:8px"><button class="btn" style="flex:1" onclick="loginScreenSubmit(\'signup\')">📝 Crear cuenta</button><button class="btn" style="flex:1" onclick="loginScreenSubmit(\'resend\')">✉️ Reenviar</button></div>'
+    +'<button class="btn" style="width:100%;margin-top:10px" onclick="closeLoginScreen()">Seguir sin cuenta (solo este dispositivo)</button>'
+    +'</div>';
+  document.body.appendChild(box);
+  setTimeout(function(){var el=document.getElementById('loginEmail');if(el)el.focus();},60);
+}
+function closeLoginScreen(){var b=document.getElementById('loginScreen');if(b)b.remove();}
+async function loginScreenSubmit(mode){
+  var st=document.getElementById('loginStatus');
+  var email=((document.getElementById('loginEmail')||{}).value||'').trim();
+  var pass=(document.getElementById('loginPassword')||{}).value||'';
+  var setSt=function(m,ok){if(st)st.innerHTML='<div class="'+(ok?'ok':'warn')+'" style="margin:0">'+safeText(m)+'</div>';};
+  if(!email||(mode!=='resend'&&!pass)){setSt('Escribe tu correo'+(mode!=='resend'?' y contraseña':'')+'.',false);return;}
+  setSt('Un momento…',true);
+  try{
+    saveCloudConfig();
+    if(mode==='signup'){
+      var d=await supabaseAuth('signup',{email,password:pass});
+      if(d&&d.access_token){safeStorage.set('pp_cloud_session',JSON.stringify(d));closeLoginScreen();setTimeout(function(){cloudStartupSync();},200);}
+      else{setSt('✅ Correo enviado. Confirma tu cuenta desde tu bandeja y luego pulsa Entrar.',true);}
+    }else if(mode==='resend'){
+      await supabaseAuth('resend',{type:'signup',email});setSt('✅ Correo de confirmación reenviado. Revisa tu bandeja y spam.',true);
+    }else{
+      var data=await supabaseAuth('token?grant_type=password',{email,password:pass});
+      safeStorage.set('pp_cloud_session',JSON.stringify(data));
+      closeLoginScreen();setTimeout(function(){cloudStartupSync();try{render()}catch(e){}},150);
+    }
+  }catch(e){setSt((e&&e.message)||'No se pudo. Revisa correo y contraseña.',false);}
+}
 async function cloudUploadProgressPhoto(photo){
   let c=getCloudConfig(),s=getCloudSession();if(!c.url||!c.key||!s?.access_token||!navigator.onLine)return;
   try{let blob=await fetch(photo.img).then(r=>r.blob()),path=`${s.user.id}/progress/${photo.id}.jpg`;
@@ -10138,7 +10180,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'45.2.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'45.2.1';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10718,7 +10760,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='45.2.0';
+    window.HM_APP_VERSION='45.2.1';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
