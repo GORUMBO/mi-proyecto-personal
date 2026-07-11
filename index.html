@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='44.0.0';
+  window.HM_APP_VERSION='44.1.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -572,7 +572,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'44.0.0';
+state.appVersion=window.HM_APP_VERSION||'44.1.0';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   safeStorage.set('pp_full',JSON.stringify(state));
@@ -2247,8 +2247,9 @@ ${visualGuide('recetas')}
   <div><label>Ordenar por</label><select id="recSort" onchange="_recipePage=1;renderRecipes()"><option value="none">Normal</option><option value="kcalDesc">Más calorías primero</option><option value="kcalAsc">Menos calorías primero</option><option value="protDesc">Más proteína primero</option><option value="costAsc">Más barato primero</option><option value="timeAsc">Más rápido primero</option></select></div>
 </div></div>
 
-<div class="row" style="justify-content:space-between;margin:12px 0 6px">
+<div class="row" style="justify-content:space-between;align-items:center;gap:8px;margin:12px 0 6px">
   <strong id="recMethodLabel">Todas las recetas</strong>
+  <button class="btn${window._portableFormat==='favoritas'?' primary':''}" id="favFilterBtn" style="white-space:nowrap" onclick="toggleFavoritesFilter()">⭐ Favoritas${(state.recipeFavorites&&state.recipeFavorites.length)?' ('+state.recipeFavorites.length+')':''}</button>
 </div>
 <div id="recipes"></div>
 
@@ -7548,6 +7549,17 @@ function toggleFavoriteRecipe(key){
   if(i>=0)state.recipeFavorites.splice(i,1);else state.recipeFavorites.push(id);
   save();renderRecipes();
 }
+// Filtro visible de favoritas (funciona en modo Personal y Profesional).
+function toggleFavoritesFilter(){
+  window._portableFormat=(window._portableFormat==='favoritas')?'todas':'favoritas';
+  _recipePage=1;
+  renderRecipes();
+  let b=document.getElementById('favFilterBtn');
+  if(b)b.className='btn'+(window._portableFormat==='favoritas'?' primary':'');
+  let el=document.getElementById('recipes');if(el&&window._portableFormat==='favoritas'&&!(state.recipeFavorites&&state.recipeFavorites.length)){
+    el.innerHTML='<div class="muted" style="padding:14px">Todavía no tienes recetas favoritas. Abre una receta y toca ⭐ Guardar para verla aquí.</div>';
+  }
+}
 function rateRecipe(key,value){if(value){state.recipeRatings[key]=+value;save()}}
 function showRecipeSubstitutions(key){
   let recipe=baseRecipes[key],el=document.getElementById('recipeSubs_'+key);if(!recipe||!el)return;
@@ -9690,7 +9702,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'44.0.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'44.1.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10270,7 +10282,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='44.0.0';
+    window.HM_APP_VERSION='44.1.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
