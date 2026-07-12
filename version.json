@@ -1,8 +1,18 @@
 {
-  "latest": "46.5.6",
+  "latest": "46.5.7",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.5.7",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Progreso con resumen por Semana, 2 semanas y Mes: tu mejor peso por ejercicio y si subiste (flechas), mas volumen total vs el periodo anterior"
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "46.5.6",
       "date": "2026-07-11",

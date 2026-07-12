@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.5.6';
+  window.HM_APP_VERSION='46.5.7';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.5.6</span>
+      <span class="versionChip">v46.5.7</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -9048,23 +9048,45 @@ function saveSimpleWorkout(){
   renderWorkoutLog();
   renderSimpleFitnessProgress();
 }
-function renderSimpleFitnessProgress(){
-  let out=document.getElementById('simpleFitnessOut');if(!out)return;
-  let logs=(state.workoutLog||[]).slice().reverse();
-  let today=logs.filter(x=>x.date===todayISO());
-  let weekAgo=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
-  let week=logs.filter(x=>String(x.date||'')>=weekAgo);
-  let last=logs[0];
-  let list=logs.slice(0,5).map(x=>`<div class="item"><b>${safeText(x.exercise)}</b><br><span class="muted">${safeText(x.date)} · ${x.sets||1} series · ${x.weight?x.weight+' lb':'sin peso'} · ${safeText(x.reps||'')}</span></div>`).join('');
-  out.innerHTML=`<div class="fit-clean-result"><h3 style="margin-top:0">Progreso rápido</h3>
-    <div class="fit-clean-status">
-      <div class="fit-clean-chip"><b>${today.length}</b><span>hoy</span></div>
-      <div class="fit-clean-chip"><b>${week.length}</b><span>esta semana</span></div>
-      <div class="fit-clean-chip"><b>${last?safeText(last.exercise):'—'}</b><span>último</span></div>
-    </div>
-    <details class="fit-clean-details" style="margin-top:10px"><summary>Ver últimos registros</summary><div class="fit-clean-details-body">${list||'<p class="muted">Todavía no hay registros.</p>'}</div></details>
-  </div>`;
-  setTimeout(()=>out.scrollIntoView({behavior:'smooth',block:'nearest'}),30);
+// Suma total de reps de un registro (de "10,10,8" -> 28). Sirve para el volumen.
+function repsTotal(x){var r=String(x.reps||'');var p=r.split(/[^0-9]+/).map(function(n){return parseInt(n,10);}).filter(function(n){return !isNaN(n);});if(p.length)return p.reduce(function(a,b){return a+b;},0);return (+x.sets||1)*8;}
+// Registros dentro de una ventana de [days] días. offset=1 => el periodo anterior (para comparar).
+function fitPeriodLogs(days,offset){offset=offset||0;var endMs=Date.now()-offset*days*86400000;var startMs=endMs-days*86400000;return (state.workoutLog||[]).filter(function(x){var t=Date.parse((x.date||'')+'T12:00:00');return isFinite(t)&&t>startMs&&t<=endMs;});}
+// Mejor peso por ejercicio en una lista de registros.
+function bestByExercise(logs){var m={};logs.forEach(function(x){var n=String(x.exercise||'').trim();if(!n)return;var w=+x.weight||0;if(!m[n]||w>m[n].w)m[n]={w:w,reps:x.reps,date:x.date};});return m;}
+function renderSimpleFitnessProgress(days){
+  var out=document.getElementById('simpleFitnessOut');if(!out)return;
+  days=days||window._progPeriod||7; window._progPeriod=days;
+  var cur=fitPeriodLogs(days,0), prev=fitPeriodLogs(days,1);
+  var curBest=bestByExercise(cur), prevBest=bestByExercise(prev);
+  var dias=[...new Set(cur.map(function(x){return x.date;}))].filter(Boolean).length;
+  var volCur=cur.reduce(function(a,x){return a+(+x.weight||0)*repsTotal(x);},0);
+  var volPrev=prev.reduce(function(a,x){return a+(+x.weight||0)*repsTotal(x);},0);
+  var volD=Math.round(volCur-volPrev);
+  var names=Object.keys(curBest).sort();
+  var withWeight=names.filter(function(n){return curBest[n].w>0;});
+  var subieron=withWeight.filter(function(n){return prevBest[n]&&curBest[n].w>prevBest[n].w;}).length;
+  var rows=names.map(function(n){
+    var c=curBest[n].w, p=prevBest[n]?prevBest[n].w:null;
+    var arrow=(p==null)?'<span class="muted" style="font-weight:800">nuevo</span>':(c>p?'<b style="color:#15704f">↑ +'+(c-p)+' lb</b>':(c<p?'<span style="color:#c0392b;font-weight:800">↓ '+(c-p)+' lb</span>':'<span class="muted">= igual</span>'));
+    return '<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span><b>'+safeText(n)+'</b><br><span class="muted" style="font-size:12px">'+(curBest[n].reps?safeText(curBest[n].reps)+' reps':'')+(p!=null?' · antes '+p+' lb':'')+'</span></span><span style="text-align:right;white-space:nowrap">'+(c?'<b>'+c+' lb</b>':'sin peso')+'<br>'+arrow+'</span></div>';
+  }).join('');
+  var label=days===7?'Semana':days===14?'2 semanas':'Mes';
+  var periodo=days===7?'esta semana':days===14?'estas 2 semanas':'este mes';
+  var btns=[[7,'Semana'],[14,'2 semanas'],[30,'Mes']].map(function(o){return '<button class="btn'+(days===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 12px" onclick="renderSimpleFitnessProgress('+o[0]+')">'+o[1]+'</button>';}).join('');
+  var volTxt=(volD>0?'↑ +'+volD.toLocaleString():(volD<0?'↓ '+Math.abs(volD).toLocaleString():'igual'))+' vs '+(days===7?'la semana pasada':days===14?'las 2 semanas previas':'el mes pasado');
+  out.innerHTML='<div class="fit-clean-result"><h3 style="margin-top:0">📊 Progreso · '+label+'</h3>'
+    +'<div class="row" style="gap:6px;margin-bottom:10px">'+btns+'</div>'
+    +'<div class="fit-clean-status">'
+    +'<div class="fit-clean-chip"><b>'+dias+'</b><span>días entrenados</span></div>'
+    +'<div class="fit-clean-chip"><b>'+withWeight.length+'</b><span>ejercicios con peso</span></div>'
+    +'<div class="fit-clean-chip"><b>'+subieron+'</b><span>subieron 💪</span></div>'
+    +'</div>'
+    +'<div class="mini" style="margin:10px 0"><b>Volumen total:</b> '+Math.round(volCur).toLocaleString()+' lb movidas <span class="muted">('+volTxt+')</span></div>'
+    +'<div style="font-weight:800;font-size:13px;margin:8px 0 4px">Tu mejor peso por ejercicio ('+periodo+'):</div>'
+    +(rows||'<p class="muted">Aún no registras pesos en este periodo. Registra tus ejercicios para ver resultados aquí.</p>')
+    +'</div>';
+  setTimeout(function(){out.scrollIntoView({behavior:'smooth',block:'nearest'});},30);
 }
 // ===== v41.43: CONSTRUCTOR DE RUTINA MULTI-DÍA, GRASA CORPORAL Y GRÁFICAS DE PROGRESO =====
 // Banco grande de ejercicios por músculo, con variantes por equipo.
@@ -11176,7 +11198,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.5.6';
+    window.HM_APP_VERSION='46.5.7';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
