@@ -1,8 +1,22 @@
 {
-  "latest": "46.0.0",
+  "latest": "46.1.0",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.1.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Los temas de color ahora sí cambian el color de toda la app",
+        "Se quito el boton Personal/Profesional (el dueño ve todo, los demas su modo personal)",
+        "Las herramientas tecnicas (respaldo, mostrar/ocultar, avanzadas) ahora son solo del dueño"
+      ],
+      "errores": [
+        "El tema no cambiaba el color del encabezado ni los botones"
+      ]
+    },
     {
       "version": "46.0.0",
       "date": "2026-07-11",

@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.0.0';
+  window.HM_APP_VERSION='46.1.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -573,7 +573,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'46.0.0';
+state.appVersion=window.HM_APP_VERSION||'46.1.0';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   // v45: usuarios con datos previos ya cuentan como registrados (no se les muestra el registro inicial).
@@ -615,7 +615,7 @@ function ppIsOwner(){
 }
 // Quita del DOM (no solo con CSS) lo marcado owner-only cuando el usuario no es el dueño.
 function ppApplyOwnerVisibility(){ if(ppIsOwner())return; try{document.querySelectorAll('.owner-only').forEach(function(e){e.remove();});}catch(e){} }
-function isPersonalMode(){ if(!ppIsOwner()) return true; return (state.uiSettings.mode||'personal')==='personal'; }
+function isPersonalMode(){ return !ppIsOwner(); } // dueño ve todo; otros ven su modo personal
 function tabAllowed(tabName){
   if(!ppIsOwner() && PP_OWNER_ONLY_TABS.includes(tabName)) return false; // privado del dueño
   if(!isPersonalMode()) return true; // pro = todo (solo dueño)
@@ -658,10 +658,7 @@ function initNav(){
       color:${g.id=='inicio'?'#15704f':'#fff'};
       box-shadow:${g.id=='inicio'?'0 2px 8px rgba(0,0,0,0.12)':'none'}"
     >${g.label}</button>`
-  ).join('') + (ppIsOwner()? `<button onclick="toggleAppMode()" id="modeToggleBtn" title="Cambia entre modo sencillo y modo con todo"
-      style="border:none;border-radius:14px;padding:9px 14px;font-weight:900;font-size:13px;white-space:nowrap;cursor:pointer;margin-left:8px;
-      background:${isPersonalMode()?'rgba(255,255,255,0.18)':'#ffd27d'};color:${isPersonalMode()?'#fff':'#15704f'}"
-    >${isPersonalMode()?'👤 Personal':'⭐ Profesional'}</button>` : '');
+  ).join('');
   showGroup(groupAllowed(_activeGroup)?_activeGroup:'inicio',false);
 }
 
@@ -6787,19 +6784,27 @@ function toggleDarkMode(){state.uiSettings.dark=!state.uiSettings.dark;save();ap
 function applyUiSettings(){document.body.classList.toggle('dark',!!state.uiSettings.dark);try{applyTheme()}catch(e){}state.uiSettings.hiddenTabs.forEach(t=>{let i=tabs.indexOf(t),el=document.getElementById('tab_'+i);if(el)el.classList.add('section-hidden')});renderVisibleSections()}
 // ===== v46 Fase G: apariencia (temas/color), foto de perfil, bienvenida, ajustes unificados =====
 var PP_THEMES={
-  maui:{nombre:'🌺 Verde Maui',g:'#15704f',accent:'#0f8a76'},
-  oceano:{nombre:'🌊 Océano',g:'#12659e',accent:'#0a4d8c'},
-  atardecer:{nombre:'🌅 Atardecer',g:'#c2562b',accent:'#a8431f'},
-  uva:{nombre:'🍇 Uva',g:'#6b3fa0',accent:'#512d80'},
-  rosa:{nombre:'🌸 Rosa',g:'#b0356a',accent:'#8a2b55'},
-  carbon:{nombre:'⚫ Carbón',g:'#2f3a44',accent:'#465563'}
+  maui:{nombre:'🌺 Verde Maui',g:'#15704f',g2:'#1a9660',accent:'#0f8a76'},
+  oceano:{nombre:'🌊 Océano',g:'#12659e',g2:'#2a8fd4',accent:'#0a4d8c'},
+  atardecer:{nombre:'🌅 Atardecer',g:'#c2562b',g2:'#e07b3f',accent:'#a8431f'},
+  uva:{nombre:'🍇 Uva',g:'#6b3fa0',g2:'#8f5fc8',accent:'#512d80'},
+  rosa:{nombre:'🌸 Rosa',g:'#b0356a',g2:'#d45a8f',accent:'#8a2b55'},
+  carbon:{nombre:'⚫ Carbón',g:'#2f3a44',g2:'#4a5b68',accent:'#465563'}
 };
 function applyTheme(){
   var t=PP_THEMES[(state.uiSettings&&state.uiSettings.theme)||'maui']||PP_THEMES.maui;
-  var accent=(state.uiSettings&&state.uiSettings.accent)||t.g;
-  var root=document.documentElement;
-  root.style.setProperty('--g',accent);
-  root.style.setProperty('--accent',t.accent);
+  var g=(state.uiSettings&&state.uiSettings.accent)||t.g, g2=t.g2||g, accent=t.accent;
+  // Inyecta overrides porque el header y los botones primarios tienen el color fijo en el CSS base.
+  var css=':root{--g:'+g+';--accent:'+accent+'}'
+    +'header{background:linear-gradient(135deg,'+g+','+g2+')!important}'
+    +'.btn.primary{background:linear-gradient(135deg,'+g+','+g2+')!important;border-color:'+g+'!important}'
+    +'.nav button.active{background:'+g+'!important;border-color:'+g+'!important}'
+    +'summary{color:'+g+'}'
+    +'.kpi{background:linear-gradient(135deg,'+g+','+g2+')!important;-webkit-background-clip:text;background-clip:text}'
+    +'.prep-progress-num,.fit-progress-num,.fridge-cat-count,.plate-svg .plate-tag,.prep-progress .prep-progress-num{background:'+g+'!important}';
+  var el=document.getElementById('ppThemeStyle'); if(!el){el=document.createElement('style');el.id='ppThemeStyle';document.head.appendChild(el);}
+  el.textContent=css;
+  try{var mt=document.querySelector('meta[name="theme-color"]'); if(mt)mt.setAttribute('content',g);}catch(e){}
 }
 function setTheme(key){ state.uiSettings.theme=key; state.uiSettings.accent=''; save(); applyUiSettings(); try{render()}catch(e){} try{showGroup('ajustes',false)}catch(e){} }
 function showWelcome(){
@@ -6880,7 +6885,7 @@ function renderAjustesUnificados(){
     +'</div></details>'
     +'<details class="settings-clean-details acc" ontoggle="accordion(this)"><summary>☁️ Cuenta</summary><div class="card">'
       +'<p class="muted" style="margin:0 0 8px">Sesión: '+safeText((getCloudSession()&&getCloudSession().user&&getCloudSession().user.email)||'sin sesión')+'</p>'
-      +'<div class="row" style="gap:8px"><button class="btn primary" onclick="syncNow()">🔄 Sincronizar ahora</button><button class="btn" onclick="cloudSignOut()">🚪 Salir</button></div>'
+      +'<div class="row" style="gap:8px">'+(getCloudSession()?'<button class="btn primary" onclick="syncNow()">🔄 Sincronizar ahora</button><button class="btn" onclick="cloudSignOut()">🚪 Salir</button>':'<button class="btn primary" onclick="showLoginScreen()">🔑 Iniciar sesión</button>')+'</div>'
     +'</div></details>'
   +'</div>';
 }
@@ -10339,7 +10344,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'46.0.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'46.1.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10919,7 +10924,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.0.0';
+    window.HM_APP_VERSION='46.1.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -11046,10 +11051,11 @@ tryLoadIDB();
         <span class="settings-status ${rec.yes?'need':'ok'}">${rec.yes?'Respaldo recomendado':'Todo tranquilo'}</span>
       </div>
       ${renderAjustesUnificados()}
+      <details class="settings-clean-details" ontoggle="if(this.open){try{ppCheckUpdates(false)}catch(e){}}"><summary>📥 Actualizaciones</summary><div class="card"><div id="actualizacionesOut"></div></div></details>
+      ${ppIsOwner()?`
       <div class="settings-main-actions">
         <button class="btn primary" onclick="hmv413MarkBackup&&hmv413MarkBackup();exportData&&exportData()">⬇️ Descargar respaldo</button>
         <button class="btn" onclick="openTab('👤 Perfil')">👤 Perfil y metas</button>
-        ${ppIsOwner()?`<button class="btn" onclick="togglePersonalMode&&togglePersonalMode()">${(state.uiSettings&&state.uiSettings.mode)==='pro'?'👤 Cambiar a personal':'⭐ Cambiar a profesional'}</button>`:''}
         <button class="btn" onclick="openTab('📊 Base datos')">📊 Base de datos</button>
       </div>
       <div class="settings-mini-status">
@@ -11060,11 +11066,10 @@ tryLoadIDB();
       </div>
       <div class="${rec.yes?'warn':'ok'}" style="margin:10px 0"><b>Último guardado:</b> ${safeText(last)}<br>${rec.yes?'Descarga un respaldo si hiciste cambios importantes.':'Puedes seguir usando la app normal.'}</div>
       <details class="settings-clean-details"><summary>👁️ Mostrar u ocultar secciones</summary><div class="card"><p class="muted">Desmarca lo que no ocupes. No se borra, solo se esconde.</p><div id="visibleSectionsOut"></div></div></details>
-      <details class="settings-clean-details" ontoggle="if(this.open){try{ppCheckUpdates(false)}catch(e){}}"><summary>📥 Actualizaciones</summary><div class="card"><div id="actualizacionesOut"></div></div></details>
       <details class="settings-clean-details"><summary>💾 Respaldo y nube</summary><div class="card">${(typeof hmv413BackupPanel==='function')?hmv413BackupPanel():''}<div class="grid"><button class="btn" onclick="checkForAppUpdate&&checkForAppUpdate()">Buscar actualización</button><button class="btn" onclick="openTab('📊 Base datos')">Importar / exportar</button></div><div id="updateCheckStatus"></div></div></details>
-      ${ppIsOwner()?'':`<details class="settings-clean-details" open><summary>☁️ Cuenta y sincronización</summary><div class="card"><p class="muted">Inicia sesión con tu correo para guardar y sincronizar tus datos entre dispositivos.</p><div class="grid"><input id="cloudEmail" type="email" placeholder="Correo"><input id="cloudPassword" type="password" placeholder="Contraseña"></div><div class="row" style="margin-top:6px"><button class="btn" id="btnCrearCuenta" onclick="cloudSignUp()">📝 Crear cuenta</button><button class="btn primary" id="btnEntrar" onclick="cloudSignIn()">🔑 Entrar</button><button class="btn" id="btnReenviar" onclick="cloudResendConfirm()">✉️ Reenviar</button><button class="btn" onclick="cloudSignOut()">🚪 Salir</button></div><div class="row" style="margin-top:6px"><button class="btn primary" onclick="syncNow()">🔄 Sincronizar ahora</button></div><div id="cloudStatus"></div><div id="syncEstado" style="margin-top:8px"></div></div></details>`}
-      ${ppIsOwner()?`<details class="settings-clean-details owner-only"><summary>🔒 Herramientas privadas (dueño)</summary><div class="card"><p class="muted">Sección visible solo para tu cuenta. Aquí puedes ir agregando pruebas y herramientas internas.</p><div class="grid"><button class="btn" onclick="openTab('📊 Base datos')">📊 Base de datos</button><button class="btn" onclick="openTab('🧤 Trabajo')">🧤 Trabajo</button><button class="btn" onclick="openTab('❤️ Ligar')">❤️ Ligar</button></div><div class="ok" style="margin-top:8px">Cuenta dueño verificada: ${safeText((getCloudSession()&&getCloudSession().user&&getCloudSession().user.email)||'sin sesión')}</div></div></details>`:''}
-      ${ppIsOwner()?`<details class="settings-clean-details owner-only"><summary>🧰 Herramientas avanzadas que casi no se usan</summary><div class="card"><p class="muted">Calendario, mapa de conexión, inventario, alertas largas y herramientas técnicas quedaron aquí. Ábrelo solo cuando lo necesites.</p>${v4124OldSecCentro?v4124OldSecCentro():''}</div></details>`:''}`;
+      <details class="settings-clean-details"><summary>🔒 Herramientas privadas (dueño)</summary><div class="card"><p class="muted">Sección visible solo para tu cuenta.</p><div class="grid"><button class="btn" onclick="openTab('📊 Base datos')">📊 Base de datos</button><button class="btn" onclick="openTab('🧤 Trabajo')">🧤 Trabajo</button><button class="btn" onclick="openTab('❤️ Ligar')">❤️ Ligar</button></div><div class="ok" style="margin-top:8px">Cuenta dueño verificada: ${safeText((getCloudSession()&&getCloudSession().user&&getCloudSession().user.email)||'sin sesión')}</div></div></details>
+      <details class="settings-clean-details"><summary>🧰 Herramientas avanzadas que casi no se usan</summary><div class="card"><p class="muted">Calendario, mapa de conexión, inventario, alertas largas y herramientas técnicas quedaron aquí. Ábrelo solo cuando lo necesites.</p>${v4124OldSecCentro?v4124OldSecCentro():''}</div></details>
+      `:''}`;
     };
 
     // Add compact visual styles without touching the rest of the app.
