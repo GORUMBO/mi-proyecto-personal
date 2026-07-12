@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.1.0';
+  window.HM_APP_VERSION='46.2.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -3502,6 +3502,39 @@ function lastSavedText(){
     return '✓ Guardado por última vez '+cuando+'.';
   }catch(e){ return '✓ Tus datos están guardados en este teléfono.'; }
 }
+// ===== Personalización del Inicio: el usuario elige qué tarjetas ve en secInicio =====
+// El orden aquí es el orden en que se muestran las tarjetas en Inicio.
+const HOME_SECTIONS=[
+  {id:'siguientePaso', label:'🎯 Tu siguiente paso'},
+  {id:'semana',        label:'📊 ¿Voy bien esta semana?'},
+  {id:'resumen',       label:'🔢 Resumen rápido (4 datos)'},
+  {id:'masAcciones',   label:'⚡ Más acciones'},
+  {id:'comidaTrabajo', label:'🍱 Comida para trabajo'},
+  {id:'respaldo',      label:'💾 Modo, respaldo y seguridad'}
+];
+let _homeCfgOpen=false; // mantiene abierto el panel "Personalizar inicio" tras re-render
+// Una tarjeta es visible salvo que esté en la lista de ocultas. Las nuevas tarjetas salen visibles por defecto.
+function homeVisible(id){ try{return !((state.uiSettings.hiddenHome||[]).includes(id));}catch(e){return true;} }
+function refreshHomeTab(){ let i=tabs.indexOf('🏠 Inicio'); if(i<0)i=0; buildTabIfNeeded(i,true); try{bindAll()}catch(e){} }
+function setHomeSectionVisible(id,vis){
+  if(!state.uiSettings.hiddenHome)state.uiSettings.hiddenHome=[];
+  let list=state.uiSettings.hiddenHome,i=list.indexOf(id);
+  if(vis&&i>=0)list.splice(i,1);
+  if(!vis&&i<0)list.push(id);
+  _homeCfgOpen=true; save(); refreshHomeTab();
+}
+function resetHomeSections(){ state.uiSettings.hiddenHome=[]; _homeCfgOpen=true; save(); refreshHomeTab(); }
+function homePersonalizer(){
+  let rows=HOME_SECTIONS.map(s=>`<label class="check mini" style="display:flex;gap:8px;align-items:center;padding:6px 2px"><input type="checkbox" ${homeVisible(s.id)?'checked':''} onchange="setHomeSectionVisible('${s.id}',this.checked)"> ${s.label}</label>`).join('');
+  return `<details class="home-more" ${_homeCfgOpen?'open':''} ontoggle="if(event.target===this)_homeCfgOpen=this.open">
+    <summary><b>⚙️ Personalizar inicio</b><span class="muted">Elige qué tarjetas ver aquí</span></summary>
+    <div class="home-more-body">
+      <p class="muted" style="margin:0 0 8px">Marca las tarjetas que quieres ver en tu pantalla de Inicio. El cambio se guarda solo.</p>
+      ${rows}
+      <div style="margin-top:10px"><button class="btn" onclick="resetHomeSections()">↩️ Mostrar todas</button></div>
+    </div>
+  </details>`;
+}
 function secInicio(){
   let totalGastos=state.expenses.reduce((a,x)=>a+(+x.total||0),0),ultimoPeso=state.weight.length?state.weight[state.weight.length-1].w+' lb':'—';
   let today=new Date().toLocaleDateString('es-MX',{weekday:'long',month:'long',day:'numeric'}),dm=getDailyMode();
@@ -3509,8 +3542,8 @@ function secInicio(){
   let next=getHomeNextAction(dm),verdict=getWeeklyVerdict(dm),meals=getHomeMeals(),lastTab=safeStorage.get('pp_last_tab')||'';
   let resume=tabs.includes(lastTab)?`<button class="btn" onclick="openTab('${lastTab.replace(/'/g,"\\'")}')">Reanudar ${safeText(lastTab.replace(/^[^\wÁÉÍÓÚÑáéíóúñ]+\s*/,''))}</button>`:'';
   let modo=isPersonalMode()?'Personal':'Profesional';
-  return `<div class="home-clean">
-  <div class="card home-focus-card">
+  let cards={};
+  cards.siguientePaso=`<div class="card home-focus-card">
     <div class="home-focus-top">
       <div>
         <h2 style="margin:0">🎯 Tu siguiente paso</h2>
@@ -3526,9 +3559,9 @@ function secInicio(){
       <div><b>Calorías</b><div class="home-bar"><span style="width:${foodPct}%;max-width:100%"></span></div><span class="muted">${Math.round(dm.food.k)} / ${dm.kcalGoal} kcal · faltan ${kcal(dm.missingKcal)}</span></div>
       <div><b>Proteína</b><div class="home-bar"><span style="width:${proteinPct}%;max-width:100%;background:#1a9660"></span></div><span class="muted">${Math.round(dm.food.p)} / ${dm.proteinGoal}g · faltan ${Math.round(dm.missingProtein)}g</span></div>
     </div>
-  </div>
+  </div>`;
 
-  <div class="card home-focus-card">
+  cards.semana=`<div class="card home-focus-card">
     <div class="home-focus-top">
       <div><h2 style="margin:0">📊 ¿Voy bien esta semana?</h2><div class="muted">Junta tu peso, entrenos y comida de hoy — sin registrar nada extra.</div></div>
       <span class="home-chip">${verdict.overall.label}</span>
@@ -3538,16 +3571,16 @@ function secInicio(){
       <div class="mini"><b>💪 Entreno</b><br>${safeText(verdict.trainTxt)}</div>
       <div class="mini"><b>🍽️ Hoy</b><br>${safeText(verdict.foodTxt)}</div>
     </div>
-  </div>
+  </div>`;
 
-  <div class="home-summary-grid">
+  cards.resumen=`<div class="home-summary-grid">
     <div class="home-summary-card"><b>${kcal(dm.missingKcal)}</b><span>calorías faltantes</span></div>
     <div class="home-summary-card"><b>${Math.round(dm.missingProtein)}g</b><span>proteína faltante</span></div>
     <div class="home-summary-card"><b>${money(dm.spentToday)}</b><span>gastado hoy</span></div>
     <div class="home-summary-card"><b>${ultimoPeso}</b><span>último peso</span></div>
-  </div>
+  </div>`;
 
-  <details class="home-more">
+  cards.masAcciones=`<details class="home-more">
     <summary><b>Más acciones</b><span class="muted">Abrir solo cuando lo ocupes</span></summary>
     <div class="home-more-body">
       <div class="home-more-actions">
@@ -3561,9 +3594,9 @@ function secInicio(){
       </div>
       <div id="smartHomeOut" class="home-result"></div>
     </div>
-  </details>
+  </details>`;
 
-  <details class="home-more">
+  cards.comidaTrabajo=`<details class="home-more">
     <summary><b>Comida para trabajo</b><span class="muted">Ideas rápidas, no siempre visibles</span></summary>
     <div class="home-more-body">
       <div class="grid">${meals.map(r=>{
@@ -3571,9 +3604,9 @@ function secInicio(){
         return `<div class="item"><b>${safeText(r.name)}</b><br><span class="muted">${r.k} kcal · P ${r.p}g · ${r.time} min · ${money(r.cost)}</span><details style="margin-top:6px"><summary>Lista de compra</summary><ul style="margin:6px 0 0;padding-left:18px">${items.map(x=>`<li>${safeText(x)}</li>`).join('')}</ul></details></div>`;
       }).join('')}</div>
     </div>
-  </details>
+  </details>`;
 
-  <details class="home-more">
+  cards.respaldo=`<details class="home-more">
     <summary><b>Modo, respaldo y seguridad</b><span class="muted">Datos y ajustes guardados aparte</span></summary>
     <div class="home-more-body">
       <div class="ok" style="margin:10px 0" id="homeSaveStatus">${lastSavedText()}</div>
@@ -3586,7 +3619,15 @@ function secInicio(){
       </div>
       <p class="muted" style="margin:10px 0 0;font-size:12px">Modo actual: <b>${modo}</b>. Los respaldos siguen disponibles, pero ya no ocupan espacio arriba.</p>
     </div>
-  </details>
+  </details>`;
+
+  let body=HOME_SECTIONS.filter(s=>homeVisible(s.id)).map(s=>cards[s.id]||'').join('');
+  let allHidden=HOME_SECTIONS.every(s=>!homeVisible(s.id));
+  let vacio=allHidden?`<div class="card"><b>Tu Inicio está vacío.</b><br><span class="muted">Abre ⚙️ Personalizar inicio y marca las tarjetas que quieras ver.</span></div>`:'';
+  return `<div class="home-clean">
+  ${homePersonalizer()}
+  ${body}
+  ${vacio}
 </div>`;}
 function weightHeroChips(){
   var wl=state.weight||[];if(!wl.length)return [];
@@ -10924,7 +10965,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.1.0';
+    window.HM_APP_VERSION='46.2.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

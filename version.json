@@ -1,8 +1,21 @@
 {
-  "latest": "46.1.0",
+  "latest": "46.2.0",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.2.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Personalizar inicio: ahora eliges qué tarjetas ver en tu pantalla de Inicio",
+        "Boton Mostrar todas para volver a ver todas las tarjetas"
+      ],
+      "cambios": [
+        "El panel Personalizar inicio esta arriba del todo en Inicio"
+      ],
+      "errores": []
+    },
     {
       "version": "46.1.0",
       "date": "2026-07-11",
