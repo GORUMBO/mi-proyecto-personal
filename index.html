@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.4.5';
+  window.HM_APP_VERSION='46.5.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -9387,21 +9387,34 @@ function readFitnessContext(){
   return {date:todayISO(),steps,energy,pain,sleep,focus,equip,hard,recovery};
 }
 function buildFitnessTodayPlan(ctx){
-  let b=fitnessExerciseBank(),keys=ctx.hard?['press','row','lat','core']:['press','row','pull','lat','curl'];
-  if(ctx.focus.includes('Espalda'))keys=ctx.hard?['row','pull','face','curl']:['row','pull','face','press','curl'];
-  if(ctx.focus.includes('Brazos'))keys=ctx.hard?['curl','tri','lat','core']:['press','row','curl','tri','lat'];
-  if(ctx.focus.includes('Pecho'))keys=ctx.hard?['press','row','tri']:['press','row','tri','lat'];
-  if(ctx.focus.includes('Core'))keys=ctx.hard?['mobility','core','face']:['core','face','row','mobility'];
-  if(ctx.focus.includes('Pierna'))keys=ctx.hard?['hip','mobility','core']:['hip','row','press','core'];
-  if(ctx.recovery)keys=['mobility','core','face'];
+  let b=fitnessExerciseBank();
+  // Esfuerzo elegido por el usuario: 'suave' | 'auto' | 'normal' | 'fuerte'. Por defecto 'auto' (detecta día pesado).
+  let effort=state.fitEffort||'auto';
+  let big=effort==='fuerte';
+  // "día pesado efectivo": suave o (auto en día pesado) acortan; normal y fuerte NO acortan aunque haya caminado mucho.
+  let hardSel = (effort==='suave') ? true : ((effort==='normal'||effort==='fuerte') ? false : ctx.hard);
+  let keys=hardSel?['press','row','lat','core']:['press','row','pull','lat','curl'];
+  if(ctx.focus.includes('Espalda'))keys=hardSel?['row','pull','face','curl']:['row','pull','face','press','curl'];
+  if(ctx.focus.includes('Brazos'))keys=hardSel?['curl','tri','lat','core']:['press','row','curl','tri','lat'];
+  if(ctx.focus.includes('Pecho'))keys=hardSel?['press','row','tri']:['press','row','tri','lat'];
+  if(ctx.focus.includes('Core'))keys=hardSel?['mobility','core','face']:['core','face','row','mobility'];
+  if(ctx.focus.includes('Pierna'))keys=hardSel?['hip','mobility','core']:['hip','row','press','core'];
+  if(ctx.recovery)keys=['mobility','core','face']; // seguridad: si vienes con dolor fuerte/energía muy baja, entrena suave aunque elijas fuerte
+  if(big&&!ctx.recovery)keys=[...new Set([...keys,'pull','tri','curl','face','hip'])].slice(0,6); // versión para crecer: 6 ejercicios
   return keys.map(k=>{
     let x={...b[k]};
-    if(ctx.hard){x.sets=Math.min(2,x.sets);x.note='Día pesado: deja 1-2 repeticiones en reserva.'}
+    if(big&&!ctx.recovery){x.sets=Math.max(3,x.sets);x.note='Crecer músculo: 3-4 series, cerca del fallo (deja 1-2 en reserva) y sube peso al completar las reps.'}
+    else if(hardSel){x.sets=Math.min(2,x.sets);x.note='Día pesado: deja 1-2 repeticiones en reserva.'}
     else x.note='Día normal: controla técnica y sube peso solo si se siente estable.';
     if(ctx.equip.includes('Casa'))x.name=x.alts[x.alts.length-1]||x.name;
     if(ctx.equip.includes('Mancuernas'))x.name=x.alts.find(a=>/mancuerna|mancuernas/.test(a))||x.name;
     return x;
   });
+}
+function setFitEffort(e){
+  state.fitEffort=e; save();
+  try{createFitnessToday();}catch(err){}
+  try{renderFitnessCoach();}catch(err){}
 }
 function todayRoutinePlan(){
   let r=state.customRoutine;if(!r||!r.days||!r.days.length)return null;
@@ -9441,6 +9454,11 @@ function renderFitnessCoach(){
     <div class="fit-progress-bar"><div class="fit-progress-fill" style="width:${pct}%"></div></div>
     ${hechos===plan.length&&plan.length?'<div style="margin-top:8px;font-weight:800;color:#15704f">🎉 ¡Terminaste tu rutina de hoy!</div>':''}
   </div>
+  ${(function(){var ef=state.fitEffort||'auto';return `<div style="margin-top:12px">
+    <div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Qué tan fuerte hoy?</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">${[['suave','🟢 Suave'],['auto','⚙️ Auto'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte · crecer']].map(function(o){return '<button class="btn'+(ef===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}</div>
+    ${ef==='fuerte'?'<div class="mini" style="margin-top:8px;font-size:12px">💪 <b>Para crecer músculo con tu trabajo físico:</b> come <b>de más</b> con buena <b>proteína</b> (carne, huevo, leche, atún), sube el peso cuando completes las reps, y duerme bien. Caminar/jardinear es cardio, no cuenta como músculo — por eso importa más comer y recuperar.</div>':(ef==='suave'?'<div class="mini" style="margin-top:8px;font-size:12px">🟢 Rutina corta para no quemarte. Súbela a “Fuerte” los días que llegues con energía.</div>':'')}
+  </div>`;})()}
   <div style="margin-top:12px">${plan.map((x,i)=>{
     let done=!!pack.checked[i];
     return `<div class="fit-ex ${done?'done':''}">
@@ -11110,7 +11128,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.4.5';
+    window.HM_APP_VERSION='46.5.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
