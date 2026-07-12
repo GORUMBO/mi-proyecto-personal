@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.2.0';
+  window.HM_APP_VERSION='46.3.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -2443,9 +2443,85 @@ function enabledRecipeMethods(r){return recipeMethods(r).filter(x=>methodEnabled
     'Vaporera: 12–13 min (duro)');
 })();
 
-function secRecetas(){return `
-<h2>🌮 Recetas mexicanas fáciles</h2>
-<p class="muted">Elige rápido qué necesitas comer. Las categorías largas siguen guardadas en avanzado.</p>
+// ===== Recetas v2: estilo propio de la app, theme-aware y responsivo (iPhone + Windows) =====
+const RECETAS2_CSS=`
+.recetas2{margin:4px 0}
+.r2-search{display:flex;gap:8px;margin-bottom:10px}
+.r2-search input{flex:1;min-width:0}
+.r2-search .btn{white-space:nowrap}
+.r2-tabs{display:flex;gap:6px;background:var(--g2);border-radius:12px;padding:4px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none}
+.r2-tabs::-webkit-scrollbar{display:none}
+.r2-tab{flex:1 0 auto;background:transparent;border:none;color:var(--m);border-radius:9px;padding:11px 14px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;white-space:nowrap}
+.r2-tab.on{background:#fff;color:var(--g);box-shadow:0 1px 3px #0000001a}
+body.dark .r2-tab.on{background:#2f4137}
+.r2-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
+.r2-chips::-webkit-scrollbar{display:none}
+.r2-chip{background:#fff;border:1px solid var(--b);color:var(--t);border-radius:999px;padding:8px 15px;white-space:nowrap;font-weight:700;font-size:13px;cursor:pointer}
+body.dark .r2-chip{background:#223029}
+.r2-chip.on{background:var(--g);color:#fff;border-color:var(--g)}
+.r2-chipmsg{color:var(--m);font-size:13px;padding:6px 2px;font-weight:600}
+.r2-favrow{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:10px}
+.r2-count{color:var(--m);font-size:13px;font-weight:700;margin-right:auto}
+.r2-fav{background:#fff;border:1px solid var(--b);color:var(--t);border-radius:999px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer}
+body.dark .r2-fav{background:#223029}
+.r2-fav.on{background:#f5c518;color:#000;border-color:#f5c518}
+.recetas2 #recipes{display:block}
+.recetas2 .recipe-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;align-items:start}
+.recetas2 .recipe-card{margin:0;border:1px solid var(--b);border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 1px 3px #0000000f}
+body.dark .recetas2 .recipe-card{background:#223029}
+.recetas2 .recipe-summary{display:block;padding:14px;min-height:0;grid-template-columns:none;list-style:none}
+.recetas2 .recipe-summary::-webkit-details-marker{display:none}
+.recetas2 .recipe-summary::marker{content:""}
+.r2-hd{display:flex;align-items:flex-start;gap:11px}
+.r2-icon{width:46px;height:46px;flex:none;border-radius:13px;display:grid;place-items:center;font-size:24px;background:var(--g2)}
+.r2-name{font-size:16px;font-weight:800;color:var(--t);line-height:1.22}
+.r2-cat{display:inline-block;font-size:11px;font-weight:800;color:var(--g);background:var(--g2);border-radius:999px;padding:2px 9px;margin-top:4px}
+.r2-desc{color:var(--m);font-size:13px;line-height:1.45;margin:11px 0 12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.r2-stats{display:flex;flex-wrap:wrap;gap:6px}
+.r2-stat{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--t);background:var(--g2);border-radius:8px;padding:5px 9px;font-variant-numeric:tabular-nums}
+.recetas2 .recipe-body{border-top:1px solid var(--b);padding:12px 14px 14px;margin-top:12px}
+.recetas2 .cat-summary{border-radius:12px}
+@media(max-width:560px){.recetas2 .recipe-grid{grid-template-columns:1fr}}
+`;
+function recCostBracket(c){c=+c||0;return c<1.2?'bajo':(c<=2.2?'medio':'alto');}
+function recTimeBracket(t){t=+t||0;return t<=15?'rapidas':(t<=30?'promedio':'tardadas');}
+function recShortDesc(r){
+  if(r.desc)return r.desc;
+  let ing=(r.ingredients||'').split(',').map(s=>s.replace(/^\s*[\d¼½¾⅓⅔.\/]+\s*(tazas?|cdas?|cditas?|cucharadas?|cucharaditas?|g|gr|gramos|kg|ml|l|litros?|piezas?|dientes?|rajas?|sobres?|latas?|paquetes?|bolsas?|botes?|frascos?|barras?|manojos?|rebanadas?|puñados?|chorritos?|pizcas?|vasos?)?\.?\s*(de\s+)?/i,'').trim()).filter(Boolean).slice(0,5);
+  if(!ing.length)return mealTypeLabel(r.type).replace(/^\S+\s/,'');
+  let txt=ing.join(', ');
+  return 'Con '+txt.charAt(0).toLowerCase()+txt.slice(1)+'.';
+}
+const RCT_TIPO_CHIPS=[['desayuno','Desayunos'],['comida','Comidas'],['cena','Cenas'],['sopa','Sopas'],['arroz','Arroces'],['pasta','Pastas'],['pollococido','Pollo'],['postre','Postres'],['licuado','Licuados'],['snack','Snacks']];
+const RCT_COSTO_CHIPS=[['bajo','Bajo'],['medio','Medio'],['alto','Alto']];
+const RCT_TIEMPO_CHIPS=[['rapidas','Rápidas'],['promedio','Promedio'],['tardadas','Tardadas']];
+const RCT_OBJETIVO_CHIPS=[['ganar peso','Ganar peso'],['ganar musculo','Ganar músculo'],['proteina','Alta proteína']];
+function recChipsHTML(){
+  let tab=window._recTab||'todas',chip=window._recChip||'';
+  let set=tab==='tipo'?RCT_TIPO_CHIPS:tab==='costo'?RCT_COSTO_CHIPS:tab==='tiempo'?RCT_TIEMPO_CHIPS:tab==='objetivo'?RCT_OBJETIVO_CHIPS:null;
+  if(!set)return '<span class="r2-chipmsg">Todas las categorías</span>';
+  return set.map(x=>`<button class="r2-chip${chip===x[0]?' on':''}" onclick="recSetChip('${x[0]}')">${x[1]}</button>`).join('');
+}
+function refreshRecetasTab(){let i=tabs.indexOf('🍽️ Recetas');if(i>=0){buildTabIfNeeded(i,true);try{bindAll()}catch(e){}}}
+function recSetTab(t){window._recTab=t;window._recChip='';_recipePage=1;refreshRecetasTab();}
+function recSetChip(v){window._recChip=(window._recChip===v?'':v);_recipePage=1;refreshRecetasTab();}
+function secRecetas(){
+  let _tab=window._recTab||'todas';
+  let _favN=(state.recipeFavorites&&state.recipeFavorites.length)?' ('+state.recipeFavorites.length+')':'';
+  return `
+<style id="recetas2Css">${RECETAS2_CSS}</style>
+<div class="recetas2">
+  <div class="r2-search">
+    <input id="recSearch" placeholder="Busca una receta" value="${safeText(window._recSearchText||'')}" oninput="window._recSearchText=this.value;_recipePage=1;renderRecipes()" onkeydown="if(event.key==='Enter'){_recipePage=1;renderRecipes()}">
+    <button class="btn primary" onclick="_recipePage=1;renderRecipes()">Buscar</button>
+  </div>
+  <div class="r2-tabs">${[['todas','Todas'],['tipo','Tipo'],['costo','Costo'],['tiempo','Tiempo'],['objetivo','Objetivo']].map(x=>`<button class="r2-tab${_tab===x[0]?' on':''}" onclick="recSetTab('${x[0]}')">${x[1]}</button>`).join('')}</div>
+  <div class="r2-chips" id="recChips">${recChipsHTML()}</div>
+  <div class="r2-favrow"><span class="r2-count" id="recMethodLabel"></span><button class="r2-fav${window._portableFormat==='favoritas'?' on':''}" onclick="toggleFavoritesFilter()">⭐ Favoritas${_favN}</button></div>
+  <div id="recipes"></div>
+</div>
+
+<details class="rct-adv" style="margin-top:12px"><summary>⚙️ Herramientas avanzadas de comida</summary><div class="rct-adv-body">
 ${state.kitchenConfigured?'':'<div class="warn" style="margin:8px 0"><b>Configura primero Mi cocina</b> 👇 para que la app te muestre solo los métodos de preparación que puedes usar.</div>'}
 ${miCocinaPanelHTML()}
 ${visualGuide('recetas')}
@@ -2466,84 +2542,12 @@ ${visualGuide('recetas')}
   <div id="smartWeeklyOut"></div>
 </div>
 
-<div class="card"><h3 style="margin-top:0">🔎 Buscar recetas</h3><div class="grid card">
-  <div><label>Momento o tipo</label><select id="recFilter" onchange="_recipePage=1;renderRecipes()"><option value="todas">Todos</option><option value="desayuno">Desayunos</option><option value="comida">Comidas</option><option value="cena">Cenas</option><option value="sopa">Sopas</option><option value="arroz">Arroces</option><option value="pasta">Espaguetis y pastas</option><option value="pollococido">Pollo cocido</option><option value="licuado">Licuados</option><option value="postre">Postres</option><option value="snack">Snacks</option><option value="fruta">Frutas</option><option value="agua">Aguas frescas</option><option value="hotcake">Hotcakes</option><option value="avena">Avenas</option><option value="pan">Panes</option><option value="salsa">Salsas</option><option value="aderezo">Aderezos</option><option value="especia">Sazonadores</option><option value="suero">Sueros</option></select></div>
-  <div><label>Presupuesto</label><select id="recBudget" onchange="_recipePage=1;renderRecipes()"><option value="all">Cualquier precio</option><option value="cheap">Menos de $3 por porción</option><option value="20day">Ideas para menos de $20 al día</option></select></div>
-  <div><label>Buscar</label><input id="recSearch" placeholder="pollo, huevo, arroz, frijol..." oninput="_recipePage=1;renderRecipes()"></div>
-  <div><label>Ordenar por</label><select id="recSort" onchange="_recipePage=1;renderRecipes()"><option value="none">Normal</option><option value="kcalDesc">Más calorías primero</option><option value="kcalAsc">Menos calorías primero</option><option value="protDesc">Más proteína primero</option><option value="costAsc">Más barato primero</option><option value="timeAsc">Más rápido primero</option></select></div>
-</div></div>
+<div class="card"><label>Ordenar por</label><select id="recSort" onchange="_recipePage=1;renderRecipes()"><option value="none">Normal</option><option value="kcalDesc">Más calorías primero</option><option value="kcalAsc">Menos calorías primero</option><option value="protDesc">Más proteína primero</option><option value="costAsc">Más barato primero</option><option value="timeAsc">Más rápido primero</option></select></div>
 
-<div class="row" style="gap:6px;flex-wrap:wrap;margin:4px 0 2px">
-  <button class="btn" onclick="recipeQuickFilter('economicas')">💰 Económicas</button>
-  <button class="btn" onclick="recipeQuickFilter('rapidas')">⚡ Rápidas</button>
-  <button class="btn" onclick="recipeQuickFilter('ganarpeso')">📈 Ganar peso</button>
-  <button class="btn" onclick="recipeQuickFilter('ganarmusculo')">💪 Ganar músculo</button>
-  <button class="btn" onclick="recipeQuickFilter('reset')">↺ Todo</button>
-</div>
-<div class="row" style="justify-content:space-between;align-items:center;gap:8px;margin:12px 0 6px">
-  <strong id="recMethodLabel">Todas las recetas</strong>
-  <button class="btn${window._portableFormat==='favoritas'?' primary':''}" id="favFilterBtn" style="white-space:nowrap" onclick="toggleFavoritesFilter()">⭐ Favoritas${(state.recipeFavorites&&state.recipeFavorites.length)?' ('+state.recipeFavorites.length+')':''}</button>
-</div>
-<div id="recipes"></div>
-
-${isPersonalMode()?'':`<details><summary style="font-size:16px;font-weight:800">⚙️ Más opciones (avanzado)</summary>
-<div style="padding-top:8px"><div class="card" style="border:2px solid #9dd5b4;background:#f7fff9">
-  <h3 style="margin-top:0">Comer ahora</h3>
-  <div class="grid">
-    <button class="btn primary" style="padding:16px;font-size:16px;border-radius:16px" onclick="recipeQuickMode('rapidas')">Rápidas</button>
-    <button class="btn" style="padding:16px;font-size:16px;border-radius:16px" onclick="recipeQuickMode('trabajo')">Para trabajo</button>
-    <button class="btn" style="padding:16px;font-size:16px;border-radius:16px" onclick="recipeQuickMode('subir')">Subir de peso</button>
-    <button class="btn" style="padding:16px;font-size:16px;border-radius:16px" onclick="recipeQuickMode('baratas')">Baratas</button>
-    <button class="btn" style="padding:16px;font-size:16px;border-radius:16px" onclick="recipeQuickMode('licuados')">Licuados</button>
-    <button class="btn" style="padding:16px;font-size:16px;border-radius:16px" onclick="recipeQuickMode('favoritas')">Favoritas</button>
-  </div>
-</div>
+<details><summary style="font-size:16px;font-weight:800">🧰 Más herramientas de comida</summary>
+<div style="padding-top:8px">
 <details>
-  <summary>Avanzado: categorías y filtros completos</summary>
-  <div class="card">
-  <div style="font-weight:900;margin-bottom:8px">Categorías</div>
-  <div class="row" style="gap:6px">
-    <button class="btn primary rec-method" data-method="todas" onclick="setRecipeMethod('todas')">Todas</button>
-    <button class="btn rec-method" data-method="estufa" onclick="setRecipeMethod('estufa')">🔥 Estufa</button>
-    <button class="btn rec-method" data-method="thermomix" onclick="setRecipeMethod('thermomix')">🤖 Todas en Thermomix</button>
-    <button class="btn" onclick="openThermomixGuide()">❓ Aprender TM5</button>
-    <button class="btn rec-method" data-method="horno" onclick="setRecipeMethod('horno')">🫕 Horno</button>
-    <button class="btn rec-method" data-method="licuadora" onclick="setRecipeMethod('licuadora')">🥤 Licuados</button>
-    <button class="btn rec-method" data-method="salsa" onclick="setRecipeMethod('salsa')">🌶️ Salsas</button>
-    <button class="btn rec-method" data-method="comida" onclick="setRecipeMethod('comida')">🍲 Comidas</button>
-    <button class="btn rec-method" data-method="snack" onclick="setRecipeMethod('snack')">🥜 Snacks</button>
-    <button class="btn rec-method" data-method="carne" onclick="setRecipeMethod('carne')">🥩 Carne cocida</button>
-    <button class="btn rec-method" data-method="fruta" onclick="setRecipeMethod('fruta')">🍓 Frutas</button>
-    <button class="btn rec-method" data-method="agua" onclick="setRecipeMethod('agua')">🧊 Aguas frescas</button>
-    <button class="btn rec-method" data-method="hotcake" onclick="setRecipeMethod('hotcake')">🥞 Hotcakes</button>
-    <button class="btn rec-method" data-method="avena" onclick="setRecipeMethod('avena')">🥣 Avenas</button>
-    <button class="btn rec-method" data-method="pan" onclick="setRecipeMethod('pan')">🍞 Panes</button>
-    <button class="btn rec-method" data-method="aderezo" onclick="setRecipeMethod('aderezo')">🥗 Aderezos</button>
-  </div>
-  </div>
-</details><details>
-  <summary>Asistente local de recetas</summary>
-  <div class="card" style="background:#f4fbf7">
-    <div class="grid">
-      <div style="grid-column:1/-1"><label>Pregunta</label><input id="recipeAIQuestion" placeholder="Ej. Tengo pollo cocido y quiero algo con salsa por menos de $4" onkeydown="if(event.key==='Enter')askRecipeAI()"></div>
-      <div><label>Máximo por porción</label><input id="recipeAIBudget" type="number" min="1" step=".5" value="5"></div>
-      <div><label>Tiempo máximo</label><select id="recipeAITime"><option value="999">Cualquier tiempo</option><option value="10">10 min</option><option value="20" selected>20 min</option><option value="30">30 min</option><option value="45">45 min</option></select></div>
-      <div><label>Tipo</label><select id="recipeAIType"><option value="todas">Todo</option><option value="comida">Comida</option><option value="snack">Snack</option><option value="salsa">Salsa</option><option value="aderezo">Aderezo</option><option value="fruta">Fruta</option><option value="agua">Agua fresca</option><option value="hotcake">Hotcake</option><option value="avena">Avena</option><option value="pan">Pan</option></select></div>
-    </div>
-    <div class="row" style="margin-top:8px"><button class="btn primary" onclick="askRecipeAI()">Preguntar a la IA</button><button class="btn" onclick="startRecipeVoiceAI()">🎙️ Dictar</button></div>
-    <p class="muted" style="font-size:12px;margin-bottom:0"><span class="trust-badge trust-local">LOCAL</span> Busca dentro de las recetas guardadas. No está conectado con ChatGPT ni consulta internet.</p>
-    <div id="recipeAIOut"></div>
-  </div>
-</details><details>
-<summary>Comidas portátiles y constructor</summary>
-<div class="card">
-  <div style="font-weight:900;margin-bottom:8px">Comidas portátiles</div>
-  <div class="row" style="gap:5px">
-    ${['Todas','Sándwich','Taco','Torta','Tostada','Burrito','Quesadilla','Wrap','Caja snack','Termo','Favoritas'].map((x,i)=>`<button class="btn portable-filter ${i===0?'primary':''}" data-format="${x.toLowerCase()}" onclick="setPortableFormat('${x.toLowerCase()}')">${['🍽️','🥪','🌮','🥖','🫓','🌯','🧀','🌯','🍱','🥣','⭐'][i]} ${x}</button>`).join('')}
-  </div>
-  </div>
-<details>
-  <summary>🧩 Constructor de comida portátil</summary>
+<summary>🧩 Constructor de comida portátil</summary>
   <div class="card">
     <div class="grid">
       <div><label>Formato</label><select id="builderBase"><option>2 rebanadas pan integral</option><option>3 tortillas</option><option>1 bolillo</option><option>3 tostadas de maíz</option><option>1 taza arroz cocido</option></select></div>
@@ -2555,7 +2559,7 @@ ${isPersonalMode()?'':`<details><summary style="font-size:16px;font-weight:800">
     <div id="portableBuilderOut"></div>
   </div>
 </details>
-</details><details>
+<details>
   <summary>Plan completo de comida</summary>
   <div class="card"><p class="muted">Aquí queda todo lo que no necesitas ver siempre: comida para trabajo, menú semanal, despensa, ajuste de calorías y seguridad.</p>
 <details>
@@ -2602,7 +2606,7 @@ ${isPersonalMode()?'':`<details><summary style="font-size:16px;font-weight:800">
   </div></div>
 </details>
   </div>
-</details></div></details>`}`}
+</details></div></details></div></details>`}
 
 function setRecipeMethod(method){
   _recipePage=1;
@@ -7868,6 +7872,12 @@ function renderRecipes(){
   });
   if(b=='cheap') arr=arr.filter(r=>r.cost<3);
   if(b=='20day') arr=arr.filter(r=>['desayuno','comida','cena','licuado'].includes(r.type)).slice(0,12);
+  // Recetas v2: filtros de las pestañas Tipo / Costo / Tiempo
+  let _tab=window._recTab||'todas', _chip=window._recChip||'';
+  if(_tab==='tipo'&&_chip) arr=arr.filter(r=>r.type===_chip);
+  else if(_tab==='costo'&&_chip) arr=arr.filter(r=>recCostBracket(r.cost)===_chip);
+  else if(_tab==='tiempo'&&_chip) arr=arr.filter(r=>recTimeBracket(r.time)===_chip);
+  else if(_tab==='objetivo'&&_chip) arr=arr.filter(r=>(r.tags||'').toLowerCase().includes(_chip));
   let sortBy=$('#recSort')?.value||'none';
   if(sortBy==='kcalDesc') arr=arr.slice().sort((a,b)=>b.k-a.k);
   else if(sortBy==='kcalAsc') arr=arr.slice().sort((a,b)=>a.k-b.k);
@@ -7876,10 +7886,10 @@ function renderRecipes(){
   else if(sortBy==='timeAsc') arr=arr.slice().sort((a,b)=>a.time-b.time);
   let totalRecipes=arr.length,totalPages=Math.max(1,Math.ceil(totalRecipes/RECIPE_PAGE_SIZE));
   _recipePage=Math.min(_recipePage,totalPages);
-  var _grouped=(f=="todas" && !s && (($("#recSort")?.value)||"none")==="none"); if(!_grouped){ arr=arr.slice((_recipePage-1)*RECIPE_PAGE_SIZE,_recipePage*RECIPE_PAGE_SIZE); }
+  var _grouped=(_tab==='todas' && !_chip && !s && (($("#recSort")?.value)||"none")==="none"); if(!_grouped){ arr=arr.slice((_recipePage-1)*RECIPE_PAGE_SIZE,_recipePage*RECIPE_PAGE_SIZE); }
   let label=document.getElementById('recMethodLabel');
   const mLabels={todas:'Todas las recetas',estufa:'🔥 Recetas en estufa',thermomix:'🤖 Todas las recetas adaptadas a Thermomix TM5',horno:'🫕 Recetas al horno',licuadora:'🥤 Licuados para subir peso',cafe:'☕ Cafés mexicanos',salsa:'🌶️ Salsas mexicanas',comida:'🍲 Comidas completas',snack:'🥜 Snacks económicos y calóricos',carne:'🥩 Recetas con carne ya cocida',fruta:'🍓 Frutas con más calorías',agua:'🧊 Aguas frescas económicas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes calóricos',aderezo:'🥗 Aderezos caseros y comprados'};
-  if(label) label.textContent=(mLabels[m]||m)+' — '+totalRecipes+' recetas';
+  if(label) label.textContent=totalRecipes+' receta'+(totalRecipes===1?'':'s');
   // Estimate carbs and fat from calories
   function getCarb(r){return Math.round((r.k - r.p*4 - (r.k*0.25))/4);}
   function getFat(r){return Math.round(r.k*0.25/9);}
@@ -7901,8 +7911,17 @@ function renderRecipes(){
       let sauce=getRecipeSaucePair(r);
       return `<details class="recipe-card">
       <summary class="recipe-summary">
-        <span class="recipe-icon">${icon}</span>
-        <span><span class="recipe-name">${r.name}</span><span class="recipe-meta"><span style="background:#eaf5ef;color:#15704f;border-radius:999px;padding:1px 8px;font-weight:800">${mealTypeLabel(r.type)}</span><span>${r.time} min</span><span>${r.k} kcal</span><span>P ${r.p}g</span><span>${money(r.cost)}</span></span></span>
+        <div class="r2-hd">
+          <span class="r2-icon">${icon}</span>
+          <div><div class="r2-name">${safeText(r.name)}</div><span class="r2-cat">${mealTypeLabel(r.type)}</span></div>
+        </div>
+        <div class="r2-desc">${safeText(recShortDesc(r))}</div>
+        <div class="r2-stats">
+          <span class="r2-stat">🔥 ${r.k} kcal</span>
+          <span class="r2-stat">🍗 ${r.p}g prot</span>
+          <span class="r2-stat">⏱️ ${r.time} min</span>
+          <span class="r2-stat">${money(r.cost)}</span>
+        </div>
       </summary>
       <div class="recipe-body">
 
@@ -10965,7 +10984,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.2.0';
+    window.HM_APP_VERSION='46.3.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

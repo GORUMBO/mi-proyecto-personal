@@ -1,8 +1,24 @@
 {
-  "latest": "46.2.0",
+  "latest": "46.3.0",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.3.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Recetas rediseñadas: buscador arriba y filtros en pestañas (Todas, Tipo, Costo, Tiempo, Objetivo)",
+        "Tarjetas de receta mas limpias y en columnas segun tu pantalla (PC y telefono)"
+      ],
+      "cambios": [
+        "Se quitaron los filtros repetidos: Comer ahora, categorias por metodo, Asistente y botones de formato",
+        "Las herramientas de comida (Mi cocina, planeador, menu semanal, constructor) quedan en un solo desplegable"
+      ],
+      "errores": [
+        "En Windows las recetas se veian en una columna angosta; ahora se ven en varias columnas"
+      ]
+    },
     {
       "version": "46.2.0",
       "date": "2026-07-11",
