@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.4.4';
+  window.HM_APP_VERSION='46.4.5';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -9456,8 +9456,30 @@ function renderFitnessCoach(){
         <button class="btn" style="flex:1" onclick="openAppTimer('Descanso: ${x.name.replace(/'/g,"\\'")}',${x.rest})">⏱️ Descanso ${x.rest}s</button>
       </div>
       <details style="margin-top:6px"><summary style="font-size:13px">🔄 Si la máquina está ocupada</summary><div class="list" style="margin-top:8px">${x.alts.map(a=>`<div class="item"><b>${safeText(a)}</b><div class="row" style="margin-top:6px"><button class="btn" onclick="replaceFitnessExercise(${i},'${a.replace(/'/g,"\\'")}')">Usar este</button><a class="btn" target="_blank" rel="noopener" href="${exLink(a)}">Ver imagen</a></div></div>`).join('')}</div></details>
+      <div class="fit-ex-log row" style="gap:6px;margin-top:8px;align-items:center">
+        <input id="rlogW_${i}" type="number" inputmode="decimal" placeholder="Peso lb" style="width:92px">
+        <input id="rlogR_${i}" inputmode="numeric" placeholder="Reps ${safeText(String(x.reps||''))}" style="flex:1;min-width:64px">
+        <button class="btn primary" onclick="logRoutineExercise(${i})">💾 Registrar</button>
+      </div>
+      <div id="rlogOut_${i}"></div>
     </div>`;
   }).join('')}</div>`;
+}
+// Registrar un ejercicio directamente desde la rutina del día (sin re-escribir el nombre).
+function logRoutineExercise(i){
+  let pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan[i])return;
+  let x=pack.plan[i];
+  let w=+(document.getElementById('rlogW_'+i)?.value)||0;
+  let reps=(document.getElementById('rlogR_'+i)?.value||'').trim()||String(x.reps||'');
+  if(!Array.isArray(state.workoutLog))state.workoutLog=[];
+  state.workoutLog.push({id:Date.now(),date:todayISO(),exercise:x.name,weight:w,sets:x.sets||0,reps:reps,note:'Rutina · '+(x.muscle||'')});
+  if(!pack.checked)pack.checked={}; pack.checked[i]=true; pack.checkedDate=todayISO();
+  save();
+  // Actualiza la tarjeta en el sitio (sin re-render completo, para no borrar lo que escribiste en otros ejercicios).
+  let out=document.getElementById('rlogOut_'+i);
+  let card=out?out.closest('.fit-ex'):null;
+  if(card){card.classList.add('done'); let c=card.querySelector('.fit-ex-check'); if(c)c.textContent='✓';}
+  if(out)out.innerHTML='<div class="ok" style="margin-top:6px;font-size:13px;padding:6px 8px">✅ Registrado'+(w?(' · '+w+' lb'):'')+(reps?(' · '+safeText(reps)+' reps'):'')+'</div>';
 }
 function toggleFitExDone(i){
   let pack=state.fitnessToday;if(!pack)return;
@@ -11088,7 +11110,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.4.4';
+    window.HM_APP_VERSION='46.4.5';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
