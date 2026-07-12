@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.4.2';
+  window.HM_APP_VERSION='46.4.3';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -7920,6 +7920,17 @@ function toggleRecipeStep(recIdx,stepIdx){
     if(num)num.textContent=count+' de '+stepEls.length;
   }
 }
+// Render perezoso de una categoría agrupada: dibuja sus tarjetas solo al abrir su <details>.
+function recipeCatToggle(el){
+  if(!el||!el.open)return;
+  var grid=el.querySelector('.recipe-grid');
+  if(!grid||grid.dataset.filled==='1')return;
+  var cat=el.getAttribute('data-cat');
+  var items=(window._recGrouped&&window._recGrouped[cat])||[];
+  var fn=window._recCardHTML;
+  grid.dataset.filled='1';
+  if(typeof fn==='function'){ try{ grid.innerHTML=items.map(fn).join(''); }catch(e){ console.warn('recipeCatToggle',e); } }
+}
 function renderRecipes(){
   let el=$('#recipes');if(!el)return;
   // No re-renderizar la lista (pesada: cientos de recetas) cuando la sección Recetas no está visible.
@@ -8115,17 +8126,20 @@ function renderRecipes(){
         </div>
       </div>
     </details>`;};
+    window._recCardHTML=cardHTML; // exponer para render perezoso por categoría
     var grouped=_grouped;
     if(grouped){
-      // Agrupar por categoría en secciones colapsables
+      // Agrupar por categoría en secciones colapsables.
+      // Render PEREZOSO: cada categoría dibuja sus tarjetas solo al abrir su <details> (evita dibujar cientos de recetas de golpe).
       var catNames={desayuno:'🍳 Desayunos',comida:'🍲 Comidas',cena:'🌙 Cenas',sopa:'🍲 Sopas',arroz:'🍚 Arroces',pasta:'🍝 Espaguetis y pastas',pollococido:'🍗 Pollo cocido',licuado:'🥤 Licuados',bebida:'🧊 Bebidas',agua:'🧊 Aguas frescas',snack:'🥜 Snacks',postre:'🍮 Postres',cafe:'☕ Cafés',salsa:'🌶️ Salsas',aderezo:'🥗 Aderezos',fruta:'🍓 Frutas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes',thermomix:'🤖 Thermomix',horno:'🫕 Al horno'};
       var order=['desayuno','comida','cena','sopa','arroz','pasta','pollococido','licuado','snack','postre','bebida','agua','cafe','avena','hotcake','pan','fruta','salsa','aderezo'];
       var byCat={};
       arr.forEach(function(r){ (byCat[r.type]=byCat[r.type]||[]).push(r); });
+      window._recGrouped=byCat;
       var cats=Object.keys(byCat).sort(function(a,b){ var ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
       return '<p class="muted" style="margin:4px 0 10px">Toca una categoría para abrirla. '+arr.length+' recetas en total.</p>'+cats.map(function(cat){
         var items=byCat[cat];
-        return '<details class="cat-group"><summary class="cat-summary">'+(catNames[cat]||cat)+' <span class="cat-count">'+items.length+'</span></summary><div class="recipe-grid" style="margin-top:8px">'+items.map(cardHTML).join('')+'</div></details>';
+        return '<details class="cat-group" data-cat="'+cat+'" ontoggle="recipeCatToggle(this)"><summary class="cat-summary">'+(catNames[cat]||cat)+' <span class="cat-count">'+items.length+'</span></summary><div class="recipe-grid" data-filled="0" style="margin-top:8px"></div></details>';
       }).join('');
     }
     // Modo lista normal (con búsqueda, filtro o orden): paginado
@@ -11054,7 +11068,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.4.2';
+    window.HM_APP_VERSION='46.4.3';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

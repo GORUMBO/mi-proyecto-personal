@@ -1,8 +1,20 @@
 {
-  "latest": "46.4.2",
+  "latest": "46.4.3",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.4.3",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Abrir Recetas ahora es instantaneo: cada categoria dibuja sus recetas solo al abrirla"
+      ],
+      "errores": [
+        "Antes se dibujaban las cientos de recetas de golpe y la seccion tardaba en abrir"
+      ]
+    },
     {
       "version": "46.4.2",
       "date": "2026-07-11",
