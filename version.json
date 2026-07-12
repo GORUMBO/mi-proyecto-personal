@@ -1,8 +1,17 @@
 {
-  "latest": "46.7.0",
+  "latest": "46.7.1",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.7.1",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Perfil y Centro ahora son uno solo: se quito Centro del menu y todo (incluidas herramientas de dueno) quedo en Perfil"
+      ]
+    },
     {
       "version": "46.7.0",
       "date": "2026-07-11",

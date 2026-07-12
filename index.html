@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.7.0';
+  window.HM_APP_VERSION='46.7.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.7.0</span>
+      <span class="versionChip">v46.7.1</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -612,7 +612,7 @@ const GROUPS = [
   {id:'salud',   label:'🍽️ Salud',   tabs:['🍱 Contador','🍽️ Recetas','🥗 Nevera','🤖 Thermomix TM5']},
   {id:'fitness', label:'💪 Fitness',  tabs:['💪 Ejercicio','🚶 Caminata','⚖️ Peso']},
   {id:'dinero',  label:'💳 Dinero',   tabs:['💳 Gastos','💰 Presupuesto','🛒 Precios','🌺 Ahorro']},
-  {id:'ajustes', label:'⚙️ Ajustes', tabs:['👤 Perfil','🧭 Centro','📊 Base datos','🧤 Trabajo','🚗 Vehículos','🏡 Casa','👕 Ropa','🧴 Piel','❤️ Ligar']},
+  {id:'ajustes', label:'⚙️ Ajustes', tabs:['👤 Perfil','📊 Base datos','🧤 Trabajo','🚗 Vehículos','🏡 Casa','👕 Ropa','🧴 Piel','❤️ Ligar']},
 ];
 let _activeGroup = 'inicio';
 let _activeTab = 0;
@@ -3653,7 +3653,7 @@ function secInicio(){
       <div class="home-more-actions">
         <button class="btn primary" onclick="save();document.getElementById('homeSaveStatus')&&(document.getElementById('homeSaveStatus').innerHTML=lastSavedText())">💾 Guardar ahora</button>
         <button class="btn" onclick="exportData()">📥 Descargar copia</button>
-        <button class="btn" onclick="openTab('🧭 Centro')">⚙️ Ajustes avanzados</button>
+        <button class="btn" onclick="openTab('👤 Perfil')">⚙️ Ajustes y cuenta</button>
       </div>
       <p class="muted" style="margin:10px 0 0;font-size:12px">Los respaldos siguen disponibles, pero ya no ocupan espacio arriba.</p>
     </div>
@@ -7041,6 +7041,21 @@ function renderVisibleSections(){
   if(!els.length)return;
   let html=tabs.filter(t=>!t.includes('Inicio')&&!t.includes('Centro')).map(t=>`<label class="check mini"><input type="checkbox" ${state.uiSettings.hiddenTabs.includes(t)?'':'checked'} onchange="setSectionVisible('${t.replace(/'/g,"\\'")}',this.checked)">${t}</label>`).join('');
   els.forEach(el=>el.innerHTML=html);
+}
+// Herramientas de dueño movidas a Perfil (respaldo, base de datos, avanzadas). Solo para el dueño.
+function perfilOwnerTools(){
+  if(typeof ppIsOwner==='function' && !ppIsOwner()) return '';
+  var s=(typeof hmv413DataStats==='function')?hmv413DataStats():{comida:(state.meals||[]).length,peso:(state.weight||[]).length,gastos:(state.expenses||[]).length,rutinas:(state.workoutLog||[]).length};
+  var rec=(typeof hmv413BackupRecommended==='function')?hmv413BackupRecommended():{yes:false};
+  var last=(typeof hmv413LastSavedText==='function')?hmv413LastSavedText():'guardado local';
+  var adv=((typeof hmv413DataSummary==='function')?hmv413DataSummary():'')+((typeof hmv413ConnectionMap==='function')?hmv413ConnectionMap():'');
+  return '<details class="settings-clean-details"><summary>🔒 Herramientas de dueño (respaldo y base de datos)</summary><div class="card">'
+    +'<div class="settings-main-actions"><button class="btn primary" onclick="hmv413MarkBackup&&hmv413MarkBackup();exportData&&exportData()">⬇️ Descargar respaldo</button><button class="btn" onclick="openTab(\'📊 Base datos\')">📊 Base de datos</button></div>'
+    +'<div class="settings-mini-status"><div><b>'+(s.comida||0)+'</b><span>comidas</span></div><div><b>'+(s.peso||0)+'</b><span>pesos</span></div><div><b>'+(s.gastos||0)+'</b><span>gastos</span></div><div><b>'+(s.rutinas||0)+'</b><span>fitness</span></div></div>'
+    +'<div class="'+(rec.yes?'warn':'ok')+'" style="margin:10px 0"><b>Último guardado:</b> '+safeText(last)+'</div>'
+    +'<details class="settings-clean-details"><summary>💾 Respaldo y nube</summary><div class="card">'+((typeof hmv413BackupPanel==='function')?hmv413BackupPanel():'')+'<div class="grid"><button class="btn" onclick="checkForAppUpdate&&checkForAppUpdate()">Buscar actualización</button><button class="btn" onclick="openTab(\'📊 Base datos\')">Importar / exportar</button></div><div id="updateCheckStatus"></div></div></details>'
+    +'<details class="settings-clean-details"><summary>🧰 Herramientas avanzadas (casi no se usan)</summary><div class="card">'+adv+'</div></details>'
+    +'</div></details>';
 }
 // Cuenta (en Perfil): iniciar/cerrar sesión y cambiar contraseña.
 function perfilCuentaHTML(){
@@ -11215,7 +11230,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.7.0';
+    window.HM_APP_VERSION='46.7.1';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -11323,6 +11338,7 @@ tryLoadIDB();
       <h3 style="margin:14px 0 4px">⚙️ Configuración y cuenta</h3>
       ${renderAjustesUnificados()}
       <details class="settings-clean-details acc" ontoggle="if(this.open){try{accordion(this)}catch(e){}try{ppCheckUpdates(false)}catch(e){}}"><summary>📥 Actualizaciones</summary><div class="card"><div id="actualizacionesOut"></div></div></details>
+      ${perfilOwnerTools()}
       `;
     };
 
@@ -11340,25 +11356,8 @@ tryLoadIDB();
         </div>
         <span class="settings-status ${rec.yes?'need':'ok'}">${rec.yes?'Respaldo recomendado':'Todo tranquilo'}</span>
       </div>
-      <p class="muted" style="margin:0 0 10px">Tu información y configuración están en <b>👤 Perfil</b>. Aquí solo quedan las herramientas de dueño (respaldo, base de datos, secciones).</p>
-      ${ppIsOwner()?`
-      <div class="settings-main-actions">
-        <button class="btn primary" onclick="hmv413MarkBackup&&hmv413MarkBackup();exportData&&exportData()">⬇️ Descargar respaldo</button>
-        <button class="btn" onclick="openTab('👤 Perfil')">👤 Perfil y metas</button>
-        <button class="btn" onclick="openTab('📊 Base datos')">📊 Base de datos</button>
-      </div>
-      <div class="settings-mini-status">
-        <div><b>${s.comida||0}</b><span>comidas</span></div>
-        <div><b>${s.peso||0}</b><span>pesos</span></div>
-        <div><b>${s.gastos||0}</b><span>gastos</span></div>
-        <div><b>${s.rutinas||0}</b><span>fitness</span></div>
-      </div>
-      <div class="${rec.yes?'warn':'ok'}" style="margin:10px 0"><b>Último guardado:</b> ${safeText(last)}<br>${rec.yes?'Descarga un respaldo si hiciste cambios importantes.':'Puedes seguir usando la app normal.'}</div>
-      <details class="settings-clean-details"><summary>👁️ Mostrar u ocultar secciones</summary><div class="card"><p class="muted">Desmarca lo que no ocupes. No se borra, solo se esconde.</p><div id="visibleSectionsOut"></div></div></details>
-      <details class="settings-clean-details"><summary>💾 Respaldo y nube</summary><div class="card">${(typeof hmv413BackupPanel==='function')?hmv413BackupPanel():''}<div class="grid"><button class="btn" onclick="checkForAppUpdate&&checkForAppUpdate()">Buscar actualización</button><button class="btn" onclick="openTab('📊 Base datos')">Importar / exportar</button></div><div id="updateCheckStatus"></div></div></details>
-      <details class="settings-clean-details"><summary>🔒 Herramientas privadas (dueño)</summary><div class="card"><p class="muted">Sección visible solo para tu cuenta.</p><div class="grid"><button class="btn" onclick="openTab('📊 Base datos')">📊 Base de datos</button><button class="btn" onclick="openTab('🧤 Trabajo')">🧤 Trabajo</button><button class="btn" onclick="openTab('❤️ Ligar')">❤️ Ligar</button></div><div class="ok" style="margin-top:8px">Cuenta dueño verificada: ${safeText((getCloudSession()&&getCloudSession().user&&getCloudSession().user.email)||'sin sesión')}</div></div></details>
-      <details class="settings-clean-details"><summary>🧰 Herramientas avanzadas que casi no se usan</summary><div class="card"><p class="muted">Calendario, mapa de conexión, inventario, alertas largas y herramientas técnicas quedaron aquí. Ábrelo solo cuando lo necesites.</p>${v4124OldSecCentro?v4124OldSecCentro():''}</div></details>
-      `:''}`;
+      <p class="muted" style="margin:0 0 10px">Toda tu información, configuración y herramientas de dueño están ahora en <b>👤 Perfil</b>.</p>
+      <button class="btn primary" onclick="openTab('👤 Perfil')">👤 Ir a Perfil</button>`;
     };
 
     // Add compact visual styles without touching the rest of the app.
