@@ -1,8 +1,20 @@
 {
-  "latest": "46.4.0",
+  "latest": "46.4.1",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.4.1",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Se quitaron los botones Personal/Profesional que seguian apareciendo arriba de cada seccion y en Inicio"
+      ],
+      "errores": [
+        "El modo ya depende de tu cuenta, esos botones ya no hacian nada"
+      ]
+    },
     {
       "version": "46.4.0",
       "date": "2026-07-11",

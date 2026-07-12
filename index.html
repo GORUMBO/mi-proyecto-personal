@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.4.0';
+  window.HM_APP_VERSION='46.4.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -3434,7 +3434,7 @@ function areaModePanel(t){
     return `<button class="btn" onclick="runAreaAction(decodeURIComponent('${code}'),this,'${label}')">${safeText(a[0])}</button>`;
   }).join('');
   let help=mode==='personal'?b.personal:b.pro;
-  return `<div class="mode-bridge minimal action-result" id="modeBridge_${idx}"><div class="mode-bridge-head"><div><h3>${safeText(b.name)} · ${chip}</h3><div class="sub">${safeText(b.now)}</div><div class="mode-mini-hint">👇 Toca un botón: el resultado aparece aquí mismo.</div></div><div class="mode-toggle"><button class="${mode==='personal'?'on':''}" onclick="setAreaMode(tabs[${idx}],'personal')">👤 Personal</button><button class="${mode==='pro'?'on':''}" onclick="setAreaMode(tabs[${idx}],'pro')">⭐ Profesional</button></div></div>${actions?`<div class="mode-actions">${actions}</div>`:''}<div class="mode-mini-result" id="areaModeOut_${idx}"></div></div>`;
+  return `<div class="mode-bridge minimal action-result" id="modeBridge_${idx}"><div class="mode-bridge-head"><div><h3>${safeText(b.name)}</h3><div class="sub">${safeText(b.now)}</div><div class="mode-mini-hint">👇 Toca un botón: el resultado aparece aquí mismo.</div></div></div>${actions?`<div class="mode-actions">${actions}</div>`:''}<div class="mode-mini-result" id="areaModeOut_${idx}"></div></div>`;
 }
 
 function wrapAreaSection(t,html){return areaModePanel(t)+html}
@@ -3617,11 +3617,9 @@ function secInicio(){
       <div class="home-more-actions">
         <button class="btn primary" onclick="save();document.getElementById('homeSaveStatus')&&(document.getElementById('homeSaveStatus').innerHTML=lastSavedText())">💾 Guardar ahora</button>
         <button class="btn" onclick="exportData()">📥 Descargar copia</button>
-        <button class="btn ${isPersonalMode()?'primary':''}" onclick="state.uiSettings.mode='personal';save();render();showGroup('inicio')">👤 Personal</button>
-        <button class="btn ${!isPersonalMode()?'primary':''}" onclick="state.uiSettings.mode='pro';save();render();showGroup('inicio')">⭐ Profesional</button>
         <button class="btn" onclick="openTab('🧭 Centro')">⚙️ Ajustes avanzados</button>
       </div>
-      <p class="muted" style="margin:10px 0 0;font-size:12px">Modo actual: <b>${modo}</b>. Los respaldos siguen disponibles, pero ya no ocupan espacio arriba.</p>
+      <p class="muted" style="margin:10px 0 0;font-size:12px">Los respaldos siguen disponibles, pero ya no ocupan espacio arriba.</p>
     </div>
   </details>`;
 
@@ -11053,7 +11051,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.4.0';
+    window.HM_APP_VERSION='46.4.1';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
