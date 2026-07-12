@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.5.4';
+  window.HM_APP_VERSION='46.5.5';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.5.4</span>
+      <span class="versionChip">v46.5.5</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -3991,7 +3991,7 @@ function secEjercicio(){
     <summary>⚙️ Ajustes de rutina</summary>
     <div class="fit-clean-details-body">
       <div class="grid">
-        <div><label>Qué quiero hoy</label><select id="simpleFitGoal"><option>Ganar músculo sin quedar molido</option><option>Espalda y hombros</option><option>Brazos</option><option>Pecho</option><option>Core y movilidad</option><option>Recuperar</option></select></div>
+        <div><label>Qué quiero hoy</label><select id="simpleFitGoal" onchange="if(state.fitnessToday){createFitnessToday();quickFitnessToday();}"><option>Ganar músculo sin quedar molido</option><option>Pecho</option><option>Espalda y hombros</option><option>Brazos</option><option>Pierna y glúteos</option><option>Core y movilidad</option><option>Recuperar</option></select></div>
         <div><label>Equipo disponible</label><select id="simpleFitEquip"><option>Gimnasio</option><option>Mancuernas</option><option>Casa / sin equipo</option></select></div>
       </div>
       <details class="fit-clean-details" style="margin-top:10px">
@@ -9407,7 +9407,10 @@ function fitnessExerciseBank(){
     pull:{name:'Jalón al pecho',muscle:'Espalda',sets:3,reps:'10-12',rest:90,alts:['Jalón agarre neutro','Pullover en cable','Dominada asistida','Remo mancuerna','Jalón agarre cerrado','Dominada negativa','Jalón un brazo','Pull-over con mancuerna']},
     face:{name:'Face pull',muscle:'Hombro posterior',sets:2,reps:'12-15',rest:60,alts:['Reverse fly máquina','Pájaros con mancuernas','Band pull apart','Remo alto ligero','Reverse fly en cable','Y-raise','Remo al cuello ligero']},
     core:{name:'Plancha',muscle:'Core',sets:2,reps:'30-45s',rest:45,alts:['Dead bug','Plancha lateral','Pallof press','Crunch suave','Rueda abdominal','Elevación de piernas','Mountain climbers','Bicicleta abdominal','Hollow hold']},
-    hip:{name:'Hip thrust ligero',muscle:'Glúteo',sets:2,reps:'12-15',rest:75,alts:['Puente de glúteo','Patada en cable','Hip thrust mancuerna','Máquina glúteo','Sentadilla búlgara','Peso muerto rumano','Zancadas','Sentadilla goblet','Step up']},
+    hip:{name:'Hip thrust ligero',muscle:'Glúteo',sets:2,reps:'12-15',rest:75,alts:['Puente de glúteo','Patada en cable','Hip thrust mancuerna','Máquina glúteo','Abducción en máquina','Zancada trasera','Patada de burro']},
+    leg:{name:'Sentadilla',muscle:'Cuádriceps/Pierna',sets:3,reps:'8-12',rest:120,alts:['Prensa de pierna','Sentadilla goblet','Zancadas','Hack squat','Extensión de cuádriceps','Sentadilla búlgara','Step up','Sentadilla en Smith','Sentadilla frontal']},
+    ham:{name:'Peso muerto rumano',muscle:'Femoral/Isquios',sets:3,reps:'8-12',rest:100,alts:['Curl femoral tumbado','Curl femoral sentado','Peso muerto piernas rígidas','Buenos días','Curl femoral de pie','Peso muerto con mancuernas']},
+    calf:{name:'Elevación de pantorrilla de pie',muscle:'Pantorrilla',sets:3,reps:'12-20',rest:60,alts:['Elevación sentado','Elevación en prensa','Elevación en escalón','Saltos de pantorrilla']},
     mobility:{name:'Movilidad cadera/espalda',muscle:'Recuperación',sets:2,reps:'45-60s',rest:30,alts:['Respiración 90/90','Estirar cadera','Foam rolling suave','Estirar pantorrilla','Gato-camello','Movilidad de hombro','Estiramiento de isquios']}
   };
 }
@@ -9418,7 +9421,7 @@ function readFitnessContext(){
   let lastWalk=(state.walks||[]).slice(-1)[0]||{};
   let steps=+(document.getElementById('fitSteps')?.value||lastWalk.steps||22000);
   let energy=+(document.getElementById('fitEnergy')?.value||3),pain=+(document.getElementById('fitPain')?.value||0),sleep=+(document.getElementById('fitSleep')?.value||7);
-  let focus=document.getElementById('fitFocus')?.value||'Ganar músculo sin quedar molido',equip=document.getElementById('fitEquip')?.value||'Gimnasio';
+  let focus=document.getElementById('simpleFitGoal')?.value||document.getElementById('fitFocus')?.value||'Ganar músculo sin quedar molido',equip=document.getElementById('simpleFitEquip')?.value||document.getElementById('fitEquip')?.value||'Gimnasio';
   let hard=steps>=22000||energy<=2||pain>=2||sleep<6;
   let recovery=pain>=3||energy<=1;
   return {date:todayISO(),steps,energy,pain,sleep,focus,equip,hard,recovery};
@@ -9435,9 +9438,9 @@ function buildFitnessTodayPlan(ctx){
   if(ctx.focus.includes('Brazos'))keys=hardSel?['curl','tri','lat','core']:['press','row','curl','tri','lat'];
   if(ctx.focus.includes('Pecho'))keys=hardSel?['press','row','tri']:['press','row','tri','lat'];
   if(ctx.focus.includes('Core'))keys=hardSel?['mobility','core','face']:['core','face','row','mobility'];
-  if(ctx.focus.includes('Pierna'))keys=hardSel?['hip','mobility','core']:['hip','row','press','core'];
+  if(ctx.focus.includes('Pierna'))keys=hardSel?['leg','hip','core']:['leg','ham','hip','calf'];
   if(ctx.recovery)keys=['mobility','core','face']; // seguridad: si vienes con dolor fuerte/energía muy baja, entrena suave aunque elijas fuerte
-  if(big&&!ctx.recovery)keys=[...new Set([...keys,'pull','tri','curl','face','hip'])].slice(0,6); // versión para crecer: 6 ejercicios
+  if(big&&!ctx.recovery){ let extra=ctx.focus.includes('Pierna')?['leg','ham','hip','calf','core']:['pull','tri','curl','face','hip']; keys=[...new Set([...keys,...extra])].slice(0,6); } // versión para crecer: 6 ejercicios
   let seedBase=fitDaySeed()+(state.fitVariant||0); // cambia cada día y con el botón "Variar"
   return keys.map((k,idx)=>{
     let x={...b[k]};
@@ -11173,7 +11176,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.5.4';
+    window.HM_APP_VERSION='46.5.5';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

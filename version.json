@@ -1,8 +1,21 @@
 {
-  "latest": "46.5.4",
+  "latest": "46.5.5",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.5.5",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Dia de pierna completo: sentadilla, prensa, peso muerto, femoral y pantorrilla",
+        "Elige Que quiero hoy (Pecho, Espalda, Brazos, Pierna...) y la rutina cambia de verdad"
+      ],
+      "cambios": [],
+      "errores": [
+        "El selector Que quiero hoy no hacia efecto: siempre daba la misma rutina"
+      ]
+    },
     {
       "version": "46.5.4",
       "date": "2026-07-11",
