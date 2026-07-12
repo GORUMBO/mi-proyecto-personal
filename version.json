@@ -1,8 +1,18 @@
 {
-  "latest": "46.5.5",
+  "latest": "46.5.6",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.5.6",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "El formulario de registro ahora aclara que es solo para ejercicios fuera de tu rutina"
+      ],
+      "errores": []
+    },
     {
       "version": "46.5.5",
       "date": "2026-07-11",

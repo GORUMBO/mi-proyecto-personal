@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.5.5';
+  window.HM_APP_VERSION='46.5.6';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.5.5</span>
+      <span class="versionChip">v46.5.6</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -3956,9 +3956,9 @@ function secEjercicio(){
     </div>
   </details>
   <details id="fitnessRegisterDetails" class="fit-clean-details">
-    <summary>✍️ Registrar peso, series y reps</summary>
+    <summary>✍️ Registrar un ejercicio extra (fuera de tu rutina)</summary>
     <div class="fit-clean-details-body">
-      <div class="fit-clean-tip">Usa esto solo después de entrenar. No necesitas llenarlo para crear la rutina.</div>
+      <div class="fit-clean-tip">Solo para anotar un ejercicio que <b>no está</b> en tu rutina de hoy. Los de tu rutina regístralos más rápido con el botón 💾 en cada uno (Mi rutina de hoy).</div>
       <div class="grid" style="margin-top:10px">
         <div style="grid-column:1/-1">
           <label>Tipo de entrenamiento</label>
@@ -11176,7 +11176,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.5.5';
+    window.HM_APP_VERSION='46.5.6';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
