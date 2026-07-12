@@ -1,8 +1,20 @@
 {
-  "latest": "46.5.2",
+  "latest": "46.5.3",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.5.3",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "El registro de peso por ejercicio y el selector Que tan fuerte hoy ahora si aparecen en tu rutina del dia"
+      ],
+      "errores": [
+        "Estaban en una vista de la rutina que no se mostraba; ahora estan en la que ves al tocar Mi rutina de hoy"
+      ]
+    },
     {
       "version": "46.5.2",
       "date": "2026-07-11",

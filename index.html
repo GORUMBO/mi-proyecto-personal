@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.5.2';
+  window.HM_APP_VERSION='46.5.3';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.5.2</span>
+      <span class="versionChip">v46.5.3</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -8993,6 +8993,11 @@ function quickFitnessToday(){
     <div class="fit-progress-bar"><div class="fit-progress-fill" style="width:${pct}%"></div></div>
     ${hechos===plan.length&&plan.length?'<div style="margin-top:8px;font-weight:800;color:#15704f">🎉 Terminaste la rutina.</div>':''}
   </div>
+  ${(function(){var ef=state.fitEffort||'auto';return `<div style="margin:8px 0 10px">
+    <div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Qué tan fuerte hoy?</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">${[['suave','🟢 Suave'],['auto','⚙️ Auto'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte · crecer']].map(function(o){return '<button class="btn'+(ef===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}</div>
+    ${ef==='fuerte'?'<div class="mini" style="margin-top:8px;font-size:12px">💪 <b>Para crecer músculo con tu trabajo físico:</b> come <b>de más</b> con proteína, sube el peso al completar las reps y duerme bien. Caminar/jardinear es cardio, no cuenta como músculo.</div>':''}
+  </div>`;})()}
   <div class="fit-list-compact">${plan.map((x,i)=>{
     let done=!!pack.checked[i];
     let alts=(x.alts||[]).slice(0,4).map(a=>`<button class="btn" onclick="replaceFitnessExercise(${i},'${String(a).replace(/'/g,"\\'")}');quickFitnessToday()">${safeText(a)}</button>`).join('');
@@ -9009,6 +9014,12 @@ function quickFitnessToday(){
         <button class="btn" onclick="openAppTimer('Descanso: ${String(x.name).replace(/'/g,"\\'")}',${x.rest})">Descanso</button>
         <a class="btn" target="_blank" rel="noopener" href="${exLink(x.name)}" style="text-decoration:none;text-align:center">Imagen</a>
       </div>
+      <div class="fit-ex-log row" style="gap:6px;margin-top:8px;align-items:center">
+        <input id="rlogW_${i}" type="number" inputmode="decimal" placeholder="Peso lb" style="width:92px">
+        <input id="rlogR_${i}" inputmode="numeric" placeholder="Reps ${safeText(String(x.reps||''))}" style="flex:1;min-width:64px">
+        <button class="btn primary" onclick="logRoutineExercise(${i})">💾 Registrar</button>
+      </div>
+      <div id="rlogOut_${i}"></div>
       <details style="margin-top:6px"><summary style="font-size:13px">Cambiar si está ocupado</summary><div class="row" style="margin-top:8px">${alts||'<span class="muted">Sin alternativas.</span>'}</div></details>
     </div>`;
   }).join('')}</div>`;
@@ -9437,6 +9448,7 @@ function setFitEffort(e){
   state.fitEffort=e; save();
   try{createFitnessToday();}catch(err){}
   try{renderFitnessCoach();}catch(err){}
+  try{quickFitnessToday();}catch(err){}
 }
 function todayRoutinePlan(){
   let r=state.customRoutine;if(!r||!r.days||!r.days.length)return null;
@@ -9517,8 +9529,8 @@ function logRoutineExercise(i){
   save();
   // Actualiza la tarjeta en el sitio (sin re-render completo, para no borrar lo que escribiste en otros ejercicios).
   let out=document.getElementById('rlogOut_'+i);
-  let card=out?out.closest('.fit-ex'):null;
-  if(card){card.classList.add('done'); let c=card.querySelector('.fit-ex-check'); if(c)c.textContent='✓';}
+  let card=out?out.closest('.fit-ex, .fit-row-compact'):null;
+  if(card){card.classList.add('done'); let c=card.querySelector('.fit-ex-check, .fit-check-small'); if(c)c.textContent='✓';}
   if(out)out.innerHTML='<div class="ok" style="margin-top:6px;font-size:13px;padding:6px 8px">✅ Registrado'+(w?(' · '+w+' lb'):'')+(reps?(' · '+safeText(reps)+' reps'):'')+'</div>';
 }
 function toggleFitExDone(i){
@@ -11150,7 +11162,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.5.2';
+    window.HM_APP_VERSION='46.5.3';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
