@@ -1,8 +1,19 @@
 {
-  "latest": "46.17.0",
+  "latest": "46.18.0",
   "date": "2026-07-12",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.18.0",
+      "date": "2026-07-12",
+      "type": "recomendada",
+      "nuevas": [
+        "Guia de verduras cocidas (en Recetas > Mas herramientas): 31 verduras con tiempos para olla, vapor y Thermomix TM5, buscador y selector de cantidad (poca/normal/mucha)",
+        "8 recetas nuevas con verduras cocidas para tus comidas (varias con version para olla y para Thermomix TM5): verduras al vapor con limon y chile, ensalada tibia de papa y ejote, pure, calabacitas a la mexicana, sopa de verduras, salteado con ajo, arroz con verduras y pollo, crema de brocoli"
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "46.17.0",
       "date": "2026-07-12",

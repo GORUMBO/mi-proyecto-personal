@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.17.0';
+  window.HM_APP_VERSION='46.18.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -2467,6 +2467,46 @@ add('especia','Adobo casero seco',3,10,1,0.6,['Mezcla todas las especias en un f
 add('especia','Chile-limón estilo Tajín casero',3,5,0,0.5,['Mezcla el chile, la sal y el limón en polvo.','Agrega una pizca de azúcar.','Espolvorea en fruta, pepino, jícama o snacks.'],'sin cocinar','especia chile limon tajin fruta snack condimento','Seco, en frasco','2 cdas chile en polvo, 1 cda sal, 1 cda limón en polvo, pizca de azúcar');
 add('especia','Sal de ajo y hierbas',3,5,0,0.5,['Mezcla la sal con el ajo y las hierbas secas.','Guarda en frasco tapado.','Úsala en carnes, papas, verduras o pan de ajo.'],'sin cocinar','especia sal ajo hierbas condimento','Seco, en frasco','3 cdas sal, 1 cda ajo en polvo, 1 cda perejil seco, 1 cdita orégano, 1 cdita romero');
 
+// 🥦 Comidas con verduras cocidas
+[
+  {name:'Verduras cocidas al vapor con limón y chile',type:'verdura',time:20,k:150,p:5,carbs:22,grasas:4,cost:1.4,porciones:'2',dificultad:'Fácil',
+   tags:'verdura verduras cocidas vapor saludable economico ligero guarnicion',ingredients:'2 zanahorias, 1 taza brócoli, 1 chayote, 1 calabacita, limón, chile en polvo, sal, aceite de oliva',
+   steps:['Corta todo en trozos parejos.','Cuece al vapor: primero zanahoria y chayote 8 min, luego brócoli y calabacita 5 min más.','Escurre y pásalas a un plato.','Agrega un chorrito de aceite, limón, sal y chile en polvo.'],
+   method:'estufa',temp:'Vapor',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Sartén 3 min o microondas 1-2 min.',llevarTrabajo:'Sí, en taper; ricas frías o tibias.',
+   methods:[{method:'thermomix',temp:'TM5: Varoma 20 min, vel 1',steps:['Pon 800 ml de agua en el vaso.','Coloca las verduras en el Varoma (las duras abajo).','Varoma, 20 min, vel 1.','Sazona con limón, sal y chile.']}]},
+  {name:'Ensalada tibia de papa y ejote',type:'verdura',time:25,k:260,p:7,carbs:38,grasas:9,cost:1.5,porciones:'2',dificultad:'Fácil',
+   tags:'verdura verduras cocidas papa ejote ensalada economico trabajo',ingredients:'3 papas, 1 taza ejotes, ¼ cebolla morada, aceite de oliva, vinagre o limón, mostaza, sal',
+   steps:['Cuece las papas en cubos 15-18 min y los ejotes 8 min.','Escurre y deja entibiar.','Mezcla aceite, vinagre/limón, mostaza y sal.','Revuelve las verduras con la cebolla y el aderezo.'],
+   method:'estufa',temp:'Estufa: hervir',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Se come tibia o fría.',llevarTrabajo:'Excelente para el trabajo, aguanta sin refri unas horas.'},
+  {name:'Puré de papa y zanahoria',type:'verdura',time:25,k:230,p:6,carbs:34,grasas:8,cost:1.2,porciones:'3',dificultad:'Fácil',
+   tags:'verdura verduras cocidas pure papa zanahoria guarnicion economico',ingredients:'4 papas, 2 zanahorias, ½ taza leche, 1 cda mantequilla, sal, pimienta',
+   steps:['Cuece papa y zanahoria en cubos 15-18 min hasta suaves.','Escúrrelas y machácalas.','Agrega leche caliente y mantequilla; mezcla.','Sazona con sal y pimienta.'],
+   method:'estufa',temp:'Estufa: hervir',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Microondas 2 min con un chorrito de leche.',llevarTrabajo:'Sí, en termo o taper.',
+   methods:[{method:'thermomix',temp:'TM5: 100°C 18 min + triturar',steps:['Pon papa y zanahoria en cubos con 500 ml de agua y sal.','100°C, 18 min, vel cuchara.','Escurre el agua.','Agrega leche y mantequilla y tritura 20 seg, vel 4.']}]},
+  {name:'Calabacitas a la mexicana',type:'verdura',time:20,k:170,p:6,carbs:16,grasas:9,cost:1.3,porciones:'3',dificultad:'Fácil',
+   tags:'verdura verduras cocidas calabacita mexicana economico guarnicion',ingredients:'4 calabacitas, 2 jitomates, ¼ cebolla, 1 elote desgranado, 1 chile serrano, aceite, sal',
+   steps:['Sofríe cebolla y chile 2 min.','Agrega jitomate picado y cocina 3 min.','Añade calabacita en cubos y el elote.','Tapa y cocina 8-10 min hasta que la calabacita esté suave.'],
+   method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Sartén o microondas 2 min.',llevarTrabajo:'Sí, con arroz o tortillas.'},
+  {name:'Sopa de verduras cocidas',type:'verdura',time:30,k:180,p:8,carbs:24,grasas:5,cost:1.6,porciones:'4',dificultad:'Fácil',
+   tags:'verdura verduras cocidas sopa caldo saludable economico',ingredients:'1 papa, 1 zanahoria, 1 chayote, 1 taza ejotes, ½ taza elote, 1 jitomate, ¼ cebolla, ajo, caldo, cilantro',
+   steps:['Sofríe cebolla, ajo y jitomate 3 min.','Agrega 6 tazas de caldo y las verduras duras (papa, zanahoria, chayote).','Hierve 12 min, luego agrega ejotes y elote 8 min más.','Sazona y sirve con cilantro y limón.'],
+   method:'estufa',temp:'Estufa: hervor suave',conservar:'Refrigerador.',duracion:'3-4 días.',recalentar:'Estufa hasta hervor o microondas 3 min.',llevarTrabajo:'Sí, en termo caliente.',
+   methods:[{method:'thermomix',temp:'TM5: 100°C 25 min, vel cuchara',steps:['Sofríe cebolla, ajo y jitomate 120°C 4 min, vel 1.','Agrega verduras en trozos y 1.2 L de caldo.','100°C, 25 min, giro a la izquierda, vel cuchara.','Sirve con cilantro y limón.']}]},
+  {name:'Verduras salteadas con ajo',type:'verdura',time:15,k:160,p:6,carbs:18,grasas:8,cost:1.4,porciones:'2',dificultad:'Fácil',
+   tags:'verdura verduras cocidas salteado ajo rapido guarnicion ganar musculo',ingredients:'2 tazas de verduras ya cocidas (brócoli, zanahoria, ejote), 2 dientes de ajo, aceite, salsa de soya, sal',
+   steps:['Calienta aceite y dora el ajo picado 30 seg.','Agrega las verduras ya cocidas.','Saltea 4-5 min a fuego alto.','Termina con un chorrito de salsa de soya.'],
+   method:'estufa',temp:'Estufa: fuego alto',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Sartén 3 min.',llevarTrabajo:'Sí; buena forma de reusar verduras cocidas.'},
+  {name:'Arroz con verduras cocidas y pollo',type:'verdura',time:20,k:420,p:30,carbs:48,grasas:12,cost:2.4,porciones:'2',dificultad:'Fácil',
+   tags:'verdura verduras cocidas arroz pollo bowl proteina ganar musculo trabajo comida completa',ingredients:'2 tazas arroz cocido, 1 taza verduras cocidas, 1 pechuga cocida en cubos, ajo, salsa de soya, aceite',
+   steps:['Calienta aceite con ajo.','Agrega el arroz y saltea 2 min.','Añade las verduras y el pollo en cubos.','Saltea 5 min, sazona con soya y sirve.'],
+   method:'estufa',temp:'Estufa: fuego medio-alto',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Sartén o microondas 2-3 min.',llevarTrabajo:'Ideal: comida completa para el trabajo.'},
+  {name:'Crema de brócoli',type:'verdura',time:25,k:200,p:9,carbs:18,grasas:11,cost:1.6,porciones:'3',dificultad:'Fácil',
+   tags:'verdura verduras cocidas crema brocoli sopa saludable',ingredients:'1 brócoli grande, 1 papa, ¼ cebolla, 1 ajo, 1 taza leche, caldo, aceite, sal, pimienta',
+   steps:['Cuece brócoli y papa en cubos con la cebolla y el ajo 12 min.','Licúa con la leche y un poco de caldo hasta cremoso.','Regresa a la olla, calienta 4 min y sazona.','Sirve con un chorrito de aceite de oliva.'],
+   method:'estufa',temp:'Estufa: fuego bajo-medio',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Estufa o microondas 2 min.',llevarTrabajo:'Sí, en termo.',
+   methods:[{method:'thermomix',temp:'TM5: 100°C 15 min + triturar',steps:['Sofríe cebolla y ajo 120°C 3 min, vel 1.','Agrega brócoli, papa y 700 ml de caldo.','100°C, 15 min, vel cuchara.','Agrega la leche y tritura 1 min, vel 6.']}]}
+].forEach(addFull);
+
 // ===== v44 Fase A: id estable de recetas + campos opcionales + migración de favoritos =====
 // Genera un identificador estable a partir de tipo+nombre (sin acentos ni símbolos).
 function recipeSlug(r){
@@ -2611,7 +2651,7 @@ function recShortDesc(r){
   let txt=ing.join(', ');
   return 'Con '+txt.charAt(0).toLowerCase()+txt.slice(1)+'.';
 }
-const RCT_TIPO_CHIPS=[['desayuno','Desayunos'],['comida','Comidas'],['huevo','Huevos'],['cena','Cenas'],['sopa','Sopas'],['arroz','Arroces'],['pasta','Pastas'],['pollococido','Pollo'],['postre','Postres'],['licuado','Licuados'],['bebida','Bebidas'],['suero','Sueros'],['snack','Snacks']];
+const RCT_TIPO_CHIPS=[['desayuno','Desayunos'],['comida','Comidas'],['huevo','Huevos'],['verdura','Verduras'],['cena','Cenas'],['sopa','Sopas'],['arroz','Arroces'],['pasta','Pastas'],['pollococido','Pollo'],['postre','Postres'],['licuado','Licuados'],['bebida','Bebidas'],['suero','Sueros'],['snack','Snacks']];
 const RCT_COSTO_CHIPS=[['bajo','Bajo'],['medio','Medio'],['alto','Alto']];
 const RCT_TIEMPO_CHIPS=[['rapidas','Rápidas'],['promedio','Promedio'],['tardadas','Tardadas']];
 const RCT_OBJETIVO_CHIPS=[['ganar peso','Ganar peso'],['ganar musculo','Ganar músculo'],['proteina','Alta proteína']];
@@ -2701,6 +2741,73 @@ function buySupplementOther(i){
   if(b==null)return;
   _saveBoughtSupplement(i,b);
 }
+// ===== Guía de verduras cocidas: tiempos para olla y Thermomix TM5, con cantidad ajustable =====
+const VEGGIES=[
+ {n:'Papa',corte:'en cubos',olla:'15-18',vapor:'20',tm5:'Varoma 30 min, vel cuchara (o 100°C 18 min)',tip:'Entera tarda ~30 min; en cubos rinde más rápido.'},
+ {n:'Camote',corte:'en cubos',olla:'15',vapor:'20',tm5:'Varoma 25 min',tip:'Queda dulce; buena energía para el trabajo.'},
+ {n:'Zanahoria',corte:'en rodajas',olla:'8-10',vapor:'15',tm5:'Varoma 20 min',tip:'Entera tarda más; en rodajas es rápida.'},
+ {n:'Betabel (remolacha)',corte:'entero con piel',olla:'35-45',vapor:'45',tm5:'Varoma 45 min',tip:'Cuece con piel y pélalo después; mancha.'},
+ {n:'Brócoli',corte:'en floretes',olla:'5',vapor:'8',tm5:'Varoma 15 min, vel 1',tip:'No lo pases o se hace papilla.'},
+ {n:'Coliflor',corte:'en floretes',olla:'7',vapor:'12',tm5:'Varoma 18 min',tip:'Un chorro de limón la deja blanca.'},
+ {n:'Chayote',corte:'en cubos',olla:'12',vapor:'15',tm5:'Varoma 20 min',tip:'Su savia reseca las manos; usa guante o aceite.'},
+ {n:'Calabacita (zucchini)',corte:'en rodajas',olla:'5',vapor:'8',tm5:'Varoma 12 min',tip:'Muy rápida; no la sobrecuezas.'},
+ {n:'Calabaza de castilla',corte:'en cubos',olla:'12',vapor:'18',tm5:'Varoma 25 min',tip:'Ideal para puré o dulce.'},
+ {n:'Elote (mazorca)',corte:'entero',olla:'15',vapor:'20',tm5:'Varoma 30 min',tip:'Desgranado cuece en ~8 min.'},
+ {n:'Ejotes (judías verdes)',corte:'enteros o en trozos',olla:'8',vapor:'12',tm5:'Varoma 15 min',tip:'Quedan mejor al dente.'},
+ {n:'Chícharos (guisantes)',corte:'desgranados',olla:'6',vapor:'8',tm5:'Varoma 12 min',tip:'Congelados: 1-2 min menos.'},
+ {n:'Haba verde',corte:'desgranada',olla:'10',vapor:'15',tm5:'Varoma 20 min',tip:'Pélala si la piel está dura.'},
+ {n:'Col (repollo)',corte:'en tiras',olla:'6',vapor:'10',tm5:'Varoma 15 min',tip:'Poco tiempo para que no huela fuerte.'},
+ {n:'Coles de Bruselas',corte:'enteras o a la mitad',olla:'8',vapor:'12',tm5:'Varoma 18 min',tip:'Una cruz en la base cuece parejo.'},
+ {n:'Espinaca',corte:'hojas',olla:'2',vapor:'3',tm5:'100°C 4 min, vel cuchara',tip:'Se reduce muchísimo; usa bastante.'},
+ {n:'Acelga',corte:'hojas y tallos',olla:'4',vapor:'6',tm5:'Varoma 10 min',tip:'Tallos primero, hojas al final.'},
+ {n:'Espárragos',corte:'enteros',olla:'4',vapor:'6',tm5:'Varoma 10 min',tip:'Corta la base dura.'},
+ {n:'Nopales',corte:'en tiras',olla:'12',vapor:'15',tm5:'100°C 15 min, vel cuchara inversa',tip:'Un tomatillo en el agua reduce la baba.'},
+ {n:'Champiñones',corte:'enteros o rebanados',olla:'5',vapor:'8',tm5:'100°C 8 min, vel cuchara',tip:'Sueltan agua; escúrrelos.'},
+ {n:'Berenjena',corte:'en cubos',olla:'6',vapor:'10',tm5:'Varoma 15 min',tip:'Sálala antes para quitar el amargor.'},
+ {n:'Pimiento (morrón)',corte:'en tiras',olla:'6',vapor:'8',tm5:'Varoma 12 min',tip:'Asado sabe aún mejor.'},
+ {n:'Cebolla',corte:'en trozos',olla:'8',vapor:'10',tm5:'Sofríe 120°C 5 min, vel 1',tip:'Para sofrito, mejor en la TM5.'},
+ {n:'Poro (puerro)',corte:'en rodajas',olla:'6',vapor:'10',tm5:'Varoma 12 min',tip:'Lava bien entre las capas.'},
+ {n:'Apio',corte:'en trozos',olla:'8',vapor:'10',tm5:'Varoma 15 min',tip:'Muy bueno para caldos.'},
+ {n:'Nabo',corte:'en cubos',olla:'12',vapor:'15',tm5:'Varoma 20 min',tip:'Sabor suave, parecido a la papa.'},
+ {n:'Rábano',corte:'entero o en mitades',olla:'8',vapor:'10',tm5:'Varoma 15 min',tip:'Cocido pierde el picor.'},
+ {n:'Alcachofa',corte:'entera',olla:'35-40',vapor:'40',tm5:'Varoma 40 min',tip:'Lista cuando una hoja sale fácil.'},
+ {n:'Yuca (mandioca)',corte:'en trozos',olla:'25-30',vapor:'35',tm5:'Varoma 35 min',tip:'Quita el hilo central duro.'},
+ {n:'Plátano macho (verde)',corte:'en trozos',olla:'20',vapor:'25',tm5:'Varoma 30 min',tip:'Verde para cocido; maduro para freír.'},
+ {n:'Jitomate (para salsa)',corte:'entero',olla:'8',vapor:'—',tm5:'100°C 10 min, vel 1 y luego licúa',tip:'Hierve para una salsa roja suave.'}
+];
+var _vegQty='normal';
+function setVegQty(q){
+  _vegQty=q;
+  ['poca','normal','mucha'].forEach(function(x){var b=document.getElementById('vegQ_'+x);if(b)b.classList.toggle('primary',x===q);});
+  renderVeggies();
+}
+function renderVeggies(){
+  var el=document.getElementById('veggiesOut'); if(!el)return;
+  var q=((document.getElementById('vegSearch')||{}).value||'').toLowerCase();
+  var addMin=_vegQty==='mucha'?3:0;
+  var agua=_vegQty==='mucha'?'olla con bastante agua (que cubra +5 cm)':_vegQty==='poca'?'poca agua, apenas cubriendo':'agua que cubra las verduras';
+  var list=VEGGIES.filter(function(v){return !q||v.n.toLowerCase().indexOf(q)>=0||(v.tip||'').toLowerCase().indexOf(q)>=0;});
+  el.innerHTML='<div class="muted" style="font-size:12px;margin-bottom:8px">💧 Cocina con '+agua+'.'+(addMin?(' Como es bastante, súmale ~'+addMin+' min a la olla.'):'')+' El vapor conserva más vitaminas.</div>'
+    +(list.length?('<div class="grid">'+list.map(function(v){
+      return '<div class="mini"><b>'+safeText(v.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(v.corte)+'</span>'
+        +'<div style="font-size:13px;margin-top:4px">🫕 <b>Olla (hervir):</b> '+safeText(v.olla)+' min'+(addMin?(' (+'+addMin+')'):'')+'</div>'
+        +'<div style="font-size:13px">♨️ <b>Vapor:</b> '+safeText(v.vapor)+' min</div>'
+        +'<div style="font-size:13px">🤖 <b>Thermomix TM5:</b> '+safeText(v.tm5)+'</div>'
+        +(v.tip?'<div class="muted" style="font-size:12px;margin-top:2px">💡 '+safeText(v.tip)+'</div>':'')
+        +'</div>';
+    }).join('')+'</div>'):'<p class="muted">No encontré esa verdura. Prueba otro nombre.</p>');
+}
+function verdurasCocidasHTML(){
+  return '<details><summary>🥦 Verduras cocidas — tiempos (olla y Thermomix TM5)</summary>'
+    +'<div class="card">'
+    +'<p class="muted" style="margin-top:0">Cuánto tarda cada verdura en quedar cocida, en olla y en la Thermomix TM5. Elige la cantidad y busca la verdura.</p>'
+    +'<input id="vegSearch" placeholder="Busca una verdura (papa, brócoli, chayote...)" oninput="renderVeggies()" style="width:100%">'
+    +'<div class="row" style="gap:6px;margin-top:8px;align-items:center"><span class="muted" style="font-size:12px">Cantidad:</span>'
+    +['poca','normal','mucha'].map(function(x){return '<button class="btn'+(x==='normal'?' primary':'')+'" id="vegQ_'+x+'" onclick="setVegQty(\''+x+'\')">'+({poca:'Poca',normal:'Normal',mucha:'Mucha'})[x]+'</button>';}).join('')
+    +'</div>'
+    +'<div id="veggiesOut" style="margin-top:10px"></div>'
+    +'</div></details>';
+}
 function secRecetas(){
   let _tab=window._recTab||'todas';
   let _favN=(state.recipeFavorites&&state.recipeFavorites.length)?' ('+state.recipeFavorites.length+')':'';
@@ -2743,6 +2850,7 @@ ${visualGuide('recetas')}
 
 <details><summary style="font-size:16px;font-weight:800">🧰 Más herramientas de comida</summary>
 <div style="padding-top:8px">
+${verdurasCocidasHTML()}
 <details>
 <summary>🧩 Constructor de comida portátil</summary>
   <div class="card">
@@ -3108,7 +3216,7 @@ function foodPickPool(goal){
   return {pool,kw};
 }
 function mealTypeLabel(type){
-  return ({desayuno:'🌅 Desayuno',comida:'🍽️ Comida',huevo:'🥚 Huevo',cena:'🌙 Cena',licuado:'🥤 Licuado',snack:'🍿 Snack / merienda',fruta:'🍓 Fruta',agua:'💧 Agua fresca',bebida:'☕ Bebida',suero:'💧 Suero',especia:'🧂 Sazonador',salsa:'🌶️ Salsa',aderezo:'🥗 Aderezo',hotcake:'🥞 Hotcake',avena:'🥣 Avena',pan:'🍞 Pan',postre:'🍮 Postre',sopa:'🍲 Sopa',arroz:'🍚 Arroz',pasta:'🍝 Pasta',pollococido:'🍗 Pollo cocido'})[type]||('🍽️ '+(type?type.charAt(0).toUpperCase()+type.slice(1):'Receta'));
+  return ({desayuno:'🌅 Desayuno',comida:'🍽️ Comida',huevo:'🥚 Huevo',verdura:'🥦 Verdura',cena:'🌙 Cena',licuado:'🥤 Licuado',snack:'🍿 Snack / merienda',fruta:'🍓 Fruta',agua:'💧 Agua fresca',bebida:'☕ Bebida',suero:'💧 Suero',especia:'🧂 Sazonador',salsa:'🌶️ Salsa',aderezo:'🥗 Aderezo',hotcake:'🥞 Hotcake',avena:'🥣 Avena',pan:'🍞 Pan',postre:'🍮 Postre',sopa:'🍲 Sopa',arroz:'🍚 Arroz',pasta:'🍝 Pasta',pollococido:'🍗 Pollo cocido'})[type]||('🍽️ '+(type?type.charAt(0).toUpperCase()+type.slice(1):'Receta'));
 }
 function typeBadge(type){
   return `<span style="display:inline-block;background:#eaf5ef;color:#15704f;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;margin-bottom:5px">${mealTypeLabel(type)}</span><br>`;
@@ -7897,7 +8005,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);try{hydrateCloudImages(document)}catch(e){}}
+function bindAll(){try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);try{hydrateCloudImages(document)}catch(e){}try{renderVeggies()}catch(e){}}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -8445,8 +8553,8 @@ function renderRecipes(){
     if(grouped){
       // Agrupar por categoría en secciones colapsables.
       // Render PEREZOSO: cada categoría dibuja sus tarjetas solo al abrir su <details> (evita dibujar cientos de recetas de golpe).
-      var catNames={desayuno:'🍳 Desayunos',comida:'🍲 Comidas',huevo:'🥚 Huevos',cena:'🌙 Cenas',sopa:'🍲 Sopas',arroz:'🍚 Arroces',pasta:'🍝 Espaguetis y pastas',pollococido:'🍗 Pollo cocido',licuado:'🥤 Licuados',bebida:'🧊 Bebidas',agua:'🧊 Aguas frescas',suero:'💧 Sueros',snack:'🥜 Snacks',postre:'🍮 Postres',cafe:'☕ Cafés',salsa:'🌶️ Salsas',aderezo:'🥗 Aderezos',especia:'🧂 Sazonadores',fruta:'🍓 Frutas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes',thermomix:'🤖 Thermomix',horno:'🫕 Al horno'};
-      var order=['desayuno','comida','huevo','cena','sopa','arroz','pasta','pollococido','licuado','snack','postre','bebida','agua','suero','cafe','avena','hotcake','pan','fruta','salsa','aderezo','especia'];
+      var catNames={desayuno:'🍳 Desayunos',comida:'🍲 Comidas',huevo:'🥚 Huevos',verdura:'🥦 Verduras',cena:'🌙 Cenas',sopa:'🍲 Sopas',arroz:'🍚 Arroces',pasta:'🍝 Espaguetis y pastas',pollococido:'🍗 Pollo cocido',licuado:'🥤 Licuados',bebida:'🧊 Bebidas',agua:'🧊 Aguas frescas',suero:'💧 Sueros',snack:'🥜 Snacks',postre:'🍮 Postres',cafe:'☕ Cafés',salsa:'🌶️ Salsas',aderezo:'🥗 Aderezos',especia:'🧂 Sazonadores',fruta:'🍓 Frutas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes',thermomix:'🤖 Thermomix',horno:'🫕 Al horno'};
+      var order=['desayuno','comida','huevo','verdura','cena','sopa','arroz','pasta','pollococido','licuado','snack','postre','bebida','agua','suero','cafe','avena','hotcake','pan','fruta','salsa','aderezo','especia'];
       var byCat={};
       arr.forEach(function(r){ (byCat[r.type]=byCat[r.type]||[]).push(r); });
       window._recGrouped=byCat;
@@ -11635,7 +11743,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.17.0';
+    window.HM_APP_VERSION='46.18.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
