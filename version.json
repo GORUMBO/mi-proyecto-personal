@@ -1,8 +1,18 @@
 {
-  "latest": "46.15.0",
+  "latest": "46.16.0",
   "date": "2026-07-12",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.16.0",
+      "date": "2026-07-12",
+      "type": "recomendada",
+      "nuevas": [
+        "Registro de errores: la app ahora anota los fallos tecnicos (antes se perdian en silencio) y los puedes ver, copiar o borrar en Base de datos. Deja listo el terreno para avisos por Telegram."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "46.15.0",
       "date": "2026-07-12",

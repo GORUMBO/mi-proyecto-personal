@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.15.0';
+  window.HM_APP_VERSION='46.16.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -573,6 +573,20 @@ async function saveVersionSnapshot(json,label){
     tx.objectStore('backups').put({label,date:new Date().toISOString(),json},label);
   }catch(error){console.warn('No se pudo crear respaldo de versión',error)}
 }
+// Registro de errores: captura fallos técnicos para poder verlos (Base de datos) y, a futuro, mandarlos al bot.
+function ppLogErr(where,e){
+  try{
+    if(!Array.isArray(state.errorLog))state.errorLog=[];
+    var msg=(e&&(e.message||(e.reason&&(e.reason.message||e.reason))||e))||e;
+    state.errorLog.unshift({t:new Date().toISOString(),where:String(where||''),msg:String(msg).slice(0,300)});
+    state.errorLog=state.errorLog.slice(0,50);
+    try{safeStorage.set('pp_full',JSON.stringify(state));}catch(_e){}
+  }catch(_e){}
+}
+try{
+  window.addEventListener('error',function(ev){ppLogErr('js',ev&&(ev.error||ev.message));});
+  window.addEventListener('unhandledrejection',function(ev){ppLogErr('promesa',ev&&ev.reason);});
+}catch(_e){}
 function save(){
   try{
     state.lastModified=new Date().toISOString();
@@ -588,7 +602,7 @@ function save(){
     else{t.innerHTML='⚠️ Poco espacio · sincroniza a la nube';t.style.background='#b45309';}
     t.style.opacity='1';clearTimeout(t._tid);t._tid=setTimeout(()=>t.style.opacity='0',okLocal?1800:4500);var hs=document.getElementById('homeSaveStatus');if(hs&&typeof lastSavedText==='function')hs.innerHTML=lastSavedText();
     scheduleAutoSync();
-  }catch(err){alert('Error guardando: '+err.message);}
+  }catch(err){ppLogErr('save',err);alert('Error guardando: '+err.message);}
 }
 // Al abrir: usar la copia MÁS NUEVA entre localStorage (ya en state) e IndexedDB.
 // Antes solo cargaba IDB si state estaba vacío, así que un localStorage viejo (o que falló por espacio)
@@ -7512,7 +7526,7 @@ async function cloudSave(silent=false){
     state.offlineChanges=0;safeStorage.set('pp_full',JSON.stringify(state));
     setSync('synced');
     if(!silent)cloudStatus('Datos sincronizados en Supabase.');
-  }catch(e){console.error('[SYNC] Error al subir a Supabase:',e);setSync('error',(e&&e.message)||'Error');if(!silent)cloudStatus(e.message,false)}
+  }catch(e){ppLogErr('sync',e);console.error('[SYNC] Error al subir a Supabase:',e);setSync('error',(e&&e.message)||'Error');if(!silent)cloudStatus(e.message,false)}
   finally{_syncing=false}
 }
 // Espeja el estado local a las tablas granulares de forma NO destructiva (upsert por fila; nunca DELETE masivo).
@@ -11436,7 +11450,20 @@ secCentro=function(){
   return `<h2>🧭 Centro de control</h2>${hmv413DataSummary()}${hmv413ConnectionMap()}`;
 };
 var hmv413OldSecBase=secBase;
-secBase=function(){return `<h2>📊 Base de datos y seguridad</h2>${hmv413DataSummary()}${hmv413BackupPanel()}<details open><summary>Estado técnico</summary><div class="card">${hmv413OldSecBase()}</div></details>`};
+secBase=function(){return `<h2>📊 Base de datos y seguridad</h2>${hmv413DataSummary()}${hmv413BackupPanel()}<details open><summary>Estado técnico</summary><div class="card">${hmv413OldSecBase()}</div></details>${errorLogHTML()}`};
+function errorLogHTML(){
+  var list=(state.errorLog||[]);
+  var body=list.length? list.slice(0,20).map(function(x){
+    return '<div class="item" style="font-size:12px"><b>'+safeText((typeof fmtFecha==='function')?fmtFecha(x.t):x.t)+'</b> · <span class="muted">'+safeText(x.where)+'</span><br>'+safeText(x.msg)+'</div>';
+  }).join('') : '<p class="muted" style="margin:0">Sin errores registrados. 🎉</p>';
+  return '<details class="fit-clean-details" style="margin-top:12px"><summary>🐞 Registro de errores ('+list.length+')</summary><div class="card">'
+    +'<p class="muted" style="margin-top:0;font-size:12px">Aquí quedan los fallos técnicos para poder diagnosticarlos si algo se comporta raro.</p>'
+    +body
+    +(list.length?'<div class="row" style="margin-top:8px;gap:8px"><button class="btn" onclick="copyErrorLog()">📋 Copiar</button><button class="btn" onclick="clearErrorLog()">🗑 Borrar</button></div>':'')
+    +'</div></details>';
+}
+function clearErrorLog(){state.errorLog=[];save();try{openTab('📊 Base datos')}catch(e){}}
+function copyErrorLog(){try{var t=(state.errorLog||[]).map(function(x){return x.t+' ['+x.where+'] '+x.msg;}).join('\n');if(navigator.clipboard)navigator.clipboard.writeText(t);alert('Registro copiado.');}catch(e){alert('No se pudo copiar.');}}
 /* Resumen inteligente de hoy quitado de Inicio a pedido de Ruben: secInicio queda como su definición original más abajo, sin el banner de arriba. */
 /* ===== fin v41.13 ===== */
 
@@ -11563,7 +11590,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.15.0';
+    window.HM_APP_VERSION='46.16.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
