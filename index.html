@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.19.0';
+  window.HM_APP_VERSION='46.20.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -2507,6 +2507,34 @@ add('especia','Sal de ajo y hierbas',3,5,0,0.5,['Mezcla la sal con el ajo y las 
    methods:[{method:'thermomix',temp:'TM5: 100°C 15 min + triturar',steps:['Sofríe cebolla y ajo 120°C 3 min, vel 1.','Agrega brócoli, papa y 700 ml de caldo.','100°C, 15 min, vel cuchara.','Agrega la leche y tritura 1 min, vel 6.']}]}
 ].forEach(addFull);
 
+// 🔥 Recetas al horno (empapelados, papa al horno, tilapia, quesadillas, tacos)
+[
+  {name:'Papa al horno rellena',type:'horno',time:60,k:380,p:14,carbs:52,grasas:12,cost:1.3,porciones:'1',dificultad:'Fácil',
+   tags:'horno papa al horno rellena economico ganar peso comida completa',ingredients:'1 papa grande, 2 cdas crema, queso rallado, tocino o pollo deshebrado, cebollín, sal, pimienta',
+   steps:['Pica la papa con un tenedor y frótala con aceite y sal.','Hornea a 200°C/400°F 50-60 min hasta que esté suave por dentro.','Ábrela a la mitad y esponja con el tenedor.','Rellena con crema, queso, tocino o pollo, y cebollín.'],
+   method:'horno',temp:'Horno: 200°C / 400°F',conservar:'Refrigerador tapado.',duracion:'2 días.',recalentar:'Horno o microondas 2-3 min.',llevarTrabajo:'Sí, en taper; rellénala al momento.'},
+  {name:'Tilapia en papel aluminio',type:'horno',time:25,k:260,p:34,carbs:6,grasas:10,cost:2.6,porciones:'1',dificultad:'Fácil',
+   tags:'horno tilapia pescado empapelado papel aluminio proteina saludable ganar musculo',ingredients:'1 filete de tilapia, ½ limón, 1 diente ajo, rodajas de jitomate y cebolla, aceite de oliva, sal, pimienta, cilantro',
+   steps:['Pon el filete sobre un cuadro grande de papel aluminio.','Agrega ajo, limón, aceite, sal y las rodajas de verdura encima.','Cierra bien el aluminio formando un paquete sellado.','Hornea a 200°C/400°F 15-20 min. Ábrelo con cuidado (sale vapor).'],
+   method:'horno',temp:'Horno: 200°C / 400°F',conservar:'Refrigerador tapado.',duracion:'2 días.',recalentar:'Horno 5 min o microondas 1-2 min.',llevarTrabajo:'Sí; se conserva jugosa en el paquete.'},
+  {name:'Pollo empapelado con verduras',type:'horno',time:40,k:360,p:34,carbs:20,grasas:14,cost:2.4,porciones:'1',dificultad:'Fácil',
+   tags:'horno pollo empapelado papel aluminio verduras proteina comida completa ganar musculo trabajo',ingredients:'1 pechuga o muslo, papa en cubos, zanahoria, calabacita, cebolla, ajo, aceite, sal, pimienta, hierbas',
+   steps:['Coloca el pollo y las verduras en un cuadro de aluminio.','Sazona con aceite, ajo, sal, pimienta y hierbas.','Cierra el paquete sellando bien los bordes.','Hornea a 200°C/400°F 30-35 min. Verifica que el pollo llegue a 74°C/165°F.'],
+   method:'horno',temp:'Horno: 200°C / 400°F',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Horno o microondas 2-3 min.',llevarTrabajo:'Ideal: comida completa en un solo paquete.'},
+  {name:'Mix de verduras al horno',type:'horno',time:35,k:190,p:6,carbs:26,grasas:8,cost:1.8,porciones:'3',dificultad:'Fácil',
+   tags:'horno verduras mix rostizadas saludable guarnicion economico',ingredients:'Papa, zanahoria, calabacita, pimiento, cebolla, brócoli, aceite de oliva, ajo en polvo, sal, pimienta, paprika',
+   steps:['Corta todo en trozos parejos (las duras un poco más chicas).','Revuelve con aceite, ajo, sal, pimienta y paprika.','Extiende en una charola en una sola capa.','Hornea a 200°C/400°F 25-30 min, revolviendo a la mitad.'],
+   method:'horno',temp:'Horno: 200°C / 400°F',conservar:'Refrigerador tapado.',duracion:'3-4 días.',recalentar:'Horno o sartén 3 min.',llevarTrabajo:'Sí, excelente guarnición para llevar.'},
+  {name:'Quesadillas al horno',type:'horno',time:15,k:320,p:14,carbs:34,grasas:14,cost:1.4,porciones:'2',dificultad:'Fácil',
+   tags:'horno quesadillas queso rapido economico snack',ingredients:'4 tortillas, 1.5 taza queso, opcional: champiñones, pollo o rajas, aceite en spray',
+   steps:['Rellena las tortillas con queso (y lo que quieras) y dóblalas.','Acomódalas en una charola y rocía un poco de aceite.','Hornea a 200°C/400°F 8-10 min, voltea a la mitad.','Quedan doraditas sin freír.'],
+   method:'horno',temp:'Horno: 200°C / 400°F',conservar:'Mejor recién hechas.',duracion:'1 día.',recalentar:'Horno 4 min para revivir lo crujiente.',llevarTrabajo:'Regular; mejor recién hechas.'},
+  {name:'Tacos dorados al horno',type:'horno',time:20,k:340,p:20,carbs:30,grasas:15,cost:1.8,porciones:'2',dificultad:'Fácil',
+   tags:'horno tacos dorados flautas pollo economico sin freir',ingredients:'8 tortillas, 2 tazas pollo deshebrado o papa/frijol, aceite en spray, sal',
+   steps:['Rellena y enrolla las tortillas; cierra con un palillo si hace falta.','Acomódalas juntas en una charola y rocía aceite.','Hornea a 200°C/400°F 12-15 min hasta dorar.','Sirve con lechuga, crema, salsa y queso.'],
+   method:'horno',temp:'Horno: 200°C / 400°F',conservar:'Refrigerador tapado.',duracion:'2 días.',recalentar:'Horno 5 min.',llevarTrabajo:'Sí; llévalos con la salsa aparte.'}
+].forEach(addFull);
+
 // ===== v44 Fase A: id estable de recetas + campos opcionales + migración de favoritos =====
 // Genera un identificador estable a partir de tipo+nombre (sin acentos ni símbolos).
 function recipeSlug(r){
@@ -2651,7 +2679,7 @@ function recShortDesc(r){
   let txt=ing.join(', ');
   return 'Con '+txt.charAt(0).toLowerCase()+txt.slice(1)+'.';
 }
-const RCT_TIPO_CHIPS=[['desayuno','Desayunos'],['comida','Comidas'],['huevo','Huevos'],['verdura','Verduras'],['cena','Cenas'],['sopa','Sopas'],['arroz','Arroces'],['pasta','Pastas'],['pollococido','Pollo'],['postre','Postres'],['licuado','Licuados'],['bebida','Bebidas'],['suero','Sueros'],['snack','Snacks']];
+const RCT_TIPO_CHIPS=[['desayuno','Desayunos'],['comida','Comidas'],['huevo','Huevos'],['verdura','Verduras'],['cena','Cenas'],['sopa','Sopas'],['arroz','Arroces'],['pasta','Pastas'],['pollococido','Pollo'],['postre','Postres'],['licuado','Licuados'],['bebida','Bebidas'],['suero','Sueros'],['horno','Al horno'],['snack','Snacks']];
 const RCT_COSTO_CHIPS=[['bajo','Bajo'],['medio','Medio'],['alto','Alto']];
 const RCT_TIEMPO_CHIPS=[['rapidas','Rápidas'],['promedio','Promedio'],['tardadas','Tardadas']];
 const RCT_OBJETIVO_CHIPS=[['ganar peso','Ganar peso'],['ganar musculo','Ganar músculo'],['proteina','Alta proteína']];
@@ -2773,7 +2801,19 @@ const VEGGIES=[
  {n:'Alcachofa',corte:'entera',olla:'35-40',vapor:'40',tm5:'Varoma 40 min',tip:'Lista cuando una hoja sale fácil.'},
  {n:'Yuca (mandioca)',corte:'en trozos',olla:'25-30',vapor:'35',tm5:'Varoma 35 min',tip:'Quita el hilo central duro.'},
  {n:'Plátano macho (verde)',corte:'en trozos',olla:'20',vapor:'25',tm5:'Varoma 30 min',tip:'Verde para cocido; maduro para freír.'},
- {n:'Jitomate (para salsa)',corte:'entero',olla:'8',vapor:'—',tm5:'100°C 10 min, vel 1 y luego licúa',tip:'Hierve para una salsa roja suave.'}
+ {n:'Jitomate (para salsa)',corte:'entero',olla:'8',vapor:'—',tm5:'100°C 10 min, vel 1 y luego licúa',tip:'Hierve para una salsa roja suave.'},
+ {n:'Ajo',corte:'entero con piel',olla:'—',vapor:'—',tm5:'Varoma 20 min',tip:'Mejor asado/al horno: queda dulce y suave.'},
+ {n:'Kale (col rizada)',corte:'hojas sin tallo',olla:'3',vapor:'5',tm5:'Varoma 8 min',tip:'Poco tiempo o se pone amarga.'},
+ {n:'Jícama',corte:'en bastones',olla:'8',vapor:'10',tm5:'Varoma 12 min',tip:'Rica cruda con limón y chile.'},
+ {n:'Okra (quimbombó)',corte:'entera o en trozos',olla:'6',vapor:'8',tm5:'Varoma 12 min',tip:'Córtala poco para menos baba.'},
+ {n:'Hongos portobello',corte:'enteros o rebanados',olla:'6',vapor:'8',tm5:'100°C 8 min, vel cuchara',tip:'Sueltan agua; escúrrelos.'},
+ {n:'Tomatillo (tomate verde)',corte:'entero',olla:'6',vapor:'—',tm5:'100°C 8 min, vel 1',tip:'Para salsa verde cocida.'},
+ {n:'Calabaza espagueti',corte:'a la mitad',olla:'20',vapor:'25',tm5:'Varoma 30 min',tip:'Raspa con tenedor: salen hebras tipo espagueti.'},
+ {n:'Colinabo',corte:'en cubos',olla:'15',vapor:'18',tm5:'Varoma 22 min',tip:'Sabor entre nabo y col.'},
+ {n:'Edamame (soya)',corte:'en vaina',olla:'5',vapor:'6',tm5:'Varoma 10 min',tip:'Con sal; alto en proteína.'},
+ {n:'Flor de calabaza',corte:'entera',olla:'3',vapor:'4',tm5:'Varoma 6 min',tip:'Muy delicada; poco tiempo.'},
+ {n:'Verdolagas',corte:'hojas y tallos',olla:'5',vapor:'6',tm5:'Varoma 10 min',tip:'Ricas en guisado con cerdo o huevo.'},
+ {n:'Malanga (taro)',corte:'en trozos',olla:'20-25',vapor:'30',tm5:'Varoma 30 min',tip:'Tipo papa; buena para caldos.'}
 ];
 var _vegQty='normal';
 function setVegQty(q){
@@ -2789,10 +2829,13 @@ function renderVeggies(){
   var list=VEGGIES.filter(function(v){return !q||v.n.toLowerCase().indexOf(q)>=0||(v.tip||'').toLowerCase().indexOf(q)>=0;});
   el.innerHTML='<div class="muted" style="font-size:12px;margin-bottom:8px">💧 Cocina con '+agua+'.'+(addMin?(' Como es bastante, súmale ~'+addMin+' min a la olla.'):'')+' El vapor conserva más vitaminas.</div>'
     +(list.length?('<div class="grid">'+list.map(function(v){
-      return '<div class="mini"><b>'+safeText(v.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(v.corte)+'</span>'
-        +'<div style="font-size:13px;margin-top:4px">🫕 <b>Olla (hervir):</b> '+safeText(v.olla)+' min'+(addMin?(' (+'+addMin+')'):'')+'</div>'
-        +'<div style="font-size:13px">♨️ <b>Vapor:</b> '+safeText(v.vapor)+' min</div>'
-        +'<div style="font-size:13px">🤖 <b>Thermomix TM5:</b> '+safeText(v.tm5)+'</div>'
+      var tm=String(v.tm5||''); if(/varoma/i.test(tm)&&!/°C/.test(tm))tm=tm.replace(/[Vv]aroma/,'Varoma (vapor ~115°C)'); if(!/vel/i.test(tm))tm+=', vel 1';
+      var ollaTxt=(v.olla==='—')?'no aplica (mejor al horno)':(safeText(v.olla)+' min'+((addMin&&parseVegMin(v.olla))?(' (+'+addMin+')'):''));
+      var vaporTxt=(v.vapor==='—')?'no aplica':(safeText(v.vapor)+' min');
+      return '<div class="mini"><b>'+foodEmoji(v.n)+' '+safeText(v.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(v.corte)+'</span>'
+        +'<div style="font-size:13px;margin-top:4px">🫕 <b>Olla (hervir):</b> '+ollaTxt+'</div>'
+        +'<div style="font-size:13px">♨️ <b>Vapor:</b> '+vaporTxt+'</div>'
+        +'<div style="font-size:13px">🤖 <b>Thermomix TM5:</b> '+safeText(tm)+'</div>'
         +(v.tip?'<div class="muted" style="font-size:12px;margin-top:2px">💡 '+safeText(v.tip)+'</div>':'')
         +'</div>';
     }).join('')+'</div>'):'<p class="muted">No encontré esa verdura. Prueba otro nombre.</p>');
@@ -2811,6 +2854,13 @@ function verdurasCocidasHTML(){
 }
 var _vegPicked=[];
 function parseVegMin(s){var m=String(s).match(/(\d+)(?:-(\d+))?/);return m?+(m[2]||m[1]):0;}
+// Ícono por alimento (adivina por palabra clave). Sirve para verduras y para la guía al horno.
+function foodEmoji(name){
+  var n=String(name||'').toLowerCase();
+  var map=[['papa','🥔'],['camote','🍠'],['zanahoria','🥕'],['betabel','🟣'],['brócoli','🥦'],['brocoli','🥦'],['coliflor','🥦'],['chayote','🥒'],['calabacita','🥒'],['zucchini','🥒'],['calabaza espagueti','🍝'],['calabaza','🎃'],['elote','🌽'],['maíz','🌽'],['ejote','🫛'],['chícharo','🫛'],['haba','🫛'],['edamame','🫛'],['kale','🥬'],['col','🥬'],['espinaca','🥬'],['acelga','🥬'],['verdolaga','🥬'],['lechuga','🥬'],['espárrago','🌿'],['nopal','🌵'],['champiñon','🍄'],['hongo','🍄'],['portobello','🍄'],['berenjena','🍆'],['pimiento','🫑'],['cebolla','🧅'],['ajo','🧄'],['poro','🧅'],['puerro','🧅'],['apio','🥬'],['colinabo','🥔'],['nabo','🥔'],['malanga','🥔'],['rábano','🌶️'],['alcachofa','🌿'],['yuca','🥔'],['jícama','🥔'],['okra','🌿'],['flor de calabaza','🌼'],['plátano','🍌'],['jitomate','🍅'],['tomatillo','🍅'],['tomate','🍅'],['pollo','🍗'],['res','🥩'],['bistec','🥩'],['costilla','🍖'],['cerdo','🥓'],['lomo','🥩'],['tilapia','🐟'],['pescado','🐟'],['salmón','🐟'],['albóndiga','🍖'],['totopo','🌮'],['tostada','🌮'],['chips','🍟'],['hot dog','🌭'],['salchicha','🌭'],['hamburguesa','🍔'],['nugget','🍗'],['papas','🍟'],['pan','🍞'],['huevo','🥚'],['muffin','🥚'],['quesadilla','🫓'],['taco','🌮'],['mix','🥗'],['verduras','🥗'],['empapelad','🌯']];
+  for(var i=0;i<map.length;i++){if(n.indexOf(map[i][0])>=0)return map[i][1];}
+  return '🥬';
+}
 function vegPickToggle(name){var i=_vegPicked.indexOf(name);if(i>=0)_vegPicked.splice(i,1);else _vegPicked.push(name);renderVegCombine();}
 function renderVegCombine(){
   var el=document.getElementById('vegCombineOut'); if(!el)return;
@@ -2858,7 +2908,19 @@ const OVEN=[
  {n:'Nuggets/papas congeladas',cat:'Rapidas',temp:'220°C / 425°F',min:'15-20',tip:'Sin aceite; voltea a la mitad.'},
  {n:'Huevos al horno (en molde)',cat:'Huevos',temp:'180°C / 350°F',min:'12-15',tip:'Rompe el huevo en un molde con aceite.'},
  {n:'Muffins de huevo',cat:'Huevos',temp:'180°C / 350°F',min:'18-20',tip:'Huevo batido con verduras en molde de muffin.'},
- {n:'Huevos rancheros al horno',cat:'Huevos',temp:'190°C / 375°F',min:'12-15',tip:'Sobre salsa, en refractario.'}
+ {n:'Huevos rancheros al horno',cat:'Huevos',temp:'190°C / 375°F',min:'12-15',tip:'Sobre salsa, en refractario.'},
+ {n:'Papa al horno (entera)',cat:'Verduras',temp:'200°C / 400°F',min:'50-60',tip:'Pícala con tenedor; rellénala al salir.'},
+ {n:'Mix de verduras al horno',cat:'Verduras',temp:'200°C / 400°F',min:'25-30',tip:'Corta parejo; las duras (papa/zanahoria) en trozos más chicos.'},
+ {n:'Chayote',cat:'Verduras',temp:'200°C / 400°F',min:'25-30',tip:'En mitades, con queso encima.'},
+ {n:'Ejotes',cat:'Verduras',temp:'220°C / 425°F',min:'15-18',tip:'Con ajo y aceite.'},
+ {n:'Coles de Bruselas',cat:'Verduras',temp:'220°C / 425°F',min:'20-25',tip:'A la mitad, lado plano hacia abajo.'},
+ {n:'Betabel',cat:'Verduras',temp:'200°C / 400°F',min:'45-60',tip:'Envuelto en aluminio; pélalo después.'},
+ {n:'Champiñones',cat:'Verduras',temp:'200°C / 400°F',min:'15-20',tip:'Con ajo y mantequilla.'},
+ {n:'Tilapia en papel aluminio',cat:'Carnes',temp:'200°C / 400°F',min:'15-20',tip:'Empapelada con limón, ajo y verduras; queda jugosa.'},
+ {n:'Pescado empapelado',cat:'Carnes',temp:'200°C / 400°F',min:'15-20',tip:'Sella bien el aluminio para que no se seque.'},
+ {n:'Pollo empapelado con verduras',cat:'Carnes',temp:'200°C / 400°F',min:'30-35',tip:'Todo en un paquete de aluminio.'},
+ {n:'Quesadillas al horno',cat:'Rapidas',temp:'200°C / 400°F',min:'8-10',tip:'Tortilla doblada con queso; voltea a la mitad.'},
+ {n:'Tacos dorados al horno',cat:'Rapidas',temp:'200°C / 400°F',min:'12-15',tip:'Rellena, enrolla y hornea hasta dorar (sin freír).'}
 ];
 var _hornoCat='Todas';
 function setHornoCat(c){_hornoCat=c;var r=document.getElementById('hornoCatRow');if(r)Array.prototype.forEach.call(r.querySelectorAll('.btn'),function(b){b.classList.toggle('primary',b.getAttribute('data-c')===c);});renderHorno();}
@@ -2867,7 +2929,7 @@ function renderHorno(){
   var q=((document.getElementById('hornoSearch')||{}).value||'').toLowerCase();
   var list=OVEN.filter(function(o){return (_hornoCat==='Todas'||o.cat===_hornoCat)&&(!q||o.n.toLowerCase().indexOf(q)>=0);});
   el.innerHTML=list.length?('<div class="grid">'+list.map(function(o){
-    return '<div class="mini"><b>'+safeText(o.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(o.cat)+'</span>'
+    return '<div class="mini"><b>'+foodEmoji(o.n)+' '+safeText(o.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(o.cat)+'</span>'
       +'<div style="font-size:13px;margin-top:4px">🌡️ <b>'+safeText(o.temp)+'</b> · ⏱️ <b>'+safeText(o.min)+' min</b></div>'
       +(o.tip?'<div class="muted" style="font-size:12px;margin-top:2px">💡 '+safeText(o.tip)+'</div>':'')
       +'</div>';
@@ -3291,7 +3353,7 @@ function foodPickPool(goal){
   return {pool,kw};
 }
 function mealTypeLabel(type){
-  return ({desayuno:'🌅 Desayuno',comida:'🍽️ Comida',huevo:'🥚 Huevo',verdura:'🥦 Verdura',cena:'🌙 Cena',licuado:'🥤 Licuado',snack:'🍿 Snack / merienda',fruta:'🍓 Fruta',agua:'💧 Agua fresca',bebida:'☕ Bebida',suero:'💧 Suero',especia:'🧂 Sazonador',salsa:'🌶️ Salsa',aderezo:'🥗 Aderezo',hotcake:'🥞 Hotcake',avena:'🥣 Avena',pan:'🍞 Pan',postre:'🍮 Postre',sopa:'🍲 Sopa',arroz:'🍚 Arroz',pasta:'🍝 Pasta',pollococido:'🍗 Pollo cocido'})[type]||('🍽️ '+(type?type.charAt(0).toUpperCase()+type.slice(1):'Receta'));
+  return ({desayuno:'🌅 Desayuno',comida:'🍽️ Comida',huevo:'🥚 Huevo',verdura:'🥦 Verdura',cena:'🌙 Cena',licuado:'🥤 Licuado',snack:'🍿 Snack / merienda',fruta:'🍓 Fruta',agua:'💧 Agua fresca',bebida:'☕ Bebida',suero:'💧 Suero',especia:'🧂 Sazonador',salsa:'🌶️ Salsa',aderezo:'🥗 Aderezo',hotcake:'🥞 Hotcake',avena:'🥣 Avena',pan:'🍞 Pan',postre:'🍮 Postre',sopa:'🍲 Sopa',arroz:'🍚 Arroz',pasta:'🍝 Pasta',pollococido:'🍗 Pollo cocido',horno:'🔥 Al horno'})[type]||('🍽️ '+(type?type.charAt(0).toUpperCase()+type.slice(1):'Receta'));
 }
 function typeBadge(type){
   return `<span style="display:inline-block;background:#eaf5ef;color:#15704f;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;margin-bottom:5px">${mealTypeLabel(type)}</span><br>`;
@@ -8629,7 +8691,7 @@ function renderRecipes(){
       // Agrupar por categoría en secciones colapsables.
       // Render PEREZOSO: cada categoría dibuja sus tarjetas solo al abrir su <details> (evita dibujar cientos de recetas de golpe).
       var catNames={desayuno:'🍳 Desayunos',comida:'🍲 Comidas',huevo:'🥚 Huevos',verdura:'🥦 Verduras',cena:'🌙 Cenas',sopa:'🍲 Sopas',arroz:'🍚 Arroces',pasta:'🍝 Espaguetis y pastas',pollococido:'🍗 Pollo cocido',licuado:'🥤 Licuados',bebida:'🧊 Bebidas',agua:'🧊 Aguas frescas',suero:'💧 Sueros',snack:'🥜 Snacks',postre:'🍮 Postres',cafe:'☕ Cafés',salsa:'🌶️ Salsas',aderezo:'🥗 Aderezos',especia:'🧂 Sazonadores',fruta:'🍓 Frutas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes',thermomix:'🤖 Thermomix',horno:'🫕 Al horno'};
-      var order=['desayuno','comida','huevo','verdura','cena','sopa','arroz','pasta','pollococido','licuado','snack','postre','bebida','agua','suero','cafe','avena','hotcake','pan','fruta','salsa','aderezo','especia'];
+      var order=['desayuno','comida','huevo','verdura','horno','cena','sopa','arroz','pasta','pollococido','licuado','snack','postre','bebida','agua','suero','cafe','avena','hotcake','pan','fruta','salsa','aderezo','especia'];
       var byCat={};
       arr.forEach(function(r){ (byCat[r.type]=byCat[r.type]||[]).push(r); });
       window._recGrouped=byCat;
@@ -11818,7 +11880,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.19.0';
+    window.HM_APP_VERSION='46.20.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

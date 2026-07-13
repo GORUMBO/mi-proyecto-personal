@@ -1,8 +1,20 @@
 {
-  "latest": "46.19.0",
+  "latest": "46.20.0",
   "date": "2026-07-12",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.20.0",
+      "date": "2026-07-12",
+      "type": "recomendada",
+      "nuevas": [
+        "Guia de verduras mas clara: ahora con icono por verdura, y la Thermomix muestra temperatura (Varoma = vapor ~115C) y velocidad. Se agregaron 12 verduras mas (ajo, kale, jicama, okra, portobello, tomatillo, calabaza espagueti, colinabo, edamame, flor de calabaza, verdolagas, malanga)",
+        "Al horno con mas cosas e iconos: mix de verduras, papa al horno, tilapia y pescado en papel aluminio, pollo empapelado, quesadillas y tacos al horno, mas chayote/ejotes/coles/betabel/champinones",
+        "6 recetas nuevas al horno: papa rellena, tilapia empapelada, pollo empapelado con verduras, mix de verduras, quesadillas al horno y tacos dorados al horno"
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "46.19.0",
       "date": "2026-07-12",
