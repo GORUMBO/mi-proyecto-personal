@@ -1,8 +1,18 @@
 {
-  "latest": "46.14.0",
+  "latest": "46.15.0",
   "date": "2026-07-12",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.15.0",
+      "date": "2026-07-12",
+      "type": "recomendada",
+      "nuevas": [
+        "Inicio: recordatorio suave para descargar una copia de seguridad cuando llevas dias sin respaldar; con boton para descargarla o posponerla"
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "46.14.0",
       "date": "2026-07-12",

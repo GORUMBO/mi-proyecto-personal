@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.14.0';
+  window.HM_APP_VERSION='46.15.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -3766,6 +3766,7 @@ function secInicio(){
   let vacio=allHidden?`<div class="card"><b>Tu Inicio está vacío.</b><br><span class="muted">Abre ⚙️ Personalizar inicio y marca las tarjetas que quieras ver.</span></div>`:'';
   return `<div class="home-clean">
   ${homePersonalizer()}
+  ${backupReminderHTML()}
   ${body}
   ${vacio}
 </div>`;}
@@ -11377,6 +11378,29 @@ function hmv413BackupPanel(){
   <div class="${rec.yes?'warn':'ok'}" style="margin-top:10px"><b>Recomendación:</b> ${rec.yes?'descarga un respaldo ahora.':'vas bien; descarga respaldo después de cambios importantes.'}</div></div>`;
 }
 function hmv413MarkBackup(){state.lastBackupAt=new Date().toISOString();save();}
+// Recordatorio suave en Inicio para descargar una copia (usa la misma lógica de hmv413BackupRecommended).
+function backupReminderHTML(){
+  try{
+    var rec=hmv413BackupRecommended();
+    if(!rec||!rec.yes)return '';
+    var snz=state.backupReminderSnooze?Date.parse(state.backupReminderSnooze):0;
+    if(snz&&Date.now()<snz)return '';
+    var dtxt=(!state.lastBackupAt)?'Aún no has descargado ninguna copia.':('Hace '+rec.days+' día'+(rec.days===1?'':'s')+' de tu última copia.');
+    return '<div class="card" style="border:2px solid #f0c36d;background:#fffaf0">'
+      +'<div style="display:flex;gap:10px;align-items:flex-start">'
+      +'<div style="font-size:24px">💾</div>'
+      +'<div style="flex:1"><b>Haz una copia de seguridad</b>'
+      +'<div class="muted" style="font-size:13px;margin:2px 0 8px">'+safeText(dtxt)+' Descargar una copia te protege si cambias de teléfono o borras los datos del navegador.</div>'
+      +'<div class="row" style="gap:8px;flex-wrap:wrap">'
+      +'<button class="btn primary" onclick="hmv413MarkBackup();exportData();snoozeBackupReminder(7)">⬇️ Descargar copia</button>'
+      +'<button class="btn" onclick="snoozeBackupReminder(3)">Después</button>'
+      +'</div></div></div></div>';
+  }catch(e){return '';}
+}
+function snoozeBackupReminder(days){
+  state.backupReminderSnooze=new Date(Date.now()+(days||3)*86400000).toISOString();
+  save(); try{refreshHomeTab()}catch(e){}
+}
 function hmv413ConnectionMap(){return `<div class="card"><h2 style="margin-top:0">🔗 Mapa de conexión</h2><div class="flow-map">
   <div class="flow-card"><h4>👤 Perfil</h4><div class="arrow">alimenta → calorías, proteína, peso, fitness y metas.</div></div>
   <div class="flow-card"><h4>🍽️ Comida</h4><div class="arrow">alimenta → contador, recetas, presupuesto, lista de compras y subir de peso.</div></div>
@@ -11539,7 +11563,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.14.0';
+    window.HM_APP_VERSION='46.15.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
