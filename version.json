@@ -1,8 +1,17 @@
 {
-  "latest": "46.7.1",
+  "latest": "46.7.2",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.7.2",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "El registro inicial ahora empieza en blanco para usuarios nuevos (antes salia con datos de ejemplo pre-llenados)"
+      ]
+    },
     {
       "version": "46.7.1",
       "date": "2026-07-11",

@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.7.1';
+  window.HM_APP_VERSION='46.7.2';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.7.1</span>
+      <span class="versionChip">v46.7.2</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -602,6 +602,8 @@ state.appVersion=window.HM_APP_VERSION||'46.1.0';
   if(typeof state.onboarded==='undefined'){
     state.onboarded = !!((state.weight&&state.weight.length>0)||(state.meals&&state.meals.length>0)||(state.profile&&state.profile.nombre));
   }
+  // Quien ya usó la app cuenta como "registro visto": si repite el registro inicial, verá sus datos (no en blanco).
+  if(state.onboarded && state.profile) state.profile._onbSeen=true;
   safeStorage.set('pp_full',JSON.stringify(state));
   persistStateIDB(JSON.stringify(state));
 })();
@@ -8279,13 +8281,13 @@ function showOnboarding(){
     +'<h2 style="margin-top:0">👋 Bienvenido — configura tu cuenta</h2>'
     +'<p class="muted">Con estos datos la app personaliza tus calorías, recetas y menú. Podrás cambiarlos después en Perfil.</p>'
     +'<div class="grid">'
-    +'<div><label>Nombre</label><input id="obNombre" value="'+safeText(p.nombre||'')+'"></div>'
-    +'<div><label>Edad</label><input id="obEdad" type="number" inputmode="numeric" value="'+(p.edad||'')+'"></div>'
-    +'<div><label>Peso (lb)</label><input id="obPeso" type="number" inputmode="decimal" value="'+(p.peso||'')+'"></div>'
-    +'<div><label>Estatura (cm)</label><input id="obAltura" type="number" inputmode="numeric" value="'+(p.altura||'')+'"></div>'
-    +'<div><label>Objetivo</label><select id="obObjetivo">'+['ganar peso','ganar músculo','mantener','bajar grasa'].map(function(o){return '<option'+(p.objetivo===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'
-    +'<div><label>Nivel de actividad</label><select id="obActividad">'+['baja','media','alta','muy alta'].map(function(o){return '<option'+((p.actividad||'muy alta')===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'
-    +'<div><label>Pasos por día aprox.</label><input id="obPasos" type="number" step="500" inputmode="numeric" value="'+(p.pasosDia||18000)+'"></div>'
+    +'<div><label>Nombre</label><input id="obNombre" placeholder="Tu nombre" value="'+safeText(p.nombre||'')+'"></div>'
+    +'<div><label>Edad</label><input id="obEdad" type="number" inputmode="numeric" placeholder="Ej. 30" value="'+(p._onbSeen?(p.edad||''):'')+'"></div>'
+    +'<div><label>Peso (lb)</label><input id="obPeso" type="number" inputmode="decimal" placeholder="Ej. 150" value="'+(p._onbSeen?(p.peso||''):'')+'"></div>'
+    +'<div><label>Estatura (cm)</label><input id="obAltura" type="number" inputmode="numeric" placeholder="Ej. 170" value="'+(p._onbSeen?(p.altura||''):'')+'"></div>'
+    +'<div><label>Objetivo</label><select id="obObjetivo"><option value="">— elige —</option>'+['ganar peso','ganar músculo','mantener','bajar grasa'].map(function(o){return '<option'+((p._onbSeen&&p.objetivo===o)?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'
+    +'<div><label>Nivel de actividad</label><select id="obActividad"><option value="">— elige —</option>'+['baja','media','alta','muy alta'].map(function(o){return '<option'+((p._onbSeen&&p.actividad===o)?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'
+    +'<div><label>Pasos por día aprox.</label><input id="obPasos" type="number" step="500" inputmode="numeric" placeholder="Ej. 8000" value="'+(p._onbSeen?(p.pasosDia||''):'')+'"></div>'
     +'</div>'
     +'<div style="margin-top:8px"><label>Preferencias de comida (opcional)</label><input id="obPref" placeholder="Ej: sin cerdo, más pollo, poco picante" value="'+safeText(p.preferencias||'')+'"></div>'
     +'<div style="margin-top:10px"><label>Herramientas de cocina que tienes</label><div class="row" id="obTools" style="gap:6px;flex-wrap:wrap;margin-top:4px">'+KITCHEN_TOOLS_ORDER.map(function(key){var m=KITCHEN_METHODS[key];var on=!!(state.kitchenTools&&state.kitchenTools[key]);return '<button class="btn'+(on?' primary':'')+'" data-tool="'+key+'" onclick="toggleKitchenTool(\''+key+'\')">'+m.icon+' '+m.label+(on?' ✓':'')+'</button>';}).join('')+'</div></div>'
@@ -8304,6 +8306,7 @@ function finishOnboarding(){
   state.profile.actividad=g('obActividad')||state.profile.actividad||'muy alta';
   state.profile.pasosDia=+g('obPasos')||state.profile.pasosDia||18000;
   state.profile.preferencias=g('obPref').trim();
+  state.profile._onbSeen=true; // ya llenó el registro; si lo repite, sus datos se muestran
   state.onboarded=true;
   state.kitchenConfigured=true;
   save();
@@ -11230,7 +11233,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.7.1';
+    window.HM_APP_VERSION='46.7.2';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
