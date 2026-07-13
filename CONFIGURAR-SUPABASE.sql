@@ -28,8 +28,8 @@ begin
     execute format('drop policy if exists own_rows on public.%I', t);
     execute format($p$create policy own_rows on public.%I
         for all to authenticated
-        using (auth.uid() = user_id)
-        with check (auth.uid() = user_id)$p$, t);
+        using ((select auth.uid()) = user_id)
+        with check ((select auth.uid()) = user_id)$p$, t);
     execute format('create index if not exists %I on public.%I (user_id, updated_at)',
         t || '_user_updated_idx', t);
   end loop;
@@ -51,8 +51,8 @@ begin
     execute format('drop policy if exists own_rows on public.%I', t);
     execute format($p$create policy own_rows on public.%I
         for all to authenticated
-        using (auth.uid() = user_id)
-        with check (auth.uid() = user_id)$p$, t);
+        using ((select auth.uid()) = user_id)
+        with check ((select auth.uid()) = user_id)$p$, t);
   end loop;
 end $$;
 

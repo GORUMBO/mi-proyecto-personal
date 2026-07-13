@@ -1,8 +1,20 @@
 {
-  "latest": "46.10.1",
+  "latest": "46.11.0",
   "date": "2026-07-12",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.11.0",
+      "date": "2026-07-12",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Proteccion de datos: el aviso de guardado ahora es honesto (avisa si el navegador se queda sin espacio y te pide sincronizar)",
+        "Al abrir, la app carga siempre la copia mas reciente entre este dispositivo y su respaldo interno, para no perder cambios recientes",
+        "Base de datos mas rapida (politicas de seguridad optimizadas en Supabase)"
+      ],
+      "errores": []
+    },
     {
       "version": "46.10.1",
       "date": "2026-07-12",
