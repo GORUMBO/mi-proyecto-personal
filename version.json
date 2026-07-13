@@ -1,8 +1,18 @@
 {
-  "latest": "46.10.0",
+  "latest": "46.10.1",
   "date": "2026-07-12",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.10.1",
+      "date": "2026-07-12",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Inicio: se quito la tarjeta 'Mas acciones' (sus atajos ya estan en otras secciones); Inicio queda mas limpio"
+      ],
+      "errores": []
+    },
     {
       "version": "46.10.0",
       "date": "2026-07-12",

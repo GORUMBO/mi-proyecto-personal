@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.10.0';
+  window.HM_APP_VERSION='46.10.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -3629,7 +3629,6 @@ const HOME_SECTIONS=[
   {id:'siguientePaso', label:'🎯 Tu siguiente paso'},
   {id:'semana',        label:'📊 ¿Voy bien esta semana?'},
   {id:'resumen',       label:'🔢 Resumen rápido (4 datos)'},
-  {id:'masAcciones',   label:'⚡ Más acciones'},
   {id:'comidaTrabajo', label:'🍱 Comida para trabajo'},
   {id:'respaldo',      label:'💾 Modo, respaldo y seguridad'}
 ];
@@ -11440,7 +11439,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.10.0';
+    window.HM_APP_VERSION='46.10.1';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
