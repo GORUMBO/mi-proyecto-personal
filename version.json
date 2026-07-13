@@ -1,8 +1,17 @@
 {
-  "latest": "46.7.3",
+  "latest": "46.7.4",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.7.4",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Se quito el panel de arriba dividido de todas las secciones: cada seccion es una sola pantalla"
+      ]
+    },
     {
       "version": "46.7.3",
       "date": "2026-07-11",
