@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.7.2';
+  window.HM_APP_VERSION='46.7.3';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.7.2</span>
+      <span class="versionChip">v46.7.3</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -3464,7 +3464,7 @@ function runAreaAction(code,btn,label){
   }catch(e){alert('No se pudo abrir esa acción todavía. Usa el botón normal de la sección.')}
 }
 function areaModePanel(t){
-  if(t==='🏠 Inicio'||t==='👤 Perfil')return '';
+  if(t==='🏠 Inicio'||t==='👤 Perfil'||t==='💪 Ejercicio')return '';
   let b=getAreaBlueprint(t),mode=getAreaMode(t),idx=tabs.indexOf(t),chip=mode==='personal'?'<span class="mode-personal-chip">Uso personal</span>':'<span class="mode-pro-chip">Uso profesional</span>';
   let actions=(b.actions||[]).slice(0,6).map(a=>{
     let code=encodeURIComponent(a[1]);
@@ -3935,28 +3935,22 @@ function secEjercicio(){
     </div>
   </details>`:'';
   return `<h2>💪 Fitness</h2>
-  <div class="fit-clean-hero">
-    <div class="fit-clean-top">
-      <div>
-        <div class="fit-clean-title">Pantalla limpia</div>
-        <div class="fit-clean-note">Arriba elige una acción. La respuesta aparece debajo de los botones. Aquí solo queda el resumen y las herramientas cerradas.</div>
-      </div>
-      <span class="pill on">${mode==='pro'?'⭐ Profesional':'👤 Personal'}</span>
+  <div class="card">
+    <p class="muted" style="margin-top:0">Elige qué hacer hoy. Todo aparece aquí mismo — sin cambiar de pantalla.</p>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <button class="btn primary" onclick="quickFitnessToday()">🏋️ Mi rutina de hoy</button>
+      <button class="btn" onclick="modifyFitnessOnlyToday('cansado')">😴 Estoy cansado</button>
+      <button class="btn" onclick="modifyFitnessOnlyToday('poco_tiempo')">⏱️ Poco tiempo</button>
+      <button class="btn" onclick="renderSimpleFitnessProgress()">📊 Progreso</button>
     </div>
-    <div class="fit-clean-status">
+    <div class="fit-clean-status" style="margin-top:12px">
       <div class="fit-clean-chip"><b>${safeText(title)}</b><span>estado de hoy</span></div>
       <div class="fit-clean-chip"><b>${length||'—'}</b><span>ejercicios</span></div>
-      <div class="fit-clean-chip"><b>${safeText(mins)}</b><span>tiempo aprox.</span></div>
       <div class="fit-clean-chip"><b>${weekCount}</b><span>registros esta semana</span></div>
     </div>
+    <div id="routineTodayOut"></div>
+    <div id="simpleFitnessOut" class="fit-clean-result" style="margin-top:12px"><div class="muted">Toca <b>🏋️ Mi rutina de hoy</b> para ver tu rutina, registrar el peso y ajustar el esfuerzo.</div></div>
   </div>
-  <div id="routineTodayOut"></div>
-  <details class="fit-clean-details" open>
-    <summary>✅ Resultado completo de la rutina</summary>
-    <div class="fit-clean-details-body">
-      <div id="simpleFitnessOut" class="fit-clean-result"><div class="muted">Toca arriba: Rutina normal, Estoy cansado o Poco tiempo. Aquí aparecerá la rutina completa si la quieres ver.</div></div>
-    </div>
-  </details>
   <details id="fitnessRegisterDetails" class="fit-clean-details">
     <summary>✍️ Registrar un ejercicio extra (fuera de tu rutina)</summary>
     <div class="fit-clean-details-body">
@@ -11233,7 +11227,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.7.2';
+    window.HM_APP_VERSION='46.7.3';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

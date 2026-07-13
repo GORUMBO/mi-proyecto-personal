@@ -1,8 +1,17 @@
 {
-  "latest": "46.7.2",
+  "latest": "46.7.3",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.7.3",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Fitness ahora es una sola pantalla: botones (rutina, cansado, poco tiempo, progreso) y todo aparece en el mismo lugar; se quito el panel de arriba, Pantalla limpia y el pill Personal"
+      ]
+    },
     {
       "version": "46.7.2",
       "date": "2026-07-11",
