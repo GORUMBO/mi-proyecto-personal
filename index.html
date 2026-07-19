@@ -361,7 +361,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.148';
+  window.HM_APP_VERSION='1.149';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -455,7 +455,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
     </div>
     <div class="appStatusBox">
       <span id="regionChip" style="cursor:pointer;background:#eaf9f0;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:4px 10px;font-weight:900;font-size:12px" onclick="abrirRegion()" title="Cambiar región">🌎</span>
-      <span class="versionChip">v1.148</span>
+      <span class="versionChip">v1.149</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -10023,17 +10023,61 @@ function basesDelPaso(texto){
   return BASES.filter(b => b.re.test(texto));
 }
 
+// ===== Escalar cantidades de una sub-receta (½ / normal / doble) =====
+var _baseFac = {};
+var _FRAC = {'½':0.5,'¼':0.25,'¾':0.75,'⅓':1/3,'⅔':2/3,'⅛':0.125,'⅜':0.375,'⅝':0.625,'⅞':0.875};
+function numBonito(v){
+  if(!isFinite(v)||v<0) return '';
+  var ent=Math.floor(v+1e-6), frac=v-ent, fs='';
+  var mapa=[[0.5,'½'],[0.25,'¼'],[0.75,'¾'],[1/3,'⅓'],[2/3,'⅔'],[0.125,'⅛'],[0.375,'⅜'],[0.625,'⅝'],[0.875,'⅞']];
+  for(var i=0;i<mapa.length;i++){ if(Math.abs(frac-mapa[i][0])<0.05){ fs=mapa[i][1]; frac=0; break; } }
+  if(frac>0.05){ var d=Math.round(v*10)/10; return String(d); } // no cae en fracción bonita
+  if(ent===0) return fs||'0';
+  return fs?(ent+fs):String(ent);
+}
+function escalarCantidad(txt, f){
+  if(f===1 || !txt) return txt;
+  var m = String(txt).match(/(\d+)?\s*([½¼¾⅓⅔⅛⅜⅝⅞])|(\d+(?:\.\d+)?)/);
+  if(!m) return txt; // "Sal", "Un puño de cilantro"… sin número: se queda igual
+  var val, sub;
+  if(m[2]){ val=(m[1]?parseInt(m[1],10):0)+_FRAC[m[2]]; sub=m[0].trim(); }
+  else { val=parseFloat(m[3]); sub=m[3]; }
+  return String(txt).replace(sub, numBonito(val*f));
+}
+function escalarRinde(r, f){
+  if(f===1 || !r) return r;
+  return String(r).replace(/(\d+(?:\.\d+)?|[½¼¾⅓⅔⅛⅜⅝⅞])/, function(x){
+    var v = (_FRAC[x]!==undefined)?_FRAC[x]:parseFloat(x);
+    return numBonito(v*f);
+  });
+}
+function escalarBase(fullId, baseId, f){
+  _baseFac[fullId]=f;
+  var b=BASES.find(function(x){return x.id===baseId;}); if(!b) return;
+  var det=document.getElementById(fullId); if(!det||!det.parentNode) return;
+  var prefijo=fullId.slice(0, fullId.length-('_'+baseId).length);
+  var wrap=document.createElement('div'); wrap.innerHTML=baseRender(b, prefijo);
+  var nuevo=wrap.firstElementChild;
+  det.parentNode.replaceChild(nuevo, det);
+  if(nuevo) nuevo.open=true; // dejar abierta la sub-receta al cambiar la cantidad
+}
 function baseRender(b, idPrefijo){
   let id = idPrefijo+'_'+b.id;
+  let f = _baseFac[id]||1;
   return `<details id="${id}" style="background:#f4f0fb;border:2px solid #b9a5e0;border-radius:12px;padding:10px;margin-top:8px">
     <summary style="font-weight:900;color:#4a2f80;font-size:14px;cursor:pointer">
-      ${b.ic} ¿Cómo hago la ${safeText(b.nombre.toLowerCase())}? <span style="font-weight:400;font-size:12px">· ${b.min} min · ${money(b.costo)} · rinde ${b.rinde}</span>
+      ${b.ic} ¿Cómo hago la ${safeText(b.nombre.toLowerCase())}? <span style="font-weight:400;font-size:12px">· ${b.min} min · ${money(b.costo*f)} · rinde ${escalarRinde(b.rinde,f)}</span>
     </summary>
 
     <div style="margin-top:10px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+        <span class="muted" style="font-size:12px;font-weight:800">Cantidad:</span>
+        ${[['0.5','½ mitad'],['1','normal'],['2','doble']].map(o=>`<button class="btn" style="font-size:12px;padding:6px 11px;${f==+o[0]?'background:#4a2f80;color:#fff;border-color:#4a2f80':''}" onclick="event.preventDefault();event.stopPropagation();escalarBase('${id}','${b.id}',${o[0]})">${o[1]}</button>`).join('')}
+        <span class="muted" style="font-size:12px">→ rinde <b>${escalarRinde(b.rinde,f)}</b></span>
+      </div>
       <div class="mini" style="background:#fff">
         <b>🛒 Necesitas</b>
-        <ul style="margin:6px 0 0;padding-left:18px">${b.ing.map(x=>`<li style="font-size:13px">${safeText(x)}</li>`).join('')}</ul>
+        <ul style="margin:6px 0 0;padding-left:18px">${b.ing.map(x=>`<li style="font-size:13px">${safeText(escalarCantidad(x,f))}</li>`).join('')}</ul>
       </div>
 
       <div style="margin-top:10px">
@@ -25233,7 +25277,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='1.148';
+    window.HM_APP_VERSION='1.149';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

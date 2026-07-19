@@ -1,8 +1,18 @@
 {
-  "latest": "1.148",
+  "latest": "1.149",
   "date": "2026-07-18",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.149",
+      "date": "2026-07-18",
+      "type": "recomendada",
+      "nuevas": [
+        "Sub-recetas (salsas y bases como el pico de gallo): ahora puedes elegir la cantidad (½ mitad / normal / doble) y la app ajusta sola los ingredientes y el 'rinde para tanto'."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.148",
       "date": "2026-07-18",
