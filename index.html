@@ -361,7 +361,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.144';
+  window.HM_APP_VERSION='1.145';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -455,7 +455,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
     </div>
     <div class="appStatusBox">
       <span id="regionChip" style="cursor:pointer;background:#eaf9f0;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:4px 10px;font-weight:900;font-size:12px" onclick="abrirRegion()" title="Cambiar región">🌎</span>
-      <span class="versionChip">v1.144</span>
+      <span class="versionChip">v1.145</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -7628,6 +7628,12 @@ function cpMinutosDelTexto(txt){
 function cpClasificar(paso){
   let t = paso.toLowerCase();
   let minutosExplicitos = cpMinutosDelTexto(t);
+  // PRECALENTAR es su propio caso: NO debe inflarse por contener "horno" (que vale 25 min por hornear).
+  // Un horno/air fryer tarda ~10 min en calentar; un sartén/comal ~3 min.
+  if(/precalienta|precalentar|precalent/.test(t)){
+    let m = minutosExplicitos || (/horno|toaster|air ?fryer|airfryer/.test(t) ? 10 : 3);
+    return {tipo:'espera', min: m, texto: paso};
+  }
   let espera = 0;
   for(let [kw, def] of CP_ESPERA){
     if(t.includes(kw)){ espera = Math.max(espera, minutosExplicitos || def); }
@@ -25119,7 +25125,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='1.144';
+    window.HM_APP_VERSION='1.145';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

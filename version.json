@@ -1,8 +1,18 @@
 {
-  "latest": "1.144",
+  "latest": "1.145",
   "date": "2026-07-18",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.145",
+      "date": "2026-07-18",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Planificador de recetas por estaciones: se corrigio el tiempo de precalentar. Antes decia precalentar el horno 25 min (por confundirlo con 'hornear'); ahora dice ~10 min (horno) o ~3 min (sarten), como debe ser. Aplica a todas las recetas."
+      ],
+      "errores": []
+    },
     {
       "version": "1.144",
       "date": "2026-07-18",
