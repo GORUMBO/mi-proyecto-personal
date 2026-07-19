@@ -1,8 +1,18 @@
 {
-  "latest": "46.21.0",
-  "date": "2026-07-13",
-  "minVersion": "43.0.0",
+  "latest": "1.140",
+  "date": "2026-07-18",
+  "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.140",
+      "date": "2026-07-18",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Se publico tu copia buena del proyecto (misma app, numeracion 1.14x)."
+      ],
+      "errores": []
+    },
     {
       "version": "46.21.0",
       "date": "2026-07-13",
