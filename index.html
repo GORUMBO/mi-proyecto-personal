@@ -361,7 +361,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.143';
+  window.HM_APP_VERSION='1.144';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -455,7 +455,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
     </div>
     <div class="appStatusBox">
       <span id="regionChip" style="cursor:pointer;background:#eaf9f0;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:4px 10px;font-weight:900;font-size:12px" onclick="abrirRegion()" title="Cambiar región">🌎</span>
-      <span class="versionChip">v1.143</span>
+      <span class="versionChip">v1.144</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -4940,6 +4940,7 @@ function setVegQty(q){
 }
 function renderVeggies(){
   var el=document.getElementById('veggiesOut'); if(!el)return;
+  var _s=el.closest('.tab'); if(_s&&!_s.classList.contains('active')&&el.children.length)return; // no re-dibujar si Recetas no está visible
   var q=((document.getElementById('vegSearch')||{}).value||'').toLowerCase();
   var addMin=_vegQty==='mucha'?3:0;
   var agua=_vegQty==='mucha'?'olla con bastante agua (que cubra +5 cm)':_vegQty==='poca'?'poca agua, apenas cubriendo':'agua que cubra las verduras';
@@ -4981,6 +4982,7 @@ function foodEmoji(name){
 function vegPickToggle(name){var i=_vegPicked.indexOf(name);if(i>=0)_vegPicked.splice(i,1);else _vegPicked.push(name);renderVegCombine();}
 function renderVegCombine(){
   var el=document.getElementById('vegCombineOut'); if(!el)return;
+  var _s=el.closest('.tab'); if(_s&&!_s.classList.contains('active')&&el.children.length)return;
   var chips=VEGGIES.map(function(v){var on=_vegPicked.indexOf(v.n)>=0;return '<button class="btn'+(on?' primary':'')+'" style="font-size:12px;padding:6px 9px;margin:2px" onclick="vegPickToggle(\''+v.n.replace(/'/g,"\\'")+'\')">'+safeText(v.n)+'</button>';}).join('');
   var plan;
   if(_vegPicked.length>=2){
@@ -5043,6 +5045,7 @@ var _hornoCat='Todas';
 function setHornoCat(c){_hornoCat=c;var r=document.getElementById('hornoCatRow');if(r)Array.prototype.forEach.call(r.querySelectorAll('.btn'),function(b){b.classList.toggle('primary',b.getAttribute('data-c')===c);});renderHorno();}
 function renderHorno(){
   var el=document.getElementById('hornoOut'); if(!el)return;
+  var _s=el.closest('.tab'); if(_s&&!_s.classList.contains('active')&&el.children.length)return;
   var q=((document.getElementById('hornoSearch')||{}).value||'').toLowerCase();
   var list=OVEN.filter(function(o){return (_hornoCat==='Todas'||o.cat===_hornoCat)&&(!q||o.n.toLowerCase().indexOf(q)>=0);});
   el.innerHTML=list.length?('<div class="grid">'+list.map(function(o){
@@ -20596,6 +20599,7 @@ function renderMauiPantry(cat){
   _mauiPantryCat=cat||_mauiPantryCat||'Todos';
   let tabs=document.getElementById('mauiPantryTabs'),out=document.getElementById('mauiPantryOut');
   if(!tabs||!out)return;
+  var _s=out.closest('.tab'); if(_s&&!_s.classList.contains('active')&&out.children.length)return; // no re-dibujar si su sección no está visible
   tabs.innerHTML=getMauiPantryCats().map(c=>`<button class="${c===_mauiPantryCat?'on':''}" onclick="renderMauiPantry('${c.replace(/'/g,"\\'")}')">${safeText(c)}</button>`).join('');
   let list=MAUI_AMERICAN_PANTRY.filter(x=>_mauiPantryCat==='Todos'||x.cat===_mauiPantryCat);
   out.innerHTML=`<div class="pantry-grid">${list.map((x,i)=>`<div class="pantry-card"><b>${safeText(x.name)}</b><div class="pantry-brand">${safeText(x.brand)}</div><div class="pantry-macro">${x.amount} · ${x.kcal} kcal · P ${x.prot}g · C ${x.carb}g · G ${x.fat}g</div><div class="muted" style="font-size:12px;min-height:34px">${safeText(x.tip)}</div><div class="pantry-actions"><button class="btn primary" onclick="eatMauiPantry(${MAUI_AMERICAN_PANTRY.indexOf(x)})">Comí esto</button><button class="btn" onclick="ownMauiPantry(${MAUI_AMERICAN_PANTRY.indexOf(x)})">Lo tengo</button></div></div>`).join('')}</div>`;
@@ -25115,7 +25119,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='1.143';
+    window.HM_APP_VERSION='1.144';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

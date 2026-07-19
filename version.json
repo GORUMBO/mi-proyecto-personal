@@ -1,8 +1,18 @@
 {
-  "latest": "1.143",
+  "latest": "1.144",
   "date": "2026-07-18",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.144",
+      "date": "2026-07-18",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Cambiar de seccion mas fluido: la app deja de re-dibujar listas grandes (verduras, horno, despensa) cuando no estan a la vista."
+      ],
+      "errores": []
+    },
     {
       "version": "1.143",
       "date": "2026-07-18",
