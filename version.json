@@ -1,8 +1,18 @@
 {
-  "latest": "1.140",
+  "latest": "1.141",
   "date": "2026-07-18",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.141",
+      "date": "2026-07-18",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "App mucho mas rapida de abrir: ahora carga al instante desde el telefono y se actualiza en segundo plano (antes bajaba todo de internet en cada apertura). Las fotos de ejercicios siguen funcionando sin internet."
+      ],
+      "errores": []
+    },
     {
       "version": "1.140",
       "date": "2026-07-18",

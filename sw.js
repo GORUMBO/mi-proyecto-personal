@@ -1,4 +1,4 @@
-const CACHE='mi-proyecto-v1-140';
+const CACHE='mi-proyecto-v1-141';
 const FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
@@ -11,5 +11,16 @@ self.addEventListener('fetch',e=>{
   // version.json siempre desde la red (para detectar versiones nuevas sin cache).
   if(/version\.json(\?|$)/.test(url))return;
   if(e.request.method!=='GET')return;
-  e.respondWith(fetch(e.request).then(r=>{let copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))));
+  // Stale-while-revalidate: responde AL INSTANTE desde la caché (app rápida) y actualiza en segundo plano.
+  // Antes era network-first: bajaba ~2.5MB en cada carga antes de mostrar nada (lento en el teléfono).
+  // Las versiones nuevas se siguen detectando con version.json (siempre red) + el aviso de "Actualizar".
+  e.respondWith(
+    caches.match(e.request).then(cached=>{
+      const fromNet=fetch(e.request).then(r=>{
+        if(r&&r.status===200){let copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}
+        return r;
+      }).catch(()=>cached||caches.match('./index.html'));
+      return cached||fromNet;
+    })
+  );
 });
