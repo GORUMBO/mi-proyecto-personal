@@ -1,8 +1,20 @@
 {
-  "latest": "1.182",
+  "latest": "1.183",
   "date": "2026-07-23",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.183",
+      "date": "2026-07-23",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Recetas mucho mas rapidas y fluidas (sobre todo en el telefono): cada receta ahora arma su ficha completa solo cuando la tocas, en vez de cargar cientos de fichas de golpe al abrir una categoria. Abrir 'Comidas y cenas' pasa de crear ~133,000 elementos a ~11,000."
+      ],
+      "errores": [
+        "La app se ponia muy lenta al abrir las categorias grandes de recetas"
+      ]
+    },
     {
       "version": "1.182",
       "date": "2026-07-23",
