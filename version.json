@@ -1,8 +1,18 @@
 {
-  "latest": "1.185",
+  "latest": "1.186",
   "date": "2026-07-24",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.186",
+      "date": "2026-07-24",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [],
+      "errores": [
+        "Se arreglo el 'json parse error' que rompia la sincronizacion en el telefono. Cuando el servidor devolvia una respuesta cortada o rara, la app tronaba; ahora reintenta sola y, si no, sigue funcionando sin perder datos (guardados en el telefono y en la nube)."
+      ]
+    },
     {
       "version": "1.185",
       "date": "2026-07-24",
