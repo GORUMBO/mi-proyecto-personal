@@ -1,8 +1,23 @@
 {
-  "latest": "1.183",
+  "latest": "1.184",
   "date": "2026-07-23",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.184",
+      "date": "2026-07-23",
+      "type": "recomendada",
+      "nuevas": [
+        "Nueva guia 'Guardar en el refri sin que se eche a perder' (en Recetas): que verduras aguantan ya picadas y como guardarlas (topper, bolsa, frasco), el truco de la toalla de papel para la lechuga, que va MEJOR fuera del refri, por que separar las frutas que maduran, y como guardar los enlatados ya abiertos.",
+        "Teclado en la computadora (Windows / navegador): usa las flechas para moverte entre los botones de la pantalla y Enter o Espacio para apretarlos. En el celular no cambia nada."
+      ],
+      "cambios": [
+        "Cocina en paralelo: la crema y el queso ya NO dicen 'se cuece en 1 min' (la crema se corta si hierve). Ahora dicen que van al final con fuego bajo o apagado.",
+        "Cocina en paralelo: si la receta lleva sofrito, ahora te dice cuanto aceite echar (1 cda que apenas cubra el fondo).",
+        "Recetas: se quito el recuadro repetido de 'Abre receta / Comi esto / Paso a paso' debajo de Mi cocina (esas acciones ya estan en cada receta)."
+      ],
+      "errores": []
+    },
     {
       "version": "1.183",
       "date": "2026-07-23",
