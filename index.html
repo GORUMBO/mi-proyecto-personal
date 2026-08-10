@@ -9763,7 +9763,7 @@ Responde SOLO con JSON válido, sin markdown, sin backticks:
     let res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})
+      body: JSON.stringify({model:'claude-sonnet-5',max_tokens:1200,messages:[{role:'user',content:prompt}]})
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     let data = await res.json();
@@ -11778,7 +11778,7 @@ async function explicarPasoIA(id, pasoEnc){
     let res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:
+      body: JSON.stringify({model:'claude-sonnet-5',max_tokens:300,messages:[{role:'user',content:
 `Explícale este paso de cocina a alguien que NUNCA ha cocinado. Paso: "${paso}"
 
 Contesta en español, corto, en 3 líneas exactas y sin markdown:
@@ -15077,7 +15077,7 @@ Si la respuesta honesta es "ya no está interesada, déjala ir", pon mensajes: [
   let res = await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:contenido}]})
+    body: JSON.stringify({model:'claude-sonnet-5',max_tokens:1500,messages:[{role:'user',content:contenido}]})
   });
   if(!res.ok) throw new Error('HTTP '+res.status);
   let data = await res.json();
@@ -15238,7 +15238,7 @@ Responde SOLO JSON, sin markdown:
     let res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})
+      body: JSON.stringify({model:'claude-sonnet-5',max_tokens:600,messages:[{role:'user',content:prompt}]})
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     let data = await res.json();
@@ -15623,7 +15623,7 @@ Responde SOLO con JSON válido, sin markdown:
     let res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})
+      body: JSON.stringify({model:'claude-sonnet-5',max_tokens:600,messages:[{role:'user',content:prompt}]})
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     let data = await res.json();
@@ -21196,7 +21196,7 @@ REGLAS PARA SONAR 100% REAL (esto es lo más importante):
 - Tono adulto pero SIN contenido sexual explícito. Ambos son mayores de 18.
 ${mode==='soltar'?'IMPORTANTE HOY: estás distante a propósito (ocupada, poco disponible, cortante). Da respuestas muy cortas y frías; si él insiste o ruega, aléjate todavía más.':''}
 Formato: primero SOLO tu mensaje como ${p.name} (sin comillas, sin narrar acciones). Luego, en una línea aparte y SOLO para el entrenador (no es parte del chat), agrega: [Tip: consejo corto]. Si el chico rogó o persiguió, el tip debe decirle claro que pare y dé tiempo.`;
-    let res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,system:sys,messages:convo})});
+    let res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-5',max_tokens:200,system:sys,messages:convo})});
     if(!res.ok){throw new Error('HTTP '+res.status);}
     let data=await res.json();
     let full=(data.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('\n').trim();
@@ -25081,7 +25081,7 @@ async function estimateBodyFatWithAI(){
   try{
     let b64=await fileToBase64(file);
     let mediaType=file.type||'image/jpeg';
-    let res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mediaType,data:b64}},{type:'text',text:'Eres un entrenador. Da SOLO una estimación aproximada del porcentaje de grasa corporal de la persona en la foto, como un rango (ej. "15-18%"), y una frase corta de qué observas (definición muscular, abdomen). Aclara en una línea que es una estimación visual imprecisa y que el método de cinta o una báscula de bioimpedancia son más confiables. Responde en español, breve, sin markdown.'}]}]})});
+    let res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-5',max_tokens:400,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mediaType,data:b64}},{type:'text',text:'Eres un entrenador. Da SOLO una estimación aproximada del porcentaje de grasa corporal de la persona en la foto, como un rango (ej. "15-18%"), y una frase corta de qué observas (definición muscular, abdomen). Aclara en una línea que es una estimación visual imprecisa y que el método de cinta o una báscula de bioimpedancia son más confiables. Responde en español, breve, sin markdown.'}]}]})});
     if(!res.ok){let t=await res.text();throw new Error('HTTP '+res.status+' '+t.slice(0,120));}
     let data=await res.json();
     let txt=(data.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('\n')||'Sin respuesta.';
@@ -27493,7 +27493,6 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='1.186';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
