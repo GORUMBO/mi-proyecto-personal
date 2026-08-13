@@ -25027,19 +25027,19 @@ function weeklyRoutine(){
   let days=+$('#days').value,e=$('#equip').value,level=$('#legs').value,prio=$('#prio').value,fatigue=($('#workFatigue')||{}).value||'pesado',mins=($('#mins_ex')||{}).value||'20 min';
   let isGym=e.includes('Gimnasio'),isCasa=e.includes('Casa'),fresh=fatigue==='fresco',heavy=fatigue==='pesado',shortSession=mins.includes('20')||heavy;
   const EX={
-    'Press inclinado':{muscle:'Pecho',sets:3,reps:'8-12',rest:90,gym:'Press mancuernas inclinado',alts:['Press máquina pecho','Press banca inclinado','Push up inclinado','Press mancuernas plano']},
-    'Press plano':{muscle:'Pecho',sets:3,reps:'8-12',rest:90,gym:'Press banca plana',alts:['Press mancuernas plano','Press máquina pecho','Push up normal','Fondos asistidos']},
-    'Remo':{muscle:'Espalda',sets:3,reps:'10-12',rest:90,gym:'Remo en máquina',alts:['Remo con mancuerna 1 brazo','Remo en cable sentado','Remo con barra','Remo con mochila en casa']},
-    'Jalón':{muscle:'Espalda',sets:3,reps:'10-12',rest:90,gym:'Jalón al pecho',alts:['Remo en máquina','Jalón agarre neutro','Pullover en cable','Remo con mancuerna']},
-    'Elevaciones lat':{muscle:'Hombro',sets:2,reps:'12-15',rest:60,gym:'Elevaciones laterales',alts:['Cable lateral','Máquina lateral','Elevación con mancuernas','Elevación con botellas']},
-    'Press militar':{muscle:'Hombro',sets:2,reps:'8-10',rest:90,gym:'Press hombro máquina',alts:['Press militar mancuernas','Press Arnold ligero','Pike push up','Landmine press']},
-    'Curl bíceps':{muscle:'Bíceps',sets:2,reps:'10-15',rest:60,gym:'Curl barra/cable',alts:['Curl mancuerna alternado','Curl martillo','Curl predicador máquina','Curl con banda']},
-    'Tríceps':{muscle:'Tríceps',sets:2,reps:'10-15',rest:60,gym:'Tríceps cuerda',alts:['Extensión cable barra','Fondos en silla','Extensión mancuerna arriba','Press cerrado máquina']},
-    'Face pull':{muscle:'Hombro posterior',sets:2,reps:'12-15',rest:60,gym:'Face pull cable',alts:['Reverse fly máquina','Pájaros con mancuernas','Remo alto ligero','Band pull apart']},
-    'Plancha':{muscle:'Core',sets:2,reps:'30-45s',rest:45,gym:'Plancha en suelo',alts:['Dead bug','Pallof press','Plancha lateral','Crunch suave']},
-    'Hip thrust':{muscle:'Glúteo suave',sets:2,reps:'12-15',rest:75,gym:'Hip thrust en banco',alts:['Puente de glúteo','Máquina glúteo','Patada cable','Hip thrust mancuerna']},
-    'Pierna suave':{muscle:'Pierna ligera',sets:2,reps:'12-15',rest:75,gym:'Prensa ligera',alts:['Step up bajo','Sentadilla goblet ligera','Extensión cuádriceps ligera','Puente glúteo']},
-    'Movilidad':{muscle:'Recuperación',sets:2,reps:'45-60s',rest:30,gym:'Movilidad de cadera y espalda',alts:['Estirar pantorrilla','Estirar cadera','Respiración 90/90','Foam rolling suave']}
+    'Press inclinado':{muscle:'Pecho',sets:3,reps:'8-12',rest:90,gym:'Press mancuernas inclinado',alts:['Press máquina pecho','Press banca inclinado','Push up inclinado','Press mancuernas plano','Press Smith inclinado','Aperturas inclinadas','Fondos entre bancos','Press con banda inclinado','Press de pecho unilateral','Press inclinado con pausa']},
+    'Press plano':{muscle:'Pecho',sets:3,reps:'8-12',rest:90,gym:'Press banca plana',alts:['Press mancuernas plano','Press máquina pecho','Push up normal','Fondos asistidos','Press Smith plano','Aperturas planas','Press de pecho unilateral','Lagartijas con banda','Press con pausa abajo','Cruce de poleas bajo']},
+    'Remo':{muscle:'Espalda',sets:3,reps:'10-12',rest:90,gym:'Remo en máquina',alts:['Remo con mancuerna 1 brazo','Remo en cable sentado','Remo con barra','Remo con mochila en casa','Remo Pendlay','Remo invertido bajo mesa','Jalón al pecho agarre neutro','Remo en polea baja','Remo con banda sentado','Remo con pausa arriba']},
+    'Jalón':{muscle:'Espalda',sets:3,reps:'10-12',rest:90,gym:'Jalón al pecho',alts:['Remo en máquina','Jalón agarre neutro','Pullover en cable','Remo con mancuerna','Dominadas asistidas','Jalón agarre cerrado','Jalón a una mano','Pullover con mancuerna','Jalón con banda','Remo alto en polea']},
+    'Elevaciones lat':{muscle:'Hombro',sets:2,reps:'12-15',rest:60,gym:'Elevaciones laterales',alts:['Cable lateral','Máquina lateral','Elevación con mancuernas','Elevación con botellas','Elevación con banda','Elevación unilateral inclinada','Elevación sentado','Lu raise','Elevación con pausa arriba','Y press']},
+    'Press militar':{muscle:'Hombro',sets:2,reps:'8-10',rest:90,gym:'Press hombro máquina',alts:['Press militar mancuernas','Press Arnold ligero','Pike push up','Landmine press','Press militar sentado con barra','Press de hombro con banda','Press con kettlebell','Push press ligero','Press unilateral','Press con pausa abajo']},
+    'Curl bíceps':{muscle:'Bíceps',sets:2,reps:'10-15',rest:60,gym:'Curl barra/cable',alts:['Curl mancuerna alternado','Curl martillo','Curl predicador máquina','Curl con banda','Curl concentrado','Curl en polea baja','Curl araña','Curl Zottman','Curl isométrico con toalla','Curl inclinado con mancuernas']},
+    'Tríceps':{muscle:'Tríceps',sets:2,reps:'10-15',rest:60,gym:'Tríceps cuerda',alts:['Extensión cable barra','Fondos en silla','Extensión mancuerna arriba','Press cerrado máquina','Fondos en paralelas','Patada de tríceps','Extensión con banda','Press cerrado con mancuernas','Skull crusher con mancuernas','Tríceps diamante']},
+    'Face pull':{muscle:'Hombro posterior',sets:2,reps:'12-15',rest:60,gym:'Face pull cable',alts:['Reverse fly máquina','Pájaros con mancuernas','Remo alto ligero','Band pull apart','Pájaros inclinado','Reverse fly en polea','Remo con banda alta','Y-T-W en suelo','Pájaros con pausa','Remo alto en máquina']},
+    'Plancha':{muscle:'Core',sets:2,reps:'30-45s',rest:45,gym:'Plancha en suelo',alts:['Dead bug','Pallof press','Plancha lateral','Crunch suave','Rueda abdominal','Bird dog','Plancha con hombro touch','Mountain climbers lentos','V-ups','Crunch invertido']},
+    'Hip thrust':{muscle:'Glúteo suave',sets:2,reps:'12-15',rest:75,gym:'Hip thrust en banco',alts:['Puente de glúteo','Máquina glúteo','Patada cable','Hip thrust mancuerna','Puente a una pierna','Step up alto','Sentadilla sumo con mancuerna','Patada con banda','Abducción en máquina','Hip thrust con pausa arriba']},
+    'Pierna suave':{muscle:'Pierna ligera',sets:2,reps:'12-15',rest:75,gym:'Prensa ligera',alts:['Step up bajo','Sentadilla goblet ligera','Extensión cuádriceps ligera','Puente glúteo','Zancadas caminando','Curl femoral sentado','Sentadilla búlgara asistida','Curl nórdico asistido','Pantorrilla de pie','Peso muerto rumano ligero']},
+    'Movilidad':{muscle:'Recuperación',sets:2,reps:'45-60s',rest:30,gym:'Movilidad de cadera y espalda',alts:['Estirar pantorrilla','Estirar cadera','Respiración 90/90','Foam rolling suave','Gato-vaca','Rotación torácica','Estiramiento de isquios','Movilidad de tobillo','Colgar de la barra','Estirar cuádriceps']}
   };
   function chosen(ex){return isGym?ex.gym:isCasa?ex.alts[ex.alts.length-1]:ex.alts.find(x=>/mancuerna|mancuernas/.test(x))||ex.gym}
   function exCard(key){
@@ -25224,7 +25224,11 @@ function quickFitnessToday(){
   </div>`;})()}
   <div class="fit-list-compact">${plan.map((x,i)=>{
     let done=!!pack.checked[i];
-    let alts=(x.alts||[]).slice(0,4).map(a=>`<button class="btn" onclick="replaceFitnessExercise(${i},'${String(a).replace(/'/g,"\\'")}');quickFitnessToday()">${safeText(a)}</button>`).join('');
+    var _altP=((window._altPage||{})[i]||0);
+    var _allAlts=(x.alts||[]).filter(a=>!(state.fitDislikes&&state.fitDislikes.indexOf(a)>=0));
+    // NO destructivo: slice desde índice de página, lista original intacta
+    var _pageSlice=_allAlts.slice(_altP*5,_altP*5+5);
+    let alts=_pageSlice.map(a=>`<button class="btn" onclick="replaceFitnessExercise(${i},'${String(a).replace(/'/g,"\\'")}');quickFitnessToday()">${safeText(a)}</button>`).join('');
     return `<div class="fit-row-compact ${done?'done':''}">
       <div class="fit-row-main" onclick="toggleSimpleFitDone(${i})">
         <div class="fit-check-small">${done?'✓':''}</div>
@@ -25291,10 +25295,12 @@ function quickFitnessToday(){
             var seriesResumen=sesionAnterior.map(function(r){
               return (r.weight?r.weight+' '+U.pesoUnidad()+' × ':'')+safeText(r.reps||'—');
             }).join(' · ');
-            var sug=suggestTargetWeight(x.name,x.muscle,x.reps);
+            var sug=sugerenciaSesion(x.name,x.reps,x.sets);
             lastHTML='<div style="margin-top:4px;font-size:11px;color:var(--m)">🕘 Última vez · <b>'+fechaBonitaUlt+'</b></div>'
               +'<div style="font-size:11px;margin-top:1px">'+seriesResumen+'</div>';
-            if(sug&&sug.text)lastHTML+='<div style="font-size:11px;color:'+(sug.target>=(firstEntry.weight||0)?'#15704f':'#b8860b')+';margin-top:1px">'+(sug.target>(firstEntry.weight||0)?'↑ ':(sug.target<(firstEntry.weight||0)?'↓ ':'= '))+safeText(sug.text)+'</div>';
+            if(sug)lastHTML+='<div style="font-size:11px;color:#b8860b;margin-top:3px;background:#fff8f0;border-radius:6px;padding:4px 8px">🎯 <b>Hoy:</b> '+safeText(sug.text)+'</div>';
+          } else {
+            lastHTML='<div style="margin-top:4px;font-size:11px;color:var(--m);background:#f0f8ff;border-radius:6px;padding:4px 8px">🆕 <b>Primera vez</b> — registra esta sesión para crear tu referencia.</div>';
           }
         }
         var regHTML=lastHTML;
@@ -25342,7 +25348,14 @@ function quickFitnessToday(){
       </details>
       `}
       <div id="rlogOut_${i}"></div>
-      <details style="margin-top:6px"><summary style="font-size:13px">Cambiar si está ocupado</summary><div class="row" style="margin-top:8px">${alts||'<span class="muted">Sin alternativas.</span>'}</div></details>
+      <details style="margin-top:6px"><summary style="font-size:13px">Cambiar si está ocupado</summary>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" style="font-size:12px;padding:6px 10px" onclick="swapToFirstAlt(${i})">🚫 Está ocupado</button>
+          <button class="btn" style="font-size:12px;padding:6px 10px" onclick="dislikeExercise('${String(x.name).replace(/'/g,"\\'")}')">👎 No me gusta</button>
+        </div>
+        <div class="row" style="margin-top:8px;flex-wrap:wrap" id="altsRow_${i}">${alts||'<span class="muted">Sin alternativas.</span>'}</div>
+        ${(x.alts&&x.alts.filter(a=>!(state.fitDislikes&&state.fitDislikes.indexOf(a)>=0)).length>5)?`<div class="row" style="margin-top:6px;align-items:center;gap:6px"><button class="btn" style="font-size:12px;padding:6px 10px" onclick="altPagePrev(${i})">← Anteriores</button><span class="muted" style="font-size:11px;font-weight:800" id="altPageLbl_${i}">Página 1</span><button class="btn" style="font-size:12px;padding:6px 10px" onclick="altPageNext(${i})">Siguientes →</button></div>`:''}
+      </details>
     </div>`;
   }).join('')}</div>`;
   setTimeout(()=>out.scrollIntoView({behavior:'smooth',block:'nearest'}),30);
@@ -25636,25 +25649,56 @@ function fallbackCopy(txt,cb){try{let ta=document.createElement('textarea');ta.v
 // ---- v41.44: CICLO CONECTADO — rotación de días + progresión de peso ----
 function restSeconds(str){let m=String(str).match(/\d+/g);if(!m)return 75;if(m.length>=2)return Math.round((+m[0]+ +m[1])/2);return +m[0];}
 function parseRepRange(reps){let m=String(reps).match(/\d+/g)||[];return {min:+m[0]||8,max:+m[1]|| +m[0]||12};}
-function suggestTargetWeight(name,muscle,reps){
-  let hist=workoutHistoryForExercise(name).filter(x=>+x.weight>0);
-  if(!hist.length)return {target:null,text:'Primera vez: usa un peso que puedas hacer todas las reps dejando 1-2 en reserva.',last:null};
-  let last=hist[0],W=+last.weight||0,feel=String(last.note||last.feel||'').toLowerCase();
-  let repsAchieved=Math.max(...(String(last.reps).match(/\d+/g)||['0']).map(Number));
-  let range=parseRepRange(reps);
-  let inc=(muscle==='pierna'||muscle==='espalda')?10:5;
-  let target,text;
-  if(feel.includes('dolor')){target=Math.max(0,W-inc);text='La última vez hubo molestia → baja a '+target+' lb y cuida la técnica.';}
-  else if(feel.includes('fácil')||feel.includes('facil')||repsAchieved>=range.max){target=W+inc;text='La última vez '+((feel.includes('fácil')||feel.includes('facil'))?'se sintió fácil':'llegaste al tope de reps')+' → sube a '+target+' lb.';}
-  else if(feel.includes('pesado')){target=W;text='La última vez pesó → repite '+W+' lb hasta que salga limpio.';}
-  else {target=W;text='Repite '+W+' lb y busca 1 repetición más que la última vez.';}
-  return {target,text,last:{weight:W,reps:last.reps}};
+// 🎯 Sugerencia de hoy: analiza la SESIÓN anterior completa del ejercicio
+function sugerenciaSesion(name,reps,goalSets){
+  var hoy=todayLocal();
+  var logs=(state.workoutLog||[]).filter(function(r){
+    var v=(r.reps||'');var repsValida=v!=='—'&&v!=='no registradas'&&v!==''&&!/^\d+[-–]\d+$/.test(v);
+    return String(r.exercise||'').toLowerCase().trim()===String(name||'').toLowerCase().trim() && +r.weight>0 && repsValida && (r.localDate||r.date||'')!==hoy;
+  });
+  if(!logs.length)return {esPrimera:true,text:'Primera vez: registra esta sesión para crear tu referencia.'};
+  // Agrupar por sesión
+  var sesiones={};
+  logs.forEach(function(r){var k=r.sessionId||('legacy_'+r.id);if(!sesiones[k])sesiones[k]=[];sesiones[k].push(r);});
+  var keys=Object.keys(sesiones).sort(function(a,b){
+    return (sesiones[b][0].localDate||sesiones[b][0].date||'').localeCompare(sesiones[a][0].localDate||sesiones[a][0].date||'');
+  });
+  var ultima=sesiones[keys[0]];
+  if(!ultima||!ultima.length)return {esPrimera:true,text:'Primera vez: registra esta sesión para crear tu referencia.'};
+  var W=+ultima[0].weight||0;
+  var range=parseRepRange(reps);
+  var inc=(/pierna|espalda/i.test(ultima[0].note||'')||/pierna|espalda/i.test(ultima[0].exercise||''))?10:5;
+  // Series NORMALES: solo las primeras goalSets (extras NO alteran el objetivo)
+  var normales=ultima.slice(0,goalSets||ultima.length);
+  var repsSerie=normales.map(function(r){var m=String(r.reps).match(/\d+/g);return m?+m[0]:0;}).filter(function(n){return n>0;});
+  if(!repsSerie.length)return {esPrimera:false,target:W,text:'Mantén '+W+' lb y registra repeticiones reales.'};
+  var todasAlMax=repsSerie.every(function(n){return n>=range.max;});
+  var algunasBajoMin=repsSerie.some(function(n){return n<range.min;});
+  var promedio=Math.round(repsSerie.reduce(function(a,b){return a+b;},0)/repsSerie.length);
+  if(todasAlMax){
+    // Completaste todas las series al tope del rango → subir peso
+    var nuevo=W+inc;
+    return {esPrimera:false,target:nuevo,text:'La última vez: '+repsSerie.join(' / ')+' reps (tope). Sube a '+nuevo+' '+U.pesoUnidad()+' · objetivo '+range.min+'-'+(range.max-2)+' reps.'};
+  }
+  if(algunasBajoMin){
+    // No alcanzaste el mínimo → mantener o bajar ligeramente
+    var bajada=Math.max(0,W-inc);
+    return {esPrimera:false,target:W,text:'La última vez: '+repsSerie.join(' / ')+' reps (bajo '+range.min+'). Mantén '+W+' '+U.pesoUnidad()+' y prioriza técnica.'+(bajada<W?' Si duele, baja a '+bajada+' '+U.pesoUnidad()+'.':'')};
+  }
+  // Dentro del rango → mantener peso e intentar superar
+  return {esPrimera:false,target:W,text:'La última vez: '+repsSerie.join(' / ')+' reps. Mantén '+W+' '+U.pesoUnidad()+' e intenta '+repsSerie.map(function(n){return Math.min(range.max,n+1);}).join(' / ')+' reps.'};
+}
+function suggestTargetWeight(name,muscle,reps,goalSets){
+  // Delegar en sugerenciaSesion: analiza series individualmente, NUNCA suma pesos
+  var s=sugerenciaSesion(name,reps,goalSets||3);
+  if(s.esPrimera)return {target:null,text:s.text,last:null};
+  return {target:s.target,text:s.text,last:null};
 }
 function routineDayPlan(di){
   let r=state.customRoutine;if(!r||!r.days[di])return [];
   let equipKey=r.cfg.equip==='casa'?'casa':r.cfg.equip==='mancuernas'?'mancuernas':'gym';
   return r.days[di].exercises.map(x=>{
-    let sug=suggestTargetWeight(x.name,x.muscle,x.reps);
+    let sug=suggestTargetWeight(x.name,x.muscle,x.reps,+String(x.sets).match(/\d+/)?.[0]||3);
     let alts=(routineDB[x.muscle]||[]).map(e=>e[equipKey]).filter(n=>n&&n!==x.name);
     return {name:x.name,muscle:x.muscle,sets:+String(x.sets).match(/\d+/)?.[0]||3,reps:x.reps,rest:restSeconds(x.rest),alts:alts,target:sug.target,progressText:sug.text,lastWeight:sug.last?sug.last.weight:null,note:'De tu rutina · Día '+(di+1)};
   });
@@ -26229,10 +26273,62 @@ function toggleFitExDone(i){
   save();
   renderFitnessCoach();
 }
+// 🚫 Está ocupado: cambia al primer alternativo no descartado de ESTA sesión
+function swapToFirstAlt(i){
+  var pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan[i])return;
+  var x=pack.plan[i];
+  var pool=(x.alts||[]).filter(function(a){return !(state.fitDislikes&&state.fitDislikes.indexOf(a)>=0);});
+  if(!pool.length){ alert('Sin alternativas disponibles. Prueba "No me gusta" en otras.'); return; }
+  replaceFitnessExercise(i,pool[0]);
+  quickFitnessToday();
+}
+// 👎 No me gusta: baja prioridad en el futuro (no elimina)
+function dislikeExercise(name){
+  if(!state.fitDislikes)state.fitDislikes=[];
+  if(state.fitDislikes.indexOf(name)<0)state.fitDislikes.push(name);
+  save(true);
+  quickFitnessToday();
+}
+// 🔄 Paginación real de alternativas: ← Anteriores / Siguientes → (NO destructiva)
+window._altPage=window._altPage||{};
+function altPool(i){
+  var pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan[i])return [];
+  var x=pack.plan[i];
+  var dislikes=state.fitDislikes||[];
+  return (x.alts||[]).filter(function(a){return dislikes.indexOf(a)<0;});
+}
+function altTotalPaginas(i){return Math.max(1,Math.ceil(altPool(i).length/5));}
+function altRenderPage(i){
+  var pool=altPool(i);
+  var total=altTotalPaginas(i);
+  var page=Math.min((window._altPage[i]||0),total-1);
+  var slice=pool.slice(page*5,page*5+5);
+  var row=document.getElementById('altsRow_'+i);
+  if(row){
+    row.innerHTML=slice.map(function(a){return '<button class="btn" onclick="replaceFitnessExercise('+i+',\''+String(a).replace(/'/g,"\\\\'")+'\');quickFitnessToday()">'+safeText(a)+'</button>';}).join('')||'<span class="muted">Sin alternativas.</span>';
+  }
+  var lbl=document.getElementById('altPageLbl_'+i);
+  if(lbl){
+    lbl.textContent=(page===total-1)?'Página '+(page+1)+'/'+total+' · Últimas alternativas':'Página '+(page+1)+'/'+total;
+  }
+  return {page:page,total:total,slice:slice};
+}
+function altPageNext(i){
+  var total=altTotalPaginas(i);
+  var page=Math.min((window._altPage[i]||0),total-1);
+  if(page<total-1)window._altPage[i]=page+1;
+  altRenderPage(i);
+}
+function altPagePrev(i){
+  var page=Math.max(0,(window._altPage[i]||0)-1);
+  window._altPage[i]=page;
+  altRenderPage(i);
+}
 function replaceFitnessExercise(index,name){
   if(!state.fitnessToday?.plan?.[index])return;
   state.fitnessToday.plan[index].name=name;
   state.fitnessToday.plan[index].note='Cambiado porque el equipo estaba ocupado.';
+  window._altPage=window._altPage||{}; window._altPage[index]=0; // resetear paginación al cambiar
   save();
   keepScroll(function(){renderFitnessCoach();renderGuidedWorkout();});
 }
