@@ -519,6 +519,7 @@ const safeStorage={
 let state={};
 const _storedStateRaw=safeStorage.get('pp_full')||'';
 try{state=JSON.parse(_storedStateRaw||'{}')||{}}catch(e){state={}}
+console.log('[LOAD] state cargado de localStorage · workoutLog: '+(state.workoutLog||[]).length+' · lastModified: '+(state.lastModified||'—'));
 state.profile=state.profile||{peso:150,altura:170,edad:30,sexo:'hombre',actividad:'muy alta',objetivo:'ganar músculo'};state.meals=state.meals||[];state.weight=state.weight||[];state.walks=state.walks||[];state.expenses=state.expenses||[];state.expenseTemplates=state.expenseTemplates||[];state.expenseSettings=state.expenseSettings||{monthlyIncome:0,foodLimit:700,gasLimit:450,funLimit:150,cashLimit:120};state.receiptTextHistory=state.receiptTextHistory||[];state.budget=Array.isArray(state.budget)?state.budget:[];state.routines=state.routines||[];state.prices=state.prices||[];state.myProducts=state.myProducts||[];state.vehicles=state.vehicles||[];state.tasks=state.tasks||[];state.clothes=state.clothes||[];
 state.dating=state.dating||{profile:{name:'Ruben',goal:'conocer',style:'natural',language:'es'},history:[],plans:[]};
 state.dating.profile=state.dating.profile||{name:'Ruben',goal:'conocer',style:'natural',language:'es'};
@@ -616,6 +617,7 @@ function _doSave(){
     let json=JSON.stringify(state);
     // localStorage puede fallar por falta de espacio (~5MB). Guardamos el resultado real para avisar honestamente.
     let okLocal=safeStorage.set('pp_full',json);
+    console.log('[SAVE] localStorage write: '+(okLocal?'OK':'FAIL')+' · workoutLog entries: '+(state.workoutLog||[]).length+' · lastModified: '+state.lastModified);
     // IndexedDB tiene mucho más espacio: es la red de seguridad aunque localStorage esté lleno.
     persistStateIDB(json);
     // show toast
@@ -9099,7 +9101,7 @@ function homeSmart(action){
     let spentWeek=(state.expenses||[]).filter(x=>String(x.d||x.date||'')>=new Date(Date.now()-7*86400000).toISOString().slice(0,10)).reduce((a,x)=>a+(+x.total||0),0);
     let leftWeek=Math.max(0,weeklyBudget-spentWeek);
     let html=`<div class="progress-mini-grid">
-      <div class="progress-mini-card"><b>${Math.round(dm.food.k)}/${dm.kcalGoal}</b><span>Calorías · ${kcalPct}%</span></div>
+      <div class="progress-mini-card"><b>${Math.round(dm.food.k)}/${dm.kcalGoal}</b><span>Calorías · ${kcalPct}%${dm.fitLabel?' · '+safeText(dm.fitLabel):''}</span></div>
       <div class="progress-mini-card"><b>${Math.round(dm.food.p)}/${dm.proteinGoal}g</b><span>Proteína · ${protPct}%</span></div>
       <div class="progress-mini-card"><b>${dm.workoutsWeek}</b><span>Entrenos esta semana</span></div>
       <div class="progress-mini-card"><b>${Math.round(dm.steps).toLocaleString('en-US')}</b><span>Pasos estimados hoy</span></div>
@@ -16272,13 +16274,24 @@ function secJuegoLigar(){
 
 function _sectionBase(t){let fn=({'🏠 Inicio':secInicio,'👤 Perfil':secPerfil,'🍽️ Recetas':secRecetas,'🥗 Nevera':secNevera,'💪 Ejercicio':secEjercicio,'⚖️ Peso':secPeso,'🚶 Caminata':secCaminata,'🍱 Contador':secContador,'💳 Gastos':secGastos,'💰 Presupuesto':secPresupuesto,'🛒 Precios':secPrecios,'🚗 Vehículos':secVehiculos,'🏡 Casa':secCasa,'🌺 Ahorro':secAhorro,'👕 Ropa':secRopa,'🧴 Piel':secPiel,'❤️ Ligar':secLigar,'📊 Base datos':secBase,'🧭 Centro':secCentro,'🧤 Trabajo':secWorkMode,'🤖 Thermomix TM5':secThermomixTM5,'🎯 Metas':secMetas,'🧽 Limpieza':secLimpieza,'🥣 Salsas':secBases,'🌎 Región':secRegion,'💸 Remesas':secRemesas,'🗣️ Inglés':secIngles,'🔧 Aparatos':secHerramientas,'💪 Proteína':secProteina})[t];return wrapAreaSection(t,fn?fn():'')}
 function todayISO(){return new Date().toISOString().slice(0,10)}
+function todayLocal(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getTodayDiaryTotals(){
   let today=todayISO(),d=state.diary&&state.diary[today],items=d?[...(d.breakfast||[]),...(d.lunch||[]),...(d.dinner||[]),...(d.snacks||[])]:[];
   return items.reduce((a,x)=>(a.k+=+x.kcal||0,a.p+=+x.prot||0,a.c+=+x.carb||0,a.f+=+x.fat||0,a),{k:0,p:0,c:0,f:0,count:items.length});
 }
 function getDailyMode(){
   let today=todayISO(),weight=state.weight.length?+state.weight[state.weight.length-1].w:+state.profile.peso||150;
-  let kcalGoal=state.profile.calorias||Math.round(weight*.4536*38+400),proteinGoal=state.profile.proteina||Math.round(weight*.4536*1.9);
+  let baseKcal=state.profile.calorias||Math.round(weight*.4536*38+400),baseProt=state.profile.proteina||Math.round(weight*.4536*1.9);
+  // Ajuste por intensidad de fitness: más fuerte = necesitas más calorías para crecer músculo
+  let fitAdj=1.0, fitLabel='';
+  var ef=state.fitEffort||'auto';
+  var pack=state.fitnessToday&&state.fitnessToday.date===todayISO()?state.fitnessToday:null;
+  var hasRoutine=pack&&pack.plan&&pack.plan.length>0;
+  if(ef==='extremo'||(ef==='auto'&&hasRoutine&&pack.ctx&&pack.ctx.hard===false)){fitAdj=1.15;fitLabel='💥 +15% día fuerte';}
+  else if(ef==='fuerte'){fitAdj=1.10;fitLabel='🔴 +10% crecer músculo';}
+  else if(ef==='normal'){fitAdj=1.05;fitLabel='🟡 +5% día normal';}
+  else if(ef==='suave'||ef==='auto'){fitAdj=1.0;fitLabel='';}
+  var kcalGoal=Math.round(baseKcal*fitAdj),proteinGoal=Math.round(baseProt*fitAdj);
   let food=getTodayDiaryTotals(),walkToday=(state.walks||[]).find(x=>x.d===today),lastWalk=(state.walks||[]).slice(-1)[0]||{};
   let steps=+(walkToday||lastWalk).steps||22000,well=(state.wellnessLog||[])[0]||{},spentToday=(state.expenses||[]).filter(x=>String(x.d||x.date||'').startsWith(today)).reduce((a,x)=>a+(+x.total||0),0);
   let workoutsWeek=(state.workoutLog||[]).filter(x=>String(x.date||'')>=new Date(Date.now()-7*86400000).toISOString().slice(0,10)).length;
@@ -16286,7 +16299,7 @@ function getDailyMode(){
   let train=hardDay?'Rutina corta: 3-4 ejercicios, 20-25 min, sin pierna pesada.':workoutsWeek>=3?'Recuperación o bombeo ligero; ya entrenaste bastante esta semana.':'Upper body: pecho, espalda, hombro y brazos, máximo 4-5 ejercicios.';
   let meal=missingKcal>900?'Licuado alto en calorías + comida con arroz/frijol/pollo.':missingProtein>45?'Prioriza proteína: pollo, atún, huevos, yogurt griego o carne.':'Vas bien; solo completa con snack fácil si te falta energía.';
   let water=steps>=22000?'Agua + electrolitos: prepara botella grande antes de salir y otra para media tarde.':'Agua normal: revisa color de orina y calor de Maui.';
-  return {weight,kcalGoal,proteinGoal,food,steps,spentToday,workoutsWeek,missingKcal,missingProtein,train,meal,water,hardDay};
+  return {weight,baseKcal,baseProt,kcalGoal,proteinGoal,food,steps,spentToday,workoutsWeek,missingKcal,missingProtein,train,meal,water,hardDay,fitAdj,fitLabel};
 }
 function getWeeklyVerdict(dm){
   let wData=(state.weight||[]).filter(x=>x.w).slice(-4);
@@ -16485,7 +16498,7 @@ function secInicio(){
       <div style="margin-top:8px"><button class="btn primary" onclick="openTab('${next.tab}')">${safeText(next.button)}</button></div>
     </div>
     <div class="home-progress-grid">
-      <div><b>Calorías</b><div class="home-bar"><span style="width:${foodPct}%;max-width:100%"></span></div><span class="muted">${Math.round(dm.food.k)} / ${dm.kcalGoal} kcal · faltan ${kcal(dm.missingKcal)}</span>${(state.profile && /sub|ganar|peso|músculo|musculo/i.test((state.profile.objetivo||'')) && dm.missingKcal>0) ? '<div style="background:#fff8f0;border-radius:8px;padding:4px 8px;font-size:12px;color:#b8860b;margin-top:4px;font-weight:700">🔥 Para subir de peso te faltan '+kcal(dm.missingKcal)+'. Métete un licuado o un puño de nueces.</div>' : ''}${(dm.food.k>=dm.kcalGoal) ? '<div style="background:#eafaf0;border-radius:8px;padding:4px 8px;font-size:12px;color:#1e8449;margin-top:4px;font-weight:700">✅ ¡Llegaste a tu meta de hoy!</div>' : ''}</div>
+      <div><b>Calorías</b><div class="home-bar"><span style="width:${foodPct}%;max-width:100%"></span></div><span class="muted">${Math.round(dm.food.k)} / ${dm.kcalGoal} kcal · faltan ${kcal(dm.missingKcal)}${dm.fitLabel?'<br>'+safeText(dm.fitLabel)+' (base: '+dm.baseKcal+')':''}</span>${(state.profile && /sub|ganar|peso|músculo|musculo/i.test((state.profile.objetivo||'')) && dm.missingKcal>0) ? '<div style="background:#fff8f0;border-radius:8px;padding:4px 8px;font-size:12px;color:#b8860b;margin-top:4px;font-weight:700">🔥 Para subir de peso te faltan '+kcal(dm.missingKcal)+'. Métete un licuado o un puño de nueces.</div>' : ''}${(dm.food.k>=dm.kcalGoal) ? '<div style="background:#eafaf0;border-radius:8px;padding:4px 8px;font-size:12px;color:#1e8449;margin-top:4px;font-weight:700">✅ ¡Llegaste a tu meta de hoy!</div>' : ''}</div>
       <div><b>Proteína</b><div class="home-bar"><span style="width:${proteinPct}%;max-width:100%;background:#1a9660"></span></div><span class="muted">${Math.round(dm.food.p)} / ${dm.proteinGoal}g · faltan ${Math.round(dm.missingProtein)}g</span></div>
     </div>
   </div>`;
@@ -19169,7 +19182,7 @@ function secEjercicio(){
       <div class="fit-clean-chip"><b>${weekCount}</b><span>registros esta semana</span></div>
     </div>
     <div id="routineTodayOut"></div>
-    <div id="simpleFitnessOut" class="fit-clean-result" style="margin-top:12px"><div class="muted">Toca <b>🏋️ Mi rutina de hoy</b> para ver tu rutina, o <b>🛠️ Crear rutina</b> para armarla con tus datos (peso, altura, pasos) y qué tan fuerte quieres hoy.</div></div>
+    <div id="simpleFitnessOut" class="fit-clean-result" style="margin-top:12px"><div class="muted"><b>🏋️ Mi rutina de hoy:</b> te genera los ejercicios del día automáticamente según tu peso, pasos y energía. Si ya armaste tu <b>🛠️ plan semanal</b>, toma el entrenamiento que toca hoy. <b>Los ejercicios cambian cada día</b> para no aburrirte.</div></div>
   </div>
   <details id="savedRoutinesDetails" class="fit-clean-details">
     <summary>📁 Rutinas guardadas</summary>
@@ -19178,36 +19191,24 @@ function secEjercicio(){
       <div id="savedRoutinesOut"></div>
     </div>
   </details>
-  <details id="fitnessRegisterDetails" class="fit-clean-details">
-    <summary>✍️ Registrar un ejercicio extra (fuera de tu rutina)</summary>
-    <div class="fit-clean-details-body">
-      <div class="fit-clean-tip">Solo para anotar un ejercicio que <b>no está</b> en tu rutina de hoy. Los de tu rutina regístralos más rápido con el botón 💾 en cada uno (Mi rutina de hoy).</div>
-      <div class="grid" style="margin-top:10px">
-        <div style="grid-column:1/-1">
-          <label>Tipo de entrenamiento</label>
-          <div class="row" style="gap:6px;flex-wrap:wrap">${Object.keys(exercises).map(g=>`<button type="button" class="btn ex-group-btn" data-g="${g}" onclick="pickExGroup('${g}')">${EX_GROUP_LABELS[g]||g}</button>`).join('')}</div>
-          <div id="exList" class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px"></div>
-          <label style="margin-top:10px">Ejercicio</label>
-          <input id="simpleWorkoutExercise" placeholder="Elige arriba, o escríbelo aquí">
-        </div>
-        <div><label>Peso levantado (${U.pesoUnidad()})</label><input id="simpleWorkoutWeight" type="number" inputmode="decimal" placeholder="${esMetrico()?'Ej. 20':'Ej. 45'}"></div>
-        <div><label>Series</label><input id="simpleWorkoutSets" type="number" inputmode="numeric" placeholder="Ej. 3"></div>
-        <div><label>Reps</label><input id="simpleWorkoutReps" placeholder="Ej. 10,10,8"></div>
-        <div><label>Cómo se sintió</label><select id="simpleWorkoutFeel"><option>Normal</option><option>Fácil</option><option>Pesado</option><option>Dolor / bajar peso</option></select></div>
+  <details id="fitnessRegisterDetails" class="fit-clean-details" style="border:2px solid #9dd5b4;background:#f7fff9">
+    <summary style="font-weight:900;font-size:15px;color:#0d6043;padding:12px 14px">✍️ Registrar ejercicio <span class="muted" style="font-weight:400;font-size:12px">— rápido, sin salir de esta pantalla</span></summary>
+    <div style="padding:6px 12px 12px">
+      <div class="fit-clean-tip" style="margin-bottom:10px">Para anotar un ejercicio <b>fuera de tu rutina</b>. Los de la rutina regístralos directo en cada tarjeta.</div>
+      <div style="margin-bottom:8px">
+        <label style="font-weight:800;font-size:13px;margin-bottom:4px">¿Qué músculo trabajaste?</label>
+        <div class="row" style="gap:5px;flex-wrap:wrap">${Object.keys(exercises).map(g=>`<button type="button" class="btn ex-group-btn" data-g="${g}" onclick="pickExGroup('${g}')" style="font-size:12px;padding:7px 10px">${EX_GROUP_LABELS[g]||g}</button>`).join('')}</div>
+        <div id="exList" class="row" style="gap:5px;flex-wrap:wrap;margin-top:6px"></div>
       </div>
-      <details class="fit-clean-details" style="margin-top:10px">
-        <summary>⚖️ Convertidor lb / kg opcional</summary>
-        <div class="fit-clean-details-body">
-          <div class="grid">
-            <div><label>Libras</label><input id="simpleLb" type="number" min="0" step="0.1" inputmode="decimal" placeholder="Ej. 45" oninput="convertSimpleWeight('lb')"></div>
-            <div><label>Kilos</label><input id="simpleKg" type="number" min="0" step="0.1" inputmode="decimal" placeholder="Ej. 20.4" oninput="convertSimpleWeight('kg')"></div>
-          </div>
-          <div class="row" style="margin-top:8px">${[10,15,20,25,30,35,40,45,50].map(lb=>`<button class="btn" onclick="setSimplePounds(${lb})">${lb}</button>`).join('')}</div>
-          <div id="simpleWeightOut" class="mini" style="margin-top:8px">Escribe libras o kilos.</div>
-        </div>
-      </details>
-      <button class="btn primary" style="width:100%;margin-top:10px;padding:14px;font-size:16px" onclick="saveSimpleWorkout()">Guardar entrenamiento</button>
-      <div id="simpleWorkoutStatus"></div>
+      <div class="grid" style="gap:8px">
+        <div style="grid-column:1/-1"><label>Ejercicio</label><input id="simpleWorkoutExercise" placeholder="Elige arriba o escribe" style="width:100%"></div>
+        <div><label>Peso (${U.pesoUnidad()})</label><input id="simpleWorkoutWeight" type="number" inputmode="decimal" placeholder="${esMetrico()?'Ej. 20':'Ej. 45'}" style="width:100%"></div>
+        <div><label>Series</label><input id="simpleWorkoutSets" type="number" inputmode="numeric" placeholder="3" style="width:100%"></div>
+        <div><label>Reps</label><input id="simpleWorkoutReps" placeholder="10,10,8" style="width:100%"></div>
+        <div><label>Cómo se sintió</label><select id="simpleWorkoutFeel" style="width:100%"><option>Normal</option><option>Fácil</option><option>Pesado</option><option>Dolor / bajar peso</option></select></div>
+      </div>
+      <button class="btn primary" style="width:100%;margin-top:10px;padding:14px;font-size:16px;min-height:50px" onclick="saveSimpleWorkout()">💾 Guardar ejercicio</button>
+      <div id="simpleWorkoutStatus" style="margin-top:8px"></div>
     </div>
   </details>
   <details class="fit-clean-details">
@@ -25194,9 +25195,8 @@ function quickFitnessToday(){
   syncSimpleFitnessInputs();
   if(!state.fitnessToday||state.fitnessToday.date!==todayISO()){
     createFitnessToday();
-  }else{
-    renderFitnessCoach();
   }
+  // NO llamar renderFitnessCoach aquí — duplica IDs con la vista de abajo y logRoutineExercise lee los inputs equivocados.
   let out=document.getElementById('simpleFitnessOut');if(!out)return;
   let pack=state.fitnessToday&&state.fitnessToday.date===todayISO()?state.fitnessToday:null;
   if(!pack){out.innerHTML='';return;}
@@ -25206,7 +25206,7 @@ function quickFitnessToday(){
   let pct=plan.length?Math.round(hechos/plan.length*100):0;
   let mins=pack.adaptedOnlyToday?(pack.adaptation?.minutes+' min'):(pack.ctx?.hard?'20-25 min':'30-40 min');
   let adaptMsg=pack.adaptedOnlyToday?`<div class="warn" style="margin-bottom:10px"><b>Solo por hoy:</b> ${safeText(pack.adaptation?.reason||'adaptado')} · ${safeText(mins)} · ${safeText(pack.adaptation?.intensity||'normal')}<div class="row" style="margin-top:6px"><button class="btn" onclick="restoreNormalFitnessToday()">Volver normal</button></div></div>`:'';
-  let semanaMsg=(pack.fromSemana&&!pack.adaptedOnlyToday)?`<div class="ok" style="margin-bottom:10px;background:#eef6f1;border:1px solid #bfe3cd"><b>🗓️ De tu semana:</b> ${safeText(pack.semanaDayName||pack.ctx?.focus||'tu rutina')}. Esta es tu rutina de hoy tal como la armaste.</div>`:'';
+  let semanaMsg=(pack.fromSemana&&!pack.adaptedOnlyToday)?`<div class="ok" style="margin-bottom:10px;background:#eef6f1;border:1px solid #bfe3cd"><b>🗓️ De tu plan semanal:</b> hoy toca <b>${safeText(pack.semanaDayName||pack.ctx?.focus||'tu rutina')}</b>. Los ejercicios de abajo vienen de la semana que armaste.</div>`:'';
   out.innerHTML=`
   ${adaptMsg}
   ${semanaMsg}
@@ -25244,22 +25244,181 @@ function quickFitnessToday(){
         <a class="btn" target="_blank" rel="noopener" href="${exLink(x.name)}" style="text-decoration:none;text-align:center">Imagen</a>
         <button class="btn" onclick="exerciseHelp('${String(x.name).replace(/'/g,"\\'")}')" style="font-weight:800;background:#eaf9f0;border-color:#9dd5b4;color:#0d6043">🎬 GIF</button>
       </div>
+      ${(function(){
+        var hoy=typeof todayLocal==='function'?todayLocal():todayISO(), sid=pack.sessionId||0;
+        var exerciseKey=String(x.name||'').toLowerCase().trim();
+        // Serie válida = peso>0 Y reps reales (no rangos, no vacíos)
+        var esSerieValida=function(r){var v=(r.reps||'');var repsValida=v!=='—'&&v!=='no registradas'&&v!==''&&!/^\d+[-–]\d+$/.test(v);return +r.weight>0 && repsValida;};
+        // Series de HOY en ESTA sesión — solo válidas
+        var sessionRegs=(state.workoutLog||[]).filter(function(r){return (r.localDate||r.date||'')===hoy && String(r.exercise||'').toLowerCase().trim()===exerciseKey && r.sessionId===sid && esSerieValida(r);});
+        // Historial: días anteriores, solo series válidas
+        var oldRegs=(state.workoutLog||[]).filter(function(r){return (r.localDate||r.date||'')!==hoy && String(r.exercise||'').toLowerCase().trim()===exerciseKey && esSerieValida(r);}).slice(-30);
+        // Publicar completitud en el scope del map (no del IIFE)
+        var goalSets=(function(){var m=String(x.sets||'3').match(/\d+/);return m?+m[0]:3;})();
+        window._fitCompleto=window._fitCompleto||{};
+        window._fitCompleto[i]=(sessionRegs.length>=goalSets);
+        var goal=x.sets||3, done=sessionRegs.length;
+        // Progreso normal: máximo goal series. Extras se muestran aparte.
+        var doneNormales=Math.min(done,goal);
+        var extras=Math.max(0,done-goal);
+        var dots='';
+        for(var d=0;d<goal;d++){dots+='<span style="font-size:14px;color:'+(d<doneNormales?'#15704f':'#d9e3db')+'">'+(d<doneNormales?'●':'○')+'</span> ';}
+        if(extras>0)dots+='<span style="font-size:11px;font-weight:800;color:#b8860b">+'+extras+' extra</span>';
+        // Última vez: agrupar por sesión (sessionId) y tomar la sesión anterior más reciente
+        var lastHTML='';
+        if(oldRegs.length){
+          // Agrupar por sessionId (registros viejos sin sessionId: usar id como pseudo-sesión)
+          var sesiones={};
+          oldRegs.forEach(function(r){
+            var keyS=r.sessionId||('legacy_'+r.id);
+            if(!sesiones[keyS])sesiones[keyS]=[];
+            sesiones[keyS].push(r);
+          });
+          // Ordenar sesiones por fecha más reciente
+          var keysSes=Object.keys(sesiones).sort(function(a,b){
+            var fa=(sesiones[a][0].localDate||sesiones[a][0].date||'');
+            var fb=(sesiones[b][0].localDate||sesiones[b][0].date||'');
+            return fb.localeCompare(fa);
+          });
+          var sesionAnterior=sesiones[keysSes[0]];
+          if(sesionAnterior&&sesionAnterior.length){
+            var firstEntry=sesionAnterior[0];
+            var fechaUlt=(firstEntry.localDate||firstEntry.date||'');
+            var fechaP=fechaUlt.split('-');
+            var mesesN=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+            var fechaBonitaUlt=(fechaP.length===3)?(parseInt(fechaP[2],10)+' '+mesesN[(parseInt(fechaP[1],10)-1)||0]):fechaUlt;
+            // Resumen de series de esa sesión
+            var seriesResumen=sesionAnterior.map(function(r){
+              return (r.weight?r.weight+' '+U.pesoUnidad()+' × ':'')+safeText(r.reps||'—');
+            }).join(' · ');
+            var sug=suggestTargetWeight(x.name,x.muscle,x.reps);
+            lastHTML='<div style="margin-top:4px;font-size:11px;color:var(--m)">🕘 Última vez · <b>'+fechaBonitaUlt+'</b></div>'
+              +'<div style="font-size:11px;margin-top:1px">'+seriesResumen+'</div>';
+            if(sug&&sug.text)lastHTML+='<div style="font-size:11px;color:'+(sug.target>=(firstEntry.weight||0)?'#15704f':'#b8860b')+';margin-top:1px">'+(sug.target>(firstEntry.weight||0)?'↑ ':(sug.target<(firstEntry.weight||0)?'↓ ':'= '))+safeText(sug.text)+'</div>';
+          }
+        }
+        var regHTML=lastHTML;
+        if(sessionRegs.length){
+          // Formato fecha legible: "12 ago 2026"
+          var fechaLocal=(sessionRegs[0].localDate||sessionRegs[0].date||hoy);
+          var fechaParts=fechaLocal.split('-');
+          var meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+          var fechaBonita=(fechaParts.length===3)?(parseInt(fechaParts[2],10)+' '+meses[(parseInt(fechaParts[1],10)-1)||0]+' '+fechaParts[0]):fechaLocal;
+          regHTML+='<div style="margin-top:4px;font-size:12px;font-weight:800;color:#15704f">Series de hoy: '+doneNormales+'/'+goal+' '+dots+'</div>'
+            +'<div style="font-size:10px;color:var(--m);margin-top:1px">📅 '+fechaBonita+'</div>'
+            +'<div style="font-size:12px;margin-top:3px">'
+            +sessionRegs.map(function(r,ri){
+              return '<span data-wlogid="'+r.id+'" style="display:inline-block;background:#eaf9f0;border:1px solid #9dd5b4;border-radius:6px;padding:2px 7px;margin:0 4px 4px 0;white-space:nowrap">'
+                +'<b>'+(r.weight?r.weight+' '+U.pesoUnidad()+' × ':'')+safeText(r.reps||'—')+'</b>'
+                +'<span onclick=\"event.stopPropagation();editWorkoutLogEntry('+r.id+')\" style=\"cursor:pointer;margin-left:3px;opacity:.5;font-size:10px\" title=\"Editar\">✎</span>'
+                +'<span onclick=\"event.stopPropagation();deleteWorkoutEntry('+r.id+')\" style=\"cursor:pointer;margin-left:2px;opacity:.4;font-size:10px\" title=\"Eliminar\">✕</span>'
+                +'</span>';
+            }).join('')
+            +'</div>';
+        } else {
+          regHTML+='<div style=\"margin-top:4px;font-size:11px;color:var(--m)\">Series de hoy: 0/'+goal+' '+dots+'</div>';
+        }
+        if(oldRegs.length){
+          regHTML+='<details style="margin-top:3px;font-size:11px"><summary style="color:var(--m);cursor:pointer">▶ Historial anterior ('+oldRegs.length+')</summary>'
+            +'<div style="font-size:11px;margin-top:3px;max-height:120px;overflow-y:auto">'
+            +oldRegs.reverse().map(function(r){return '<div style="padding:1px 0"><b>'+(r.weight?r.weight+' '+U.pesoUnidad()+' × ':'')+safeText(r.reps||'—')+'</b> <span class="muted">'+safeText(r.date||'')+'</span></div>';}).join('')
+            +'</div></details>';
+        }
+        return regHTML;
+      })()}
+      ${(window._fitCompleto&&window._fitCompleto[i])?`
+      <div style="margin-top:8px;text-align:center;background:#eaf9f0;border:1px solid #9dd5b4;border-radius:10px;padding:8px;font-size:13px;font-weight:800;color:#15704f">✓ Series completadas</div>
+      <details style="margin-top:4px;font-size:12px"><summary style="color:var(--m);cursor:pointer;padding:3px 0">+ Serie extra (opcional)</summary>
+        <div style="margin-top:4px" class="row"><input id="rlogSW_${i}" type="number" inputmode="decimal" placeholder="Peso lb" style="flex:1"><input id="rlogSR_${i}" inputmode="numeric" placeholder="Reps" style="flex:1"><button class="btn primary" onclick="logRoutineExercise(${i},this)" style="font-size:12px;white-space:nowrap">Registrar extra</button></div>
+      </details>
+      `:`
       <div class="fit-ex-log row" style="gap:6px;margin-top:8px;align-items:center">
         <input id="rlogW_${i}" type="number" inputmode="decimal" placeholder="Peso ${U.pesoUnidad()}" style="width:92px">
         <input id="rlogR_${i}" inputmode="numeric" placeholder="Reps ${safeText(String(x.reps||''))}" style="flex:1;min-width:64px">
-        <button class="btn primary" onclick="logRoutineExercise(${i})">💾 Registrar</button>
+        <button class="btn primary" onclick="logRoutineQuick(${i})" style="flex:2;font-size:13px;min-height:36px">✓ Terminé</button>
       </div>
+      <details style="margin-top:4px;font-size:12px"><summary style="color:var(--m);cursor:pointer;padding:3px 0">+ Registrar por series</summary>
+        <div style="margin-top:4px" class="row"><input id="rlogSW_${i}" type="number" inputmode="decimal" placeholder="Peso lb de esta serie" style="flex:1"><input id="rlogSR_${i}" inputmode="numeric" placeholder="Reps de esta serie" style="flex:1"><button class="btn primary" onclick="logRoutineExercise(${i},this)" style="font-size:12px;white-space:nowrap">Registrar serie</button></div>
+      </details>
+      `}
       <div id="rlogOut_${i}"></div>
       <details style="margin-top:6px"><summary style="font-size:13px">Cambiar si está ocupado</summary><div class="row" style="margin-top:8px">${alts||'<span class="muted">Sin alternativas.</span>'}</div></details>
     </div>`;
   }).join('')}</div>`;
   setTimeout(()=>out.scrollIntoView({behavior:'smooth',block:'nearest'}),30);
 }
+// MODO RÁPIDO: registrar todas las series de un ejercicio de una vez
+function logRoutineQuick(i){
+  let pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan[i])return;
+  let x=pack.plan[i];
+  var ctx=pack.ctx||{};
+  var wEl=document.getElementById('rlogW_'+i);
+  var weight=+(wEl?.value)||0;
+  if(!weight){ console.log('[QUICK] Ignorado: sin peso'); return; }
+  // Leer reps del input rápido (opcional)
+  var rEl=document.getElementById('rlogR_'+i);
+  var repsInput=(rEl?.value||'').trim();
+  var isRange=/^\d+[-–]\d+$/.test(repsInput);
+  var repsStr=repsInput&&!isRange?repsInput:'no registradas';
+  console.log('[QUICK] repsInput raw='+JSON.stringify(rEl?.value)+' reps guardadas='+repsStr);
+  var goal=x.sets||3;
+  var sessionId=pack.sessionId||Date.now();
+  if(!pack.sessionId){pack.sessionId=sessionId;}
+  if(!Array.isArray(state.workoutLog))state.workoutLog=[];
+  // Guarda contra doble click: solo contar series VÁLIDAS (mismo criterio que el template)
+  var yaRegistradas=(state.workoutLog||[]).filter(function(r){var v=(r.reps||'');return r.sessionId===sessionId && r.exercise===x.name && r.weight>0 && v!=='—' && v!=='no registradas';}).length;
+  if(yaRegistradas>=goal){ console.log('[QUICK] Ya completo, ignorando doble click'); return; }
+  var seriesFaltantes=goal-yaRegistradas;
+  // Crear UNA entrada por serie (todas con el mismo peso/reps)
+  for(var s=0;s<seriesFaltantes;s++){
+    state.workoutLog.push({id:Date.now()+s,date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:weight,sets:1,reps:repsStr,note:'Rutina · '+(x.muscle||'')+' · Serie '+(yaRegistradas+s+1)});
+  }
+  console.log('[QUICK] creadas '+seriesFaltantes+' series de '+goal+' para '+x.name);
+  if(!pack.checked)pack.checked={}; pack.checked[i]=true; pack.checkedDate=todayISO();
+  save(true);
+  if(wEl)wEl.value='';
+  quickFitnessToday();
+}
+function deleteWorkoutEntry(id){
+  console.log('[DEL] antes workoutLog='+(state.workoutLog||[]).length+' id='+id);
+  if(!confirm('¿Borrar esta serie?'))return;
+  state.workoutLog=(state.workoutLog||[]).filter(function(r){return r.id!==id;});
+  console.log('[DEL] después workoutLog='+state.workoutLog.length);
+  save(true);
+  console.log('[DEL] save(true) ejecutado');
+  quickFitnessToday();
+}
+function editWorkoutLogEntry(id){
+  // Edición inline SIN prompt(): reemplaza el chip por inputs temporales
+  var entry=(state.workoutLog||[]).find(function(r){return r.id===id;});
+  if(!entry)return;
+  var chip=document.querySelector('[data-wlogid="'+id+'"]');
+  if(!chip)return;
+  var parent=chip.parentNode;
+  var div=document.createElement('span');
+  div.style.cssText='display:inline-flex;gap:4px;align-items:center;background:#fff;border:1px solid #9dd5b4;border-radius:6px;padding:3px 6px;margin:0 4px 4px 0';
+  div.innerHTML='<input type="number" inputmode="decimal" value="'+(entry.weight||'')+'" placeholder="Peso" style="width:56px;font-size:12px;padding:2px">'
+    +'<input type="text" inputmode="numeric" value="'+safeText(entry.reps||'')+'" placeholder="Reps" style="width:48px;font-size:12px;padding:2px">'
+    +'<button class="btn" style="padding:2px 7px;font-size:11px" onclick="saveWorkoutEntryEdit('+id+',this)">✓</button>'
+    +'<button class="btn" style="padding:2px 7px;font-size:11px" onclick="quickFitnessToday()">✕</button>';
+  chip.replaceWith(div);
+  div.querySelector('input').focus();
+}
+function saveWorkoutEntryEdit(id,btn){
+  var entry=(state.workoutLog||[]).find(function(r){return r.id===id;});
+  if(!entry)return;
+  var wrapper=btn.parentNode;
+  var inputs=wrapper.querySelectorAll('input');
+  entry.weight=+inputs[0].value||0;
+  entry.reps=inputs[1].value.trim()||'—';
+  save(true);
+  quickFitnessToday();
+}
 function toggleSimpleFitDone(i){
   let pack=state.fitnessToday;if(!pack)return;
   if(!pack.checked)pack.checked={};
   pack.checked[i]=!pack.checked[i];
-  save();
+  save(true);
   quickFitnessToday();
 }
 function saveSimpleWorkout(){
@@ -25270,7 +25429,7 @@ function saveSimpleWorkout(){
   let reps=document.getElementById('simpleWorkoutReps')?.value||'';
   let feel=document.getElementById('simpleWorkoutFeel')?.value||'Normal';
   state.workoutLog.push({date:todayISO(),exercise,weight,sets,reps,note:'Registro simple · '+feel,id:Date.now()});
-  save();
+  save(true); // inmediato: acción explícita del usuario
   ['simpleWorkoutExercise','simpleWorkoutWeight','simpleWorkoutSets','simpleWorkoutReps'].forEach(id=>{let el=document.getElementById(id);if(el)el.value=''});
   let status=document.getElementById('simpleWorkoutStatus');
   if(status)status.innerHTML=`<div class="ok" style="margin-top:10px"><b>Guardado:</b> ${safeText(exercise)} · ${sets} series · ${weight?weight+' lb':'sin peso'}.</div>`;
@@ -25304,8 +25463,41 @@ function renderSimpleFitnessProgress(days){
   var periodo=days===7?'esta semana':days===14?'estas 2 semanas':'este mes';
   var btns=[[7,'Semana'],[14,'2 semanas'],[30,'Mes']].map(function(o){return '<button class="btn'+(days===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 12px" onclick="renderSimpleFitnessProgress('+o[0]+')">'+o[1]+'</button>';}).join('');
   var volTxt=(volD>0?'↑ +'+volD.toLocaleString():(volD<0?'↓ '+Math.abs(volD).toLocaleString():'igual'))+' vs '+(days===7?'la semana pasada':days===14?'las 2 semanas previas':'el mes pasado');
+  // === DASHBOARD UNIFICADO ===
+  var dm=getDailyMode();
+  var pesoActual='—', pesoTendencia='';
+  if(state.weight&&state.weight.length){
+    var wNow=state.weight[state.weight.length-1].w;
+    var wPrev=state.weight.length>=2?state.weight[state.weight.length-2].w:null;
+    pesoActual=U.peso(wNow);
+    if(wPrev!=null){
+      var d=Math.round((wNow-wPrev)*10)/10;
+      pesoTendencia=(d>0?'↑ +':'↓ ')+U.peso(Math.abs(d))+(d>0?'':'')+' vs último';
+    }
+  }
+  var todayPack=state.fitnessToday&&state.fitnessToday.date===todayISO()?state.fitnessToday:null;
+  var todayDone=todayPack?((todayPack.plan||[]).filter(function(x,i){return todayPack.checked&&todayPack.checked[i];}).length):0;
+  var todayTotal=todayPack?(todayPack.plan||[]).length:0;
+  var foodPct=Math.min(100,Math.round(dm.food.k/dm.kcalGoal*100));
+
+  // PRs
+  var allBest=bestByExercise(fitPeriodLogs(30,0));
+  var prs=Object.keys(allBest).filter(function(n){return allBest[n].w>0;}).sort(function(a,b){return allBest[b].w-allBest[a].w;}).slice(0,3);
+  var prHTML=prs.length?prs.map(function(n){return '<div style="display:flex;justify-content:space-between;gap:6px"><span style="font-size:13px;font-weight:700">⭐ '+safeText(n)+'</span><span style="font-weight:900;color:#15704f;white-space:nowrap">'+allBest[n].w+' lb</span></div>';}).join(''):'<span class="muted" style="font-size:12px">Registra ejercicios con peso para ver récords</span>';
+
   out.innerHTML='<div class="fit-clean-result"><h3 style="margin-top:0">📊 Progreso · '+label+'</h3>'
     +'<div class="row" style="gap:6px;margin-bottom:10px">'+btns+'</div>'
+    // --- Tarjeta resumen compacta ---
+    +'<div class="card" style="background:#f8fff9;border:1.5px solid #9dd5b4;padding:12px;margin-bottom:10px">'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px">'
+    +'<div style="text-align:center"><div style="font-size:11px;font-weight:800;color:var(--m)">⚖️ Peso</div><div style="font-size:20px;font-weight:900;color:#15704f">'+pesoActual+'</div>'+(pesoTendencia?'<div style="font-size:11px;color:'+(pesoTendencia.includes('↑')?'#15704f':'#b03030')+'">'+pesoTendencia+'</div>':'')+'</div>'
+    +'<div style="text-align:center"><div style="font-size:11px;font-weight:800;color:var(--m)">💪 Hoy</div><div style="font-size:20px;font-weight:900;color:#15704f">'+(todayTotal?todayDone+'/'+todayTotal:'—')+'</div><div style="font-size:11px;color:var(--m)">ejercicios</div></div>'
+    +'<div style="text-align:center"><div style="font-size:11px;font-weight:800;color:var(--m)">🍽️ Kcal</div><div style="font-size:20px;font-weight:900;color:'+(foodPct>=100?'#15704f':'#b8860b')+'">'+foodPct+'%</div><div style="font-size:11px;color:var(--m)">'+Math.round(dm.food.k)+'/'+dm.kcalGoal+'</div></div>'
+    +'<div style="text-align:center"><div style="font-size:11px;font-weight:800;color:var(--m)">🏋️ Volumen</div><div style="font-size:20px;font-weight:900;color:#15704f">'+(volCur>=1000?Math.round(volCur/1000)+'k':Math.round(volCur))+'</div><div style="font-size:11px;color:var(--m)">lb '+periodo+'</div></div>'
+    +'</div>'
+    +(prs.length?'<div style="margin-top:10px;padding-top:8px;border-top:1px solid #d9e3db">'+prHTML+'</div>':'')
+    +'</div>'
+    // --- Detalle por ejercicio ---
     +'<div class="fit-clean-status">'
     +'<div class="fit-clean-chip"><b>'+dias+'</b><span>días entrenados</span></div>'
     +'<div class="fit-clean-chip"><b>'+withWeight.length+'</b><span>ejercicios con peso</span></div>'
@@ -25859,8 +26051,8 @@ function openCreateRoutine(){
   var curGoal=(state.fitnessToday&&state.fitnessToday.ctx&&state.fitnessToday.ctx.focus)||p.objetivoFit||'Ganar músculo sin quedar molido';
   if(FIT_GOALS.indexOf(curGoal)<0)curGoal='Ganar músculo sin quedar molido';
   out.innerHTML='<div class="fit-clean-result">'
-    +'<h3 style="margin-top:0">🛠️ Crear rutina</h3>'
-    +'<p class="muted" style="margin-top:0;font-size:13px">Aquí armas tu <b>plan de la semana</b> (fijo). Más abajo, el <b>ajuste de hoy</b> es aparte — según cómo te sientas cada día.</p>'
+    +'<h3 style="margin-top:0">🛠️ Crear plan semanal</h3>'
+    +'<p class="muted" style="margin-top:0;font-size:13px">Armas tu <b>plan de la semana</b> una sola vez. Después, cada día <b>🏋️ Mi rutina de hoy</b> toma automáticamente el entrenamiento que toca. Ya no vuelves a configurar nada.</p>'
     +'<div class="grid">'
     +'<div><label>Peso (lb)</label><input id="crPeso" type="number" inputmode="decimal" step="0.1" placeholder="Ej. 165" value="'+(p.peso||'')+'"></div>'
     +'<div><label>Altura (cm)</label><input id="crAltura" type="number" inputmode="decimal" placeholder="Ej. 175" value="'+(p.altura||'')+'"></div>'
@@ -25913,8 +26105,8 @@ function crearRutina(){
   var recovery=pain>=3||energy<=1;
   var equip=(g('simpleFitEquip')||{}).value||'Gimnasio';
   var ctx={date:todayISO(),steps:steps,energy:energy,pain:pain,sleep:sleep,focus:goal,equip:equip,hard:hard,recovery:recovery};
-  state.fitnessToday={date:ctx.date,ctx:ctx,plan:buildFitnessTodayPlan(ctx),createdAt:new Date().toISOString()};
-  save();
+  // Usar createFitnessToday para que tome la rutina de state.customRoutine si existe
+  createFitnessToday();
   quickFitnessToday();
 }
 function todayRoutinePlan(){
@@ -25934,7 +26126,13 @@ function createFitnessToday(){
   let plan,fromSemana=false;
   if(tr&&!tr.rest&&tr.plan&&tr.plan.length){plan=tr.plan;fromSemana=true;ctx.focus=tr.dayName;}
   else{plan=buildFitnessTodayPlan(ctx);}
-  state.fitnessToday={date:ctx.date,ctx,plan,createdAt:new Date().toISOString(),fromSemana:fromSemana,semanaDayName:fromSemana?tr.dayName:null};
+  // Generar sessionId único por sesión de entrenamiento (no mezcla series de distintas sesiones el mismo día)
+  if(!state.fitnessToday||state.fitnessToday.date!==ctx.date){state.fitnessToday={sessionId:Date.now()};}
+  else{state.fitnessToday.sessionId=state.fitnessToday.sessionId||Date.now();}
+  state.fitnessToday.date=ctx.date; state.fitnessToday.ctx=ctx; state.fitnessToday.plan=plan;
+  state.fitnessToday.createdAt=new Date().toISOString(); state.fitnessToday.fromSemana=fromSemana;
+  state.fitnessToday.semanaDayName=fromSemana?tr.dayName:null;
+  if(!state.fitnessToday.seriesCount)state.fitnessToday.seriesCount={};
   save();
   renderFitnessCoach();
 }
@@ -25979,27 +26177,50 @@ function renderFitnessCoach(){
       <div class="fit-ex-log row" style="gap:6px;margin-top:8px;align-items:center">
         <input id="rlogW_${i}" type="number" inputmode="decimal" placeholder="Peso ${U.pesoUnidad()}" style="width:92px">
         <input id="rlogR_${i}" inputmode="numeric" placeholder="Reps ${safeText(String(x.reps||''))}" style="flex:1;min-width:64px">
-        <button class="btn primary" onclick="logRoutineExercise(${i})">💾 Registrar</button>
+        <button class="btn primary" onclick="logRoutineExercise(${i},this)">💾 Registrar</button>
       </div>
       <div id="rlogOut_${i}"></div>
     </div>`;
   }).join('')}</div>`;
 }
 // Registrar un ejercicio directamente desde la rutina del día (sin re-escribir el nombre).
-function logRoutineExercise(i){
-  let pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan[i])return;
+function logRoutineExercise(i, btn){
+  console.log('[REG] FUNCION LLAMADA i='+i);
+  let pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan[i]){console.warn('[REG] No hay rutina para i='+i);return;}
   let x=pack.plan[i];
-  let w=+(document.getElementById('rlogW_'+i)?.value)||0;
-  let reps=(document.getElementById('rlogR_'+i)?.value||'').trim()||String(x.reps||'');
+  // Leer peso: primero el input del modo detallado (rlogSW_), luego el rápido (rlogW_)
+  var wEl2 = document.getElementById('rlogSW_'+i) || document.getElementById('rlogW_'+i);
+  let w = +(wEl2?.value) || 0;
+  // Reps: primero el input detallado (rlogSR_), luego el rápido (rlogR_)
+  var rEl = document.getElementById('rlogSR_'+i) || document.getElementById('rlogR_'+i);
+  var repsInput = (rEl?.value || '').trim();
+  console.log('[REG] repsInput raw='+JSON.stringify(rEl?.value)+' reps guardadas='+repsInput);
+  // NUNCA guardar el rango recomendado (8-12) como reps reales
+  var isRange = /^\d+[-–]\d+$/.test(repsInput);
+  let reps = repsInput && !isRange ? repsInput : '—';
+  console.log('[REG] reps final='+reps+' peso='+w);
+  // Si peso Y reps están vacíos, no crear registro
+  if(!w && reps==='—'){ console.log('[REG] Ignorado: peso y reps vacíos'); return; }
+  console.log('[REG] ANTES PUSH — ejercicio='+x.name+' peso='+w+' reps='+reps+' fecha='+todayISO()+' log antes='+(state.workoutLog||[]).length);
   if(!Array.isArray(state.workoutLog))state.workoutLog=[];
-  state.workoutLog.push({id:Date.now(),date:todayISO(),exercise:x.name,weight:w,sets:x.sets||0,reps:reps,note:'Rutina · '+(x.muscle||'')});
+  // Contar series de este ejercicio en esta sesión
+  var sessionId=pack.sessionId||Date.now();
+  if(!pack.sessionId){pack.sessionId=sessionId;}
+  if(!pack.seriesCount)pack.seriesCount={};
+  var key=x.name;
+  pack.seriesCount[key]=(pack.seriesCount[key]||0)+1;
+  var serieNum=pack.seriesCount[key];
+  state.workoutLog.push({id:Date.now(),date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:w,sets:x.sets||0,reps:reps,note:'Rutina · '+(x.muscle||'')+' · Serie '+serieNum});
+  console.log('[REG] DESPUES DEL PUSH — workoutLog='+state.workoutLog.length+' serie='+serieNum);
   if(!pack.checked)pack.checked={}; pack.checked[i]=true; pack.checkedDate=todayISO();
-  save();
-  // Actualiza la tarjeta en el sitio (sin re-render completo, para no borrar lo que escribiste en otros ejercicios).
-  let out=document.getElementById('rlogOut_'+i);
-  let card=out?out.closest('.fit-ex, .fit-row-compact'):null;
-  if(card){card.classList.add('done'); let c=card.querySelector('.fit-ex-check, .fit-check-small'); if(c)c.textContent='✓';}
-  if(out)out.innerHTML='<div class="ok" style="margin-top:6px;font-size:13px;padding:6px 8px">✅ Registrado'+(w?(' · '+w+' lb'):'')+(reps?(' · '+safeText(reps)+' reps'):'')+'</div>';
+  save(true); // inmediato: la acción del usuario no debe esperar el debounce
+  console.log('[REG] DESPUES DE SAVE(true)');
+  // Confirmación inmediata en la tarjeta
+  var out = document.getElementById('rlogOut_'+i);
+  if(out)out.innerHTML='<div class="ok" style="margin-top:6px;font-size:13px;padding:6px 8px">✅ '+(w?w+' '+U.pesoUnidad()+' × ':'')+safeText(reps||'—')+'</div>';
+  // Actualizar la lista de "Hoy" sin re-render completo
+  setTimeout(function(){quickFitnessToday();},150);
+  console.log('[REG] DESPUES DE RENDER — card actualizada');
 }
 function toggleFitExDone(i){
   let pack=state.fitnessToday;if(!pack)return;
