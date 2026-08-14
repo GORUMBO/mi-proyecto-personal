@@ -1,0 +1,277 @@
+// ============================================================
+// PRUEBAS v1.187.1 — RENDER REAL (DOM stub) de la rutina de hoy
+// y de "Ver progreso". Ejecuta quickFitnessToday/renderSimpleFitnessProgress
+// de verdad y verifica el HTML producido, no solo funciones aisladas.
+// Uso: node tests/fitness-render.test.js
+// ============================================================
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+function extractFunc(src, name) {
+  const i = src.indexOf('function ' + name + '(');
+  if (i < 0) throw new Error('No se encontró function ' + name);
+  let depth = 0, j = i, q = null;
+  for (; j < src.length; j++) {
+    const c = src[j];
+    if (q) { if (c === '\\') { j++; continue; } if (c === q) q = null; continue; }
+    if (c === '"' || c === "'") { q = c; continue; }
+    if (c === '{') depth++;
+    else if (c === '}') { depth--; if (depth === 0) return src.slice(i, j + 1); }
+  }
+  throw new Error('incompleta: ' + name);
+}
+
+// ---- DOM stub ----
+const fakeEls = {};
+function makeEl(id) {
+  return {
+    id, value: '', innerHTML: '', textContent: '', style: {}, open: false,
+    scrollIntoView: function () {}, focus: function () {},
+    querySelector: function () { return null; }, querySelectorAll: function () { return []; },
+    appendChild: function () {}, setAttribute: function () {}, remove: function () {}
+  };
+}
+const documentStub = {
+  getElementById: function (id) { if (!fakeEls[id]) fakeEls[id] = makeEl(id); return fakeEls[id]; },
+  querySelector: function () { return null; },
+  querySelectorAll: function () { return []; },
+  createElement: function () { return makeEl('_dyn' + Object.keys(fakeEls).length); },
+  addEventListener: function () {},
+  head: { appendChild: function () {} },
+  body: { appendChild: function () {} }
+};
+
+const sandbox = {
+  console,
+  document: documentStub,
+  todayISO: function () { return '2026-08-14'; },
+  todayLocal: function () { return sandbox._hoyLocal; },
+  safeText: function (s) { return String(s == null ? '' : s); },
+  exLink: function (n) { return 'https://example.com/' + encodeURIComponent(n); },
+  U: {
+    pesoUnidad: function () { return 'lb'; },
+    peso: function (x) { return x + ' lb'; }
+  },
+  setTimeout: function (fn) { try { fn(); } catch (e) {} },
+  clearTimeout: function () {},
+  save: function () { sandbox.saves = (sandbox.saves || 0) + 1; },
+  alert: function () {},
+  getDailyMode: function () { return { food: { k: 1200, kcalGoal: 2500, p: 80, count: 1 } }; }
+};
+sandbox.window = sandbox;
+sandbox._hoyLocal = '2026-08-13';
+vm.createContext(sandbox);
+
+['parseRepRange', 'sugerenciaSesion', 'seriesValidasRegs', 'repsNum', 'seriesHoyEjercicio',
+  'evaluarSesionHoy', 'actualizarResultadosHoy', 'fitResumenResultadoHoy', 'fitHistorialSesiones',
+  'syncSimpleFitnessInputs', 'quickFitnessToday', 'fitPeriodLogs', 'bestByExercise', 'repsTotal',
+  'renderSimpleFitnessProgress']
+  .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sandbox); });
+
+const fn = {
+  quick: function () { sandbox.quickFitnessToday(); return fakeEls['simpleFitnessOut'].innerHTML; },
+  progress: function () { sandbox.renderSimpleFitnessProgress(7); return fakeEls['simpleFitnessOut'].innerHTML; },
+  actualizar: sandbox.actualizarResultadosHoy
+};
+
+// ---- Helpers ----
+let passed = 0, failed = 0;
+const failures = [];
+function t(name, cond, extra) {
+  if (cond) { passed++; console.log('  ✓ ' + name); }
+  else { failed++; failures.push(name + (extra ? ' → ' + extra : '')); console.log('  ✗ ' + name + (extra ? ' → ' + extra : '')); }
+}
+function S(dia, ej, peso, repsArr, sid, offset) {
+  return repsArr.map(function (r, i) {
+    return { id: ((sid || 1) * 100000) + (offset || 0) + i, date: dia, localDate: dia, sessionId: sid || 1, exercise: ej, weight: peso, sets: 1, reps: String(r), note: 'Rutina · test · Serie ' + (i + 1) };
+  });
+}
+function nuevoEstado() {
+  sandbox.state = {
+    workoutLog: [], fitnessDailyResults: [], fitnessToday: null,
+    weight: [], walks: [], expenses: [], wellnessLog: [], meals: [],
+    profile: { peso: 150, altura: 170, edad: 30, sexo: 'hombre', actividad: 'muy alta', objetivo: 'ganar músculo' },
+    fitEffort: 'auto', fitDislikes: []
+  };
+  sandbox._hoyLocal = '2026-08-13';
+  for (const k in fakeEls) delete fakeEls[k];
+}
+function packPlan(sid, plan, checked) {
+  // checkedDate = hoy: si falta, quickFitnessToday resetea el checklist (comportamiento real).
+  sandbox.state.fitnessToday = { date: '2026-08-14', sessionId: sid, plan: plan, checked: checked || {}, checkedDate: '2026-08-14' };
+}
+const AYER = '2026-08-11', HOY = '2026-08-13';
+
+console.log('\n== RENDER rutina de hoy (quickFitnessToday real) ==');
+
+t('R1 · Ejercicio SIN historial registrado hoy → aparece "🆕 Primera vez registrada"', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77);
+  packPlan(77, [
+    { name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' },
+    { name: 'Remo con barra', sets: 2, reps: '10-12' }
+  ], { 0: true });
+  const html = fn.quick();
+  return html.indexOf('🆕 Primera vez registrada') >= 0;
+}());
+
+t('R2 · Resumen "Objetivo vs resultado de hoy" aparece desde la primera serie (sin terminar)', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77);
+  packPlan(77, [
+    { name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' },
+    { name: 'Remo con barra', sets: 2, reps: '10-12' }
+  ], { 0: true });
+  const html = fn.quick();
+  return html.indexOf('🏁 Objetivo vs resultado de hoy') >= 0 && html.indexOf('🎉 Terminaste') < 0;
+}());
+
+t('R3 · Objetivo cumplido: veredicto junto al ejercicio + resumen + rutina terminada', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [10, 10], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77));
+  packPlan(77, [
+    { name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' },
+    { name: 'Remo con barra', sets: 2, reps: '10-12' }
+  ], { 0: true, 1: true });
+  const html = fn.quick();
+  const n = html.split('✓ Objetivo cumplido').length - 1;
+  return html.indexOf('✓ Objetivo cumplido') >= 0
+    && html.indexOf('🎯 Objetivo · 20 lb · 11 / 11') >= 0
+    && html.indexOf('🎉 Terminaste la rutina.') >= 0
+    && html.indexOf('sin series registradas') >= 0
+    && n >= 2; // veredicto por ejercicio + resumen
+}());
+
+t('R4 · Progreso parcial 11/10 → "↗ Progreso · faltó 1 repetición"', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [10, 10], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [11, 10], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  const html = fn.quick();
+  return html.indexOf('↗ Progreso · faltó 1 repetición') >= 0 && html.indexOf('Casi. Mantén 20 lb') >= 0;
+}());
+
+t('R5 · Sin mejora 10/10 → "→ Mantén el peso"', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [10, 10], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [10, 10], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  const html = fn.quick();
+  return html.indexOf('→ Mantén el peso') >= 0;
+}());
+
+t('R6 · Sesión por debajo 8/8 → "↓ Sesión por debajo de la anterior" sin bajar peso', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [10, 10], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [8, 8], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  const html = fn.quick();
+  return html.indexOf('↓ Sesión por debajo de la anterior') >= 0 && html.indexOf('Mantén 20 lb') >= 0;
+}());
+
+t('R7 · Ejercicio alternativo usa SU historial (30 lb, no el del plano)', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Press plano', 20, [10, 10], 1)
+    .concat(S(AYER, 'Press inclinado', 30, [8, 8], 1))
+    .concat(S(HOY, 'Press inclinado', 30, [9, 9], 77));
+  packPlan(77, [{ name: 'Press inclinado', sets: 2, reps: '8-12' }], { 0: true });
+  const html = fn.quick();
+  return html.indexOf('✓ Objetivo cumplido') >= 0 && html.indexOf('🎯 Objetivo · 30 lb · 9 / 9') >= 0;
+}());
+
+t('R8 · F5: re-render con el mismo estado produce el mismo HTML', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [10, 10], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  const h1 = fn.quick();
+  const h2 = fn.quick();
+  return h1 === h2 && h1.indexOf('✓ Objetivo cumplido') >= 0;
+}());
+
+t('R9 · Cerrar/abrir: el estado redondo (JSON) vuelve a renderizar igual', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [10, 10], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  const h1 = fn.quick();
+  sandbox.state = JSON.parse(JSON.stringify(sandbox.state)); // simula guardar y volver a cargar
+  const h2 = fn.quick();
+  return h1 === h2 && h2.indexOf('✓ Objetivo cumplido') >= 0;
+}());
+
+t('R10 · Cambio de día: 0 series hoy y el objetivo se reconstruye desde ayer', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77); // "ayer" para el nuevo día
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], {});
+  sandbox._hoyLocal = '2026-08-14'; // mañana
+  const html = fn.quick();
+  return html.indexOf('Series de hoy: 0/2') >= 0
+    && html.indexOf('🎯 Objetivo · 20 lb · 12 / 12') >= 0
+    && html.indexOf('Objetivo cumplido') < 0;
+}());
+
+t('R11 · Rutina nueva sin ninguna serie → sin resumen ni veredictos', function () {
+  nuevoEstado();
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], {});
+  const html = fn.quick();
+  return html.indexOf('🏁 Objetivo vs resultado') < 0 && html.indexOf('Objetivo cumplido') < 0;
+}());
+
+t('R12 · actualizarResultadosHoy anota "primera" (🆕) en el storage', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77);
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  fn.actualizar();
+  const ann = sandbox.state.fitnessDailyResults[0];
+  return !!ann && ann.estado === 'primera' && ann.icon === '🆕';
+}());
+
+console.log('\n== RENDER Ver progreso (renderSimpleFitnessProgress real) ==');
+
+t('R13 · "Historial de sesiones" visible con fecha → ejercicio → peso → reps → resultado', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [10, 10], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  fn.actualizar();
+  const html = fn.progress();
+  return html.indexOf('📜 Historial de sesiones') >= 0
+    && html.indexOf('Aperturas con mancuernas') >= 0
+    && html.indexOf('20 lb') >= 0
+    && html.indexOf('11/11') >= 0
+    && html.indexOf('✓ Objetivo cumplido') >= 0;
+}());
+
+t('R14 · El sistema viejo "Tu mejor peso por ejercicio" sigue presente', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [10, 10], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  const html = fn.progress();
+  return html.indexOf('Tu mejor peso por ejercicio') >= 0;
+}());
+
+t('R15 · Historial sin anotaciones muestra la fila con resultado "—"', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77);
+  sandbox.state.fitnessDailyResults = [];
+  const html = fn.progress();
+  return html.indexOf('📜 Historial de sesiones') >= 0
+    && html.indexOf('Aperturas con mancuernas') >= 0
+    && html.indexOf('11/11') >= 0;
+}());
+
+// ---- Resumen ----
+console.log('\n==========================================');
+console.log('Resultado: ' + passed + ' pasaron · ' + failed + ' fallaron');
+if (failures.length) {
+  console.log('Fallos:');
+  failures.forEach(function (f) { console.log('  ✗ ' + f); });
+}
+console.log('==========================================');
+process.exitCode = failed ? 1 : 0;
