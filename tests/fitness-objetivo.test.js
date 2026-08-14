@@ -245,6 +245,60 @@ t('Registros inválidos (peso 0 o reps "no registradas") se ignoran', function (
   return e.estado === 'sinResultado';
 }());
 
+console.log('\n== CICLO DE LA SEGUNDA SESIÓN (caso real: primera 20×11/11) ==');
+
+t('C1 · Primera sesión 20×11/11 → siguiente objetivo 20 lb · 12/12', function () {
+  const s1 = S(AYER, 'Aperturas con mancuernas', 20, [11, 11], 1);
+  const s = fn.sugerencia('Aperturas con mancuernas', '8-12', 2, { log: s1, hoy: HOY });
+  return s.target === 20 && eq(s.targetReps, [12, 12]);
+}());
+
+t('C2 · Segunda sesión exacta 20×12/12 → "✓ Objetivo cumplido"', function () {
+  const log = S(AYER, 'Aperturas con mancuernas', 20, [11, 11], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [12, 12], 2));
+  const e = fn.evaluar('Aperturas con mancuernas', '8-12', 2, HOY, log, 2);
+  return e.estado === 'cumplido';
+}());
+
+t('C3 · Parcial 20×12/11 → "↗ Progreso · faltó 1 repetición" y mantiene 20 lb', function () {
+  const log = S(AYER, 'Aperturas con mancuernas', 20, [11, 11], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [12, 11], 2));
+  const e = fn.evaluar('Aperturas con mancuernas', '8-12', 2, HOY, log, 2);
+  return e.estado === 'progreso' && e.label.indexOf('faltó 1 repetición') >= 0 && e.texto.indexOf('Mantén 20 lb') >= 0;
+}());
+
+t('C4 · Tras cumplir 12/12: siguiente objetivo sube a 25 lb · 8/8 (nunca suma)', function () {
+  const log = S(AYER, 'Aperturas con mancuernas', 20, [11, 11], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [12, 12], 2));
+  const s = fn.sugerencia('Aperturas con mancuernas', '8-12', 2, { log: log, hoy: MANANA });
+  return s.target === 25 && eq(s.targetReps, [8, 8]) && s.target !== 40 && s.target !== 80;
+}());
+
+t('C5 · Serie extra de 12 al final NO dispara el aumento (objetivo sigue 20 · 12/12)', function () {
+  const log = S(AYER, 'Aperturas con mancuernas', 20, [11, 11, 12], 1); // 3ª = extra
+  const s = fn.sugerencia('Aperturas con mancuernas', '8-12', 2, { log: log, hoy: HOY });
+  return s.target === 20 && eq(s.targetReps, [12, 12]);
+}());
+
+t('C6 · Alternativo: objetivo y veredicto usan solo el historial del alternativo', function () {
+  const log = S(AYER, 'Aperturas con mancuernas', 20, [11, 11], 1)
+    .concat(S(AYER, 'Press inclinado con mancuernas', 30, [8, 8], 1))
+    .concat(S(HOY, 'Press inclinado con mancuernas', 30, [9, 9], 2));
+  const e = fn.evaluar('Press inclinado con mancuernas', '8-12', 2, HOY, log, 2);
+  return e.estado === 'cumplido' && e.goal.target === 30;
+}());
+
+t('C7 · Persistencia: anotación de la segunda sesión con su objetivo guardado', function () {
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [11, 11], 1)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [12, 12], 7));
+  sandbox.state.fitnessDailyResults = [];
+  sandbox.state.fitnessToday = { sessionId: 7, plan: [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }] };
+  fn.actualizar();
+  const ann = sandbox.state.fitnessDailyResults[0];
+  const ann2 = JSON.parse(JSON.stringify(ann)); // sobrevive recarga
+  return !!ann && ann.estado === 'cumplido' && ann2.objetivo === '20 lb · 12 / 12' && ann2.repsStr === '12/12';
+}());
+
 console.log('\n== Persistencia (actualizarResultadosHoy) ==');
 
 t('Guarda veredicto en fitnessDailyResults y sobrevive recarga (JSON round-trip)', function () {

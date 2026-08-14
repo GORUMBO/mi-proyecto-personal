@@ -286,6 +286,66 @@ t('R23 · Anotación guardada de "primera" también muestra "🆕 Primera vez"',
   return html.indexOf('🆕 Primera vez') >= 0;
 }());
 
+console.log('\n== CICLO DE LA SEGUNDA SESIÓN (render real) ==');
+
+t('R24 · Historial de dos sesiones: 13 ago ✓ cumplido arriba y 11 ago 🆕 primera abajo', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [11, 11], 8)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [12, 12], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  fn.actualizar(); // anota la sesión de HOY (cumplido); la de AYER queda derivada como 🆕
+  const html = fn.progress();
+  const p13 = html.indexOf('13 ago'), p11 = html.indexOf('11 ago');
+  return p13 >= 0 && p11 >= 0 && p13 < p11
+    && html.indexOf('✓ Objetivo cumplido') >= 0
+    && html.indexOf('🆕 Primera vez') >= 0
+    && html.indexOf('11/11') >= 0 && html.indexOf('12/12') >= 0;
+}());
+
+t('R25 · Segunda sesión: objetivo "20 lb · 12 / 12" y tras 12/12 → "✓ Objetivo cumplido"', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [11, 11], 8)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [12, 12], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  const html = fn.quick();
+  return html.indexOf('🎯 Objetivo · 20 lb · 12 / 12') >= 0
+    && html.indexOf('✓ Objetivo cumplido') >= 0
+    && html.indexOf('🏁 Objetivo vs resultado de hoy') >= 0;
+}());
+
+t('R26 · Segunda sesión parcial 12/11 → "↗ Progreso · faltó 1 repetición" y mantiene 20 lb', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [11, 11], 8)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [12, 11], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  const html = fn.quick();
+  return html.indexOf('↗ Progreso · faltó 1 repetición') >= 0
+    && html.indexOf('Mantén 20 lb') >= 0
+    && html.indexOf('✓ Objetivo cumplido') < 0;
+}());
+
+t('R27 · Siguiente sesión tras cumplir 12/12: objetivo sube a 25 lb · 8 / 8 (no suma)', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [11, 11], 8)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [12, 12], 77));
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], {});
+  sandbox._hoyLocal = '2026-08-14'; // día siguiente
+  const html = fn.quick();
+  return html.indexOf('🎯 Objetivo · 25 lb · 8 / 8') >= 0
+    && html.indexOf('Series de hoy: 0/2') >= 0
+    && html.indexOf('60 lb') < 0 && html.indexOf('40 lb') < 0;
+}());
+
+t('R28 · Semana con dos sesiones: 2 días entrenados y volumen 920 lb', function () {
+  nuevoEstado();
+  // fechas dinámicas: la ventana de 7 días usa la fecha real del sistema
+  sandbox.state.workoutLog = S(sysLocal(-2), 'Aperturas con mancuernas', 20, [11, 11], 8)
+    .concat(S(sysLocal(0), 'Aperturas con mancuernas', 20, [12, 12], 77));
+  const html = fn.progress();
+  return html.indexOf('<b>2</b><span>días entrenados</span>') >= 0
+    && html.indexOf('920 lb movidas') >= 0;
+}());
+
 console.log('\n== PERIODOS Semana / 2 semanas / Mes (fitPeriodLogs) ==');
 
 // Fecha local del sistema (los tests corren "hoy", sea la hora que sea).
