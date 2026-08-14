@@ -1,8 +1,25 @@
 {
-  "latest": "1.186",
-  "date": "2026-07-24",
+  "latest": "1.187",
+  "date": "2026-08-13",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187",
+      "date": "2026-08-13",
+      "type": "recomendada",
+      "nuevas": [
+        "Fitness: objetivo vs resultado real del dia (veredictos objetivo cumplido / superado / progreso / mantén / por debajo).",
+        "Fitness: historial de sesiones en Ver progreso (fecha, ejercicio, peso, reps y resultado).",
+        "Fitness: Progreso Semana/2 semanas/Mes corregido (usa la fecha local de cada registro).",
+        "Fitness: alternativas paginadas y registro de series estable con última sesión por día."
+      ],
+      "cambios": [],
+      "errores": [
+        "Se arreglo que Progreso mostrara 0 dias entrenados y 0 volumen aunque hubiera registros (la ventana usaba la fecha UTC).",
+        "Se arreglo la app vacia al abrir dos copias a la vez: ahora solo corre una instancia y la segunda enfoca la ventana existente.",
+        "Se arreglo que el historial mostrara un guion en la primera sesion de un ejercicio: ahora muestra Primera vez."
+      ]
+    },
     {
       "version": "1.186",
       "date": "2026-07-24",
