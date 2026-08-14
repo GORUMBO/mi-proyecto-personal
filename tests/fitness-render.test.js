@@ -67,6 +67,7 @@ vm.createContext(sandbox);
 
 ['parseRepRange', 'sugerenciaSesion', 'seriesValidasRegs', 'repsNum', 'seriesHoyEjercicio',
   'evaluarSesionHoy', 'actualizarResultadosHoy', 'fitResumenResultadoHoy', 'fitHistorialSesiones',
+  'esPrimeraSesionEjercicio',
   'syncSimpleFitnessInputs', 'quickFitnessToday', 'fitPeriodLogs', 'bestByExercise', 'repsTotal',
   'renderSimpleFitnessProgress']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sandbox); });
@@ -256,14 +257,33 @@ t('R14 · El sistema viejo "Tu mejor peso por ejercicio" sigue presente', functi
   return html.indexOf('Tu mejor peso por ejercicio') >= 0;
 }());
 
-t('R15 · Historial sin anotaciones muestra la fila con resultado "—"', function () {
+t('R15 · Primera sesión sin anotación guardada → historial muestra "🆕 Primera vez" (no "—")', function () {
   nuevoEstado();
   sandbox.state.workoutLog = S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77);
   sandbox.state.fitnessDailyResults = [];
   const html = fn.progress();
   return html.indexOf('📜 Historial de sesiones') >= 0
     && html.indexOf('Aperturas con mancuernas') >= 0
-    && html.indexOf('11/11') >= 0;
+    && html.indexOf('11/11') >= 0
+    && html.indexOf('🆕 Primera vez') >= 0;
+}());
+
+t('R22 · Sin anotación pero CON sesión anterior → la más vieja es "🆕 Primera vez" y la nueva "—"', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(AYER, 'Aperturas con mancuernas', 20, [10, 10], 8)
+    .concat(S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77));
+  sandbox.state.fitnessDailyResults = [];
+  const html = fn.progress();
+  return html.indexOf('🆕 Primera vez') >= 0 && html.indexOf('<span class="muted">—</span>') >= 0;
+}());
+
+t('R23 · Anotación guardada de "primera" también muestra "🆕 Primera vez"', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = S(HOY, 'Aperturas con mancuernas', 20, [11, 11], 77);
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], { 0: true });
+  fn.actualizar();
+  const html = fn.progress();
+  return html.indexOf('🆕 Primera vez') >= 0;
 }());
 
 console.log('\n== PERIODOS Semana / 2 semanas / Mes (fitPeriodLogs) ==');

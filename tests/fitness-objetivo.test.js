@@ -46,7 +46,7 @@ vm.createContext(sandbox);
 
 ['parseRepRange', 'sugerenciaSesion', 'seriesValidasRegs', 'repsNum',
   'seriesHoyEjercicio', 'evaluarSesionHoy', 'actualizarResultadosHoy',
-  'fitResumenResultadoHoy', 'fitHistorialSesiones'].forEach(function (n) {
+  'fitResumenResultadoHoy', 'fitHistorialSesiones', 'esPrimeraSesionEjercicio'].forEach(function (n) {
   vm.runInContext(extractFunc(HTML, n), sandbox);
 });
 

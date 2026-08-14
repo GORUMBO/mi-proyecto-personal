@@ -25895,6 +25895,15 @@ function fitResumenResultadoHoy(){
   if(!alguna)return '';
   return '<div style="margin-top:10px;background:#fff;border:1.5px solid #9dd5b4;border-radius:12px;padding:10px 12px"><div style="font-weight:900;font-size:13px;color:#15704f;margin-bottom:4px">🏁 Objetivo vs resultado de hoy</div>'+filas+'</div>';
 }
+// ¿Esta sesión es la PRIMERA del ejercicio? Derivado de workoutLog (sin sesión anterior válida).
+// No modifica ni duplica datos: solo decide la etiqueta del historial.
+function esPrimeraSesionEjercicio(dia,name,log){
+  var key=String(name||'').toLowerCase().trim();
+  return !seriesValidasRegs((log||state.workoutLog||[])).some(function(r){
+    var rd=((r.localDate||r.date)||'');
+    return String(r.exercise||'').toLowerCase().trim()===key && rd && rd<dia;
+  });
+}
 // 📜 Historial de sesiones para "Ver progreso": fecha → ejercicio → peso → reps → resultado.
 // Lee SIEMPRE de workoutLog (datos existentes) y solo añade la marca del veredicto guardado.
 function fitHistorialSesiones(){
@@ -25920,10 +25929,17 @@ function fitHistorialSesiones(){
     var peso=pesos.length===1?pesos[0]+' '+U.pesoUnidad():'varios';
     var reps=g.regs.map(function(r){return repsNum(r);}).join('/');
     var ann=anotBy['r'+g.dia+'_'+(g.sid||0)+'_'+g.ex.toLowerCase()];
-    // Columna de resultado siempre visible: anotación si existe, si no "—".
-    var marca=ann
-      ?('<span style="font-weight:900;color:'+((ann.estado==='cumplido'||ann.estado==='superado')?'#15704f':(ann.estado==='debajo'?'#b03030':(ann.estado==='manten'?'#63706a':(ann.estado==='primera'?'#0d6043':'#b8860b'))))+'"> '+safeText(ann.icon)+'</span>')
-      :'<span class="muted">—</span>';
+    // Columna de resultado siempre visible:
+    // 1) anotación guardada → su icono; 2) sin anotación y SIN sesión anterior válida → 🆕 Primera vez
+    // (derivado de los datos existentes, sin modificar historial); 3) resto → "—".
+    var marca;
+    if(ann){
+      marca='<span style="font-weight:900;color:'+((ann.estado==='cumplido'||ann.estado==='superado')?'#15704f':(ann.estado==='debajo'?'#b03030':(ann.estado==='manten'?'#63706a':(ann.estado==='primera'?'#0d6043':'#b8860b'))))+'"> '+(ann.estado==='primera'?'🆕 Primera vez':safeText(ann.icon))+'</span>';
+    } else if(esPrimeraSesionEjercicio(g.dia,g.ex,log)){
+      marca='<span style="font-weight:900;color:#0d6043"> 🆕 Primera vez</span>';
+    } else {
+      marca='<span class="muted">—</span>';
+    }
     var fechaP=g.dia.split('-');
     var fechaBonita=(fechaP.length===3)?(parseInt(fechaP[2],10)+' '+meses[(parseInt(fechaP[1],10)-1)||0]):g.dia;
     return '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px;padding:4px 0;border-bottom:1px dashed #e4ebe6"><span style="font-weight:800">'+fechaBonita+'</span><span style="flex:1;font-weight:700">'+safeText(g.ex)+'</span><span class="muted">'+peso+'</span><span class="muted">'+reps+'</span>'+marca+'</div>';
