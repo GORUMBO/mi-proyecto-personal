@@ -266,6 +266,74 @@ t('R15 · Historial sin anotaciones muestra la fila con resultado "—"', functi
     && html.indexOf('11/11') >= 0;
 }());
 
+console.log('\n== PERIODOS Semana / 2 semanas / Mes (fitPeriodLogs) ==');
+
+// Fecha local del sistema (los tests corren "hoy", sea la hora que sea).
+function sysLocal(offsetDays) {
+  const d = new Date(Date.now() + (offsetDays || 0) * 86400000);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+// Registros como los REALES del usuario: localDate = día local, date = día UTC (puede ser "mañana").
+function regsRealesHoy() {
+  const local = sysLocal(0);
+  const utc = new Date(Date.now() + 24 * 3600000).toISOString().slice(0, 10);
+  return [
+    { id: 101, date: utc, localDate: local, sessionId: 9, exercise: 'Aperturas con mancuernas', weight: 20, sets: 1, reps: '11', note: 'Rutina · Pecho · Serie 1' },
+    { id: 102, date: utc, localDate: local, sessionId: 9, exercise: 'Aperturas con mancuernas', weight: 20, sets: 1, reps: '11', note: 'Rutina · Pecho · Serie 2' }
+  ];
+}
+
+t('R16 · Semana: cuenta los registros de HOY aunque x.date sea UTC de "mañana"', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = regsRealesHoy();
+  const n = sandbox.fitPeriodLogs(7, 0).length;
+  return n === 2;
+}(), 'fitPeriodLogs(7,0)=' + sandbox.fitPeriodLogs(7, 0).length);
+
+t('R17 · 2 semanas y Mes también cuentan los registros de hoy', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = regsRealesHoy();
+  return sandbox.fitPeriodLogs(14, 0).length === 2 && sandbox.fitPeriodLogs(30, 0).length === 2;
+}());
+
+t('R18 · Progreso Semana con datos reales: 1 día, 1 ejercicio con peso, 440 lb de volumen', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = regsRealesHoy();
+  const html = fn.progress();
+  return html.indexOf('<b>1</b><span>días entrenados</span>') >= 0
+    && html.indexOf('<b>1</b><span>ejercicios con peso</span>') >= 0
+    && html.indexOf('440 lb movidas') >= 0;
+}());
+
+t('R19 · Registro viejo SIN localDate (solo date) sigue contando (sin regresión)', function () {
+  nuevoEstado();
+  const ayer = sysLocal(-1);
+  sandbox.state.workoutLog = regsRealesHoy().concat([
+    { id: 103, date: ayer, sessionId: 8, exercise: 'Remo con barra', weight: 25, sets: 1, reps: '10', note: 'legacy' }
+  ]);
+  return sandbox.fitPeriodLogs(7, 0).length === 3;
+}());
+
+t('R20 · Registro de hace 40 días queda FUERA del Mes', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = regsRealesHoy().concat([
+    { id: 104, date: sysLocal(-40), localDate: sysLocal(-40), sessionId: 7, exercise: 'Curl bíceps', weight: 15, sets: 1, reps: '10', note: 'viejo' }
+  ]);
+  return sandbox.fitPeriodLogs(30, 0).length === 2 && sandbox.fitPeriodLogs(7, 0).length === 2;
+}());
+
+t('R21 · Semana, 2 semanas y Mes renderizan sin romperse', function () {
+  nuevoEstado();
+  sandbox.state.workoutLog = regsRealesHoy();
+  const h7 = sandbox.renderSimpleFitnessProgress(7), html7 = fakeEls['simpleFitnessOut'].innerHTML;
+  const h14 = sandbox.renderSimpleFitnessProgress(14), html14 = fakeEls['simpleFitnessOut'].innerHTML;
+  const h30 = sandbox.renderSimpleFitnessProgress(30), html30 = fakeEls['simpleFitnessOut'].innerHTML;
+  return html7.indexOf('📊 Progreso · Semana') >= 0
+    && html14.indexOf('📊 Progreso · 2 semanas') >= 0
+    && html30.indexOf('📊 Progreso · Mes') >= 0
+    && html7.indexOf('440') >= 0 && html14.indexOf('440') >= 0 && html30.indexOf('440') >= 0;
+}());
+
 // ---- Resumen ----
 console.log('\n==========================================');
 console.log('Resultado: ' + passed + ' pasaron · ' + failed + ' fallaron');

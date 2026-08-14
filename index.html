@@ -25479,7 +25479,8 @@ function saveSimpleWorkout(){
 // Suma total de reps de un registro (de "10,10,8" -> 28). Sirve para el volumen.
 function repsTotal(x){var r=String(x.reps||'');var p=r.split(/[^0-9]+/).map(function(n){return parseInt(n,10);}).filter(function(n){return !isNaN(n);});if(p.length)return p.reduce(function(a,b){return a+b;},0);return (+x.sets||1)*8;}
 // Registros dentro de una ventana de [days] días. offset=1 => el periodo anterior (para comparar).
-function fitPeriodLogs(days,offset){offset=offset||0;var endMs=Date.now()-offset*days*86400000;var startMs=endMs-days*86400000;return (state.workoutLog||[]).filter(function(x){var t=Date.parse((x.date||'')+'T12:00:00');return isFinite(t)&&t>startMs&&t<=endMs;});}
+function fitPeriodLogs(days,offset){offset=offset||0;var endMs=Date.now()-offset*days*86400000;var startMs=endMs-days*86400000;return (state.workoutLog||[]).filter(function(x){// v1.187.2: usar fecha LOCAL (localDate) — x.date es UTC y descartaba registros de hoy (tarde/noche en zonas UTC-negativas)
+var t=Date.parse(((x.localDate||x.date)||'')+'T00:00:00');return isFinite(t)&&t>=startMs&&t<=endMs;});}
 // Mejor peso por ejercicio en una lista de registros.
 function bestByExercise(logs){var m={};logs.forEach(function(x){var n=String(x.exercise||'').trim();if(!n)return;var w=+x.weight||0;if(!m[n]||w>m[n].w)m[n]={w:w,reps:x.reps,date:x.date};});return m;}
 function renderSimpleFitnessProgress(days){
@@ -25487,7 +25488,7 @@ function renderSimpleFitnessProgress(days){
   days=days||window._progPeriod||7; window._progPeriod=days;
   var cur=fitPeriodLogs(days,0), prev=fitPeriodLogs(days,1);
   var curBest=bestByExercise(cur), prevBest=bestByExercise(prev);
-  var dias=[...new Set(cur.map(function(x){return x.date;}))].filter(Boolean).length;
+  var dias=[...new Set(cur.map(function(x){return x.localDate||x.date;}))].filter(Boolean).length;
   var volCur=cur.reduce(function(a,x){return a+(+x.weight||0)*repsTotal(x);},0);
   var volPrev=prev.reduce(function(a,x){return a+(+x.weight||0)*repsTotal(x);},0);
   var volD=Math.round(volCur-volPrev);
