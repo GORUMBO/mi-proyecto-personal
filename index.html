@@ -557,6 +557,7 @@ if(!state.uiSettings.mode)state.uiSettings.mode='personal';
 state.trash=state.trash||[];
 state.workLog=state.workLog||[];
 state.workoutLog=state.workoutLog||[];state.savedRoutines=state.savedRoutines||[];
+state.fitnessDailyResults=state.fitnessDailyResults||[]; // v1.187: veredictos objetivo vs resultado (complementa workoutLog)
 state.fitnessToday=state.fitnessToday||null;
 state.activeWorkout=state.activeWorkout||null;
 state.emergency=state.emergency||{name:'Ruben',blood:'',allergies:'',medications:'',contact:'',insurance:''};
@@ -25214,7 +25215,7 @@ function quickFitnessToday(){
   <div class="fit-progress">
     <div class="fit-progress-top"><b>Avance de hoy</b><span class="fit-progress-num">${hechos} de ${plan.length}</span></div>
     <div class="fit-progress-bar"><div class="fit-progress-fill" style="width:${pct}%"></div></div>
-    ${hechos===plan.length&&plan.length?'<div style="margin-top:8px;font-weight:800;color:#15704f">🎉 Terminaste la rutina.</div>':''}
+    ${hechos===plan.length&&plan.length?'<div style="margin-top:8px;font-weight:800;color:#15704f">🎉 Terminaste la rutina.</div>'+fitResumenResultadoHoy():''}
   </div>
   ${(function(){var ef=state.fitEffort||'auto';return `<div style="margin:8px 0 10px">
     <div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Qué tan fuerte hoy?</div>
@@ -25298,7 +25299,13 @@ function quickFitnessToday(){
             var sug=sugerenciaSesion(x.name,x.reps,x.sets);
             lastHTML='<div style="margin-top:4px;font-size:11px;color:var(--m)">🕘 Última vez · <b>'+fechaBonitaUlt+'</b></div>'
               +'<div style="font-size:11px;margin-top:1px">'+seriesResumen+'</div>';
-            if(sug)lastHTML+='<div style="font-size:11px;color:#b8860b;margin-top:3px;background:#fff8f0;border-radius:6px;padding:4px 8px">🎯 <b>Hoy:</b> '+safeText(sug.text)+'</div>';
+            // v1.187: objetivo compacto "🎯 Objetivo · 20 lb · 11 / 11 / 11" (cuando hay números);
+            // si no hay objetivo numérico (primera vez) se mantiene el texto clásico.
+            if(sug&&sug.targetReps&&sug.targetReps.length){
+              lastHTML+='<div style="font-size:11px;font-weight:800;color:#b8860b;margin-top:3px;background:#fff8f0;border-radius:6px;padding:4px 8px">🎯 Objetivo · '+safeText(String(sug.target||'—')+' '+U.pesoUnidad()+' · '+sug.targetReps.join(' / '))+'</div>';
+            } else if(sug){
+              lastHTML+='<div style="font-size:11px;color:#b8860b;margin-top:3px;background:#fff8f0;border-radius:6px;padding:4px 8px">🎯 <b>Hoy:</b> '+safeText(sug.text)+'</div>';
+            }
           } else {
             lastHTML='<div style="margin-top:4px;font-size:11px;color:var(--m);background:#f0f8ff;border-radius:6px;padding:4px 8px">🆕 <b>Primera vez</b> — registra esta sesión para crear tu referencia.</div>';
           }
@@ -25323,6 +25330,18 @@ function quickFitnessToday(){
             +'</div>';
         } else {
           regHTML+='<div style=\"margin-top:4px;font-size:11px;color:var(--m)\">Series de hoy: 0/'+goal+' '+dots+'</div>';
+        }
+        // v1.187: veredicto objetivo vs resultado (✓ cumplido / ↗ progreso / → mantén / ↓ debajo)
+        if(sessionRegs.length){
+          var evaHoy=evaluarSesionHoy(x.name,x.reps,goalSets,hoy,state.workoutLog,sid);
+          if(evaHoy&&evaHoy.estado!=='sinResultado'&&evaHoy.estado!=='primera'){
+            var colorV=(evaHoy.estado==='cumplido'||evaHoy.estado==='superado')?'#15704f':(evaHoy.estado==='debajo'?'#b03030':(evaHoy.estado==='manten'?'#63706a':'#b8860b'));
+            var bgV=(evaHoy.estado==='cumplido'||evaHoy.estado==='superado')?'#eaf9f0':(evaHoy.estado==='debajo'?'#fdecec':(evaHoy.estado==='manten'?'#f4f6f5':'#fff8f0'));
+            var bdV=(evaHoy.estado==='cumplido'||evaHoy.estado==='superado')?'#9dd5b4':(evaHoy.estado==='debajo'?'#e6b9b9':(evaHoy.estado==='manten'?'#d9e3db':'#f0d9a8'));
+            regHTML+='<div style="margin-top:6px;font-size:12px;font-weight:800;color:'+colorV+';background:'+bgV+';border:1px solid '+bdV+';border-radius:8px;padding:5px 9px">'+safeText(evaHoy.label)
+              +(evaHoy.estado!=='manten'?'<div style="font-weight:600;font-size:11px;opacity:.85;margin-top:1px">'+safeText(evaHoy.texto)+'</div>':'')
+              +'</div>';
+          }
         }
         if(oldRegs.length){
           regHTML+='<details style="margin-top:3px;font-size:11px"><summary style="color:var(--m);cursor:pointer">▶ Historial anterior ('+oldRegs.length+')</summary>'
@@ -25389,6 +25408,7 @@ function logRoutineQuick(i){
   console.log('[QUICK] creadas '+seriesFaltantes+' series de '+goal+' para '+x.name);
   if(!pack.checked)pack.checked={}; pack.checked[i]=true; pack.checkedDate=todayISO();
   save(true);
+  actualizarResultadosHoy(); // v1.187: veredicto objetivo vs resultado
   if(wEl)wEl.value='';
   quickFitnessToday();
 }
@@ -25398,6 +25418,7 @@ function deleteWorkoutEntry(id){
   state.workoutLog=(state.workoutLog||[]).filter(function(r){return r.id!==id;});
   console.log('[DEL] después workoutLog='+state.workoutLog.length);
   save(true);
+  actualizarResultadosHoy(); // v1.187: recalcular veredicto tras borrar una serie
   console.log('[DEL] save(true) ejecutado');
   quickFitnessToday();
 }
@@ -25425,6 +25446,7 @@ function saveWorkoutEntryEdit(id,btn){
   entry.weight=+inputs[0].value||0;
   entry.reps=inputs[1].value.trim()||'—';
   save(true);
+  actualizarResultadosHoy(); // v1.187: recalcular veredicto tras editar una serie
   quickFitnessToday();
 }
 function toggleSimpleFitDone(i){
@@ -25519,6 +25541,7 @@ function renderSimpleFitnessProgress(days){
     +'<div class="mini" style="margin:10px 0"><b>Volumen total:</b> '+Math.round(volCur).toLocaleString()+' lb movidas <span class="muted">('+volTxt+')</span></div>'
     +'<div style="font-weight:800;font-size:13px;margin:8px 0 4px">Tu mejor peso por ejercicio ('+periodo+'):</div>'
     +(rows||'<p class="muted">Aún no registras pesos en este periodo. Registra tus ejercicios para ver resultados aquí.</p>')
+    +fitHistorialSesiones()
     +'</div>';
   setTimeout(function(){out.scrollIntoView({behavior:'smooth',block:'nearest'});},30);
 }
@@ -25650,13 +25673,17 @@ function fallbackCopy(txt,cb){try{let ta=document.createElement('textarea');ta.v
 function restSeconds(str){let m=String(str).match(/\d+/g);if(!m)return 75;if(m.length>=2)return Math.round((+m[0]+ +m[1])/2);return +m[0];}
 function parseRepRange(reps){let m=String(reps).match(/\d+/g)||[];return {min:+m[0]||8,max:+m[1]|| +m[0]||12};}
 // 🎯 Sugerencia de hoy: analiza la SESIÓN anterior completa del ejercicio
-function sugerenciaSesion(name,reps,goalSets){
-  var hoy=todayLocal();
-  var logs=(state.workoutLog||[]).filter(function(r){
+// v1.187: parámetro opcional opts={log,hoy} para poder calcular el objetivo de forma
+// determinística (los registros de HOY quedan SIEMPRE excluidos, así el objetivo
+// es reconstruible en cualquier momento). Devuelve además lastReps/lastWeight/targetReps
+// (números, no texto) para comparar objetivo vs resultado. NUNCA suma pesos.
+function sugerenciaSesion(name,reps,goalSets,opts){
+  var hoy=opts&&opts.hoy?opts.hoy:todayLocal();
+  var logs=((opts&&opts.log)||state.workoutLog||[]).filter(function(r){
     var v=(r.reps||'');var repsValida=v!=='—'&&v!=='no registradas'&&v!==''&&!/^\d+[-–]\d+$/.test(v);
     return String(r.exercise||'').toLowerCase().trim()===String(name||'').toLowerCase().trim() && +r.weight>0 && repsValida && (r.localDate||r.date||'')!==hoy;
   });
-  if(!logs.length)return {esPrimera:true,text:'Primera vez: registra esta sesión para crear tu referencia.'};
+  if(!logs.length)return {esPrimera:true,text:'Primera vez: registra esta sesión para crear tu referencia.',lastReps:[],lastWeight:0,targetReps:[]};
   // Agrupar por sesión
   var sesiones={};
   logs.forEach(function(r){var k=r.sessionId||('legacy_'+r.id);if(!sesiones[k])sesiones[k]=[];sesiones[k].push(r);});
@@ -25664,35 +25691,231 @@ function sugerenciaSesion(name,reps,goalSets){
     return (sesiones[b][0].localDate||sesiones[b][0].date||'').localeCompare(sesiones[a][0].localDate||sesiones[a][0].date||'');
   });
   var ultima=sesiones[keys[0]];
-  if(!ultima||!ultima.length)return {esPrimera:true,text:'Primera vez: registra esta sesión para crear tu referencia.'};
+  if(!ultima||!ultima.length)return {esPrimera:true,text:'Primera vez: registra esta sesión para crear tu referencia.',lastReps:[],lastWeight:0,targetReps:[]};
   var W=+ultima[0].weight||0;
   var range=parseRepRange(reps);
   var inc=(/pierna|espalda/i.test(ultima[0].note||'')||/pierna|espalda/i.test(ultima[0].exercise||''))?10:5;
   // Series NORMALES: solo las primeras goalSets (extras NO alteran el objetivo)
   var normales=ultima.slice(0,goalSets||ultima.length);
   var repsSerie=normales.map(function(r){var m=String(r.reps).match(/\d+/g);return m?+m[0]:0;}).filter(function(n){return n>0;});
-  if(!repsSerie.length)return {esPrimera:false,target:W,text:'Mantén '+W+' lb y registra repeticiones reales.'};
+  if(!repsSerie.length)return {esPrimera:false,target:W,text:'Mantén '+W+' lb y registra repeticiones reales.',lastReps:[],lastWeight:W,targetReps:[]};
   var todasAlMax=repsSerie.every(function(n){return n>=range.max;});
   var algunasBajoMin=repsSerie.some(function(n){return n<range.min;});
   var promedio=Math.round(repsSerie.reduce(function(a,b){return a+b;},0)/repsSerie.length);
   if(todasAlMax){
     // Completaste todas las series al tope del rango → subir peso
     var nuevo=W+inc;
-    return {esPrimera:false,target:nuevo,text:'La última vez: '+repsSerie.join(' / ')+' reps (tope). Sube a '+nuevo+' '+U.pesoUnidad()+' · objetivo '+range.min+'-'+(range.max-2)+' reps.'};
+    var repsNuevas=[];for(var ti=0;ti<(goalSets||repsSerie.length);ti++)repsNuevas.push(range.min);
+    return {esPrimera:false,target:nuevo,text:'La última vez: '+repsSerie.join(' / ')+' reps (tope). Sube a '+nuevo+' '+U.pesoUnidad()+' · objetivo '+range.min+'-'+(range.max-2)+' reps.',lastReps:repsSerie,lastWeight:W,targetReps:repsNuevas};
   }
   if(algunasBajoMin){
     // No alcanzaste el mínimo → mantener o bajar ligeramente
     var bajada=Math.max(0,W-inc);
-    return {esPrimera:false,target:W,text:'La última vez: '+repsSerie.join(' / ')+' reps (bajo '+range.min+'). Mantén '+W+' '+U.pesoUnidad()+' y prioriza técnica.'+(bajada<W?' Si duele, baja a '+bajada+' '+U.pesoUnidad()+'.':'')};
+    return {esPrimera:false,target:W,text:'La última vez: '+repsSerie.join(' / ')+' reps (bajo '+range.min+'). Mantén '+W+' '+U.pesoUnidad()+' y prioriza técnica.'+(bajada<W?' Si duele, baja a '+bajada+' '+U.pesoUnidad()+'.':''),lastReps:repsSerie,lastWeight:W,targetReps:repsSerie.slice(0,goalSets||repsSerie.length)};
   }
   // Dentro del rango → mantener peso e intentar superar
-  return {esPrimera:false,target:W,text:'La última vez: '+repsSerie.join(' / ')+' reps. Mantén '+W+' '+U.pesoUnidad()+' e intenta '+repsSerie.map(function(n){return Math.min(range.max,n+1);}).join(' / ')+' reps.'};
+  var repsObjetivo=repsSerie.map(function(n){return Math.min(range.max,n+1);});
+  return {esPrimera:false,target:W,text:'La última vez: '+repsSerie.join(' / ')+' reps. Mantén '+W+' '+U.pesoUnidad()+' e intenta '+repsObjetivo.join(' / ')+' reps.',lastReps:repsSerie,lastWeight:W,targetReps:repsObjetivo};
 }
 function suggestTargetWeight(name,muscle,reps,goalSets){
   // Delegar en sugerenciaSesion: analiza series individualmente, NUNCA suma pesos
   var s=sugerenciaSesion(name,reps,goalSets||3);
   if(s.esPrimera)return {target:null,text:s.text,last:null};
   return {target:s.target,text:s.text,last:null};
+}
+
+// ==== v1.187: OBJETIVO VS RESULTADO REAL DEL DÍA ====
+// Devuelve solo las series VÁLIDAS (peso>0 y reps reales), deduplicadas por id.
+function seriesValidasRegs(regs){
+  var vistos={},out=[];
+  (regs||[]).forEach(function(r){
+    if(r&&!vistos[r.id]){vistos[r.id]=1;out.push(r);}
+  });
+  return out.filter(function(r){
+    var v=(r.reps||'');var repsValida=v!=='—'&&v!=='no registradas'&&v!==''&&!/^\d+[-–]\d+$/.test(v);
+    return +r.weight>0 && repsValida;
+  });
+}
+// Reps numéricas de un registro ("12" -> 12, "11,5" -> 11).
+function repsNum(r){var m=String(r.reps||'').match(/\d+/);return m?+m[0]:0;}
+// Series REALES de HOY para un ejercicio. Nombre exacto: un ejercicio alternativo
+// usa EXCLUSIVAMENTE su propio historial, nunca se mezclan.
+function seriesHoyEjercicio(name,hoy,log,sessionId){
+  var key=String(name||'').toLowerCase().trim();
+  var hoyRegs=seriesValidasRegs((log||state.workoutLog||[]).filter(function(r){
+    return String(r.exercise||'').toLowerCase().trim()===key && (r.localDate||r.date||'')===hoy;
+  })).sort(function(a,b){return (a.id||0)-(b.id||0);});
+  if(sessionId){
+    var sidRegs=hoyRegs.filter(function(r){return r.sessionId===sessionId;});
+    if(sidRegs.length)return sidRegs;
+  }
+  return hoyRegs;
+}
+// 🎯 EVALUACIÓN: objetivo (derivado de la sesión anterior, reconstruible) vs resultado de HOY.
+// Estados: cumplido | superado | progreso | manten | debajo | incompleto | primera | sinResultado.
+// Reglas: juzga peso + reps + series juntas; una sesión mala NUNCA baja peso automáticamente;
+// las series extra NO contaminan las normales; nunca se suman pesos.
+function evaluarSesionHoy(name,reps,goalSets,hoy,log,sessionId){
+  var hoyE=hoy||todayLocal();
+  var logE=log||state.workoutLog||[];
+  var sug=sugerenciaSesion(name,reps,goalSets,{log:logE,hoy:hoyE});
+  var actual=seriesHoyEjercicio(name,hoyE,logE,sessionId);
+  var N=actual.length, G=+(goalSets||3);
+  var range=parseRepRange(reps);
+  var base={goal:sug,actual:actual};
+  if(sug.esPrimera){
+    return Object.assign(base,{estado:'primera',label:'🆕 Primera vez',texto:'Primera vez: registra esta sesión para crear tu referencia.',objetivoStr:''});
+  }
+  if(!N){
+    return Object.assign(base,{estado:'sinResultado',label:'',texto:'Aún no registras series hoy para comparar con el objetivo.',objetivoStr:''});
+  }
+  var T=+sug.target||0, W=+sug.lastWeight||0;
+  var gReps=sug.targetReps||[], lReps=sug.lastReps||[];
+  var unit=U.pesoUnidad?U.pesoUnidad():'lb';
+  var objetivoStr=T+' '+unit+' · '+gReps.join(' / ');
+  if(N<G){
+    return Object.assign(base,{estado:'incompleto',label:'↗ Progreso',texto:'Incompleto: hiciste '+N+' de '+G+' series. Mantén '+T+' '+unit+' y completa las series la próxima vez.',objetivoStr:objetivoStr});
+  }
+  // Solo se comparan las primeras G series (normales). Las extras quedan fuera.
+  var normales=actual.slice(0,G);
+  var pesosOK=normales.every(function(r){return +r.weight>=T;});
+  var algunPesoMayor=normales.some(function(r){return +r.weight>T;});
+  var repsCumplidas=true, faltanReps=0, todasSuperadas=true;
+  for(var i=0;i<G;i++){
+    var gr=(gReps[i]!=null)?gReps[i]:range.min;
+    var ar=repsNum(normales[i]);
+    if(ar<gr){repsCumplidas=false;faltanReps+=(gr-ar);todasSuperadas=false;}
+    else if(ar===gr){todasSuperadas=false;}
+  }
+  var sumA=normales.reduce(function(a,r){return a+repsNum(r);},0);
+  var sumL=(lReps||[]).reduce(function(a,b){return a+b;},0);
+  var sumG=(gReps||[]).reduce(function(a,b){return a+b;},0);
+  if(pesosOK&&repsCumplidas){
+    if(algunPesoMayor||todasSuperadas){
+      return Object.assign(base,{estado:'superado',label:'✓ Objetivo superado 🎉',texto:'Superaste el objetivo ('+objetivoStr+'). El resultado queda como nueva referencia.',objetivoStr:objetivoStr});
+    }
+    return Object.assign(base,{estado:'cumplido',label:'✓ Objetivo cumplido',texto:'Cumpliste '+objetivoStr+'. Este resultado es tu nueva referencia.',objetivoStr:objetivoStr});
+  }
+  if(!pesosOK){
+    // Hizo menos peso del pedido: comparar contra la sesión anterior. Una sesión mala no baja peso automáticamente.
+    var A=+normales[0].weight||0;
+    if(A<W){
+      return Object.assign(base,{estado:'debajo',label:'↓ Sesión por debajo de la anterior',texto:'Sesión por debajo de la anterior ('+A+' vs '+W+' '+unit+'). Mantén '+W+' '+unit+' y vuelve a intentarlo.',objetivoStr:objetivoStr});
+    }
+    return Object.assign(base,{estado:'progreso',label:'↗ Progreso',texto:'Subiste a '+A+' '+unit+'; el objetivo era '+objetivoStr+'. Sigue empujando el objetivo.',objetivoStr:objetivoStr});
+  }
+  if(algunPesoMayor&&!repsCumplidas){
+    // Subió de peso voluntariamente: con más peso basta llegar al mínimo del rango.
+    var todasEnRango=normales.every(function(r){return repsNum(r)>=range.min;});
+    if(todasEnRango){
+      var AW=+normales[0].weight||T;
+      return Object.assign(base,{estado:'superado',label:'✓ Objetivo superado 🎉',texto:'Subiste a '+AW+' '+unit+' (más que '+T+') y las reps siguen dentro del rango. Nueva referencia.',objetivoStr:objetivoStr});
+    }
+    return Object.assign(base,{estado:'progreso',label:'↗ Progreso',texto:'Con '+T+' '+unit+' o más, intenta llegar a '+range.min+' reps por serie.',objetivoStr:objetivoStr});
+  }
+  // Peso correcto pero reps cortas: comparar contra la sesión anterior.
+  if(sumA>sumL){
+    var falto=Math.max(1,sumG-sumA);
+    return Object.assign(base,{estado:'progreso',label:'↗ Progreso · faltó '+(falto===1?'1 repetición':falto+' repeticiones'),texto:'Casi. Mantén '+T+' '+unit+' e intenta completar '+gReps.join(' / ')+' la próxima vez.',objetivoStr:objetivoStr});
+  }
+  if(sumA===sumL){
+    return Object.assign(base,{estado:'manten',label:'→ Mantén el peso',texto:'Quedó igual que la última vez ('+normales.map(function(r){return repsNum(r);}).join(' / ')+'). Mantén '+T+' '+unit+' y busca una repetición más.',objetivoStr:objetivoStr});
+  }
+  return Object.assign(base,{estado:'debajo',label:'↓ Sesión por debajo de la anterior',texto:'Sesión por debajo de la anterior. Mantén '+T+' '+unit+' y vuelve a intentarlo.',objetivoStr:objetivoStr});
+}
+// Persiste el veredicto de hoy por ejercicio en state.fitnessDailyResults.
+// NO crea una segunda base: solo anota objetivo+veredicto sobre las sesiones ya
+// guardadas en workoutLog (el historial se lee siempre de workoutLog).
+function actualizarResultadosHoy(){
+  var pack=state.fitnessToday;
+  if(!pack||!pack.plan||!Array.isArray(state.workoutLog))return;
+  var hoy=todayLocal();
+  var sid=pack.sessionId||0;
+  var nuevos=[];
+  pack.plan.forEach(function(x,i){
+    var G=(function(){var m=String(x.sets||'3').match(/\d+/);return m?+m[0]:3;})();
+    var actual=seriesHoyEjercicio(x.name,hoy,state.workoutLog,sid);
+    if(!actual.length)return;
+    var eva=evaluarSesionHoy(x.name,x.reps,G,hoy,state.workoutLog,sid);
+    if(!eva||eva.estado==='primera'||eva.estado==='sinResultado')return;
+    nuevos.push({
+      id:'r'+hoy+'_'+(sid||0)+'_'+String(x.name).toLowerCase().trim(),
+      date:hoy, sessionId:sid||null, exercise:x.name,
+      peso:(+actual[0].weight||0),
+      repsStr:actual.map(function(r){return repsNum(r);}).join('/'),
+      sets:actual.length,
+      objetivo:eva.objetivoStr||'',
+      estado:eva.estado, icon:eva.label, texto:eva.texto
+    });
+  });
+  if(!Array.isArray(state.fitnessDailyResults))state.fitnessDailyResults=[];
+  var antes=JSON.stringify(state.fitnessDailyResults);
+  var idsNuevos={};
+  nuevos.forEach(function(n){idsNuevos[n.id]=1;});
+  // Quitar anotaciones viejas de HOY y hacer upsert de las nuevas (el resto de días queda intacto)
+  state.fitnessDailyResults=state.fitnessDailyResults.filter(function(r){return String(r.date||'')!==hoy || idsNuevos[r.id];});
+  nuevos.forEach(function(n){
+    var ex=state.fitnessDailyResults.find(function(r){return r.id===n.id;});
+    if(ex){Object.assign(ex,n);}else{state.fitnessDailyResults.push(n);}
+  });
+  if(antes!==JSON.stringify(state.fitnessDailyResults)){save(true);}
+}
+// 🏁 Resumen automático al terminar la rutina: objetivo vs resultado por ejercicio.
+function fitResumenResultadoHoy(){
+  var pack=state.fitnessToday;if(!pack||!pack.plan)return '';
+  var hoy=todayLocal();var sid=pack.sessionId||0;
+  var filas='';
+  pack.plan.forEach(function(x,i){
+    var G=(function(){var m=String(x.sets||'3').match(/\d+/);return m?+m[0]:3;})();
+    var actual=seriesHoyEjercicio(x.name,hoy,state.workoutLog,sid);
+    var eva=evaluarSesionHoy(x.name,x.reps,G,hoy,state.workoutLog,sid);
+    var est=(eva&&eva.estado!=='sinResultado')?eva:null;
+    if(!actual.length){
+      filas+='<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:3px 0"><span style="font-weight:700">'+safeText(x.name)+'</span><span class="muted" style="font-size:11px">sin series registradas</span></div>';
+      return;
+    }
+    if(!est){
+      filas+='<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:3px 0"><span style="font-weight:700">'+safeText(x.name)+'</span><span class="muted" style="font-size:11px">primera vez · sin comparación</span></div>';
+      return;
+    }
+    var colorE=(est.estado==='cumplido'||est.estado==='superado')?'#15704f':(est.estado==='debajo'?'#b03030':(est.estado==='manten'?'#63706a':'#b8860b'));
+    filas+='<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:3px 0"><span style="font-weight:700">'+safeText(x.name)+'</span><span style="font-weight:800;color:'+colorE+';white-space:nowrap">'+safeText(est.label)+'</span></div>';
+  });
+  if(!filas)return '';
+  return '<div style="margin-top:10px;background:#fff;border:1.5px solid #9dd5b4;border-radius:12px;padding:10px 12px"><div style="font-weight:900;font-size:13px;color:#15704f;margin-bottom:4px">🏁 Objetivo vs resultado de hoy</div>'+filas+'</div>';
+}
+// 📜 Historial de sesiones para "Ver progreso": fecha → ejercicio → peso → reps → resultado.
+// Lee SIEMPRE de workoutLog (datos existentes) y solo añade la marca del veredicto guardado.
+function fitHistorialSesiones(){
+  var log=state.workoutLog||[];
+  var anotBy={};
+  (state.fitnessDailyResults||[]).forEach(function(a){anotBy[a.id]=a;});
+  var grupos={},orden=[];
+  seriesValidasRegs(log).forEach(function(r){
+    var dia=r.localDate||r.date||'';
+    var sid=r.sessionId||('legacy_'+r.id);
+    var ex=String(r.exercise||'').trim();if(!ex)return;
+    var k=dia+'|'+sid+'|'+ex.toLowerCase();
+    if(!grupos[k]){grupos[k]={dia:dia,sid:sid,ex:ex,regs:[]};orden.push(k);}
+    grupos[k].regs.push(r);
+  });
+  orden.sort(function(a,b){
+    return grupos[b].dia.localeCompare(grupos[a].dia)||((grupos[b].regs[0].id||0)-(grupos[a].regs[0].id||0));
+  });
+  var meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var filas=orden.slice(0,14).map(function(k){
+    var g=grupos[k];
+    var pesos=[];g.regs.forEach(function(r){var w=+r.weight||0;if(pesos.indexOf(w)<0)pesos.push(w);});
+    var peso=pesos.length===1?pesos[0]+' '+U.pesoUnidad():'varios';
+    var reps=g.regs.map(function(r){return repsNum(r);}).join('/');
+    var ann=anotBy['r'+g.dia+'_'+(g.sid||0)+'_'+g.ex.toLowerCase()];
+    var marca=ann?('<span style="font-weight:900;color:'+((ann.estado==='cumplido'||ann.estado==='superado')?'#15704f':(ann.estado==='debajo'?'#b03030':'#b8860b'))+'"> '+safeText(ann.icon)+'</span>'):'';
+    var fechaP=g.dia.split('-');
+    var fechaBonita=(fechaP.length===3)?(parseInt(fechaP[2],10)+' '+meses[(parseInt(fechaP[1],10)-1)||0]):g.dia;
+    return '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px;padding:4px 0;border-bottom:1px dashed #e4ebe6"><span style="font-weight:800">'+fechaBonita+'</span><span style="flex:1;font-weight:700">'+safeText(g.ex)+'</span><span class="muted">'+peso+'</span><span class="muted">'+reps+'</span>'+marca+'</div>';
+  }).join('');
+  if(!filas)return '';
+  return '<div style="margin-top:14px;border-top:1px solid #d9e3db;padding-top:10px"><div style="font-weight:800;font-size:13px;margin-bottom:4px">📜 Historial de sesiones</div>'+filas+'<div class="muted" style="font-size:11px;margin-top:4px">✓ objetivo cumplido · ↗ progreso · → mantén · ↓ por debajo</div></div>';
 }
 function routineDayPlan(di){
   let r=state.customRoutine;if(!r||!r.days[di])return [];
@@ -26258,6 +26481,7 @@ function logRoutineExercise(i, btn){
   console.log('[REG] DESPUES DEL PUSH — workoutLog='+state.workoutLog.length+' serie='+serieNum);
   if(!pack.checked)pack.checked={}; pack.checked[i]=true; pack.checkedDate=todayISO();
   save(true); // inmediato: la acción del usuario no debe esperar el debounce
+  actualizarResultadosHoy(); // v1.187: veredicto objetivo vs resultado
   console.log('[REG] DESPUES DE SAVE(true)');
   // Confirmación inmediata en la tarjeta
   var out = document.getElementById('rlogOut_'+i);
@@ -26489,7 +26713,7 @@ function saveGuidedWorkoutStep(){
   }else{
     aw.lastMessage='Guardado: '+x.name+'. Ya llegaste al final; toca Terminar para cerrar la rutina.';
   }
-  save();keepScroll(function(){renderGuidedWorkout();renderWorkoutLog();renderFitnessProgressPanel();});
+  save();actualizarResultadosHoy();keepScroll(function(){renderGuidedWorkout();renderWorkoutLog();renderFitnessProgressPanel();});
 }
 function finishGuidedWorkout(){
   if(!state.activeWorkout)return;
