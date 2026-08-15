@@ -2,3 +2,5 @@ node_modules/
 dist/
 *.log
 .DS_Store
+# Sesión de diagnóstico local (JWT del usuario): NUNCA se sube a Git.
+/session-token.txt

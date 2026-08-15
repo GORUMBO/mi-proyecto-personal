@@ -1,8 +1,25 @@
 {
-  "latest": "1.187.11",
-  "date": "2026-08-14",
+  "latest": "1.187.12",
+  "date": "2026-08-15",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.12",
+      "date": "2026-08-15",
+      "type": "obligatoria",
+      "nuevas": [
+        "Boton 'Auditar Supabase' en la barra de diagnostico: muestra en pantalla la fila REAL de personal_backups (workoutLog real por fila), la consulta exacta de la app y una escritura controlada que re-envia el MISMO contenido (solo cambia updated_at) para ver si el upsert modifica la fila que se lee. Sin copiar tokens.",
+        "Subida verificada: la app solo dice 'Subido' si Supabase confirma lo enviado; si no, error visible y sin reintentos automaticos (fin del ciclo de promociones)."
+      ],
+      "cambios": [
+        "Reconexion idempotente: el canal muerto en silencio se detecta con cualquier mensaje recibido (antes solo phx_reply, y un latido sin respuesta forzaba cierre en falso cada 75 s), y la reconexion ya no re-sube si no hay registros propios pendientes.",
+        "Diagnostico de origen: [SYNC-INIT]/[WEIGHT-LOAD]/[REALTIME-INIT]/[AUTH-INIT] indican QUIEN llama a cada sincronizacion."
+      ],
+      "errores": [
+        "La consola repetia 'Usuario conectado / Registros de peso' sin tocar nada: el watchdog mataba el canal vivo por latidos sin phx_reply y cada reconexion corria un sync completo.",
+        "La app podia declarar 'Subido 53' basandose solo en el payload local aunque la fila de Supabase siguiera en 42."
+      ]
+    },
     {
       "version": "1.187.11",
       "date": "2026-08-14",

@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.11';
+  window.HM_APP_VERSION='1.187.12';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -22820,7 +22820,7 @@ async function cloudSignIn(){
     saveCloudConfig();
     let data=await supabaseAuth('token?grant_type=password',{email,password:pass});
     safeStorage.set('pp_cloud_session',JSON.stringify(data));safeStorage.set('pp_signup_known','');
-    cloudStatus('Sesión iniciada: '+data.user.email);setTimeout(cloudStartupSync,300);afterLoginSuccess();
+    cloudStatus('Sesión iniciada: '+data.user.email);setTimeout(function(){cloudStartupSync({_origin:'login'});},300);afterLoginSuccess();
   }catch(e){cloudStatus(e.message,false);}
   finally{_authBusy=false;_setAuthBtns(false);_tickConfirmCooldown();}
 }
@@ -23096,9 +23096,69 @@ function renderSyncChain(){
       document.body.appendChild(el);
     }
     el.innerHTML='<b>🔁 Cadena de sync (diagnóstico temporal)</b>'
+      +'<button onclick="ppAuditarSupabase()" style="margin-left:8px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🔍 Auditar Supabase</button>'
       +PP_SYNCCHAIN.map(function(e){return '<div style="margin-top:2px">'+safeText(e.t)+' · '+safeText(e.evento)+' <span style="opacity:.75">'+safeText(e.detalle)+'</span></div>';}).join('')
       +'<span onclick="this.parentNode.remove()" style="cursor:pointer;float:right;opacity:.6">✕</span>';
   }catch(e){}
+}
+// v1.187.12 (diagnóstico temporal): auditoría EN PANTALLA de la fila REAL de
+// personal_backups, con la MISMA sesión de la app (sin copiar tokens). La
+// prueba de escritura controlada re-envía el MISMO contenido de la fila
+// (solo cambia updated_at): no modifica datos.
+function ppAuditPanel(){
+  var p=document.getElementById('ppAuditOut');
+  if(p)return p;
+  p=document.createElement('div');p.id='ppAuditOut';
+  p.style.cssText='position:fixed;top:10px;right:10px;z-index:30000;max-width:430px;max-height:72vh;overflow:auto;background:rgba(18,53,42,.97);color:#eafff4;border-radius:10px;padding:10px 12px;font-size:12px;box-shadow:0 2px 16px rgba(0,0,0,.4)';
+  p.innerHTML='<b>🔍 Auditoría Supabase</b><span style="float:right;cursor:pointer;opacity:.8" onclick="document.getElementById(\'ppAuditOut\').remove()">✕</span><div id="ppAuditLines" style="margin-top:6px"></div>';
+  document.body.appendChild(p);
+  return p;
+}
+function ppAuditLine(m){
+  var p=ppAuditPanel();
+  var l=document.getElementById('ppAuditLines');
+  if(l){var d=document.createElement('div');d.style.marginTop='3px';d.innerHTML=m;l.appendChild(d);p.scrollTop=p.scrollHeight;}
+}
+async function ppAuditarSupabase(){
+  ppAuditLine('<i>Iniciando…</i>');
+  try{
+    var s=getCloudSession();
+    if(!s||!s.access_token){ppAuditLine('✘ Sin sesión activa. Inicia sesión primero.');return;}
+    try{await refreshCloudSession(true);s=getCloudSession();}catch(e){}
+    var c=getCloudConfig();
+    var H={apikey:c.key,'Authorization':'Bearer '+s.access_token,'Content-Type':'application/json'};
+    ppAuditLine('🔑 '+safeText(s.user&&s.user.email)+' · id '+safeText(String(s.user&&s.user.id)));
+    // 1) Todas las filas visibles (RLS) con su data real.
+    var r1=await fetch(c.url+'/rest/v1/personal_backups?select=user_id,updated_at,data',{headers:H});
+    var rows=[];try{rows=JSON.parse(await r1.text());}catch(e){}
+    ppAuditLine('☁️ filas visibles · HTTP '+r1.status+' · total: '+(Array.isArray(rows)?rows.length:'?'));
+    if(Array.isArray(rows)){
+      for(var i=0;i<rows.length;i++){
+        var f=rows[i],wl=(f.data&&f.data.workoutLog)||[];
+        var ult=wl.length?wl[wl.length-1]:null;
+        ppAuditLine('· fila '+(i+1)+': workoutLog <b>'+wl.length+'</b>'+(ult?' · último '+safeText(ult.exercise)+'#'+ult.id:'')+' · updated_at '+safeText(f.updated_at||''));
+      }
+    }
+    // 2) La MISMA consulta filtrada que usa la app.
+    var r2=await fetch(c.url+'/rest/v1/personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at',{headers:H});
+    var rows2=[];try{rows2=JSON.parse(await r2.text());}catch(e){}
+    var wl2=(rows2[0]&&rows2[0].data&&rows2[0].data.workoutLog)||[];
+    ppAuditLine('🔎 SELECT de la app: filas='+rows2.length+' · workoutLog <b>'+wl2.length+'</b>');
+    // 3) Prueba de escritura controlada: MISMO contenido (solo cambia updated_at).
+    if(rows.length===1&&rows[0].data){
+      ppAuditLine('🧪 Escritura controlada (mismo contenido)…');
+      var r3=await fetch(c.url+'/rest/v1/personal_backups?on_conflict=user_id',{method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=representation'}),body:JSON.stringify({user_id:s.user.id,data:rows[0].data,updated_at:new Date().toISOString()})});
+      ppAuditLine('🧪 upsert HTTP '+r3.status);
+      try{
+        var rr=JSON.parse(await r3.text());rr=(Array.isArray(rr)?rr:[rr]);
+        rr.forEach(function(x){ppAuditLine('· fila devuelta: workoutLog <b>'+(((x.data&&x.data.workoutLog)||[]).length)+'</b>');});
+      }catch(e){ppAuditLine('· respuesta no-JSON');}
+      var r4=await fetch(c.url+'/rest/v1/personal_backups?select=user_id,updated_at,data',{headers:H});
+      var rows4=[];try{rows4=JSON.parse(await r4.text());}catch(e){}
+      rows4.forEach(function(x,j){ppAuditLine('· después fila '+(j+1)+': workoutLog <b>'+(((x.data&&x.data.workoutLog)||[]).length)+'</b>');});
+    } else ppAuditLine('(sin fila única con data: se omite la escritura controlada)');
+    ppAuditLine('🏁 Fin. No se modificaron datos (solo updated_at).');
+  }catch(e){ppAuditLine('✘ Error: '+safeText(String((e&&e.message)||e)));}
 }
 // Canal en vivo: recibe cambios de OTRO dispositivo al instante, sin recargar.
 // Un solo WebSocket; se suscribe a las tablas del usuario (RLS con access_token).
@@ -23106,10 +23166,12 @@ function renderSyncChain(){
 // equipo, cambio de red: no llega 'close'), el latido deja de recibir respuesta
 // y forzamos reconexión en vez de quedarnos "conectados" sin recibir nada.
 let _rtSocket=null,_rtTimer=null,_rtBackoff=3000,_rtDebounce=null,_rtLastReply=0,_rtJoined=0,_rtEverConnected=false;
-function initRealtimeSync(){
+function initRealtimeSync(origen){
+  // v1.187.12 (diagnóstico temporal): quién pide el canal y con qué socket queda.
+  console.log('[REALTIME-INIT] origen='+(origen||'?')+' · socketsPrevios='+(_rtSocket?1:0));
   if(!navigator.onLine||!getCloudSession())return;
   var c=getCloudConfig();if(!c||!c.url||!c.key)return;
-  if(_rtSocket&&(_rtSocket.readyState===0||_rtSocket.readyState===1))return; // ya conectado
+  if(_rtSocket&&(_rtSocket.readyState===0||_rtSocket.readyState===1)){console.log('[REALTIME-INIT] ya conectado: se reutiliza el canal (sin duplicar)');return;} // ya conectado
   var s=getCloudSession();
   var wsUrl=c.url.replace(/^https/,'wss')+'/realtime/v1/websocket?apikey='+encodeURIComponent(c.key)+'&vsn=1.0.0';
   var ws;
@@ -23145,11 +23207,20 @@ function initRealtimeSync(){
     // normal los promueve (merge primero → sube la unión; sin bucle: el eco
     // posterior no encuentra registros propios sin subir).
     if(esReconexion){
-      setTimeout(function(){try{cloudStartupSync();}catch(e){}},1500);
+      // v1.187.12: promoción con skipUpload — solo sube si hay registros propios
+      // que la nube no tiene (localOnly). Sin eso, la reconexión NO re-subía ni
+      // re-descargaba de más (idempotente; antes subía la unión en cada reconexión).
+      setTimeout(function(){try{cloudStartupSync({_origin:'reconexion',skipUpload:true});}catch(e){}},1500);
     }
   };
   ws.onmessage=function(ev){
     try{
+      // v1.187.12: CUALQUIER mensaje del canal cuenta como "vivo". Antes solo
+      // phx_reply actualizaba _rtLastReply: si el servidor no respondía el
+      // latido (pero sí enviaba eventos), el watchdog mataba el canal a los 75 s
+      // → reconexión → sync completo → y otra vez: el ciclo que repetía
+      // "[SYNC] Usuario conectado / Registros de peso" sin que tocaras nada.
+      _rtLastReply=Date.now();
       var msg=JSON.parse(ev.data);
       // v1.187.9: Supabase avisa con event:'system' status:'error' cuando una
       // tabla NO está habilitada para Realtime (publicación supabase_realtime).
@@ -23177,7 +23248,7 @@ function initRealtimeSync(){
         clearTimeout(_rtDebounce);
         _rtDebounce=setTimeout(function(){
           syncChainPush('▼ Cambio recibido del otro dispositivo','tabla: '+tabla+' · tipo: '+(data.type||'?')+' · registros: '+records.length);
-          cloudStartupSync({skipUpload:true}).then(function(){
+          cloudStartupSync({_origin:'evento-realtime:'+tabla,skipUpload:true}).then(function(){
             syncChainPush('✔ Estado fusionado · UI actualizada','sin recargar');
           });
         },1200);
@@ -23188,7 +23259,7 @@ function initRealtimeSync(){
     _rtSocket=null;clearInterval(_rtTimer);
     syncChainPush('✘ Canal en vivo cerrado','reintentando en '+Math.round(_rtBackoff/1000)+' s');
     if(navigator.onLine){
-      setTimeout(function(){initRealtimeSync();},_rtBackoff);
+      setTimeout(function(){initRealtimeSync('reconexion-backoff');},_rtBackoff);
       _rtBackoff=Math.min(_rtBackoff*2,30000);
     }
   };
@@ -23197,6 +23268,11 @@ function initRealtimeSync(){
 
 async function cloudStartupSync(opts){
   opts=opts||{};
+  // v1.187.12 (diagnóstico temporal): QUIÉN llama a cada sync. Si falta el
+  // origen, se imprime el stack para localizar el caller (temporal).
+  var origenSync=opts._origin||(opts.skipUpload?'evento-realtime:?':'desconocido');
+  console.log('[SYNC-INIT] origen='+origenSync);
+  if(!opts._origin){try{console.log('[SYNC-INIT] stack: '+String(new Error().stack||'').slice(0,600));}catch(e){}}
   if(!navigator.onLine||!getCloudSession()){renderSyncUI();return}
   // v1.187.7: _csBusy evita que varios eventos realtime lancen descargas
   // concurrentes (se encolan en una sola pasada; la siguiente los toma frescos).
@@ -23252,7 +23328,7 @@ async function cloudStartupSync(opts){
     // 2) Tabla granular de peso: canal confiable por-fila (merge por updated_at).
     let pesoRows=await cloudRest('peso?user_id=eq.'+encodeURIComponent(s.user.id)+'&deleted=is.false&select=client_id,data,updated_at');
     let remoteWeights=(pesoRows||[]).map(r=>{let d=(r.data&&typeof r.data==='object')?r.data:{};d.client_id=d.client_id||r.client_id;d.updated_at=d.updated_at||r.updated_at;return d;});
-    console.log('[SYNC] Registros de peso descargados de la nube:',remoteWeights.length);
+    console.log('[WEIGHT-LOAD] origen='+origenSync+' · Registros de peso descargados de la nube:',remoteWeights.length);
     PP_SYNC.downloaded=remoteWeights.length;
     state.weight=mergeWeightLists(state.weight, remoteWeights);
     normalizeAllWeights();
@@ -23271,7 +23347,7 @@ async function cloudStartupSync(opts){
       await cloudSave(true);
     }
     setSync('synced');
-    initRealtimeSync();
+    initRealtimeSync('fin-sync');
   }catch(e){
     console.error('[SYNC] Error en sincronización inicial:',e);setSync('error',(e&&e.message)||'Error desconocido');
     // v1.187.7: sin respuesta de Supabase NO se pide el registro inicial
@@ -23288,7 +23364,7 @@ async function syncNow(){
   if(!navigator.onLine){cloudStatus('Sin conexión a internet ahora mismo.',false);setSync('offline',String(state.offlineChanges||0));return;}
   _syncRetries=0; clearTimeout(_syncRetryTimer); // reiniciar backoff en sync manual
   cloudStatus('Sincronizando ahora…');
-  await cloudStartupSync();
+  await cloudStartupSync({_origin:'manual'});
   if(PP_SYNC.kind==='synced')cloudStatus('✅ Sincronizado. Pesos en la nube descargados: '+(PP_SYNC.downloaded!=null?PP_SYNC.downloaded:(state.weight||[]).length));
   else if(PP_SYNC.kind==='error')cloudStatus('Error al sincronizar: '+PP_SYNC.lastError,false);
 }
@@ -23318,7 +23394,7 @@ function scheduleAutoSync(){
   if(!_startupSynced){
     // Aún no hemos fusionado la nube en esta sesión: primero descargamos para no pisar datos remotos.
     console.log('[SYNC] Cambio local en cola; se fusiona con la nube antes de subir.');
-    _autoSyncTimer=setTimeout(()=>{cloudStartupSync().then(()=>cloudSave(true))},1500);
+    _autoSyncTimer=setTimeout(()=>{cloudStartupSync({_origin:'autosave-arranque'}).then(()=>cloudSave(true))},1500);
     return;
   }
   _autoSyncTimer=setTimeout(()=>cloudSave(true),2500);
@@ -23355,12 +23431,28 @@ async function cloudSave(silent=false){
     await cloudRest('personal_backups?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payloadUp)});
     console.log('[SYNC] Respuesta de Supabase: respaldo guardado OK.');
     // v1.187.10 (diagnóstico temporal): leer la fila REAL tras el upsert.
+    // v1.187.12: el éxito SOLO se declara si Supabase confirma lo enviado.
+    // Antes se decía "Subido 53" con el payload local aunque la nube siguiera
+    // en 42 (la escritura no caía en la fila que se lee). Sin confirmación:
+    // error visible, SIN reintentos automáticos (frena el ciclo).
+    var rowsPost=null,nPostWl=-1;
     try{
-      var rowsPost=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');
+      rowsPost=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');
       var remotePost=rowsPost&&rowsPost[0];
-      console.log('[UPSERT-RESULT] workoutLog='+(((remotePost&&remotePost.data&&remotePost.data.workoutLog)||[]).length)+' · fila user_id='+String(s.user.id));
+      nPostWl=((remotePost&&remotePost.data&&remotePost.data.workoutLog)||[]).length;
+      console.log('[UPSERT-RESULT] workoutLog='+nPostWl+' · filas visibles='+((rowsPost||[]).length)+' · fila user_id='+String(s.user.id));
     }catch(e){console.log('[UPSERT-RESULT] no se pudo releer: '+String((e&&e.message)||e));}
-    console.log('[SAVE-END] remoto workoutLog='+(((remotePost&&remotePost.data&&remotePost.data.workoutLog)||[]).length));
+    if((rowsPost||[]).length>1){
+      syncChainPush('✘ Hay '+rowsPost.length+' filas personal_backups para tu usuario','se escribe una y se lee otra — revisar Supabase');
+      setSync('error','Hay varias filas personal_backups para tu usuario (se escribió en una y se leyó otra).');
+      return;
+    }
+    if(nPostWl<wlUp.length){
+      syncChainPush('✘ Supabase NO confirmó la subida','enviado: '+wlUp.length+' · guardado: '+nPostWl+' — no se reintenta solo');
+      setSync('error','Supabase no confirmó la subida (enviado '+wlUp.length+', guardado '+nPostWl+').');
+      return;
+    }
+    console.log('[SAVE-END] remoto workoutLog='+nPostWl);
     await mirrorGranular(s.user.id).catch(err=>console.warn('[SYNC] Espejo granular pendiente',err));
     state.offlineChanges=0;safeStorage.set('pp_full',JSON.stringify(state));
     _syncRetries=0; // éxito: reiniciar contador
@@ -23517,7 +23609,7 @@ async function submitNewPassword(){
     if(d&&d.id){ s.user=d; safeStorage.set('pp_cloud_session',JSON.stringify(s)); }
     setSt('✅ Contraseña actualizada. Ya puedes usar la app.',true);
     var b=document.getElementById('resetPwScreen'); if(b)b.remove();
-    setTimeout(function(){cloudStartupSync();try{render()}catch(e){}},200);
+    setTimeout(function(){cloudStartupSync({_origin:'nueva-contrasena'});try{render()}catch(e){}},200);
   }catch(e){setSt((e&&e.message)||'No se pudo actualizar la contraseña.',false);}
 }
 async function loginScreenSubmit(mode){
@@ -23532,14 +23624,14 @@ async function loginScreenSubmit(mode){
     saveCloudConfig();
     if(mode==='signup'){
       var d=await supabaseAuth('signup',{email,password:pass});
-      if(d&&d.access_token){safeStorage.set('pp_cloud_session',JSON.stringify(d));closeLoginScreen();setTimeout(function(){cloudStartupSync();afterLoginSuccess();},200);}
+      if(d&&d.access_token){safeStorage.set('pp_cloud_session',JSON.stringify(d));closeLoginScreen();setTimeout(function(){cloudStartupSync({_origin:'login-signup'});afterLoginSuccess();},200);}
       else{setSt('✅ Correo enviado. Confirma tu cuenta desde tu bandeja y luego pulsa Entrar.',true);}
     }else if(mode==='resend'){
       await supabaseAuth('resend',{type:'signup',email});setSt('✅ Correo de confirmación reenviado. Revisa tu bandeja y spam.',true);
     }else{
       var data=await supabaseAuth('token?grant_type=password',{email,password:pass});
       safeStorage.set('pp_cloud_session',JSON.stringify(data));
-      closeLoginScreen();setTimeout(function(){cloudStartupSync();afterLoginSuccess();},150);
+      closeLoginScreen();setTimeout(function(){cloudStartupSync({_origin:'login-signin'});afterLoginSuccess();},150);
     }
   }catch(e){setSt((e&&e.message)||'No se pudo. Revisa correo y contraseña.',false);}
 }
@@ -23617,9 +23709,14 @@ async function migrateProgressPhotosToCloud(){
   try{if(state.profile&&state.profile.photo)await cloudUploadProfilePhoto();}catch(e){}
 }
 window.addEventListener('load',function(){setTimeout(migrateProgressPhotosToCloud,3000);});
-window.addEventListener('online',()=>{if(!getCloudSession()){setSync('nosession');return}setSync('pending',String(state.offlineChanges||0));syncChainPush('🌐 Internet recuperado','subiendo pendientes automáticamente');cloudStartupSync();initRealtimeSync();});
+window.addEventListener('online',()=>{if(!getCloudSession()){setSync('nosession');return}setSync('pending',String(state.offlineChanges||0));syncChainPush('🌐 Internet recuperado','subiendo pendientes automáticamente');cloudStartupSync({_origin:'online'});initRealtimeSync('online');});
 window.addEventListener('offline',()=>setSync('offline',String(state.offlineChanges||0)));
-window.addEventListener('load',()=>setTimeout(cloudStartupSync,1200));
+window.addEventListener('load',function(){
+  // v1.187.12 (diagnóstico temporal): la sesión se lee de localStorage; NO hay
+  // onAuthStateChange ni listeners de auth que puedan duplicarse.
+  console.log('[AUTH-INIT] una sola vez · sesión desde localStorage · sin listeners de auth');
+  setTimeout(function(){cloudStartupSync({_origin:'arranque'});},1200);
+});
 window.addEventListener('load',()=>setTimeout(function(){ try{ avisoSinCuenta(); }catch(e){} },2500));
 window.addEventListener('load',()=>setTimeout(function(){ try{ iniciarPrueba(); }catch(e){} },3000));
 

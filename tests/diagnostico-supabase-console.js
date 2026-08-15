@@ -1,53 +1,72 @@
 // ============================================================
-// DIAGNÓSTICO SUPABASE CON EVIDENCIA REAL (se pega en la consola)
-// Uso: abre la app en Chrome (https://gorumbo.github.io/mi-proyecto-personal/),
-// inicia sesión, abre DevTools (F12) > Console, pega TODO este archivo y Enter.
-// Devuelve: sesión (email + user_id), fila real de personal_backups,
-// últimas filas de ejercicios y una sonda Realtime de 60 s con tu token real.
-// NO escribe, NO borra, NO modifica nada: solo lee y escucha.
+// AUDITORÍA DE LA FILA REAL DE SUPABASE (se pega en la consola)
+// Uso: abre la app en Chrome, inicia sesión, F12 > Console, pega TODO.
+// NO borra ni sobrescribe nada: solo LEE. Devuelve:
+//  - sesión (email + user_id),
+//  - TODAS las filas visibles de personal_backups para tu usuario
+//    (RLS solo muestra las tuyas): cuántas filas hay, user_id, fecha y
+//    cuántos workoutLog tiene CADA una (si hay más de una fila, esa es
+//    la causa de "subo 53 pero leo 42": se escribe en una y se lee otra),
+//  - conteo de ejercicios granulares.
+// Para una prueba de escritura controlada (NO destructiva: re-envía el
+// MISMO contenido que ya tiene la fila), cambia TEST_ESCRITURA a true.
 // ============================================================
 (async function () {
-  const c = { url: 'https://fzkpgrvqncqnmvagbjaf.supabase.co', key: 'sb_publishable_v3rxA0aQmdf1Ol4vTTQKqQ_xUDl-b4u' };
-  const out = [];
-  const log = function (x) { out.push(x); console.log(x); };
-  const s = JSON.parse(localStorage.getItem('pp_cloud_session') || 'null');
+  var TEST_ESCRITURA = false; // ← ponlo en true SOLO para la prueba controlada
+  var c = { url: 'https://fzkpgrvqncqnmvagbjaf.supabase.co', key: 'sb_publishable_v3rxA0aQmdf1Ol4vTTQKqQ_xUDl-b4u' };
+  var out = [];
+  function log(x) { out.push(x); console.log(x); }
+  var s = JSON.parse(localStorage.getItem('pp_cloud_session') || 'null');
   if (!s || !s.access_token) { log('NO hay sesión en este navegador. Inicia sesión en la app primero.'); return; }
   log('🔑 Sesión: ' + (s.user && s.user.email) + ' · user_id: ' + (s.user && s.user.id));
-  const J = s.access_token;
-  const R = async function (p) {
-    const r = await fetch(c.url + '/rest/v1/' + p, { headers: { apikey: c.key, Authorization: 'Bearer ' + J } });
-    return r.text();
-  };
-  const b = await R('personal_backups?select=user_id,updated_at');
-  log('☁️ personal_backups (tu fila): HTTP → ' + b.slice(0, 300));
-  const wl = await R('personal_backups?select=data->workoutLog');
-  log('☁️ workoutLog en tu respaldo (últimos 2000 chars): ' + wl.slice(0, 2000));
-  // Los 4 ÚLTIMOS registros del respaldo (¿está el ejercicio nuevo?):
+  var J = s.access_token;
+  function R(p, opts) {
+    return fetch(c.url + '/rest/v1/' + p, Object.assign({ headers: { apikey: c.key, Authorization: 'Bearer ' + J } }, opts || {}))
+      .then(function (r) { return r.text().then(function (t) { return { status: r.status, body: t }; }); });
+  }
+  // 1) TODAS las filas visibles de personal_backups (sin filtro → RLS limita a las tuyas).
+  // IMPORTANTE: pedir TAMBIÉN la columna 'data' (sin ella, workoutLog sale 0).
+  var rows = await R('personal_backups?select=user_id,updated_at,data');
+  log('☁️ personal_backups · HTTP ' + rows.status + ' · cuerpo: ' + rows.body.slice(0, 300));
   try {
-    const parsed = JSON.parse(wl);
-    const list = parsed && parsed[0] && parsed[0].workoutLog;
-    if (Array.isArray(list)) {
-      log('☁️ Total workoutLog en la nube: ' + list.length);
-      list.slice(-4).forEach(function (x, i) {
-        log('   #' + (list.length - 4 + i + 1) + ' · ' + x.exercise + ' · id ' + x.id + ' · fecha ' + (x.localDate || x.date || '') + ' · reps ' + (x.reps || '') + ' · peso ' + (x.weight || 0));
-      });
+    var lista = JSON.parse(rows.body);
+    if (Array.isArray(lista)) {
+      log('☁️ FILAS VISIBLES: ' + lista.length);
+      for (var i = 0; i < lista.length; i++) {
+        var f = lista[i];
+        var wl = (f.data && f.data.workoutLog) || [];
+        log('   fila ' + (i + 1) + ' · user_id: ' + f.user_id + ' · updated_at: ' + f.updated_at + ' · workoutLog: ' + wl.length
+          + (wl.length ? ' · último: ' + wl[wl.length - 1].exercise + '#' + wl[wl.length - 1].id : ''));
+      }
+      if (lista.length > 1) log('⚠️ HAY MÁS DE UNA FILA → se escribe en una y se lee otra.');
     }
-  } catch (e) { log('   (no se pudo parsear workoutLog: ' + e.message + ')'); }
-  const ej = await R('ejercicios?select=user_id,client_id,updated_at&order=updated_at.desc&limit=5');
-  log('💪 ejercicios (últimas 5 filas): ' + ej.slice(0, 1500));
-  log('📡 Sonda Realtime 60 s con TU token. AHORA registra un ejercicio de prueba en el iPhone.');
-  const ws = new WebSocket(c.url.replace(/^https/, 'wss') + '/realtime/v1/websocket?apikey=' + encodeURIComponent(c.key) + '&vsn=1.0.0');
-  let n = 0;
-  ws.onopen = function () {
-    ['personal_backups', 'ejercicios'].forEach(function (t, i) {
-      ws.send(JSON.stringify({
-        topic: 'realtime:public:' + t + ':user_id=eq.' + s.user.id,
-        event: 'phx_join',
-        payload: { config: { postgres_changes: [{ event: '*', schema: 'public', table: t, filter: 'user_id=eq.' + s.user.id }] }, access_token: J },
-        ref: 'diag_' + i
-      }));
+  } catch (e) { log('   (no se pudo parsear: ' + e.message + ')'); }
+  // 2) Tabla granular de ejercicios.
+  var ej = await R('ejercicios?select=client_id,updated_at&order=updated_at.desc&limit=5');
+  try {
+    var ejLista = JSON.parse(ej.body);
+    log('💪 ejercicios · últimas ' + (Array.isArray(ejLista) ? ejLista.length : 0) + ' filas: ' + ej.body.slice(0, 600));
+  } catch (e) { log('💪 ejercicios · HTTP ' + ej.status + ' · ' + ej.body.slice(0, 200)); }
+  // 3) Prueba de escritura controlada (opcional, NO destructiva).
+  if (TEST_ESCRITURA && Array.isArray(lista) && lista.length === 1) {
+    var unica = lista[0];
+    log('🧪 Prueba controlada: re-enviando el MISMO contenido de la fila (nada cambia).');
+    var before = (unica.data && unica.data.workoutLog) || [];
+    var send = await R('personal_backups?on_conflict=user_id', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ user_id: s.user.id, data: unica.data, updated_at: new Date().toISOString() })
     });
-  };
-  ws.onmessage = function (ev) { n++; log('📡 ' + String(ev.data).slice(0, 400)); };
-  setTimeout(function () { log('🏁 RESULTADO SONDA: ' + n + ' mensajes en 60 s.'); console.log(out.join('\n')); }, 60000);
+    log('🧪 Respuesta del upsert: HTTP ' + send.status + ' · ' + send.body.slice(0, 400));
+    var after = await R('personal_backups?select=user_id,updated_at,data');
+    try {
+      var afterLista = JSON.parse(after.body);
+      log('🧪 FILAS tras el upsert: ' + afterLista.length);
+      afterLista.forEach(function (f, i) {
+        log('   fila ' + (i + 1) + ' · workoutLog: ' + (((f.data && f.data.workoutLog) || [])).length);
+      });
+    } catch (e) { log('🧪 (no se pudo parsear: ' + e.message + ')'); }
+  }
+  log('🏁 FIN DE LA AUDITORÍA');
+  console.log(out.join('\n'));
 })();

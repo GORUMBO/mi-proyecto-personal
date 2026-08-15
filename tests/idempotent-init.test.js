@@ -1,9 +1,10 @@
 // ============================================================
-// PRUEBAS v1.187.11 — El arranque sin red no pierde los datos:
-// iPhone local=53, Supabase remoto=42, Windows local=42.
-// Al recuperar la red, el iPhone DEBE promover sus 53 y la
-// nube queda en 53 para siempre (ningún dispositivo viejo la regresa).
-// Uso: node tests/reconnect-promotes-local.test.js
+// PRUEBAS v1.187.12 — Inicialización idempotente
+// La app abierta varios minutos, sin tocar nada, debe quedarse
+// estable: 1 canal realtime, sin descargas repetitivas de peso,
+// sin uploads repetidos, sin ciclos sync/render, y la reconexión
+// tras perder internet funciona sin duplicar nada.
+// Uso: node tests/idempotent-init.test.js
 // ============================================================
 const fs = require('fs');
 const path = require('path');
@@ -34,23 +35,8 @@ function t(name, cond, extra) {
 }
 const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 
-// Estados sintéticos: ids 1..42 = base; 1001..1011 = los 11 del iPhone (Remo=1011).
-function mkWorkouts(n) {
-  const out = [];
-  for (let i = 1; i <= n; i++) {
-    out.push({ id: i, date: '2026-08-1' + (i % 10), exercise: 'Ejercicio ' + i, weight: 10, sets: 1, reps: '10', note: '' });
-  }
-  return out;
-}
-function mkIphoneWorkouts() {
-  const out = mkWorkouts(42);
-  for (let i = 0; i < 10; i++) out.push({ id: 1001 + i, date: '2026-08-14', exercise: 'Ejercicio nuevo ' + (i + 1), weight: 25, sets: 1, reps: '10', note: '' });
-  out.push({ id: 1011, date: '2026-08-14', exercise: 'Remo', weight: 30, sets: 1, reps: '12', note: 'Registro simple · Normal' });
-  return out;
-}
-
 const server = {
-  backups: {}, rows: {}, wsClients: [], uploads: 0, backupWrites: 0, voidMode: false,
+  backups: {}, rows: {}, wsClients: [], uploads: 0, backupWrites: 0, weightLoads: 0,
   broadcast: function (tabla, user_id, record) {
     server.wsClients.forEach(function (c) {
       if (c.user_id !== user_id) return;
@@ -69,13 +55,15 @@ const server = {
   }
 };
 
-function makeDevice(name, user_id, workouts, onLine) {
+function makeDevice(name, user_id, workouts) {
   const fakeEls = {};
   const timers = [];
+  let wsCount = 0;
   let wsInstance = null;
   let renders = 0;
+  let syncs = 0;
   class FakeWS {
-    constructor(url) { this.url = url; this.readyState = 1; wsInstance = this; server.wsClients.push(this); this.user_id = user_id; this.topics = []; }
+    constructor(url) { this.url = url; this.readyState = 1; wsInstance = this; wsCount++; server.wsClients.push(this); this.user_id = user_id; this.topics = []; }
     send(str) {
       const m = JSON.parse(str);
       if (m.event === 'phx_join') {
@@ -83,7 +71,7 @@ function makeDevice(name, user_id, workouts, onLine) {
         this.onmessage({ data: JSON.stringify({ event: 'phx_reply', payload: { status: 'ok', response: { postgres_changes: [{ id: 1 }] } }, ref: m.ref, topic: m.topic }) });
       }
     }
-    close() { this.readyState = 3; }
+    close() { this.readyState = 3; if (this.onclose) this.onclose({ code: 1000, reason: '' }); }
   }
   const storageStore = {};
   const sb = {
@@ -97,19 +85,21 @@ function makeDevice(name, user_id, workouts, onLine) {
     },
     $: function (sel) { return sb.document.querySelector(sel); },
     safeText: function (s) { return String(s == null ? '' : s); },
-    navigator: { onLine: !!onLine },
+    navigator: { onLine: true },
     WebSocket: FakeWS,
     setTimeout: function (fn, ms) { const h = { fn: fn, ms: ms, done: false }; timers.push(h); return h; },
     clearTimeout: function (h) { if (h) h.done = true; },
-    setInterval: function () { return 99; },
-    clearInterval: function () {},
+    setInterval: function (fn) { sb._intervalFn = fn; return 99; },
+    clearInterval: function () { sb._intervalFn = null; },
     __flushTimers: function () {
       const pend = timers.filter(function (x) { return !x.done; });
       timers.length = 0;
       pend.forEach(function (x) { x.done = true; try { x.fn(); } catch (e) {} });
     },
+    __pendingTimers: function () { return timers.filter(function (x) { return !x.done; }).length; },
     state: {
-      workoutLog: workouts.slice(), weight: [], meals: [], walks: [], expenses: [], diary: {},
+      workoutLog: workouts.slice(), weight: [{ client_id: 'w1', d: '2026-08-10', w: 129, updated_at: '2026-08-10T00:00:00Z' }],
+      meals: [], walks: [], expenses: [], diary: {},
       profile: { nombre: 'Ruben', peso: 129, altura: 168, edad: 25, objetivo: 'bajar grasa', _onbSeen: true, calorias: 2624, proteina: 111, grasa: 53, carbos: 426 },
       onboarded: true, lastModified: '2026-08-14T08:00:00Z'
     },
@@ -126,12 +116,14 @@ function makeDevice(name, user_id, workouts, onLine) {
         const b = server.backups[user_id];
         return b ? [{ data: b.data, updated_at: b.updated_at }] : [];
       }
-      if (String(p).indexOf('peso?user_id=eq.') >= 0) return [];
+      if (String(p).indexOf('peso?user_id=eq.') >= 0) {
+        server.weightLoads++;
+        return [{ client_id: 'w1', data: { d: '2026-08-10', w: 129 }, updated_at: '2026-08-10T00:00:00Z' }];
+      }
       if (options && options.method === 'POST') {
         server.uploads++;
         const body = JSON.parse(options.body);
         if (String(p).indexOf('personal_backups') >= 0) {
-          if (server.voidMode) return []; // POST "ok" pero la escritura NO cae en la fila (bug simulado)
           server.backupWrites++;
           server.backups[user_id] = body;
           server.broadcast('personal_backups', user_id, body);
@@ -145,7 +137,7 @@ function makeDevice(name, user_id, workouts, onLine) {
       }
       return [];
     },
-    setSync: function (kind) { sb.lastSyncKind = kind; }, renderSyncUI: function () {}, renderSyncChain: function () {},
+    setSync: function () {}, renderSyncUI: function () {}, renderSyncChain: function () {},
     render: function () { renders++; },
     finishOnboardingDecision: function () {}, normalizeAllWeights: function () {}, cloudStatus: function () {},
     safeStorage: { get: function (k) { return Object.prototype.hasOwnProperty.call(storageStore, k) ? storageStore[k] : null; }, set: function (k, v) { storageStore[k] = String(v); return true; } },
@@ -154,84 +146,63 @@ function makeDevice(name, user_id, workouts, onLine) {
   sb.window = sb;
   vm.createContext(sb);
   ['_mergeArrays', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates',
-    'mergeWeightLists', 'ensureId', 'todayISO', 'cloudStartupSync', 'cloudSave',
+    'mergeWeightLists', 'normalizeWeightEntry', 'ensureId', 'ppUUID', 'todayISO', 'cloudStartupSync', 'cloudSave',
     'mirrorGranular', 'scheduleAutoSync', 'initRealtimeSync', 'syncChainPush', 'save', '_doSave']
     .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sb); });
   vm.runInContext((HTML.match(/var PROFILE_DEFAULTS=\{[^}]*\};/) || ['var PROFILE_DEFAULTS={};'])[0], sb);
-  return { sb: sb, ws: function () { return wsInstance; }, chain: function () { return sb.PP_SYNCCHAIN; }, get renders() { return renders; } };
+  const origCS = sb.cloudStartupSync;
+  sb.cloudStartupSync = function (o) { syncs++; return origCS(o); };
+  return { sb: sb, ws: function () { return wsInstance; }, wsCount: function () { return wsCount; }, chain: function () { return sb.PP_SYNCCHAIN; }, get renders() { return renders; }, get syncs() { return syncs; } };
 }
 
 (async function () {
-  // Estado inicial: Supabase remoto = 42 (los datos reales del usuario).
-  server.backups = {}; server.rows = {}; server.wsClients = []; server.uploads = 0; server.backupWrites = 0;
-  server.backups['u-123'] = { user_id: 'u-123', data: { workoutLog: mkWorkouts(42), weight: [], profile: { nombre: 'Ruben' }, onboarded: true, lastModified: '2026-08-14T07:00:00Z' }, updated_at: '2026-08-14T07:00:00Z' };
+  console.log('\n== Una sola instancia, abierta "varios minutos" ==');
+  server.backups = {}; server.rows = {}; server.wsClients = []; server.uploads = 0; server.backupWrites = 0; server.weightLoads = 0;
+  const S = makeDevice('solo', 'u-123', [{ id: 1, date: '2026-08-13', exercise: 'Sentadilla', weight: 50, sets: 1, reps: '8', note: '' }]);
 
-  console.log('\n== iPhone arranca SIN red (suspensión/apagado) ==');
-  const I = makeDevice('iphone', 'u-123', mkIphoneWorkouts(), false); // local=53, sin red
-  await I.sb.cloudStartupSync();
-  t('R1 · Sin red, el arranque NO sube nada y NO pierde sus 53 locales',
-    server.backupWrites === 0 && I.sb.state.workoutLog.length === 53);
+  // Arranque normal: sync de arranque (sube una vez) + canal.
+  await S.sb.cloudStartupSync({ _origin: 'arranque', skipUpload: false });
+  await sleep(30);
+  S.sb.__flushTimers(); await sleep(30); // eco propio → merge (skipUpload) → sin subida
+  const wsInicial = S.ws();
+  if (wsInicial && wsInicial.onopen) wsInicial.onopen(); // el navegador abre solo (captura el latido)
 
-  console.log('\n== Windows (local=42, abierto y suscrito) espera el evento ==');
-  const W = makeDevice('windows', 'u-123', mkWorkouts(42), true);
-  W.sb.initRealtimeSync();
-  const wsW = W.ws();
-  if (wsW && wsW.onopen) wsW.onopen();      // primera conexión de W (sin promoción)
+  // I1: el canal es ÚNICO aunque se pida varias veces.
+  const wsAntes = S.wsCount();
+  S.sb.initRealtimeSync('fin-sync');
+  S.sb.initRealtimeSync('online');
+  S.sb.initRealtimeSync('reconexion-backoff');
+  t('I1 · Un solo canal realtime aunque initRealtimeSync se llame varias veces', S.wsCount() === wsAntes);
 
-  console.log('\n== Vuelve la red: el WS del iPhone reconecta y DEBE promover los 53 ==');
-  I.sb.navigator.onLine = true;
-  I.sb.initRealtimeSync();
-  const ws1 = I.ws();
-  if (ws1 && ws1.onopen) ws1.onopen();      // primera conexión (sin promoción)
-  ws1.close();                              // la red se cayó estando abierto
-  I.sb.__flushTimers();                     // backoff → nueva conexión
-  const ws2 = I.ws();
-  if (ws2 && ws2.onopen) ws2.onopen();      // RECONEXIÓN → programa el sync de promoción
-  I.sb.__flushTimers();                     // corre la promoción (1.5 s → aquí inmediato)
-  await sleep(40);
-  const nube = server.backups['u-123'];
-  t('R2 · Al reconectar, el iPhone subió la UNIÓN: Supabase queda en 53 con Remo',
-    server.backupWrites === 1 && nube.data.workoutLog.length === 53 && nube.data.workoutLog.some(function (x) { return x.exercise === 'Remo'; }));
-  t('R3 · La cadena del iPhone muestra la subida con el conteo real',
-    I.chain().some(function (e) { return e.evento.indexOf('▲ Subido') >= 0 && e.detalle.indexOf('workoutLog: 53') >= 0; }));
+  // I2: "minutos" sin tocar nada: sin descargas de peso repetidas, sin uploads, sin temporizadores.
+  const pesosAntes = server.weightLoads, uploadsAntes = server.backupWrites, syncsAntes = S.syncs;
+  for (let i = 0; i < 12; i++) { S.sb.__flushTimers(); await sleep(25); }
+  t('I2 · Sin descargas repetitivas de peso (solo la del sync inicial)', server.weightLoads === pesosAntes);
+  t('I3 · Cero uploads nuevos en reposo', server.backupWrites === uploadsAntes);
+  t('I4 · Sin syncs crecientes ni temporizadores pendientes', S.syncs === syncsAntes && S.sb.__pendingTimers() === 0);
 
-  console.log('\n== Windows procesa el evento del iPhone ==');
-  W.sb.__flushTimers();                     // debounce del evento recibido
-  await sleep(40);
-  t('R4 · Windows descargó y fusionó: queda en 53 con Remo, sin tocar nada',
-    W.sb.state.workoutLog.length === 53 && W.sb.state.workoutLog.some(function (x) { return x.exercise === 'Remo'; }));
-  t('R5 · Windows NO re-subió (skipUpload, sin ping-pong)', server.backupWrites === 1);
+  // I5: el watchdog NO mata el canal cuando llegan mensajes aunque no haya phx_reply
+  // (cualquier mensaje cuenta como "vivo" — antes solo phx_reply, y un latido sin
+  // respuesta forzaba cierre → reconexión → sync completo → el ciclo de logs).
+  const wsAntesW = S.wsCount();
+  S.sb._rtLastReply = Date.now() - 60000; // hace 60 s sin phx_reply…
+  server.broadcast('personal_backups', 'u-123', server.backups['u-123']); // …pero llegan eventos
+  if (S.sb._intervalFn) S.sb._intervalFn(); // corre el latido/watchdog (25 s → aquí manual)
+  t('I5 · Con mensajes entrando, el watchdog NO fuerza cierre (canal vivo)', S.wsCount() === wsAntesW);
 
-  console.log('\n== Caso inverso: un dispositivo con copia vieja NO puede regresar la nube ==');
-  const C = makeDevice('windows-viejo', 'u-123', mkWorkouts(42), true); // copia vieja de 42, sin canal
-  C.sb.save(true);
-  C.sb.__flushTimers();
-  await sleep(40);
-  const nube2 = server.backups['u-123'];
-  t('R6 · La subida del dispositivo viejo conserva los 53 (fusión previa, sin regresión)',
-    nube2.data.workoutLog.length === 53 && nube2.data.workoutLog.some(function (x) { return x.exercise === 'Remo'; }));
-
-  console.log('\n== R7 · Si la escritura NO cae en la fila que se lee, la app lo dice y NO cicla ==');
-  // Simula el bug real: el POST responde ok pero la fila leída sigue en 42
-  // (la escritura va a otra parte). La app debe: NO decir "Subido 53",
-  // marcar error visible y NO reintentar en bucle.
-  server.backups['u-123'] = { user_id: 'u-123', data: { workoutLog: mkWorkouts(42), weight: [], profile: { nombre: 'Ruben' }, onboarded: true, lastModified: '2026-08-14T07:00:00Z' }, updated_at: '2026-08-14T07:00:00Z' };
-  const bwAntes = server.backupWrites;
-  const D = makeDevice('diagnostico', 'u-123', mkIphoneWorkouts(), true);
-  server.voidMode = true; // el POST "ok" pero no toca backups (la fila sigue en 42)
-  D.sb.save(true);
-  D.sb.__flushTimers();
-  await sleep(40);
-  server.voidMode = false;
-  t('R7 · Sin confirmación remota: NO declara éxito y marca error (sin "▲ Subido")',
-    !D.chain().some(function (e) { return e.evento.indexOf('▲ Subido') >= 0; })
-    && D.chain().some(function (e) { return e.evento.indexOf('✘ Supabase NO confirmó') >= 0; })
-    && D.sb.lastSyncKind === 'error');
-  // Y no queda ningún reintento programado (fin del ciclo).
-  D.sb.__flushTimers();
+  // I6: silencio REAL de 75 s → el watchdog cierra y la reconexión recupera SIN duplicar ni subir de más.
+  S.sb._rtLastReply = Date.now() - 80000;
+  if (S.sb._intervalFn) S.sb._intervalFn();
+  S.sb.__flushTimers(); // backoff → reconexión (nuevo socket)
   await sleep(20);
-  D.sb.__flushTimers();
-  t('R8 · Sin reintentos automáticos pendientes (no hay ciclo)', server.backupWrites === bwAntes);
+  const wsNew = S.ws();
+  if (wsNew && wsNew.onopen) wsNew.onopen(); // el navegador abre solo
+  S.sb.__flushTimers(); // promoción de reconexión (skipUpload)
+  await sleep(30);
+  t('I6 · Reconexión tras silencio real: canal nuevo y funcional', S.wsCount() === wsAntesW + 1);
+  t('I7 · La reconexión NO re-subió (sin registros propios pendientes)', server.backupWrites === uploadsAntes);
+  t('I8 · El workoutLog en la nube sigue intacto (sin regresión)',
+    server.backups['u-123'].data.workoutLog.length === S.sb.state.workoutLog.length);
 
   console.log('\n==========================================');
   console.log('Resultado: ' + passed + ' pasaron · ' + failed + ' fallaron');
