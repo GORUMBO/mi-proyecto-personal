@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.12",
+  "latest": "1.187.13",
   "date": "2026-08-15",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.13",
+      "date": "2026-08-15",
+      "type": "obligatoria",
+      "nuevas": [
+        "Traza en pantalla de la ultima subida (para iPhone sin DevTools): inicio → merge → payload con el ultimo ejercicio y su id → HTTP → relectura, con ✓ confirmado o ✗ NO confirmado. Solo instrumentacion; sin cambios de logica."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.12",
       "date": "2026-08-15",

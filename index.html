@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.12';
+  window.HM_APP_VERSION='1.187.13';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -22963,6 +22963,27 @@ function mergeWeightLists(a,b){
 function ensureId(x){if(x&&typeof x==='object'&&x.id==null)x.id=ppUUID();return x;}
 // Estado de sincronización centralizado: badge de 5 estados + panel de diagnóstico en español.
 let PP_SYNC={kind:'',detail:'',lastError:'',lastSyncAt:null,downloaded:null,remoteChecked:false,remoteHasData:false,_onbNoteShown:false};
+// v1.187.13 (diagnóstico temporal): traza EN PANTALLA de la última subida
+// (para iPhone sin DevTools): cuántos workoutLog lleva el estado en cada paso.
+var ppUploadTrace={inicio:null,merge:null,payload:null,ultimo:null,http:null,releida:null,result:null,error:null};
+function ppRenderUploadTrace(){
+  try{
+    var t=ppUploadTrace||{};
+    var el=document.getElementById('ppUploadTraceBar');
+    if(!el){
+      el=document.createElement('div');el.id='ppUploadTraceBar';
+      el.style.cssText='position:fixed;bottom:126px;right:10px;z-index:99999;background:rgba(18,53,42,.96);color:#eafff4;border-radius:10px;padding:8px 10px;font-size:11px;max-width:330px;box-shadow:0 2px 12px rgba(0,0,0,.35)';
+      document.body.appendChild(el);
+    }
+    el.innerHTML='<b>📤 Última subida</b>'
+      +'<div style="margin-top:2px">inicio: <b>'+safeText(t.inicio==null?'—':t.inicio)+'</b> → merge: <b>'+safeText(t.merge==null?'—':t.merge)+'</b> → payload: <b>'+safeText(t.payload==null?'—':t.payload)+'</b></div>'
+      +'<div>último: '+safeText(t.ultimo||'—')+' · HTTP: '+safeText(t.http||'—')+' · releída: <b>'+safeText(t.releida==null?'—':t.releida)+'</b>'
+      +(t.result==='ok'?' <span style="color:#8ff0b5">✓ confirmado</span>':(t.result==='fail'?' <span style="color:#ffb4a8">✗ NO confirmado</span>':''))
+      +'</div>'
+      +(t.error?'<div style="color:#ffb4a8">✘ '+safeText(t.error)+'</div>':'')
+      +'<span onclick="this.parentNode.remove()" style="cursor:pointer;float:right;opacity:.6">✕</span>';
+  }catch(e){}
+}
 let _startupSynced=false;
 const _SYNC_LABEL={offline:'Sin conexión',pending:'Pendiente',syncing:'Sincronizando',synced:'Sincronizado',error:'Error',nosession:'Sin sesión'};
 const _SYNC_COLOR={offline:'#ffd27d',pending:'#fff0a8',syncing:'#bfe3ff',synced:'#d9f5e7',error:'#ffc9c0',nosession:'#e6e6e6'};
@@ -23411,6 +23432,9 @@ async function cloudSave(silent=false){
     normalizeAllWeights();
     // v1.187.10 (diagnóstico temporal): traza completa del upsert.
     console.log('[SAVE-BEGIN] local workoutLog='+((state.workoutLog)||[]).length);
+    // v1.187.13: traza EN PANTALLA (iPhone sin DevTools) de cada paso.
+    ppUploadTrace={inicio:((state.workoutLog)||[]).length,merge:null,payload:null,ultimo:null,http:null,releida:null,result:null,error:null};
+    if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     // v1.187.10 FIX: antes de subir, fusionar el respaldo ACTUAL de la nube.
     // Antes era un POST ciego: un dispositivo con copia vieja (42) podía pisar
     // la escritura reciente de otro (53) y la nube REGRESABA. Con la unión, la
@@ -23423,13 +23447,20 @@ async function cloudSave(silent=false){
         console.log('[MERGE-BEFORE-UPSERT] workoutLog='+((state.workoutLog)||[]).length);
       }
     }catch(e){/* sin red para leer: se sube lo local; el siguiente sync re-fusiona */}
+    ppUploadTrace.merge=((state.workoutLog)||[]).length;
+    if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     var wlUp=state.workoutLog||[];
     var wlLastUp=wlUp.length?wlUp[wlUp.length-1]:null;
     var payloadUp={user_id:s.user.id,data:state,updated_at:new Date().toISOString()};
     console.log('[UPSERT-PAYLOAD] workoutLog='+(((payloadUp.data&&payloadUp.data.workoutLog)||[]).length)+' · último: '+(wlLastUp?wlLastUp.exercise:'—')+'#'+(wlLastUp?wlLastUp.id:'—')+' · payloadBytes='+JSON.stringify(payloadUp).length);
+    ppUploadTrace.payload=((payloadUp.data&&payloadUp.data.workoutLog)||[]).length;
+    ppUploadTrace.ultimo=wlLastUp?(wlLastUp.exercise+'#'+wlLastUp.id):null;
+    if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     console.log('[SYNC] Petición enviada a Supabase (personal_backups). Pesos locales:',(state.weight||[]).length,'· workoutLog:',wlUp.length,'· último id:',wlLastUp&&wlLastUp.id,'· último ejercicio:',wlLastUp&&wlLastUp.exercise);
     await cloudRest('personal_backups?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payloadUp)});
     console.log('[SYNC] Respuesta de Supabase: respaldo guardado OK.');
+    ppUploadTrace.http='ok';
+    if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     // v1.187.10 (diagnóstico temporal): leer la fila REAL tras el upsert.
     // v1.187.12: el éxito SOLO se declara si Supabase confirma lo enviado.
     // Antes se decía "Subido 53" con el payload local aunque la nube siguiera
@@ -23442,14 +23473,20 @@ async function cloudSave(silent=false){
       nPostWl=((remotePost&&remotePost.data&&remotePost.data.workoutLog)||[]).length;
       console.log('[UPSERT-RESULT] workoutLog='+nPostWl+' · filas visibles='+((rowsPost||[]).length)+' · fila user_id='+String(s.user.id));
     }catch(e){console.log('[UPSERT-RESULT] no se pudo releer: '+String((e&&e.message)||e));}
+    ppUploadTrace.releida=nPostWl;
+    if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     if((rowsPost||[]).length>1){
       syncChainPush('✘ Hay '+rowsPost.length+' filas personal_backups para tu usuario','se escribe una y se lee otra — revisar Supabase');
       setSync('error','Hay varias filas personal_backups para tu usuario (se escribió en una y se leyó otra).');
+      ppUploadTrace.result='fail';ppUploadTrace.error='varias filas personal_backups';
+      if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
       return;
     }
     if(nPostWl<wlUp.length){
       syncChainPush('✘ Supabase NO confirmó la subida','enviado: '+wlUp.length+' · guardado: '+nPostWl+' — no se reintenta solo');
       setSync('error','Supabase no confirmó la subida (enviado '+wlUp.length+', guardado '+nPostWl+').');
+      ppUploadTrace.result='fail';ppUploadTrace.error='enviado '+wlUp.length+' pero guardado '+nPostWl;
+      if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
       return;
     }
     console.log('[SAVE-END] remoto workoutLog='+nPostWl);
@@ -23458,9 +23495,13 @@ async function cloudSave(silent=false){
     _syncRetries=0; // éxito: reiniciar contador
     setSync('synced');
     syncChainPush('▲ Subido a Supabase','workoutLog: '+wlUp.length+' · último: '+(wlLastUp?wlLastUp.exercise:'—')+'#'+(wlLastUp?wlLastUp.id:'—'));
+    ppUploadTrace.result='ok';
+    if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     if(!silent)cloudStatus('Datos sincronizados en Supabase.');
   }catch(e){
     ppLogErr('sync',e);console.error('[SYNC] Error al subir a Supabase:',e);
+    ppUploadTrace.result='fail';ppUploadTrace.error=String((e&&e.message)||e).slice(0,80);
+    if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     if(_syncRetries===0)syncChainPush('✘ Error al subir',String(e&&e.message||'').slice(0,60));
     _syncRetries++;
     if(_syncRetries <= 5){

@@ -73,8 +73,9 @@ const sb = {
 };
 sb.window = sb;
 vm.createContext(sb);
-['ppAuditPanel', 'ppAuditLine', 'ppAuditarSupabase', 'renderSyncChain', 'syncChainPush']
+['ppAuditPanel', 'ppAuditLine', 'ppAuditarSupabase', 'renderSyncChain', 'syncChainPush', 'ppRenderUploadTrace']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sb); });
+sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, http: null, releida: null, result: null, error: null };
 
 (async function () {
   console.log('\n== Botón de auditoría (sesión de la app, sin copiar tokens) ==');
@@ -101,6 +102,14 @@ vm.createContext(sb);
   sb.renderSyncChain();
   t('A5 · La barra de la cadena incluye el botón "🔍 Auditar Supabase"',
     (fakeEls.syncChainBar && fakeEls.syncChainBar.innerHTML.indexOf('Auditar Supabase') >= 0));
+
+  // A6: traza de subida en pantalla (para iPhone sin DevTools).
+  sb.ppUploadTrace = { inicio: 53, merge: 53, payload: 53, ultimo: 'Remo#1011', http: 'ok', releida: 42, result: 'fail', error: 'enviado 53 pero guardado 42' };
+  sb.ppRenderUploadTrace();
+  const bar = fakeEls.ppUploadTraceBar && fakeEls.ppUploadTraceBar.innerHTML;
+  t('A6 · La traza en pantalla muestra cada paso y el fallo de confirmación',
+    bar && bar.indexOf('inicio: <b>53</b>') >= 0 && bar.indexOf('payload: <b>53</b>') >= 0
+    && bar.indexOf('releída: <b>42</b>') >= 0 && bar.indexOf('NO confirmado') >= 0);
 
   console.log('\n==========================================');
   console.log('Resultado: ' + passed + ' pasaron · ' + failed + ' fallaron');
