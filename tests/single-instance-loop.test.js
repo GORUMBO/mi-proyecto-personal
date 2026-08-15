@@ -114,7 +114,7 @@ function makeSingleInstance(user_id, renderImpl) {
     },
     PP_SYNC: { kind: 'synced', downloaded: null, remoteChecked: false, remoteHasData: false },
     PP_SYNCCHAIN: [],
-    _rtSocket: null, _rtTimer: null, _rtBackoff: 3000, _rtDebounce: null, _rtLastReply: 0, _rtJoined: 0,
+    _rtSocket: null, _rtTimer: null, _rtBackoff: 3000, _rtDebounce: null, _rtLastReply: 0, _rtJoined: 0, _rtEverConnected: false,
     _startupSynced: true, _syncing: false, _csBusy: false, _syncRetries: 0, _syncRetryTimer: null,
     _saveTimeout: null, _savePending: false, _autoSyncTimer: null,
     getCloudSession: function () { return { user: { id: user_id, email: 'solo@x.y' }, access_token: 'tok-solo' }; },

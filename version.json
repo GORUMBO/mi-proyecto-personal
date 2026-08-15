@@ -1,8 +1,21 @@
 {
-  "latest": "1.187.10",
+  "latest": "1.187.11",
   "date": "2026-08-14",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.11",
+      "date": "2026-08-14",
+      "type": "obligatoria",
+      "nuevas": [
+        "El dispositivo recupera la nube al volver la red: si el arranque ocurrio sin conexion (suspension del equipo), al reconectar el canal en vivo la app promueve automaticamente los datos locales que la nube no tiene.",
+        "Si en el canal en vivo detecta registros propios que no estan en Supabase, los sube una sola vez (sin ping-pong: al converger no vuelve a subir)."
+      ],
+      "cambios": [],
+      "errores": [
+        "El iPhone quedo con 53 registros locales pero la nube seguia en 42: el arranque sin red se rendia y al volver la conexion nada re-subia (el evento 'online' no dispara confiable en iOS y la reconexion del canal solo re-suscribia). Ahora la reconexion promueve la union."
+      ]
+    },
     {
       "version": "1.187.10",
       "date": "2026-08-14",

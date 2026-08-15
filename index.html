@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.10';
+  window.HM_APP_VERSION='1.187.11';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -23105,7 +23105,7 @@ function renderSyncChain(){
 // v1.187.7: watchdog de latido — si el socket muere en silencio (suspensión del
 // equipo, cambio de red: no llega 'close'), el latido deja de recibir respuesta
 // y forzamos reconexión en vez de quedarnos "conectados" sin recibir nada.
-let _rtSocket=null,_rtTimer=null,_rtBackoff=3000,_rtDebounce=null,_rtLastReply=0,_rtJoined=0;
+let _rtSocket=null,_rtTimer=null,_rtBackoff=3000,_rtDebounce=null,_rtLastReply=0,_rtJoined=0,_rtEverConnected=false;
 function initRealtimeSync(){
   if(!navigator.onLine||!getCloudSession())return;
   var c=getCloudConfig();if(!c||!c.url||!c.key)return;
@@ -23117,6 +23117,8 @@ function initRealtimeSync(){
   _rtSocket=ws;_rtLastReply=Date.now();_rtJoined=0;
   ws.onopen=function(){
     _rtBackoff=3000;
+    var esReconexion=_rtEverConnected;
+    _rtEverConnected=true;
     ['personal_backups','peso','ejercicios','comidas','pasos','gastos','calorias','proteina','ajustes'].forEach(function(tabla){
       try{
         ws.send(JSON.stringify({
@@ -23137,6 +23139,14 @@ function initRealtimeSync(){
       }catch(e){}
     },25000);
     syncChainPush('✔ Canal en vivo conectado','los cambios del otro dispositivo llegarán solos');
+    // v1.187.11: si es una RECONEXIÓN (red recuperada o el equipo despertó de
+    // suspensión), pueden haber quedado datos locales sin subir: el arranque
+    // pasó sin red y el evento 'online' no siempre dispara en iOS. Un sync
+    // normal los promueve (merge primero → sube la unión; sin bucle: el eco
+    // posterior no encuentra registros propios sin subir).
+    if(esReconexion){
+      setTimeout(function(){try{cloudStartupSync();}catch(e){}},1500);
+    }
   };
   ws.onmessage=function(ev){
     try{
@@ -23223,7 +23233,11 @@ async function cloudStartupSync(opts){
     var rwLastD=rwD.length?rwD[rwD.length-1]:null;
     var localIdsD={};((state.workoutLog)||[]).forEach(function(x){if(x&&x.id!=null)localIdsD['id:'+x.id]=1;});
     var nuevosD=rwD.filter(function(x){return !(x&&x.id!=null&&localIdsD['id:'+x.id]);}).length;
-    syncChainPush('☁️ Descarga de Supabase','remoto: '+rwD.length+' · último: '+(rwLastD?rwLastD.exercise:'—')+'#'+(rwLastD?rwLastD.id:'—')+' · local: '+((state.workoutLog)||[]).length+' · nuevos del remoto: '+nuevosD);
+    // v1.187.11: registros LOCALES que la nube NO tiene (los que hay que promover
+    // si venimos del canal en vivo y el arranque no pudo subirlos).
+    var rwIdsD={};rwD.forEach(function(x){if(x&&x.id!=null)rwIdsD['id:'+x.id]=1;});
+    var localOnlyD=opts.skipUpload?((state.workoutLog)||[]).filter(function(x){return !(x&&x.id!=null&&rwIdsD['id:'+x.id]);}).length:0;
+    syncChainPush('☁️ Descarga de Supabase','remoto: '+rwD.length+' · último: '+(rwLastD?rwLastD.exercise:'—')+'#'+(rwLastD?rwLastD.id:'—')+' · local: '+((state.workoutLog)||[]).length+' · nuevos del remoto: '+nuevosD+(localOnlyD?' · propios sin subir: '+localOnlyD:''));
     if(remote&&remote.data)state=mergeCloudStates(state, remote.data);
     syncChainPush('🔀 Merge','workoutLog total: '+((state.workoutLog)||[]).length);
     // Si la nube confirma que el usuario YA existe, restaura el perfil y salta
@@ -23249,6 +23263,13 @@ async function cloudStartupSync(opts){
     // v1.187.5: skipUpload=true → venimos del canal en vivo: NO se re-sube la unión
     // (anti-bucle: evita el ping-pong infinito entre dispositivos abiertos).
     if(!opts.skipUpload)await cloudSave(true); // sube la UNIÓN (nunca más pobre que la nube): frena la pérdida de datos.
+    // v1.187.11: EXCEPCIÓN segura: si este dispositivo tiene registros que la
+    // nube NO tiene (p.ej. el arranque pasó sin red y nunca subió), promoverlos
+    // UNA vez. Sin bucle: tras subir, el eco siguiente ve localOnly=0.
+    else if(localOnlyD>0){
+      syncChainPush('☁️ Subiendo registros locales pendientes','propios sin subir: '+localOnlyD);
+      await cloudSave(true);
+    }
     setSync('synced');
     initRealtimeSync();
   }catch(e){
