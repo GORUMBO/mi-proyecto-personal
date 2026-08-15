@@ -22824,9 +22824,17 @@ async function refreshCloudSession(force){
 // Une dos listas evitando duplicados (por id si existe, o por contenido).
 function _mergeArrays(a,b){
   a=Array.isArray(a)?a:[];b=Array.isArray(b)?b:[];
-  let seen=new Set(),out=[];
+  let seen=new Map(),out=[];
   let keyOf=x=>(x&&typeof x==='object'&&x.id!=null)?('id:'+x.id):('j:'+JSON.stringify(x));
-  for(let item of a.concat(b)){let k=keyOf(item);if(!seen.has(k)){seen.add(k);out.push(item);}}
+  for(let item of a.concat(b)){
+    let k=keyOf(item);
+    let prev=seen.get(k);
+    if(prev===undefined){seen.set(k,item);out.push(item);continue;}
+    // v1.187.5: conflicto por el mismo id → gana el de updated_at más reciente.
+    // Sin updated_at (p.ej. series de workoutLog) se conserva el primero (comportamiento anterior).
+    let pi=Date.parse((prev&&prev.updated_at)||0)||0, ni=Date.parse((item&&item.updated_at)||0)||0;
+    if(ni>pi){let idx=out.indexOf(prev);if(idx>=0)out[idx]=item;seen.set(k,item);}
+  }
   return out;
 }
 // Fusión NO destructiva de estado local y de la nube: nunca se pierden datos.
@@ -23015,7 +23023,90 @@ function renderSyncEstado(){
     </div>
     ${PP_SYNC.lastError?`<div class="warn" style="margin-top:8px"><b>Último error:</b> ${safeText(PP_SYNC.lastError)}</div>`:'<div class="ok" style="margin-top:8px">Sin errores registrados.</div>'}`;
 }
-async function cloudStartupSync(){
+// ==== v1.187.5: SINCRONIZACIÓN AUTOMÁTICA BIDIRECCIONAL (Realtime) ====
+// Cadena de diagnóstico TEMPORAL (se quita cuando la prueba real pase):
+// 📱/💻 guardó → 🌐 Supabase recibió → 💻/📱 recibió → UI actualizada.
+let PP_SYNCCHAIN=[];
+function syncChainPush(evento,detalle){
+  var t=new Date();
+  var hh=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0');
+  PP_SYNCCHAIN.unshift({evento:evento,detalle:detalle||'',t:hh});
+  PP_SYNCCHAIN=PP_SYNCCHAIN.slice(0,4);
+  renderSyncChain();
+}
+function renderSyncChain(){
+  try{
+    var el=document.getElementById('syncChainBar');
+    if(!PP_SYNCCHAIN.length){if(el)el.innerHTML='';return;}
+    if(!el){
+      el=document.createElement('div');el.id='syncChainBar';
+      el.style.cssText='position:fixed;bottom:10px;right:10px;z-index:99999;background:rgba(18,53,42,.96);color:#eafff4;border-radius:10px;padding:8px 10px;font-size:11px;max-width:320px;box-shadow:0 2px 12px rgba(0,0,0,.35)';
+      document.body.appendChild(el);
+    }
+    el.innerHTML='<b>🔁 Cadena de sync (diagnóstico temporal)</b>'
+      +PP_SYNCCHAIN.map(function(e){return '<div style="margin-top:2px">'+safeText(e.t)+' · '+safeText(e.evento)+' <span style="opacity:.75">'+safeText(e.detalle)+'</span></div>';}).join('')
+      +'<span onclick="this.parentNode.remove()" style="cursor:pointer;float:right;opacity:.6">✕</span>';
+  }catch(e){}
+}
+// Canal en vivo: recibe cambios de OTRO dispositivo al instante, sin recargar.
+// Un solo WebSocket; se suscribe a las tablas del usuario (RLS con access_token).
+let _rtSocket=null,_rtTimer=null,_rtBackoff=3000,_rtDebounce=null;
+function initRealtimeSync(){
+  if(!navigator.onLine||!getCloudSession())return;
+  var c=getCloudConfig();if(!c||!c.url||!c.key)return;
+  if(_rtSocket&&(_rtSocket.readyState===0||_rtSocket.readyState===1))return; // ya conectado
+  var s=getCloudSession();
+  var wsUrl=c.url.replace(/^https/,'wss')+'/realtime/v1/websocket?apikey='+encodeURIComponent(c.key)+'&vsn=1.0.0';
+  var ws;
+  try{ws=new WebSocket(wsUrl);}catch(e){return;}
+  _rtSocket=ws;
+  ws.onopen=function(){
+    _rtBackoff=3000;
+    ['personal_backups','peso','ejercicios','comidas','pasos','gastos','calorias','proteina','ajustes'].forEach(function(tabla){
+      try{
+        ws.send(JSON.stringify({
+          topic:'realtime:public:'+tabla+':user_id=eq.'+s.user.id,
+          event:'phx_join',
+          payload:{config:{postgres_changes:[{event:'*',schema:'public',table:tabla,filter:'user_id=eq.'+s.user.id}]},access_token:s.access_token},
+          ref:String(Date.now())+'_'+tabla
+        }));
+      }catch(e){}
+    });
+    clearInterval(_rtTimer);
+    _rtTimer=setInterval(function(){try{ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'}));}catch(e){}},25000);
+    syncChainPush('✔ Canal en vivo conectado','los cambios del otro dispositivo llegarán solos');
+  };
+  ws.onmessage=function(ev){
+    try{
+      var msg=JSON.parse(ev.data);
+      if(msg&&msg.event==='postgres_changes'){
+        var payload=msg.payload||{};
+        var data=payload.data||{};
+        var tabla=data.table||'personal_backups';
+        var records=data.records||(data.record?[data.record]:[]);
+        if(!records.length)return;
+        clearTimeout(_rtDebounce);
+        _rtDebounce=setTimeout(function(){
+          syncChainPush('▼ Cambio recibido del otro dispositivo','tabla: '+tabla);
+          cloudStartupSync({skipUpload:true}).then(function(){
+            syncChainPush('✔ Estado fusionado · UI actualizada','sin recargar');
+          });
+        },1200);
+      }
+    }catch(e){}
+  };
+  ws.onclose=function(){
+    _rtSocket=null;clearInterval(_rtTimer);
+    if(navigator.onLine){
+      setTimeout(function(){initRealtimeSync();},_rtBackoff);
+      _rtBackoff=Math.min(_rtBackoff*2,30000);
+    }
+  };
+  ws.onerror=function(){try{ws.close();}catch(e){}};
+}
+
+async function cloudStartupSync(opts){
+  opts=opts||{};
   if(!navigator.onLine||!getCloudSession()){renderSyncUI();return}
   if(_syncing)return;
   try{
@@ -23038,8 +23129,11 @@ async function cloudStartupSync(){
     _startupSynced=true;
     render();
     maybeShowOnboarding();
-    await cloudSave(true); // sube la UNIÓN (nunca más pobre que la nube): frena la pérdida de datos.
+    // v1.187.5: skipUpload=true → venimos del canal en vivo: NO se re-sube la unión
+    // (anti-bucle: evita el ping-pong infinito entre dispositivos abiertos).
+    if(!opts.skipUpload)await cloudSave(true); // sube la UNIÓN (nunca más pobre que la nube): frena la pérdida de datos.
     setSync('synced');
+    initRealtimeSync();
   }catch(e){console.error('[SYNC] Error en sincronización inicial:',e);setSync('error',(e&&e.message)||'Error desconocido');}
 }
 // Botón visible "Sincronizar ahora": fuerza descarga + fusión + subida.
@@ -23101,9 +23195,11 @@ async function cloudSave(silent=false){
     state.offlineChanges=0;safeStorage.set('pp_full',JSON.stringify(state));
     _syncRetries=0; // éxito: reiniciar contador
     setSync('synced');
+    syncChainPush('▲ Subido a Supabase','la nube recibió el cambio');
     if(!silent)cloudStatus('Datos sincronizados en Supabase.');
   }catch(e){
     ppLogErr('sync',e);console.error('[SYNC] Error al subir a Supabase:',e);
+    if(_syncRetries===0)syncChainPush('✘ Error al subir',String(e&&e.message||'').slice(0,60));
     _syncRetries++;
     if(_syncRetries <= 5){
       // Backoff exponencial: 2s, 4s, 8s, 16s, 32s
@@ -23344,7 +23440,7 @@ async function migrateProgressPhotosToCloud(){
   try{if(state.profile&&state.profile.photo)await cloudUploadProfilePhoto();}catch(e){}
 }
 window.addEventListener('load',function(){setTimeout(migrateProgressPhotosToCloud,3000);});
-window.addEventListener('online',()=>{if(!getCloudSession()){setSync('nosession');return}setSync('pending',String(state.offlineChanges||0));cloudStartupSync();});
+window.addEventListener('online',()=>{if(!getCloudSession()){setSync('nosession');return}setSync('pending',String(state.offlineChanges||0));syncChainPush('🌐 Internet recuperado','subiendo pendientes automáticamente');cloudStartupSync();initRealtimeSync();});
 window.addEventListener('offline',()=>setSync('offline',String(state.offlineChanges||0)));
 window.addEventListener('load',()=>setTimeout(cloudStartupSync,1200));
 window.addEventListener('load',()=>setTimeout(function(){ try{ avisoSinCuenta(); }catch(e){} },2500));
