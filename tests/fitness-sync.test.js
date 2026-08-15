@@ -65,7 +65,7 @@ const sandbox = {
   setInterval: function () { return 99; },
   clearInterval: function () {},
   state: { workoutLog: [], weight: [], lastModified: '2026-01-01T00:00:00Z' },
-  PP_SYNC: { downloaded: null },
+  PP_SYNC: { downloaded: null, remoteChecked: false, remoteHasData: false },
   PP_SYNCCHAIN: [],
   _rtSocket: null, _rtTimer: null, _rtBackoff: 3000, _rtDebounce: null,
   getCloudSession: function () { return { user: { id: 'u-123', email: 'x@y.z' }, access_token: 'tok-abc' }; },
@@ -74,6 +74,7 @@ const sandbox = {
   setSync: function () {},
   render: function () {},
   maybeShowOnboarding: function () {},
+  finishOnboardingDecision: function () {},
   normalizeAllWeights: function () {},
   _startupSynced: false,
   _syncing: false
@@ -81,9 +82,11 @@ const sandbox = {
 sandbox.window = sandbox;
 vm.createContext(sandbox);
 
-['_mergeArrays', '_mergeHabitosLog', '_mergeVehiculos', 'mergeCloudStates', 'mergeWeightLists',
+['_mergeArrays', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates', 'mergeWeightLists',
   'normalizeWeightEntry', 'cloudStartupSync', 'initRealtimeSync', 'syncChainPush', 'renderSyncChain']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sandbox); });
+// PROFILE_DEFAULTS es una var suelta (no una function); se inyecta tal cual.
+vm.runInContext((HTML.match(/var PROFILE_DEFAULTS=\{[^}]*\};/) || ['var PROFILE_DEFAULTS={};'])[0], sandbox);
 
 const fn = {
   mergeArrays: sandbox._mergeArrays,

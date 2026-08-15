@@ -1,8 +1,24 @@
 {
-  "latest": "1.187.6",
+  "latest": "1.187.7",
   "date": "2026-08-14",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.7",
+      "date": "2026-08-14",
+      "type": "obligatoria",
+      "nuevas": [
+        "Al iniciar sesion en un dispositivo nuevo o despues de actualizar, la app primero consulta Supabase: si ya existe tu perfil lo restaura sola y se salta el registro inicial.",
+        "El registro inicial solo se pide si Supabase confirma que ese usuario realmente no tiene perfil; si no hay respuesta (sin red), la app se puede seguir usando y se reintenta con Sincronizar ahora."
+      ],
+      "cambios": [
+        "El perfil se sincroniza campo a campo: un valor vacio o por defecto nunca pisa tu valor real (protege tu perfil en la nube)."
+      ],
+      "errores": [
+        "En un dispositivo con almacenamiento vacio, al iniciar sesion salia 'Bienvenido - configura tu cuenta' ANTES de descargar el perfil de la nube y ya no se quitaba: parecia usuario nuevo teniendo los datos abajo.",
+        "La cadena de diagnostico ahora muestra el correo y el id de la sesion para verificar que sea la cuenta correcta."
+      ]
+    },
     {
       "version": "1.187.6",
       "date": "2026-08-14",

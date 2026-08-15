@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.6';
+  window.HM_APP_VERSION='1.187.7';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -22852,6 +22852,29 @@ function _mergeArrays(a,b){
   }
   return out;
 }
+// v1.187.7: unión de perfiles campo a campo.
+// - Un campo vacío nunca pisa un valor real del otro lado.
+// - Un valor por defecto del registro inicial (30/150/170/18000/ganar músculo/
+//   muy alta) nunca pisa un valor distinto (protege contra un registro inicial
+//   guardado sin querer en un dispositivo recién instalado).
+// - Si ambos tienen valores reales distintos, gana el lado con lastModified más reciente.
+var PROFILE_DEFAULTS={edad:30,peso:150,altura:170,objetivo:'ganar músculo',actividad:'muy alta',pasosDia:18000};
+function _mergeProfile(a,b,lt,rt){
+  a=(a&&typeof a==='object')?a:{}; b=(b&&typeof b==='object')?b:{};
+  var out={};
+  new Set([...Object.keys(a),...Object.keys(b)]).forEach(function(k){
+    var va=a[k],vb=b[k];
+    var ea=!(va===undefined||va===null||va===''), eb=!(vb===undefined||vb===null||vb==='');
+    if(!ea&&!eb)return;
+    if(!ea){out[k]=vb;return;}
+    if(!eb){out[k]=va;return;}
+    if(va===vb){out[k]=va;return;}
+    if(PROFILE_DEFAULTS[k]===va&&PROFILE_DEFAULTS[k]!==vb){out[k]=vb;return;}
+    if(PROFILE_DEFAULTS[k]===vb&&PROFILE_DEFAULTS[k]!==va){out[k]=va;return;}
+    out[k]=(lt>=rt)?va:vb;
+  });
+  return out;
+}
 // Fusión NO destructiva de estado local y de la nube: nunca se pierden datos.
 // Las listas se unen; para valores sueltos/objetos gana la copia más reciente.
 function mergeCloudStates(local,remote){
@@ -22864,6 +22887,10 @@ function mergeCloudStates(local,remote){
   }
   // El registro inicial es "pegajoso": si se completó en cualquier dispositivo, no se vuelve a pedir.
   base.onboarded=!!(local.onboarded||remote.onboarded);
+  // v1.187.7: el perfil se une CAMPO a campo (no como objeto entero). Un valor
+  // vacío o un valor por defecto guardado por un registro inicial en un
+  // dispositivo recién instalado NUNCA pisa el valor real del otro lado.
+  base.profile=_mergeProfile(local.profile,remote.profile,lt,rt);
 
   // ---- v57: fusiones PROFUNDAS (si no, se pierden datos entre iPhone y Windows) ----
 
@@ -22925,7 +22952,7 @@ function mergeWeightLists(a,b){
 }
 function ensureId(x){if(x&&typeof x==='object'&&x.id==null)x.id=ppUUID();return x;}
 // Estado de sincronización centralizado: badge de 5 estados + panel de diagnóstico en español.
-let PP_SYNC={kind:'',detail:'',lastError:'',lastSyncAt:null,downloaded:null};
+let PP_SYNC={kind:'',detail:'',lastError:'',lastSyncAt:null,downloaded:null,remoteChecked:false,remoteHasData:false,_onbNoteShown:false};
 let _startupSynced=false;
 const _SYNC_LABEL={offline:'Sin conexión',pending:'Pendiente',syncing:'Sincronizando',synced:'Sincronizado',error:'Error',nosession:'Sin sesión'};
 const _SYNC_COLOR={offline:'#ffd27d',pending:'#fff0a8',syncing:'#bfe3ff',synced:'#d9f5e7',error:'#ffc9c0',nosession:'#e6e6e6'};
@@ -23129,10 +23156,35 @@ async function cloudStartupSync(opts){
     let s=getCloudSession();
     console.log('[SYNC] Usuario conectado:',s&&s.user&&s.user.email,'· id:',s&&s.user&&s.user.id);
     setSync('syncing');
+    // v1.187.7: cada sync parte sin confirmación previa (puede ser otro usuario
+    // u otra sesión); solo se marca remoteChecked tras una respuesta real.
+    PP_SYNC.remoteChecked=false; PP_SYNC.remoteHasData=false;
     // 1) Respaldo completo (blob) — fusión no destructiva con lo local.
     let rows=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');
     let remote=rows&&rows[0];
+    // v1.187.7: ¿Supabase confirma que este usuario YA existe (perfil/datos)?
+    // Decide si se pide el registro inicial: solo si la respuesta es "no hay nada".
+    var rd=remote&&remote.data;
+    PP_SYNC.remoteHasData=!!(rd&&(
+      rd.onboarded
+      ||(rd.profile&&(rd.profile._onbSeen||rd.profile.nombre))
+      ||(Array.isArray(rd.weight)&&rd.weight.length>0)
+      ||(Array.isArray(rd.meals)&&rd.meals.length>0)
+      ||(Array.isArray(rd.workoutLog)&&rd.workoutLog.length>0)
+      ||(Array.isArray(rd.expenses)&&rd.expenses.length>0)
+    ));
+    PP_SYNC.remoteChecked=true;
+    if(!opts.skipUpload)syncChainPush('🔑 Conectado',String(s.user.email||'')+' · id '+String(s.user.id||'').slice(0,8)+'…');
     if(remote&&remote.data)state=mergeCloudStates(state, remote.data);
+    // Si la nube confirma que el usuario YA existe, restaura el perfil y salta
+    // el registro inicial aunque el localStorage local estuviera vacío
+    // (dispositivo nuevo, o almacenamiento borrado por iOS tras la actualización).
+    if(PP_SYNC.remoteHasData&&!state.onboarded){
+      state.onboarded=true;
+      state.profile=state.profile||{};
+      state.profile._onbSeen=true;
+      syncChainPush('☁️ Perfil encontrado en la nube','restaurado: se omite el registro inicial');
+    }
     // 2) Tabla granular de peso: canal confiable por-fila (merge por updated_at).
     let pesoRows=await cloudRest('peso?user_id=eq.'+encodeURIComponent(s.user.id)+'&deleted=is.false&select=client_id,data,updated_at');
     let remoteWeights=(pesoRows||[]).map(r=>{let d=(r.data&&typeof r.data==='object')?r.data:{};d.client_id=d.client_id||r.client_id;d.updated_at=d.updated_at||r.updated_at;return d;});
@@ -23143,13 +23195,18 @@ async function cloudStartupSync(opts){
     safeStorage.set('pp_full',JSON.stringify(state));persistStateIDB(JSON.stringify(state));
     _startupSynced=true;
     render();
-    maybeShowOnboarding();
+    finishOnboardingDecision();
     // v1.187.5: skipUpload=true → venimos del canal en vivo: NO se re-sube la unión
     // (anti-bucle: evita el ping-pong infinito entre dispositivos abiertos).
     if(!opts.skipUpload)await cloudSave(true); // sube la UNIÓN (nunca más pobre que la nube): frena la pérdida de datos.
     setSync('synced');
     initRealtimeSync();
-  }catch(e){console.error('[SYNC] Error en sincronización inicial:',e);setSync('error',(e&&e.message)||'Error desconocido');}
+  }catch(e){
+    console.error('[SYNC] Error en sincronización inicial:',e);setSync('error',(e&&e.message)||'Error desconocido');
+    // v1.187.7: sin respuesta de Supabase NO se pide el registro inicial
+    // (solo se pide si Supabase confirma que ese usuario no tiene perfil).
+    finishOnboardingDecision();
+  }
 }
 // Botón visible "Sincronizar ahora": fuerza descarga + fusión + subida.
 async function syncNow(){
@@ -23299,7 +23356,14 @@ function showLoginScreen(){
   document.body.appendChild(box);
   setTimeout(function(){var el=document.getElementById('loginEmail');if(el)el.focus();},60);
 }
-function closeLoginScreen(){var b=document.getElementById('loginScreen');if(b)b.remove();try{maybeShowOnboarding()}catch(e){}}
+function closeLoginScreen(){
+  var b=document.getElementById('loginScreen');if(b)b.remove();
+  // v1.187.7: con sesión iniciada, el registro inicial se decide DESPUÉS de
+  // consultar Supabase (cloudStartupSync → finishOnboardingDecision). Mostrarlo
+  // aquí era el bug del "usuario nuevo": salía antes de descargar el perfil
+  // existente y el modal ya no se cerraba al llegar los datos.
+  if(!getCloudSession()){try{maybeShowOnboarding()}catch(e){}}
+}
 async function recoverPassword(){
   var st=document.getElementById('loginStatus');
   var email=((document.getElementById('loginEmail')||{}).value||'').trim();
@@ -24538,6 +24602,24 @@ function selectRecipeMethod(idx,key){
 }
 // ===== v45 Fase D: registro inicial (onboarding) + perfil ampliado =====
 function maybeShowOnboarding(){ if(!state.onboarded){ try{showOnboarding()}catch(e){console.warn('onboarding',e)} } }
+// v1.187.7: decide el registro inicial DESPUÉS de consultar Supabase.
+// - Ya hay perfil (local o restaurado): cierra el modal si se hubiera abierto.
+// - Con sesión: solo se pide si Supabase CONFIRMÓ que ese usuario no tiene
+//   perfil (remoteChecked && !remoteHasData). Si no hubo respuesta (sin red o
+//   error), NO se pide: se puede reintentar con "Sincronizar ahora".
+// - Sin sesión (modo local): comportamiento de siempre.
+function finishOnboardingDecision(){
+  var ob=document.getElementById('onboardingModal');
+  if(state.onboarded){ if(ob)ob.remove(); return; }
+  if(!getCloudSession()){ maybeShowOnboarding(); return; }
+  if(PP_SYNC.remoteChecked&&!PP_SYNC.remoteHasData){
+    syncChainPush('☁️ Supabase confirma: sin perfil','se pide el registro inicial');
+    maybeShowOnboarding();
+  }else if(!PP_SYNC.remoteChecked&&!PP_SYNC._onbNoteShown){
+    PP_SYNC._onbNoteShown=true;
+    syncChainPush('☁️ Esperando confirmación de Supabase','el registro inicial solo se pedirá si no hay perfil');
+  }
+}
 function showOnboarding(){
   if(state.onboarded)return;
   if(document.getElementById('onboardingModal'))return;
