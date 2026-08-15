@@ -207,7 +207,8 @@ const syncSb = {
   syncChainPush: function (msg, detail) { chain.push(msg + '|' + detail); },
   finishOnboardingDecision: function () { decisionCalls++; },
   _startupSynced: false,
-  _syncing: false
+  _syncing: false,
+  _csBusy: false
 };
 syncSb.window = syncSb;
 vm.createContext(syncSb);

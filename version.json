@@ -1,8 +1,23 @@
 {
-  "latest": "1.187.7",
+  "latest": "1.187.8",
   "date": "2026-08-14",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.8",
+      "date": "2026-08-14",
+      "type": "obligatoria",
+      "nuevas": [
+        "Canal en vivo reforzado: si la conexion con Supabase muere en silencio (suspension del equipo o cambio de red), la app lo detecta sola y se reconecta. Ya no puede quedarse 'conectada' sin recibir cambios.",
+        "La cadena de diagnostico ahora muestra cada paso: evento recibido, descarga, fusion y UI actualizada (y avisa si la suscripcion fue rechazada)."
+      ],
+      "cambios": [
+        "Una sola sincronizacion a la vez (antes varios eventos podian descargar en paralelo)."
+      ],
+      "errores": [
+        "Un ejercicio registrado en el iPhone no aparecia solo en Windows porque el canal en vivo podia morir sin aviso (sin 'close') y la app nunca se reconectaba hasta recargar."
+      ]
+    },
     {
       "version": "1.187.7",
       "date": "2026-08-14",

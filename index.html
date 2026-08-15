@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.7';
+  window.HM_APP_VERSION='1.187.8';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -23073,7 +23073,7 @@ function syncChainPush(evento,detalle){
   var t=new Date();
   var hh=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0');
   PP_SYNCCHAIN.unshift({evento:evento,detalle:detalle||'',t:hh});
-  PP_SYNCCHAIN=PP_SYNCCHAIN.slice(0,4);
+  PP_SYNCCHAIN=PP_SYNCCHAIN.slice(0,6); // v1.187.7: cabe la traza completa evento→descarga→merge→UI
   renderSyncChain();
 }
 function renderSyncChain(){
@@ -23092,7 +23092,10 @@ function renderSyncChain(){
 }
 // Canal en vivo: recibe cambios de OTRO dispositivo al instante, sin recargar.
 // Un solo WebSocket; se suscribe a las tablas del usuario (RLS con access_token).
-let _rtSocket=null,_rtTimer=null,_rtBackoff=3000,_rtDebounce=null;
+// v1.187.7: watchdog de latido — si el socket muere en silencio (suspensión del
+// equipo, cambio de red: no llega 'close'), el latido deja de recibir respuesta
+// y forzamos reconexión en vez de quedarnos "conectados" sin recibir nada.
+let _rtSocket=null,_rtTimer=null,_rtBackoff=3000,_rtDebounce=null,_rtLastReply=0,_rtJoined=0;
 function initRealtimeSync(){
   if(!navigator.onLine||!getCloudSession())return;
   var c=getCloudConfig();if(!c||!c.url||!c.key)return;
@@ -23101,7 +23104,7 @@ function initRealtimeSync(){
   var wsUrl=c.url.replace(/^https/,'wss')+'/realtime/v1/websocket?apikey='+encodeURIComponent(c.key)+'&vsn=1.0.0';
   var ws;
   try{ws=new WebSocket(wsUrl);}catch(e){return;}
-  _rtSocket=ws;
+  _rtSocket=ws;_rtLastReply=Date.now();_rtJoined=0;
   ws.onopen=function(){
     _rtBackoff=3000;
     ['personal_backups','peso','ejercicios','comidas','pasos','gastos','calorias','proteina','ajustes'].forEach(function(tabla){
@@ -23115,12 +23118,29 @@ function initRealtimeSync(){
       }catch(e){}
     });
     clearInterval(_rtTimer);
-    _rtTimer=setInterval(function(){try{ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'}));}catch(e){}},25000);
+    _rtTimer=setInterval(function(){
+      try{
+        // Diagnóstico: si no llega respuesta (phx_reply) al latido en 75 s,
+        // el canal está muerto en silencio → forzar cierre y reconexión.
+        if(Date.now()-_rtLastReply>75000){syncChainPush('✘ Canal en vivo sin respuesta','forzando reconexión');try{ws.close();}catch(e){}}
+        else ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'+Date.now()}));
+      }catch(e){}
+    },25000);
     syncChainPush('✔ Canal en vivo conectado','los cambios del otro dispositivo llegarán solos');
   };
   ws.onmessage=function(ev){
     try{
       var msg=JSON.parse(ev.data);
+      if(msg&&msg.event==='phx_reply'){
+        _rtLastReply=Date.now();
+        var st=msg.payload&&msg.payload.status;
+        if(st==='ok'){
+          if(_rtJoined===0){_rtJoined=1;syncChainPush('✔ Suscripción aceptada','Supabase mandará los cambios de tus tablas');}
+        }else if(st==='error'){
+          syncChainPush('✘ Suscripción rechazada',String((msg.payload&&msg.payload.response&&msg.payload.response.reason)||''));
+        }
+        return;
+      }
       if(msg&&msg.event==='postgres_changes'){
         var payload=msg.payload||{};
         var data=payload.data||{};
@@ -23129,7 +23149,7 @@ function initRealtimeSync(){
         if(!records.length)return;
         clearTimeout(_rtDebounce);
         _rtDebounce=setTimeout(function(){
-          syncChainPush('▼ Cambio recibido del otro dispositivo','tabla: '+tabla);
+          syncChainPush('▼ Cambio recibido del otro dispositivo','tabla: '+tabla+' · tipo: '+(data.type||'?')+' · registros: '+records.length);
           cloudStartupSync({skipUpload:true}).then(function(){
             syncChainPush('✔ Estado fusionado · UI actualizada','sin recargar');
           });
@@ -23139,18 +23159,22 @@ function initRealtimeSync(){
   };
   ws.onclose=function(){
     _rtSocket=null;clearInterval(_rtTimer);
+    syncChainPush('✘ Canal en vivo cerrado','reintentando en '+Math.round(_rtBackoff/1000)+' s');
     if(navigator.onLine){
       setTimeout(function(){initRealtimeSync();},_rtBackoff);
       _rtBackoff=Math.min(_rtBackoff*2,30000);
     }
   };
-  ws.onerror=function(){try{ws.close();}catch(e){}};
+  ws.onerror=function(){syncChainPush('✘ Canal en vivo: error de conexión','se reintentará');try{ws.close();}catch(e){}};
 }
 
 async function cloudStartupSync(opts){
   opts=opts||{};
   if(!navigator.onLine||!getCloudSession()){renderSyncUI();return}
-  if(_syncing)return;
+  // v1.187.7: _csBusy evita que varios eventos realtime lancen descargas
+  // concurrentes (se encolan en una sola pasada; la siguiente los toma frescos).
+  if(_syncing||_csBusy)return;
+  _csBusy=true;
   try{
     await refreshCloudSession();
     let s=getCloudSession();
@@ -23175,7 +23199,10 @@ async function cloudStartupSync(opts){
     ));
     PP_SYNC.remoteChecked=true;
     if(!opts.skipUpload)syncChainPush('🔑 Conectado',String(s.user.email||'')+' · id '+String(s.user.id||'').slice(0,8)+'…');
+    // v1.187.7 (diagnóstico temporal): traza de la descarga → merge → UI.
+    syncChainPush('☁️ Descarga de Supabase','workoutLog remoto: '+(((rd&&rd.workoutLog)||[]).length)+' · local: '+((state.workoutLog)||[]).length);
     if(remote&&remote.data)state=mergeCloudStates(state, remote.data);
+    syncChainPush('🔀 Merge','workoutLog total: '+((state.workoutLog)||[]).length);
     // Si la nube confirma que el usuario YA existe, restaura el perfil y salta
     // el registro inicial aunque el localStorage local estuviera vacío
     // (dispositivo nuevo, o almacenamiento borrado por iOS tras la actualización).
@@ -23206,6 +23233,8 @@ async function cloudStartupSync(opts){
     // v1.187.7: sin respuesta de Supabase NO se pide el registro inicial
     // (solo se pide si Supabase confirma que ese usuario no tiene perfil).
     finishOnboardingDecision();
+  }finally{
+    _csBusy=false;
   }
 }
 // Botón visible "Sincronizar ahora": fuerza descarga + fusión + subida.
@@ -23234,7 +23263,7 @@ async function cloudRest(path,options={},_retried){
     return null;
   }
 }
-let _autoSyncTimer=null,_syncing=false;
+let _autoSyncTimer=null,_syncing=false,_csBusy=false;
 function scheduleAutoSync(){
   state.offlineChanges=(state.offlineChanges||0)+1;
   let session=getCloudSession();
