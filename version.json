@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.14",
+  "latest": "1.187.15",
   "date": "2026-08-15",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.15",
+      "date": "2026-08-15",
+      "type": "obligatoria",
+      "nuevas": [
+        "Bitacora de TODAS las escrituras a Supabase, visible en pantalla (boton 'Ver escrituras'): requestId, hora, funcion de origen (stack), tabla, workoutLog enviados, HTTP, updated_at enviado y el que devolvio la fila. Sirve para identificar QUE escritura deja la fila en 42 despues de la de 53. Solo diagnostico."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.14",
       "date": "2026-08-15",

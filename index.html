@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.14';
+  window.HM_APP_VERSION='1.187.15';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -22965,7 +22965,7 @@ function ensureId(x){if(x&&typeof x==='object'&&x.id==null)x.id=ppUUID();return 
 let PP_SYNC={kind:'',detail:'',lastError:'',lastSyncAt:null,downloaded:null,remoteChecked:false,remoteHasData:false,_onbNoteShown:false};
 // v1.187.13 (diagnóstico temporal): traza EN PANTALLA de la última subida
 // (para iPhone sin DevTools): cuántos workoutLog lleva el estado en cada paso.
-var ppUploadTrace={inicio:null,merge:null,payload:null,ultimo:null,http:null,respWorkoutLog:null,releida:null,result:null,error:null,faltantes:[],lista53:[]};
+var ppUploadTrace={inicio:null,merge:null,payload:null,ultimo:null,http:null,respWorkoutLog:null,releida:null,result:null,error:null,faltantes:[],lista53:[],writeId:null,tsEnviado:null,tsServidor:null,tsLeido:null,otraEscritura:false};
 function ppRenderUploadTrace(){
   try{
     var t=ppUploadTrace||{};
@@ -22980,15 +22980,43 @@ function ppRenderUploadTrace(){
       +'<div>último: '+safeText(t.ultimo||'—')+' · '+safeText(t.http||'—')+' · servidor devolvió: <b>'+safeText(t.respWorkoutLog==null?'—':t.respWorkoutLog)+'</b> · releída: <b>'+safeText(t.releida==null?'—':t.releida)+'</b>'
       +(t.result==='ok'?' <span style="color:#8ff0b5">✓ confirmado</span>':(t.result==='fail'?' <span style="color:#ffb4a8">✗ NO confirmado</span>':''))
       +'</div>'
+      +(t.otraEscritura?'<div style="color:#ffb4a8;font-weight:800">⚠️ OTRA escritura posterior pisó la fila (updated_at ya no es el nuestro)</div>':'')
       +((t.result==='fail'&&t.faltantes&&t.faltantes.length)?'<button onclick="ppVerFaltantes()" style="margin-top:4px;background:#b0453a;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">🔎 Ver '+t.faltantes.length+' faltantes</button>':'')
+      +'<button onclick="ppVerEscrituras()" style="margin-top:4px;margin-left:4px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">📋 Ver escrituras</button>'
       +(t.error?'<div style="color:#ffb4a8">✘ '+safeText(t.error)+'</div>':'')
+      +'<div style="opacity:.6;margin-top:3px">escritura #'+safeText(t.writeId||'—')+' · enviado '+safeText((t.tsEnviado||'').slice(11,19)||'—')+' · fila '+safeText((t.tsLeido||'').slice(11,19)||'—')+'</div>'
       +'<span onclick="this.parentNode.remove()" style="cursor:pointer;float:right;opacity:.6">✕</span>';
   }catch(e){}
+}
+// v1.187.16: quién llama a la escritura (nombre de función desde el stack).
+function ppWriteOrigen(){
+  try{
+    var s=new Error().stack||'';
+    var lines=s.split('\n');
+    for(var i=2;i<lines.length;i++){
+      var l=lines[i];
+      if(l.indexOf('cloudRest')>=0||l.indexOf('ppWriteOrigen')>=0)continue;
+      var m=l.match(/at ([^ (]+)/);
+      return m?m[1]:'?';
+    }
+  }catch(e){}
+  return '?';
+}
+// v1.187.16: bitácora visible de TODAS las escrituras a Supabase.
+function ppVerEscrituras(){
+  try{
+    var log=PP_SYNC.writeLog||[];
+    ppAuditLine('<b>ÚLTIMAS ESCRITURAS A SUPABASE ('+log.length+')</b>');
+    log.forEach(function(w){
+      ppAuditLine('· WRITE '+safeText(String(w.id||'').slice(-8))+' · '+safeText((w.t||'').slice(11,19))+' · <b>'+safeText(w.fn||'?')+'</b> · '+safeText(w.tabla||'?')+' · wl '+(w.wl==null?'—':w.wl)+' · HTTP '+safeText(w.http)+' · respWl '+(w.respWl==null?'—':w.respWl)+' · tsResp '+safeText((w.tsResp||'').slice(11,19)));
+    });
+  }catch(e){ppAuditLine('✘ '+safeText(String((e&&e.message)||e)));}
 }
 // v1.187.14: lista en pantalla de los registros que Supabase NO guardó.
 function ppVerFaltantes(){
   try{
     var t=ppUploadTrace||{};
+    if(t.otraEscritura)ppAuditLine('<b>⚠️ OTRA ESCRITURA posterior pisó la fila:</b> enviamos updated_at '+safeText(t.tsEnviado||'—')+' · la fila quedó en '+safeText(t.tsLeido||'—')+' · (servidor devolvió '+safeText(t.tsServidor||'—')+')');
     ppAuditLine('<b>REGISTROS FALTANTES EN SUPABASE: '+((t.faltantes||[]).length)+'</b>');
     (t.faltantes||[]).forEach(function(f){
       ppAuditLine('· <b>'+safeText(f.id)+'</b> | '+safeText(f.fecha||'—')+' | '+safeText(f.ejercicio||'—')+' | '+safeText(f.razon||'—'));
@@ -23409,6 +23437,22 @@ async function cloudRest(path,options={},_retried){
   let r=await fetch(c.url+'/rest/v1/'+path,{...options,headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json',...(options.headers||{})}});let text=await r.text();
   // v1.187.14 (diagnóstico): guardar el HTTP real de la última petición.
   try{PP_SYNC.lastHttp=r.status;}catch(e){}
+  // v1.187.16 (diagnóstico): bitácora de TODAS las escrituras a Supabase
+  // (quién, qué tabla, cuántos workoutLog, updated_at enviado/devuelto, HTTP).
+  if(options&&options.method==='POST'){
+    try{
+      var bLog=JSON.parse(options.body||'{}');
+      var tablaLog=String(path).split('?')[0];
+      var wlLog=(bLog&&bLog.data&&bLog.data.workoutLog)?bLog.data.workoutLog.length:null;
+      var entryLog={id:String(Date.now())+'-'+Math.floor(Math.random()*100000),t:new Date().toISOString(),fn:ppWriteOrigen(),tabla:tablaLog,wl:wlLog,tsEnviado:(bLog&&bLog.updated_at)||null,http:r.status,respWl:null,tsResp:null};
+      if(tablaLog==='personal_backups'){
+        try{var rrLog=JSON.parse(text);rrLog=Array.isArray(rrLog)?rrLog[0]:rrLog;if(rrLog){entryLog.respWl=((rrLog.data&&rrLog.data.workoutLog)||[]).length;entryLog.tsResp=rrLog.updated_at||null;}}catch(e){}
+      }
+      if(!PP_SYNC.writeLog)PP_SYNC.writeLog=[];
+      PP_SYNC.writeLog.unshift(entryLog);
+      PP_SYNC.writeLog=PP_SYNC.writeLog.slice(0,20);
+    }catch(e){}
+  }
   // Si el token fue rechazado (401), fuerza UN refresco y reintenta una sola vez antes de fallar.
   if(r.status===401 && !_retried){ try{await refreshCloudSession(true);}catch(_e){} return cloudRest(path,options,true); }
   if(!r.ok)throw Error(text||'Error de base de datos');
@@ -23450,7 +23494,7 @@ async function cloudSave(silent=false){
     // v1.187.10 (diagnóstico temporal): traza completa del upsert.
     console.log('[SAVE-BEGIN] local workoutLog='+((state.workoutLog)||[]).length);
     // v1.187.13: traza EN PANTALLA (iPhone sin DevTools) de cada paso.
-    ppUploadTrace={inicio:((state.workoutLog)||[]).length,merge:null,payload:null,ultimo:null,http:null,respWorkoutLog:null,releida:null,result:null,error:null,faltantes:[],lista53:[]};
+    ppUploadTrace={inicio:((state.workoutLog)||[]).length,merge:null,payload:null,ultimo:null,http:null,respWorkoutLog:null,releida:null,result:null,error:null,faltantes:[],lista53:[],writeId:null,tsEnviado:null,tsServidor:null,tsLeido:null,otraEscritura:false};
     if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     // v1.187.10 FIX: antes de subir, fusionar el respaldo ACTUAL de la nube.
     // Antes era un POST ciego: un dispositivo con copia vieja (42) podía pisar
@@ -23474,6 +23518,10 @@ async function cloudSave(silent=false){
     ppUploadTrace.ultimo=wlLastUp?(wlLastUp.exercise+'#'+wlLastUp.id):null;
     // v1.187.14: tabla de los registros enviados (índice, id, fecha, ejercicio).
     ppUploadTrace.lista53=((state.workoutLog)||[]).map(function(x,i){return {i:i+1,id:x&&x.id,fecha:x&&(x.localDate||x.date),ejercicio:x&&x.exercise};});
+    // v1.187.15: identificador único de ESTA escritura + el updated_at que enviamos,
+    // para detectar si OTRA escritura posterior pisa la fila (la causa del 42).
+    ppUploadTrace.writeId=String(Date.now())+'-'+Math.floor(Math.random()*1000000);
+    ppUploadTrace.tsEnviado=payloadUp.updated_at;
     if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     console.log('[SYNC] Petición enviada a Supabase (personal_backups). Pesos locales:',(state.weight||[]).length,'· workoutLog:',wlUp.length,'· último id:',wlLastUp&&wlLastUp.id,'· último ejercicio:',wlLastUp&&wlLastUp.exercise);
     // v1.187.14 (diagnóstico): return=representation para ver la fila REAL que
@@ -23483,6 +23531,7 @@ async function cloudSave(silent=false){
     var respRowUp=(Array.isArray(respUp)?respUp[0]:respUp)||{};
     ppUploadTrace.http='HTTP '+((PP_SYNC&&PP_SYNC.lastHttp!=null)?PP_SYNC.lastHttp:'?');
     ppUploadTrace.respWorkoutLog=((respRowUp.data&&respRowUp.data.workoutLog)||[]).length;
+    ppUploadTrace.tsServidor=respRowUp.updated_at||null;
     if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     // v1.187.10 (diagnóstico temporal): leer la fila REAL tras el upsert.
     // v1.187.12: el éxito SOLO se declara si Supabase confirma lo enviado.
@@ -23497,6 +23546,10 @@ async function cloudSave(silent=false){
       console.log('[UPSERT-RESULT] workoutLog='+nPostWl+' · filas visibles='+((rowsPost||[]).length)+' · fila user_id='+String(s.user.id));
     }catch(e){console.log('[UPSERT-RESULT] no se pudo releer: '+String((e&&e.message)||e));}
     ppUploadTrace.releida=nPostWl;
+    // v1.187.15: si el updated_at de la fila ya NO es el que enviamos, OTRA
+    // escritura posterior pisó la fila (instancia vieja con código sin fusión).
+    ppUploadTrace.tsLeido=(remotePost&&remotePost.updated_at)||null;
+    ppUploadTrace.otraEscritura=!!(ppUploadTrace.tsLeido&&ppUploadTrace.tsEnviado&&ppUploadTrace.tsLeido!==ppUploadTrace.tsEnviado);
     // v1.187.14: comparar local vs remoto y listar los registros que NO quedaron
     // en Supabase, con su razón probable (id duplicado local, sin id, o ausente
     // de la fila guardada).
