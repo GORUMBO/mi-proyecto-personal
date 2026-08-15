@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187';
+  window.HM_APP_VERSION='1.187.6';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -397,13 +397,26 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
     if('serviceWorker'in navigator&&location.protocol!=='file:'){
       try{
         let reg=await navigator.serviceWorker.register('./sw.js');window._hmRegistration=reg;
-        if(reg.waiting)showUpdateBanner(reg.waiting);
+        // v1.187.6: si la versión nueva YA está descargada y esperando, actívala
+        // de inmediato; el evento 'controllerchange' recargará la app UNA vez.
+        if(reg.waiting){try{reg.waiting.postMessage({type:'SKIP_WAITING'});}catch(e){}}
         reg.addEventListener('updatefound',function(){
           let worker=reg.installing;if(!worker)return;
           worker.addEventListener('statechange',function(){if(worker.state==='installed'&&navigator.serviceWorker.controller)showUpdateBanner(worker)});
         });
         let refreshing=false;
         navigator.serviceWorker.addEventListener('controllerchange',function(){if(!refreshing){refreshing=true;location.reload()}});
+        // Red de seguridad: si esta sesión tiene una actualización pendiente
+        // (marcada por el flujo de actualización), reintenta bajar el service
+        // worker nuevo cada 5 minutos mientras haya conexión. Cuando por fin
+        // termine de instalarse, 'controllerchange' recargará UNA vez.
+        setInterval(function(){
+          try{
+            if(navigator.onLine&&sessionStorage.getItem('pp_upd_active')==='1'){
+              let r=window._hmRegistration;if(r)r.update();
+            }
+          }catch(e){}
+        },300000);
       }catch(error){/* El service worker/PWA no está disponible en algunos dominios (ej. tiiny.host) por restricción de Safari. La app funciona igual; no hace falta avisar. */}
     }
   });
@@ -420,7 +433,9 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
         let deployed=String(j.latest||''),installed=String(window.HM_APP_VERSION||'');
         if(!deployed||!installed)return;
         if(typeof ppVerCmp==='function'&&ppVerCmp(installed,deployed)<0){
-          if(sessionStorage.getItem('pp_force_'+deployed))return;
+          // v1.187.6: si el flujo de "Descargando actualización" ya gestiona esta
+          // versión, no duplicar recargas (cada camino recarga como máximo una vez).
+          if(sessionStorage.getItem('pp_force_'+deployed)||sessionStorage.getItem('pp_upd_'+deployed))return;
           sessionStorage.setItem('pp_force_'+deployed,'1');
           try{if(window.caches){let keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));}}catch(e){}
           try{let reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(reg){if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});try{await reg.update();}catch(e){}}}catch(e){}
@@ -24598,6 +24613,9 @@ async function ppCheckUpdates(manual){
   }else if(manual && status){
     status.innerHTML=hayNueva?'':'<div class="ok">Ya tienes la última versión ('+installed+').</div>';
   }
+  // v1.187.6: ya está al día → el chequeo de fondo del service worker (cada 5 min)
+  // puede descansar hasta que haya una versión nueva de nuevo.
+  if(!hayNueva){try{sessionStorage.removeItem('pp_upd_active');}catch(e){}}
 }
 function _verEntry(j,ver){return (j.history||[]).find(h=>h.version===ver)||(j.history||[])[0]||{};}
 function ppEnsureDlStyle(){
@@ -24606,13 +24624,61 @@ function ppEnsureDlStyle(){
   s.textContent='@keyframes ppDlBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}.pp-dl-bounce{animation:ppDlBounce 1s infinite}';
   document.head.appendChild(s);
 }
-// Pantalla completa de "Descargando actualización" que se aplica SOLA (sin botones).
+// Pantalla completa de "Descargando actualización" que se aplica SOLA.
+// v1.187.6 — a prueba de bucles:
+//  1) doAppUpdate espera de verdad a que el service worker nuevo termine de
+//     instalarse (antes solo miraba reg.waiting justo después de update(),
+//     cuando casi siempre era null → nunca se activaba).
+//  2) El sw.js hace skipWaiting solo al terminar y 'controllerchange' recarga
+//     la app UNA vez (con guarda por página).
+//  3) Si la versión nueva YA está descargada (reg.waiting al cargar), se
+//     activa de inmediato sin pantalla.
+//  4) Si tarda más del límite: una única recarga de emergencia por versión
+//     (pp_reload_<ver>), y si sigue sin poderse, la pantalla se cierra con
+//     "Continuar a la app" y se reintenta en silencio cada 3 minutos.
+//  5) Tras 2 intentos fallidos en la misma sesión ya no se muestra la pantalla
+//     completa: solo reintentos silenciosos de fondo.
+// No se toca localStorage ni Supabase: solo cachés del service worker y
+// banderas de sessionStorage.
+var PP_UPD_QUIET=0;        // reintentos silenciosos hechos en esta página
+var PP_UPD_QUIET_MAX=12;   // 12 x 3 min ≈ 36 min; luego se rinde hasta la próxima apertura
+
+// Espera a que el worker nuevo termine de instalarse (o se active).
+// Devuelve true si quedó instalado/activo, false si no hay worker nuevo o se agotó el tiempo.
+function ppWaitWorker(reg,ms){
+  return new Promise(function(resolve){
+    var settled=false,iv=null,t=null;
+    function current(){try{return reg&&(reg.waiting||reg.installing)||null;}catch(e){return null;}}
+    function fin(ok){if(settled)return;settled=true;if(iv)clearInterval(iv);if(t)clearTimeout(t);resolve(!!ok);}
+    function check(){
+      try{
+        var w=current();
+        if(!w){fin(false);return;} // no hay worker nuevo: nada que activar
+        if(w.state==='installed'||w.state==='activating'||w.state==='activated'){
+          try{w.postMessage({type:'SKIP_WAITING'});}catch(e){} // por si acaso (el sw.js ya lo hace solo)
+          fin(true);
+        }else if(w.state==='redundant'){fin(false);}
+      }catch(e){fin(false);}
+    }
+    if(!('serviceWorker'in navigator)){fin(false);return;}
+    iv=setInterval(check,250);
+    t=setTimeout(function(){fin(false);},ms||25000); // límite: nunca quedarse esperando para siempre
+    try{var w=current();if(w)w.addEventListener('statechange',check);}catch(e){}
+    check();
+  });
+}
+
 function showUpdateNotice(j,obligatoria){
   if(!j)return;
   if(document.getElementById('updateNotice'))return;
   ppEnsureDlStyle();
-  var tag='pp_upd_'+(j.latest||'x');
-  var retried=false; try{retried=sessionStorage.getItem(tag)==='1';}catch(e){}
+  var ver=String(j.latest||'x');
+  try{sessionStorage.setItem('pp_upd_'+ver,'1');}catch(e){}
+  try{sessionStorage.setItem('pp_upd_active','1');}catch(e){}
+  // Si ya falló varias veces esta sesión, no volver a tapar la app: reintento
+  // silencioso en segundo plano y la app sigue usable.
+  var tries=0; try{tries=parseInt(sessionStorage.getItem('pp_upd_tries_'+ver)||'0',10);}catch(e){}
+  if(tries>=2){ doAppUpdate(j,true); return; }
   var box=document.createElement('div');box.id='updateNotice';
   box.style.cssText='position:fixed;inset:0;background:linear-gradient(160deg,#15704f,#0c3f2c);z-index:23500;display:grid;place-items:center;padding:24px;color:#fff;text-align:center';
   box.innerHTML='<div style="max-width:420px;width:100%">'
@@ -24625,27 +24691,77 @@ function showUpdateNotice(j,obligatoria){
     +'</div>';
   document.body.appendChild(box);
   var step=8; var iv=setInterval(function(){step+=Math.random()*16+6;var b=document.getElementById('ppDlBar');if(b)b.style.width=Math.min(step,92)+'%';if(step>=92)clearInterval(iv);},400);
-  if(retried){ // ya intentamos una vez este arranque: evita bucle, deja un botón
-    var m=document.getElementById('ppDlMsg');if(m)m.textContent='Casi listo…';
-    var man=document.getElementById('ppDlManual');if(man)man.innerHTML='<button class="btn" style="min-height:46px;background:#fff;color:#15704f;font-weight:900" onclick="location.reload(true)">Tocar para terminar</button>';
-    return;
-  }
-  try{sessionStorage.setItem(tag,'1');}catch(e){}
-  doAppUpdate();
+  doAppUpdate(j,false);
 }
 function dismissUpdateNotice(){var b=document.getElementById('updateNotice');if(b)b.remove();}
-function doAppUpdate(){
+function doAppUpdate(j,quiet){
+  if(doAppUpdate._busy)return; // nunca dos actualizaciones a la vez
+  doAppUpdate._busy=true;
+  var ver=String((j&&j.latest)||'x');
+  var WAIT_MS=25000;
+  var msg=document.getElementById('ppDlMsg'),bar=document.getElementById('ppDlBar'),man=document.getElementById('ppDlManual');
   (async function(){
+    var ok=false;
     try{
       if('serviceWorker'in navigator){
-        var reg=window._hmRegistration||await navigator.serviceWorker.getRegistration();
-        if(reg){ await reg.update(); if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'}); }
+        var reg=window._hmRegistration;
+        if(!reg){try{reg=await navigator.serviceWorker.getRegistration();}catch(e){}}
+        if(!reg){try{reg=await navigator.serviceWorker.register('./sw.js');}catch(e){}}
+        if(reg){
+          window._hmRegistration=reg;
+          // Si la versión nueva YA está descargada y esperando, actívala ahora.
+          if(reg.waiting){try{reg.waiting.postMessage({type:'SKIP_WAITING'});}catch(e){}}
+          try{await reg.update();}catch(e){}
+        }
       }
+      if(msg)msg.textContent='Instalando…';
+      if(bar)bar.style.width='100%';
+      ok=await ppWaitWorker(reg,WAIT_MS);
+    }catch(e){ok=false;}
+    doAppUpdate._busy=false;
+    if(ok){
+      // El worker nuevo quedó instalado y se activa solo (skipWaiting) →
+      // 'controllerchange' recarga UNA vez. Si en 3 s no llegó la recarga
+      // (navegador raro), damos una recarga única de seguridad por versión.
+      await new Promise(function(res){setTimeout(res,3000);});
+      if(!sessionStorage.getItem('pp_reload_'+ver)){
+        try{sessionStorage.setItem('pp_reload_'+ver,'1');}catch(e){}
+        try{location.reload();}catch(e){}
+      }
+      return;
+    }
+    // ---- No se pudo instalar en el límite: nunca bloquear la app ----
+    try{
+      var tries=parseInt(sessionStorage.getItem('pp_upd_tries_'+ver)||'0',10)+1;
+      sessionStorage.setItem('pp_upd_tries_'+ver,String(tries));
     }catch(e){}
-    var b=document.getElementById('ppDlBar'); if(b)b.style.width='100%';
-    var m=document.getElementById('ppDlMsg'); if(m)m.textContent='Instalando…';
-    setTimeout(function(){try{location.reload()}catch(e){}},1400);
+    // Una sola recarga de emergencia por versión y solo desde la pantalla
+    // completa (a veces desatasca al navegador). Los reintentos silenciosos
+    // nunca recargan por la fuerza.
+    if(!quiet&&!sessionStorage.getItem('pp_reload_'+ver)){
+      try{sessionStorage.setItem('pp_reload_'+ver,'1');}catch(e){}
+      try{location.reload();}catch(e){}
+      return;
+    }
+    if(quiet){ scheduleQuietRetry(j); return; }
+    // Pantalla completa → avisar, dejar continuar y reintentar en segundo plano.
+    if(msg)msg.textContent='Tarda más de lo normal… Puedes seguir usando la app; reintentaré solo en unos minutos.';
+    if(man&&!document.getElementById('ppDlContinue')){
+      man.innerHTML='<button class="btn" id="ppDlContinue" style="min-height:46px;background:#fff;color:#15704f;font-weight:900">Continuar a la app</button>'
+        +' <button class="btn" id="ppDlRetry" style="min-height:46px;background:rgba(255,255,255,.18);color:#fff;font-weight:900">Reintentar ahora</button>';
+      var c=document.getElementById('ppDlContinue'),rt=document.getElementById('ppDlRetry');
+      if(c)c.onclick=dismissUpdateNotice;
+      if(rt)rt.onclick=function(){try{doAppUpdate(j,false);}catch(e){}};
+    }
+    scheduleQuietRetry(j);
   })();
+}
+// Reintento silencioso de fondo: sin pantalla; si por fin se instala,
+// 'controllerchange' recarga la app UNA vez.
+function scheduleQuietRetry(j){
+  if(PP_UPD_QUIET>=PP_UPD_QUIET_MAX)return; // ya se intentó bastante esta apertura
+  PP_UPD_QUIET++;
+  setTimeout(function(){try{doAppUpdate(j,true);}catch(e){}},180000); // 3 min
 }
 function applyAppUpdate(){ var j=PP_UPDATE.info||{latest:(window.HM_APP_VERSION||'')}; showUpdateNotice(j,true); }
 function renderActualizaciones(){

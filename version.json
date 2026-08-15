@@ -1,8 +1,22 @@
 {
-  "latest": "1.187.5",
+  "latest": "1.187.6",
   "date": "2026-08-14",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.6",
+      "date": "2026-08-14",
+      "type": "obligatoria",
+      "nuevas": [
+        "Se arregla la actualizacion atascada en 'Casi listo…': la descarga del service worker ahora tiene tiempo limite y la instalacion SIEMPRE termina, la version nueva se activa sola y la app recarga una sola vez.",
+        "Si la actualizacion tarda demasiado, la app se puede seguir usando y reintenta sola cada 3 minutos hasta lograrlo."
+      ],
+      "cambios": [],
+      "errores": [
+        "El service worker nuevo podia quedarse eternamente 'installing' si la red se cortaba a media descarga (nunca se activaba y la app repetia la pantalla de actualizar sin salida).",
+        "La app se comparaba contra la version 1.187 aunque la publicada era 1.187.5: siempre creia tener una version vieja."
+      ]
+    },
     {
       "version": "1.187.5",
       "date": "2026-08-14",
