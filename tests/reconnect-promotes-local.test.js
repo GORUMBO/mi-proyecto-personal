@@ -227,6 +227,11 @@ function makeDevice(name, user_id, workouts, onLine) {
     !D.chain().some(function (e) { return e.evento.indexOf('▲ Subido') >= 0; })
     && D.chain().some(function (e) { return e.evento.indexOf('✘ Supabase NO confirmó') >= 0; })
     && D.sb.lastSyncKind === 'error');
+  // v1.187.14: la traza identifica los 11 registros que faltan y su razón.
+  t('R7b · La traza lista los 11 faltantes con razón (no aparecen en la fila guardada)',
+    D.sb.ppUploadTrace && Array.isArray(D.sb.ppUploadTrace.faltantes) && D.sb.ppUploadTrace.faltantes.length === 11
+    && D.sb.ppUploadTrace.faltantes.every(function (f) { return f.razon.indexOf('no aparece en la fila guardada') >= 0; })
+    && D.sb.ppUploadTrace.lista53.length === 53);
   // Y no queda ningún reintento programado (fin del ciclo).
   D.sb.__flushTimers();
   await sleep(20);

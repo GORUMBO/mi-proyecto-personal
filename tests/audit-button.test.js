@@ -73,9 +73,9 @@ const sb = {
 };
 sb.window = sb;
 vm.createContext(sb);
-['ppAuditPanel', 'ppAuditLine', 'ppAuditarSupabase', 'renderSyncChain', 'syncChainPush', 'ppRenderUploadTrace']
+['ppAuditPanel', 'ppAuditLine', 'ppAuditarSupabase', 'renderSyncChain', 'syncChainPush', 'ppRenderUploadTrace', 'ppVerFaltantes']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sb); });
-sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, http: null, releida: null, result: null, error: null };
+sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, http: null, respWorkoutLog: null, releida: null, result: null, error: null, faltantes: [], lista53: [] };
 
 (async function () {
   console.log('\n== Botón de auditoría (sesión de la app, sin copiar tokens) ==');
@@ -110,6 +110,16 @@ sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, htt
   t('A6 · La traza en pantalla muestra cada paso y el fallo de confirmación',
     bar && bar.indexOf('inicio: <b>53</b>') >= 0 && bar.indexOf('payload: <b>53</b>') >= 0
     && bar.indexOf('releída: <b>42</b>') >= 0 && bar.indexOf('NO confirmado') >= 0);
+
+  // A7: lista de faltantes en pantalla con id | fecha | ejercicio | razón.
+  sb.ppUploadTrace.faltantes = [{ id: 1011, fecha: '2026-08-14', ejercicio: 'Remo', razon: 'no aparece en la fila guardada por Supabase' }];
+  sb.ppUploadTrace.lista53 = [{ i: 1, id: 1, fecha: '2026-08-13', ejercicio: 'Sentadilla' }];
+  fakeEls.ppAuditLines = makeEl('ppAuditLines');
+  sb.ppVerFaltantes();
+  const faltLineas = (fakeEls.ppAuditLines && fakeEls.ppAuditLines.children || []).map(function (c) { return c.innerHTML; });
+  t('A7 · "Ver faltantes" lista cada registro perdido con id, fecha, ejercicio y razón',
+    faltLineas.some(function (l) { return l.indexOf('REGISTROS FALTANTES EN SUPABASE: 1') >= 0; })
+    && faltLineas.some(function (l) { return l.indexOf('<b>1011</b>') >= 0 && l.indexOf('Remo') >= 0; }));
 
   console.log('\n==========================================');
   console.log('Resultado: ' + passed + ' pasaron · ' + failed + ' fallaron');

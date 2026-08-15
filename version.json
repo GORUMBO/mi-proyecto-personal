@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.13",
+  "latest": "1.187.14",
   "date": "2026-08-15",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.14",
+      "date": "2026-08-15",
+      "type": "obligatoria",
+      "nuevas": [
+        "Diagnostico de faltantes: la traza de subida ahora muestra que devolvio el servidor (return=representation + HTTP real) y un boton 'Ver N faltantes' que lista cada registro perdido con ID | fecha | ejercicio | razon probable (sin id, id duplicado localmente, o no aparece en la fila guardada), mas la tabla de los registros enviados. Solo diagnostico: sin cambios de logica, merge, IDs ni datos."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.13",
       "date": "2026-08-15",
