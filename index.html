@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.15';
+  window.HM_APP_VERSION='1.187.16';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -22965,7 +22965,7 @@ function ensureId(x){if(x&&typeof x==='object'&&x.id==null)x.id=ppUUID();return 
 let PP_SYNC={kind:'',detail:'',lastError:'',lastSyncAt:null,downloaded:null,remoteChecked:false,remoteHasData:false,_onbNoteShown:false};
 // v1.187.13 (diagnóstico temporal): traza EN PANTALLA de la última subida
 // (para iPhone sin DevTools): cuántos workoutLog lleva el estado en cada paso.
-var ppUploadTrace={inicio:null,merge:null,payload:null,ultimo:null,http:null,respWorkoutLog:null,releida:null,result:null,error:null,faltantes:[],lista53:[],writeId:null,tsEnviado:null,tsServidor:null,tsLeido:null,otraEscritura:false};
+var ppUploadTrace={inicio:null,merge:null,payload:null,ultimo:null,http:null,respWorkoutLog:null,releida:null,result:null,error:null,faltantes:[],lista53:[],writeId:null,tsEnviado:null,tsServidor:null,tsLeido:null,tsAntes:null,otraEscritura:false,noAplico:false};
 function ppRenderUploadTrace(){
   try{
     var t=ppUploadTrace||{};
@@ -22980,7 +22980,8 @@ function ppRenderUploadTrace(){
       +'<div>último: '+safeText(t.ultimo||'—')+' · '+safeText(t.http||'—')+' · servidor devolvió: <b>'+safeText(t.respWorkoutLog==null?'—':t.respWorkoutLog)+'</b> · releída: <b>'+safeText(t.releida==null?'—':t.releida)+'</b>'
       +(t.result==='ok'?' <span style="color:#8ff0b5">✓ confirmado</span>':(t.result==='fail'?' <span style="color:#ffb4a8">✗ NO confirmado</span>':''))
       +'</div>'
-      +(t.otraEscritura?'<div style="color:#ffb4a8;font-weight:800">⚠️ OTRA escritura posterior pisó la fila (updated_at ya no es el nuestro)</div>':'')
+      +(t.noAplico?'<div style="color:#ffb4a8;font-weight:800">⚠️ NUESTRA escritura NO se aplicó (la fila quedó con updated_at más viejo: '+safeText((t.tsLeido||'').slice(11,19))+')</div>':'')
+      +(t.otraEscritura?'<div style="color:#ffb4a8;font-weight:800">⚠️ OTRA escritura posterior pisó la fila (updated_at más nuevo: '+safeText((t.tsLeido||'').slice(11,19))+')</div>':'')
       +((t.result==='fail'&&t.faltantes&&t.faltantes.length)?'<button onclick="ppVerFaltantes()" style="margin-top:4px;background:#b0453a;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">🔎 Ver '+t.faltantes.length+' faltantes</button>':'')
       +'<button onclick="ppVerEscrituras()" style="margin-top:4px;margin-left:4px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">📋 Ver escrituras</button>'
       +(t.error?'<div style="color:#ffb4a8">✘ '+safeText(t.error)+'</div>':'')
@@ -22989,6 +22990,7 @@ function ppRenderUploadTrace(){
   }catch(e){}
 }
 // v1.187.16: quién llama a la escritura (nombre de función desde el stack).
+// Acepta formato Chrome ("at fn (url)") y Safari ("fn@url:line:col").
 function ppWriteOrigen(){
   try{
     var s=new Error().stack||'';
@@ -22997,7 +22999,9 @@ function ppWriteOrigen(){
       var l=lines[i];
       if(l.indexOf('cloudRest')>=0||l.indexOf('ppWriteOrigen')>=0)continue;
       var m=l.match(/at ([^ (]+)/);
-      return m?m[1]:'?';
+      if(m)return m[1];
+      var m2=l.match(/^([^@]*)@/);
+      if(m2&&m2[1]&&m2[1].trim())return m2[1].trim();
     }
   }catch(e){}
   return '?';
@@ -23008,7 +23012,7 @@ function ppVerEscrituras(){
     var log=PP_SYNC.writeLog||[];
     ppAuditLine('<b>ÚLTIMAS ESCRITURAS A SUPABASE ('+log.length+')</b>');
     log.forEach(function(w){
-      ppAuditLine('· WRITE '+safeText(String(w.id||'').slice(-8))+' · '+safeText((w.t||'').slice(11,19))+' · <b>'+safeText(w.fn||'?')+'</b> · '+safeText(w.tabla||'?')+' · wl '+(w.wl==null?'—':w.wl)+' · HTTP '+safeText(w.http)+' · respWl '+(w.respWl==null?'—':w.respWl)+' · tsResp '+safeText((w.tsResp||'').slice(11,19)));
+      ppAuditLine('· WRITE '+safeText(String(w.id||'').slice(-8))+' · '+safeText((w.t||'').slice(11,19))+' · <b>'+safeText(w.fn||'?')+'</b> · '+safeText(w.method||'?')+' '+safeText(w.reqUrl||'?')+' · wl '+(w.wl==null?'—':w.wl)+' · bytes '+safeText(w.bodyBytes==null?'—':w.bodyBytes)+' · HTTP '+safeText(w.http)+' · '+safeText(w.respHeaders||'')+' · respWl '+(w.respWl==null?'—':w.respWl)+' · tsResp '+safeText((w.tsResp||'').slice(11,19)||'—')+' · uidEnviado '+safeText(String(w.uidEnviado||'—').slice(0,8))+(w.respText?' · resp: '+safeText(w.respText):''));
     });
   }catch(e){ppAuditLine('✘ '+safeText(String((e&&e.message)||e)));}
 }
@@ -23016,6 +23020,7 @@ function ppVerEscrituras(){
 function ppVerFaltantes(){
   try{
     var t=ppUploadTrace||{};
+    if(t.noAplico)ppAuditLine('<b>⚠️ NUESTRA escritura NO se aplicó:</b> fila ANTES '+safeText((t.tsAntes||'').slice(11,19)||'—')+' · enviamos '+safeText((t.tsEnviado||'').slice(11,19)||'—')+' · la fila sigue en '+safeText((t.tsLeido||'').slice(11,19)||'—')+' · (servidor devolvió '+safeText(t.tsServidor||'—')+')');
     if(t.otraEscritura)ppAuditLine('<b>⚠️ OTRA ESCRITURA posterior pisó la fila:</b> enviamos updated_at '+safeText(t.tsEnviado||'—')+' · la fila quedó en '+safeText(t.tsLeido||'—')+' · (servidor devolvió '+safeText(t.tsServidor||'—')+')');
     ppAuditLine('<b>REGISTROS FALTANTES EN SUPABASE: '+((t.faltantes||[]).length)+'</b>');
     (t.faltantes||[]).forEach(function(f){
@@ -23192,6 +23197,13 @@ async function ppAuditarSupabase(){
     var c=getCloudConfig();
     var H={apikey:c.key,'Authorization':'Bearer '+s.access_token,'Content-Type':'application/json'};
     ppAuditLine('🔑 '+safeText(s.user&&s.user.email)+' · id '+safeText(String(s.user&&s.user.id)));
+    // v1.187.16: verificar la identidad REAL del token contra la sesión guardada.
+    try{
+      var u=await fetch(c.url+'/auth/v1/user',{headers:{apikey:c.key,'Authorization':'Bearer '+s.access_token}});
+      var ut=await u.text();
+      var uidReal='';try{uidReal=JSON.parse(ut).id||'';}catch(e){}
+      ppAuditLine('🆔 auth.uid() real del token: '+safeText(String(uidReal||'—').slice(0,12))+'…'+(uidReal===s.user.id?' · COINCIDE con la sesión':' · ⚠️ NO coincide con s.user.id ('+safeText(String(s.user.id||'—').slice(0,12))+'…)'));
+    }catch(e){ppAuditLine('🆔 no se pudo verificar auth.uid(): '+safeText(String((e&&e.message)||e)));}
     // 1) Todas las filas visibles (RLS) con su data real.
     var r1=await fetch(c.url+'/rest/v1/personal_backups?select=user_id,updated_at,data',{headers:H});
     var rows=[];try{rows=JSON.parse(await r1.text());}catch(e){}
@@ -23444,7 +23456,7 @@ async function cloudRest(path,options={},_retried){
       var bLog=JSON.parse(options.body||'{}');
       var tablaLog=String(path).split('?')[0];
       var wlLog=(bLog&&bLog.data&&bLog.data.workoutLog)?bLog.data.workoutLog.length:null;
-      var entryLog={id:String(Date.now())+'-'+Math.floor(Math.random()*100000),t:new Date().toISOString(),fn:ppWriteOrigen(),tabla:tablaLog,wl:wlLog,tsEnviado:(bLog&&bLog.updated_at)||null,http:r.status,respWl:null,tsResp:null};
+      var entryLog={id:String(Date.now())+'-'+Math.floor(Math.random()*100000),t:new Date().toISOString(),fn:ppWriteOrigen(),tabla:tablaLog,wl:wlLog,tsEnviado:(bLog&&bLog.updated_at)||null,http:r.status,respWl:null,tsResp:null,respText:(text||'').slice(0,300),bodyBytes:(options.body||'').length,uidEnviado:(bLog&&bLog.user_id)||null,method:(options.method||'?'),reqUrl:String(path).slice(0,120),prefer:(options.headers&&options.headers.Prefer)||null,respHeaders:(function(){try{return 'CL:'+(r.headers&&r.headers.get?r.headers.get('content-length'):'?')+' CT:'+(r.headers&&r.headers.get?r.headers.get('content-type'):'?')+' CR:'+(r.headers&&r.headers.get?r.headers.get('content-range'):'?');}catch(e){return '?';}})()};
       if(tablaLog==='personal_backups'){
         try{var rrLog=JSON.parse(text);rrLog=Array.isArray(rrLog)?rrLog[0]:rrLog;if(rrLog){entryLog.respWl=((rrLog.data&&rrLog.data.workoutLog)||[]).length;entryLog.tsResp=rrLog.updated_at||null;}}catch(e){}
       }
@@ -23494,7 +23506,7 @@ async function cloudSave(silent=false){
     // v1.187.10 (diagnóstico temporal): traza completa del upsert.
     console.log('[SAVE-BEGIN] local workoutLog='+((state.workoutLog)||[]).length);
     // v1.187.13: traza EN PANTALLA (iPhone sin DevTools) de cada paso.
-    ppUploadTrace={inicio:((state.workoutLog)||[]).length,merge:null,payload:null,ultimo:null,http:null,respWorkoutLog:null,releida:null,result:null,error:null,faltantes:[],lista53:[],writeId:null,tsEnviado:null,tsServidor:null,tsLeido:null,otraEscritura:false};
+    ppUploadTrace={inicio:((state.workoutLog)||[]).length,merge:null,payload:null,ultimo:null,http:null,respWorkoutLog:null,releida:null,result:null,error:null,faltantes:[],lista53:[],writeId:null,tsEnviado:null,tsServidor:null,tsLeido:null,tsAntes:null,otraEscritura:false,noAplico:false};
     if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     // v1.187.10 FIX: antes de subir, fusionar el respaldo ACTUAL de la nube.
     // Antes era un POST ciego: un dispositivo con copia vieja (42) podía pisar
@@ -23509,6 +23521,7 @@ async function cloudSave(silent=false){
       }
     }catch(e){/* sin red para leer: se sube lo local; el siguiente sync re-fusiona */}
     ppUploadTrace.merge=((state.workoutLog)||[]).length;
+    ppUploadTrace.tsAntes=(remotePre&&remotePre.updated_at)||null;
     if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
     var wlUp=state.workoutLog||[];
     var wlLastUp=wlUp.length?wlUp[wlUp.length-1]:null;
@@ -23546,10 +23559,14 @@ async function cloudSave(silent=false){
       console.log('[UPSERT-RESULT] workoutLog='+nPostWl+' · filas visibles='+((rowsPost||[]).length)+' · fila user_id='+String(s.user.id));
     }catch(e){console.log('[UPSERT-RESULT] no se pudo releer: '+String((e&&e.message)||e));}
     ppUploadTrace.releida=nPostWl;
-    // v1.187.15: si el updated_at de la fila ya NO es el que enviamos, OTRA
-    // escritura posterior pisó la fila (instancia vieja con código sin fusión).
+    // v1.187.16: comparar updated_at con SEMÁNTICA correcta (zonas incluidas):
+    // - fila MÁS NUEVA que lo enviado → OTRA escritura posterior (alguien escribió después).
+    // - fila MÁS VIEJA o IGUAL a la anterior → NUESTRA escritura NO se aplicó
+    //   (el servidor respondió 200 pero la fila no cambió).
     ppUploadTrace.tsLeido=(remotePost&&remotePost.updated_at)||null;
-    ppUploadTrace.otraEscritura=!!(ppUploadTrace.tsLeido&&ppUploadTrace.tsEnviado&&ppUploadTrace.tsLeido!==ppUploadTrace.tsEnviado);
+    var tEnv=Date.parse(ppUploadTrace.tsEnviado||0)||0, tLei=Date.parse(ppUploadTrace.tsLeido||0)||0;
+    ppUploadTrace.otraEscritura=!!(tLei&&tEnv&&tLei>tEnv);
+    ppUploadTrace.noAplico=!!(tLei&&tEnv&&tLei<=tEnv);
     // v1.187.14: comparar local vs remoto y listar los registros que NO quedaron
     // en Supabase, con su razón probable (id duplicado local, sin id, o ausente
     // de la fila guardada).

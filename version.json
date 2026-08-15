@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.15",
+  "latest": "1.187.16",
   "date": "2026-08-15",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.16",
+      "date": "2026-08-15",
+      "type": "obligatoria",
+      "nuevas": [
+        "Inspeccion completa de la llamada de escritura (solo diagnostico): la bitacora muestra metodo, ruta REST exacta, Prefer, bytes del body, HTTP y cabeceras de respuesta (content-length/content-type/content-range), respText (texto real de la respuesta) y uid enviado; la auditoria verifica auth.uid() real del token contra la sesion guardada. Corrige el detector de 'otra escritura' con semantica de tiempos (fila mas vieja = nuestra escritura NO se aplico; mas nueva = otra escritura posterior). Sin cambios de logica de guardado ni de datos."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.15",
       "date": "2026-08-15",

@@ -63,8 +63,9 @@ const sb = {
   fetch: async function (url, opts) {
     requests.push({ url: String(url), opts: opts || {} });
     const p = String(url).replace('https://xyz.supabase.co/rest/v1/', '');
-    if (p.indexOf('personal_backups?select=user_id,updated_at,data') === 0) return { status: 200, text: async function () { return JSON.stringify([row42]); } };
-    if (p.indexOf('personal_backups?user_id=eq.') === 0) return { status: 200, text: async function () { return JSON.stringify([row42]); } };
+    if (String(url).indexOf('/auth/v1/user') >= 0) return { ok: true, status: 200, text: async function () { return JSON.stringify({ id: 'u-123' }); } };
+    if (p.indexOf('personal_backups?select=user_id,updated_at,data') === 0) return { ok: true, status: 200, text: async function () { return JSON.stringify([row42]); } };
+    if (p.indexOf('personal_backups?user_id=eq.') === 0) return { ok: true, status: 200, text: async function () { return JSON.stringify([row42]); } };
     if (opts && opts.method === 'POST') return { status: 200, text: async function () { return JSON.stringify([row42]); } };
     return { status: 200, text: async function () { return '[]'; } };
   },
@@ -85,6 +86,8 @@ sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, htt
   t('A1 · Muestra la sesión y el workoutLog REAL de la fila en pantalla',
     lineas.some(function (l) { return l.indexOf('u-123') >= 0; })
     && lineas.some(function (l) { return l.indexOf('workoutLog <b>42</b>') >= 0; }));
+  t('A8 · Verifica auth.uid() real del token y confirma que coincide con la sesión',
+    lineas.some(function (l) { return l.indexOf('COINCIDE con la sesión') >= 0; }));
   const post = requests.find(function (r) { return r.opts.method === 'POST'; });
   t('A2 · La escritura controlada re-envía el MISMO contenido de la fila (42, sin tocar datos)',
     !!post && JSON.parse(post.opts.body).data.workoutLog.length === 42);

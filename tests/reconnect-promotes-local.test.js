@@ -232,6 +232,10 @@ function makeDevice(name, user_id, workouts, onLine) {
     D.sb.ppUploadTrace && Array.isArray(D.sb.ppUploadTrace.faltantes) && D.sb.ppUploadTrace.faltantes.length === 11
     && D.sb.ppUploadTrace.faltantes.every(function (f) { return f.razon.indexOf('no aparece en la fila guardada') >= 0; })
     && D.sb.ppUploadTrace.lista53.length === 53);
+  // v1.187.16: detecta que NUESTRA escritura NO se aplicó (fila más vieja que lo enviado).
+  t('R7c · La traza detecta que la escritura NO se aplicó (fila quedó más vieja)',
+    D.sb.ppUploadTrace.noAplico === true && D.sb.ppUploadTrace.otraEscritura === false
+    && !!D.sb.ppUploadTrace.tsEnviado && Date.parse(D.sb.ppUploadTrace.tsLeido) < Date.parse(D.sb.ppUploadTrace.tsEnviado));
   // Y no queda ningún reintento programado (fin del ciclo).
   D.sb.__flushTimers();
   await sleep(20);
