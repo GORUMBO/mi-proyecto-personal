@@ -1,8 +1,22 @@
 {
-  "latest": "1.187",
-  "date": "2026-08-13",
+  "latest": "1.187.5",
+  "date": "2026-08-14",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.5",
+      "date": "2026-08-14",
+      "type": "recomendada",
+      "nuevas": [
+        "Sincronizacion automatica bidireccional: los cambios hechos en un dispositivo aparecen solos en el otro, sin recargar.",
+        "Canal en vivo con Supabase Realtime y cadena de diagnostico temporal (subida, recepcion y UI actualizada)."
+      ],
+      "cambios": [],
+      "errores": [
+        "Se evita el ping-pong infinito entre dispositivos abiertos: un cambio recibido de la nube no se vuelve a subir.",
+        "Conflictos por el mismo registro: gana la version con updated_at mas reciente."
+      ]
+    },
     {
       "version": "1.187",
       "date": "2026-08-13",
