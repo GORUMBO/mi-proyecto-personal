@@ -198,6 +198,17 @@ function makeDevice(name, user_id, initialWorkout) {
     && B.chain().some(function (e) { return e.evento.indexOf('🔀 Merge') >= 0; })
     && B.chain().some(function (e) { return e.evento.indexOf('Estado fusionado') >= 0; }));
 
+  console.log('\n== D10 · Si Supabase NO emite cambios (tabla fuera de Realtime), la app lo dice ==');
+  wsB.onmessage({
+    data: JSON.stringify({
+      event: 'system',
+      payload: { status: 'error', message: 'Unable to subscribe to changes with given parameters. Please check Realtime is enabled for the given connect parameters: [event: *, schema: public, table: peso, filters: [], select: nil]' },
+      topic: 'realtime:public:peso:user_id=eq.u-123'
+    })
+  });
+  t('D10 · El aviso real de Supabase queda en la cadena (ya no es silencioso)',
+    B.chain().some(function (e) { return e.evento.indexOf('✘ Supabase no emite cambios') >= 0; }));
+
   console.log('\n==========================================');
   console.log('Resultado: ' + passed + ' pasaron · ' + failed + ' fallaron');
   console.log('==========================================');

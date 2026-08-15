@@ -1,8 +1,24 @@
 {
-  "latest": "1.187.8",
+  "latest": "1.187.9",
   "date": "2026-08-14",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.9",
+      "date": "2026-08-14",
+      "type": "obligatoria",
+      "nuevas": [
+        "Se elimina el bucle local de una sola instancia: con Windows abierto y sin tocar nada, el estado se quedaba oscilando Pendiente → Sincronizando → Sincronizado para siempre (cada render guardaba y re-subia). Ahora solo se guarda y sube si los datos cambiaron de verdad.",
+        "Se corrige que cada render pisara tu perfil con valores por defecto (peso 150, estatura 170, edad 30) cuando la pestana Perfil no estaba abierta."
+      ],
+      "cambios": [
+        "calcMacros ya no guarda de forma incondicional: recalcula con TU peso real y solo guarda si hay cambio material.",
+        "El guardado local ignora cambios de metadata (fecha y contador de sincronizacion): sin datos nuevos no hay escritura ni subida."
+      ],
+      "errores": [
+        "En una sola ventana abierta, cada evento Realtime propio (el UPDATE de personal_backups y los espejos granulares) provocaba otro guardado y otra subida, sin fin."
+      ]
+    },
     {
       "version": "1.187.8",
       "date": "2026-08-14",

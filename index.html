@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.8';
+  window.HM_APP_VERSION='1.187.9';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -629,6 +629,16 @@ var _saveTimeout=null, _savePending=false;
 function _doSave(){
   _savePending=false;
   try{
+    // v1.187.9: si el estado NO cambió materialmente (ignorando lastModified y
+    // offlineChanges, que son metadata de sync y no datos), no se escribe ni se
+    // dispara sync. Corta de raíz los bucles de re-escritura: render → save →
+    // upload → evento propio → merge → render → save → …
+    var sig=JSON.stringify(Object.assign({},state,{lastModified:0,offlineChanges:0}));
+    var prevRaw=null;try{prevRaw=safeStorage.get('pp_full');}catch(e){}
+    if(prevRaw){
+      try{var prevSig=JSON.stringify(Object.assign({},JSON.parse(prevRaw),{lastModified:0,offlineChanges:0}));}catch(e){prevSig=null;}
+      if(prevSig===sig)return;
+    }
     state.lastModified=new Date().toISOString();
     let json=JSON.stringify(state);
     // localStorage puede fallar por falta de espacio (~5MB). Guardamos el resultado real para avisar honestamente.
@@ -23131,6 +23141,13 @@ function initRealtimeSync(){
   ws.onmessage=function(ev){
     try{
       var msg=JSON.parse(ev.data);
+      // v1.187.9: Supabase avisa con event:'system' status:'error' cuando una
+      // tabla NO está habilitada para Realtime (publicación supabase_realtime).
+      // Antes se ignoraba y parecía todo conectado; ahora se muestra el motivo.
+      if(msg&&msg.event==='system'&&msg.payload&&msg.payload.status==='error'){
+        syncChainPush('✘ Supabase no emite cambios para esa tabla',String(msg.payload.message||'revisa Replication en Supabase').slice(0,120));
+        return;
+      }
       if(msg&&msg.event==='phx_reply'){
         _rtLastReply=Date.now();
         var st=msg.payload&&msg.payload.status;
@@ -23706,7 +23723,24 @@ function setSimplePounds(value){
   let input=document.getElementById('simpleLb');
   if(input){input.value=value;convertSimpleWeight('lb')}
 }
-function calcMacros(){Object.assign(state.profile,{peso:+$('#peso')?.value||150,altura:+$('#altura')?.value||170,edad:+$('#edad')?.value||30,objetivo:$('#objetivo')?.value||'ganar músculo'});let kg=state.profile.peso*.4536;let cal=Math.round(kg*38+400);let prot=Math.round(kg*1.9);let fat=Math.round(kg*.9);let carb=Math.round((cal-prot*4-fat*9)/4);Object.assign(state.profile,{calorias:cal,proteina:prot,grasa:fat,carbos:carb});$('#macroOut')&&($('#macroOut').innerHTML=`<div class="card macro-result-clean"><div class="macro-result-head"><div><b>Tus macros del día</b><span>Objetivo: ${safeText(state.profile.objetivo)}</span></div></div><div class="macro-big-grid"><div class="macro-big"><b>${cal}</b><span>kcal meta</span></div><div class="macro-big"><b>${prot}g</b><span>proteína</span></div><div class="macro-big"><b>${fat}g</b><span>grasa</span></div><div class="macro-big"><b>${carb}g</b><span>carbos</span></div></div><p class="muted" style="margin:10px 0 0;font-size:13px">Por tu trabajo físico, usa esto como punto de partida y sube 200-300 kcal si no subes de peso.</p></div>`);save()}
+function calcMacros(){
+  // v1.187.9: esta función corre en CADA render (bindAll). Antes hacía DOS daños:
+  // 1) pisaba el perfil con defaults (150/170/30) cuando los inputs de Perfil no
+  //    estaban montados (otra pestaña activa), y 2) guardaba SIEMPRE. Eso armaba
+  //    el bucle infinito de UNA sola instancia: render → save → cloudSave →
+  //    evento realtime propio → merge → render → save → … (Pendiente→Sincronizado).
+  // Ahora: conserva los valores existentes si los inputs faltan/están vacíos y
+  // solo guarda si algo cambió materialmente.
+  var p=state.profile||(state.profile={});
+  var antes=JSON.stringify({peso:+p.peso||0,altura:+p.altura||0,edad:+p.edad||0,objetivo:p.objetivo||'',calorias:+p.calorias||0,proteina:+p.proteina||0,grasa:+p.grasa||0,carbos:+p.carbos||0});
+  var vPeso=($('#peso')||{}).value,vAltura=($('#altura')||{}).value,vEdad=($('#edad')||{}).value,vObj=($('#objetivo')||{}).value;
+  if(vPeso)p.peso=+vPeso;if(vAltura)p.altura=+vAltura;if(vEdad)p.edad=+vEdad;if(vObj)p.objetivo=vObj;
+  let kg=(+p.peso||0)*.4536;let cal=Math.round(kg*38+400);let prot=Math.round(kg*1.9);let fat=Math.round(kg*.9);let carb=Math.round((cal-prot*4-fat*9)/4);
+  p.calorias=cal;p.proteina=prot;p.grasa=fat;p.carbos=carb;
+  $('#macroOut')&&($('#macroOut').innerHTML=`<div class="card macro-result-clean"><div class="macro-result-head"><div><b>Tus macros del día</b><span>Objetivo: ${safeText(p.objetivo)}</span></div></div><div class="macro-big-grid"><div class="macro-big"><b>${cal}</b><span>kcal meta</span></div><div class="macro-big"><b>${prot}g</b><span>proteína</span></div><div class="macro-big"><b>${fat}g</b><span>grasa</span></div><div class="macro-big"><b>${carb}g</b><span>carbos</span></div></div><p class="muted" style="margin:10px 0 0;font-size:13px">Por tu trabajo físico, usa esto como punto de partida y sube 200-300 kcal si no subes de peso.</p></div>`);
+  var despues=JSON.stringify({peso:+p.peso||0,altura:+p.altura||0,edad:+p.edad||0,objetivo:p.objetivo||'',calorias:+p.calorias||0,proteina:+p.proteina||0,grasa:+p.grasa||0,carbos:+p.carbos||0});
+  if(despues!==antes)save();
+}
 function addFood(){let f=foods[$('#foodSel').value],m=(+$('#foodQty').value||1)*(+$('#foodUnit').value||1);state.meals.push({n:f[0],k:f[1]*m,p:f[2]*m,g:f[3]*m,c:f[4]*m,cost:f[5]*m});save();renderMeals()}
 function renderMeals(){let el=$('#mealOut');if(!el)return;let t=state.meals.reduce((a,x)=>(a.k+=x.k,a.p+=x.p,a.g+=x.g,a.c+=x.c,a.cost+=x.cost,a),{k:0,p:0,g:0,c:0,cost:0});el.innerHTML=`<div class="grid"><div class="kpi">${kcal(t.k)}</div><div class="kpi">P ${Math.round(t.p)}g</div><div class="kpi">G ${Math.round(t.g)}g</div><div class="kpi">${money(t.cost)}</div></div>`+state.meals.map(x=>`<div class="item">${x.n}: ${kcal(x.k)} · P ${Math.round(x.p)}g · ${money(x.cost)}</div>`).join('')}
 let _subwayOpen = false;
