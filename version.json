@@ -1,8 +1,21 @@
 {
-  "latest": "1.187.9",
+  "latest": "1.187.10",
   "date": "2026-08-14",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.10",
+      "date": "2026-08-14",
+      "type": "obligatoria",
+      "nuevas": [
+        "Subida protegida: antes de guardar en la nube, la app fusiona el respaldo actual de Supabase y sube la UNION. Un dispositivo con copia vieja ya no puede pisar los datos nuevos de otro: la nube solo crece, nunca regresa.",
+        "Diagnostico extremo a extremo del ejercicio: id visible al registrarlo, al subirlo, al descargarlo y al fusionarlo."
+      ],
+      "cambios": [],
+      "errores": [
+        "Un ejercicio registrado en el iPhone subia bien (53 registros) pero segundos despues la nube volvia a 42: un guardado automatico de Windows con copia vieja hacia un POST ciego y pisaba la escritura reciente. Ahora toda subida fusiona primero."
+      ]
+    },
     {
       "version": "1.187.9",
       "date": "2026-08-14",

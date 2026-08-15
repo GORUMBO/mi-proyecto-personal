@@ -209,6 +209,19 @@ function makeDevice(name, user_id, initialWorkout) {
   t('D10 · El aviso real de Supabase queda en la cadena (ya no es silencioso)',
     B.chain().some(function (e) { return e.evento.indexOf('✘ Supabase no emite cambios') >= 0; }));
 
+  console.log('\n== D11 · Un dispositivo con copia VIEJA no puede regresar la nube ==');
+  // Caso real del bug: A subió 2 ejercicios (Sentadilla + Press banca), pero un
+  // dispositivo viejo (sin canal, con 1 solo ejercicio) hace su guardado ciego.
+  // cloudSave ahora fusiona primero el respaldo actual y sube la UNIÓN.
+  const C = makeDevice('windows-viejo', 'u-123', [{ id: 1, date: '2026-08-13', exercise: 'Sentadilla', weight: 50, sets: 1, reps: '8', note: 'viejo' }]);
+  C.sb.save(true);           // guardado local del dispositivo viejo
+  C.sb.__flushTimers();      // auto-sync → cloudSave
+  await sleep(30);
+  const wlNube = server.backups['u-123'] && server.backups['u-123'].data.workoutLog;
+  t('D11 · La subida del dispositivo viejo conserva el ejercicio del iPhone (unión, no regresión)',
+    !!wlNube && wlNube.some(function (x) { return x.exercise === 'Press banca'; })
+    && wlNube.some(function (x) { return x.exercise === 'Sentadilla'; }));
+
   console.log('\n==========================================');
   console.log('Resultado: ' + passed + ' pasaron · ' + failed + ' fallaron');
   console.log('==========================================');

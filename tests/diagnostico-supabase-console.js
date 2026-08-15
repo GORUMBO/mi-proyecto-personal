@@ -22,6 +22,17 @@
   log('☁️ personal_backups (tu fila): HTTP → ' + b.slice(0, 300));
   const wl = await R('personal_backups?select=data->workoutLog');
   log('☁️ workoutLog en tu respaldo (últimos 2000 chars): ' + wl.slice(0, 2000));
+  // Los 4 ÚLTIMOS registros del respaldo (¿está el ejercicio nuevo?):
+  try {
+    const parsed = JSON.parse(wl);
+    const list = parsed && parsed[0] && parsed[0].workoutLog;
+    if (Array.isArray(list)) {
+      log('☁️ Total workoutLog en la nube: ' + list.length);
+      list.slice(-4).forEach(function (x, i) {
+        log('   #' + (list.length - 4 + i + 1) + ' · ' + x.exercise + ' · id ' + x.id + ' · fecha ' + (x.localDate || x.date || '') + ' · reps ' + (x.reps || '') + ' · peso ' + (x.weight || 0));
+      });
+    }
+  } catch (e) { log('   (no se pudo parsear workoutLog: ' + e.message + ')'); }
   const ej = await R('ejercicios?select=user_id,client_id,updated_at&order=updated_at.desc&limit=5');
   log('💪 ejercicios (últimas 5 filas): ' + ej.slice(0, 1500));
   log('📡 Sonda Realtime 60 s con TU token. AHORA registra un ejercicio de prueba en el iPhone.');

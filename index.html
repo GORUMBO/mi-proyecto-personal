@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.9';
+  window.HM_APP_VERSION='1.187.10';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -643,7 +643,7 @@ function _doSave(){
     let json=JSON.stringify(state);
     // localStorage puede fallar por falta de espacio (~5MB). Guardamos el resultado real para avisar honestamente.
     let okLocal=safeStorage.set('pp_full',json);
-    console.log('[SAVE] localStorage write: '+(okLocal?'OK':'FAIL')+' · workoutLog entries: '+(state.workoutLog||[]).length+' · lastModified: '+state.lastModified);
+    console.log('[SAVE] localStorage write: '+(okLocal?'OK':'FAIL')+' · workoutLog entries: '+(state.workoutLog||[]).length+' · lastModified: '+state.lastModified+' · último: '+(((state.workoutLog||[]).slice(-1)[0]||{}).exercise||'—')+'#'+(((state.workoutLog||[]).slice(-1)[0]||{}).id||'—'));
     // IndexedDB tiene mucho más espacio: es la red de seguridad aunque localStorage esté lleno.
     persistStateIDB(json);
     // show toast
@@ -23217,7 +23217,13 @@ async function cloudStartupSync(opts){
     PP_SYNC.remoteChecked=true;
     if(!opts.skipUpload)syncChainPush('🔑 Conectado',String(s.user.email||'')+' · id '+String(s.user.id||'').slice(0,8)+'…');
     // v1.187.7 (diagnóstico temporal): traza de la descarga → merge → UI.
-    syncChainPush('☁️ Descarga de Supabase','workoutLog remoto: '+(((rd&&rd.workoutLog)||[]).length)+' · local: '+((state.workoutLog)||[]).length);
+    // v1.187.9: incluye el último registro remoto y cuántos registros remotos
+    // NO existen localmente (el número decisivo para saber si llegó el nuevo).
+    var rwD=((rd&&rd.workoutLog)||[]);
+    var rwLastD=rwD.length?rwD[rwD.length-1]:null;
+    var localIdsD={};((state.workoutLog)||[]).forEach(function(x){if(x&&x.id!=null)localIdsD['id:'+x.id]=1;});
+    var nuevosD=rwD.filter(function(x){return !(x&&x.id!=null&&localIdsD['id:'+x.id]);}).length;
+    syncChainPush('☁️ Descarga de Supabase','remoto: '+rwD.length+' · último: '+(rwLastD?rwLastD.exercise:'—')+'#'+(rwLastD?rwLastD.id:'—')+' · local: '+((state.workoutLog)||[]).length+' · nuevos del remoto: '+nuevosD);
     if(remote&&remote.data)state=mergeCloudStates(state, remote.data);
     syncChainPush('🔀 Merge','workoutLog total: '+((state.workoutLog)||[]).length);
     // Si la nube confirma que el usuario YA existe, restaura el perfil y salta
@@ -23306,14 +23312,39 @@ async function cloudSave(silent=false){
   try{
     setSync('syncing');
     normalizeAllWeights();
-    console.log('[SYNC] Petición enviada a Supabase (personal_backups). Pesos locales:',(state.weight||[]).length);
-    await cloudRest('personal_backups?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:s.user.id,data:state,updated_at:new Date().toISOString()})});
+    // v1.187.10 (diagnóstico temporal): traza completa del upsert.
+    console.log('[SAVE-BEGIN] local workoutLog='+((state.workoutLog)||[]).length);
+    // v1.187.10 FIX: antes de subir, fusionar el respaldo ACTUAL de la nube.
+    // Antes era un POST ciego: un dispositivo con copia vieja (42) podía pisar
+    // la escritura reciente de otro (53) y la nube REGRESABA. Con la unión, la
+    // nube solo puede crecer: nunca pierde el ejercicio nuevo.
+    try{
+      var rowsPre=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');
+      var remotePre=rowsPre&&rowsPre[0];
+      if(remotePre&&remotePre.data){
+        state=mergeCloudStates(state, remotePre.data);
+        console.log('[MERGE-BEFORE-UPSERT] workoutLog='+((state.workoutLog)||[]).length);
+      }
+    }catch(e){/* sin red para leer: se sube lo local; el siguiente sync re-fusiona */}
+    var wlUp=state.workoutLog||[];
+    var wlLastUp=wlUp.length?wlUp[wlUp.length-1]:null;
+    var payloadUp={user_id:s.user.id,data:state,updated_at:new Date().toISOString()};
+    console.log('[UPSERT-PAYLOAD] workoutLog='+(((payloadUp.data&&payloadUp.data.workoutLog)||[]).length)+' · último: '+(wlLastUp?wlLastUp.exercise:'—')+'#'+(wlLastUp?wlLastUp.id:'—')+' · payloadBytes='+JSON.stringify(payloadUp).length);
+    console.log('[SYNC] Petición enviada a Supabase (personal_backups). Pesos locales:',(state.weight||[]).length,'· workoutLog:',wlUp.length,'· último id:',wlLastUp&&wlLastUp.id,'· último ejercicio:',wlLastUp&&wlLastUp.exercise);
+    await cloudRest('personal_backups?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payloadUp)});
     console.log('[SYNC] Respuesta de Supabase: respaldo guardado OK.');
+    // v1.187.10 (diagnóstico temporal): leer la fila REAL tras el upsert.
+    try{
+      var rowsPost=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');
+      var remotePost=rowsPost&&rowsPost[0];
+      console.log('[UPSERT-RESULT] workoutLog='+(((remotePost&&remotePost.data&&remotePost.data.workoutLog)||[]).length)+' · fila user_id='+String(s.user.id));
+    }catch(e){console.log('[UPSERT-RESULT] no se pudo releer: '+String((e&&e.message)||e));}
+    console.log('[SAVE-END] remoto workoutLog='+(((remotePost&&remotePost.data&&remotePost.data.workoutLog)||[]).length));
     await mirrorGranular(s.user.id).catch(err=>console.warn('[SYNC] Espejo granular pendiente',err));
     state.offlineChanges=0;safeStorage.set('pp_full',JSON.stringify(state));
     _syncRetries=0; // éxito: reiniciar contador
     setSync('synced');
-    syncChainPush('▲ Subido a Supabase','la nube recibió el cambio');
+    syncChainPush('▲ Subido a Supabase','workoutLog: '+wlUp.length+' · último: '+(wlLastUp?wlLastUp.exercise:'—')+'#'+(wlLastUp?wlLastUp.id:'—'));
     if(!silent)cloudStatus('Datos sincronizados en Supabase.');
   }catch(e){
     ppLogErr('sync',e);console.error('[SYNC] Error al subir a Supabase:',e);
@@ -25826,6 +25857,8 @@ function saveSimpleWorkout(){
   let reps=document.getElementById('simpleWorkoutReps')?.value||'';
   let feel=document.getElementById('simpleWorkoutFeel')?.value||'Normal';
   state.workoutLog.push({date:todayISO(),exercise,weight,sets,reps,note:'Registro simple · '+feel,id:Date.now()});
+  // v1.187.9 (diagnóstico temporal): ID del registro en la cadena para seguirlo extremo a extremo.
+  try{syncChainPush('📝 Ejercicio guardado',String(exercise)+' · id '+state.workoutLog[state.workoutLog.length-1].id+' · total '+state.workoutLog.length);}catch(e){}
   save(true); // inmediato: acción explícita del usuario
   ['simpleWorkoutExercise','simpleWorkoutWeight','simpleWorkoutSets','simpleWorkoutReps'].forEach(id=>{let el=document.getElementById(id);if(el)el.value=''});
   let status=document.getElementById('simpleWorkoutStatus');
@@ -26866,6 +26899,9 @@ function logRoutineExercise(i, btn){
   var serieNum=pack.seriesCount[key];
   state.workoutLog.push({id:Date.now(),date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:w,sets:x.sets||0,reps:reps,note:'Rutina · '+(x.muscle||'')+' · Serie '+serieNum});
   console.log('[REG] DESPUES DEL PUSH — workoutLog='+state.workoutLog.length+' serie='+serieNum);
+  // v1.187.9 (diagnóstico temporal): deja el ID del registro en la cadena para
+  // seguirlo extremo a extremo (iPhone → Supabase → Windows).
+  try{syncChainPush('📝 Ejercicio guardado',String(x.name)+' · id '+state.workoutLog[state.workoutLog.length-1].id+' · total '+state.workoutLog.length);}catch(e){}
   if(!pack.checked)pack.checked={}; pack.checked[i]=true; pack.checkedDate=todayISO();
   save(true); // inmediato: la acción del usuario no debe esperar el debounce
   actualizarResultadosHoy(); // v1.187: veredicto objetivo vs resultado
