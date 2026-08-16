@@ -141,13 +141,15 @@ async function handleRequest(request) {
   }
 
   // 8) Éxito: para personal_backups, confirmar el conteo real de workoutLog.
+  //    Diagnóstico de identidad: sub del JWT y user_id de la fila devuelta.
   var rows = Array.isArray(data) ? data : [data];
-  var workoutLogCount = null, updatedAt = null;
+  var workoutLogCount = null, updatedAt = null, rowUserId = null;
+  if (rows.length && rows[0]) rowUserId = rows[0].user_id || null;
   if (tabla === 'personal_backups' && rows.length && rows[0] && rows[0].data) {
     workoutLogCount = (rows[0].data.workoutLog || []).length;
     updatedAt = rows[0].updated_at || null;
   }
-  return json({ ok: true, status: upstream.status, workoutLogCount: workoutLogCount, updatedAt: updatedAt, data: data });
+  return json({ ok: true, status: upstream.status, workoutLogCount: workoutLogCount, updatedAt: updatedAt, sub: claims.sub, rowUserId: rowUserId, data: data });
 }
 
 export default {

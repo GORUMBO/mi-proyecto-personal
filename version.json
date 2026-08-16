@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.20",
+  "latest": "1.187.21",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.21",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "Diagnostico de identidad: las pruebas del Worker muestran en pantalla QUIEN es quien: s.user.id de la sesion, sub del JWT, sub que vio el Worker y user_id de la fila que devolvio Supabase. El Worker incluye sub y rowUserId en sus respuestas. Sin cambios de sincronizacion ni datos."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.20",
       "date": "2026-08-16",
