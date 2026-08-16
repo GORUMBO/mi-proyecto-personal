@@ -65,7 +65,7 @@ const sb = {
 };
 sb.window = sb;
 vm.createContext(sb);
-['ppRespBloqueada', 'cloudRest', 'ppWriteOrigen', 'ppVerEscrituras'].forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sb); });
+['ppRespBloqueada', 'cloudRest', 'ppWriteOrigen'].forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sb); });
 
 (async function () {
   console.log('\n== Bitácora de escrituras (cloudRest real + fetch simulado) ==');

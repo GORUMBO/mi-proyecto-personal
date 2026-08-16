@@ -152,11 +152,10 @@ function makeDevice(name, workouts, useWorker) {
     fila.data.workoutLog.length === 53 && fila.data.workoutLog.some(function (x) { return x.exercise === 'Remo'; }));
   t('U3 · Sin duplicados: 53 ids únicos', uniq === 53);
   t('U4 · El iPhone conserva sus 53 locales', A.state.workoutLog.length === 53);
-  t('U5 · La cadena confirma la subida con el conteo real',
-    A.PP_SYNCCHAIN.some(function (e) { return e.evento.indexOf('▲ Subido') >= 0 && e.detalle.indexOf('workoutLog: 53') >= 0; }));
+  t('U5 · La subida quedó confirmada con el conteo real (53)',
+    A.ppUploadTrace && A.ppUploadTrace.result === 'ok' && A.ppUploadTrace.releida === 53 && A.ppUploadTrace.payload === 53);
   t('U6 · La verificación superó el retardo de lectura (confirmado, no fallo)',
-    A.PP_SYNCCHAIN.some(function (e) { return e.evento.indexOf('▲ Subido') >= 0; })
-    && !A.PP_SYNCCHAIN.some(function (e) { return e.evento.indexOf('NO confirmó') >= 0; }));
+    A.ppUploadTrace && A.ppUploadTrace.result === 'ok' && A.ppUploadTrace.noAplico === false);
 
   console.log('\n== Windows (42) sincroniza después y recibe la unión ==');
   const B = makeDevice('windows', mkBase42(), false); // directo, como hoy

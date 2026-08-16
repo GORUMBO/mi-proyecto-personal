@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.28",
+  "latest": "1.187.29",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.29",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "Limpieza visual: se retiran la cadena de sync, la traza de ultima subida, los botones de auditoria/prueba y los mensajes temporales de consola. Se conserva UNICO el boton del puente Cloudflare (activar/apagar). La sincronizacion queda exactamente como estaba funcionando."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.28",
       "date": "2026-08-16",

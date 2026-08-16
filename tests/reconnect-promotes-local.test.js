@@ -192,8 +192,8 @@ function makeDevice(name, user_id, workouts, onLine) {
   const nube = server.backups['u-123'];
   t('R2 · Al reconectar, el iPhone subió la UNIÓN: Supabase queda en 53 con Remo',
     server.backupWrites === 1 && nube.data.workoutLog.length === 53 && nube.data.workoutLog.some(function (x) { return x.exercise === 'Remo'; }));
-  t('R3 · La cadena del iPhone muestra la subida con el conteo real',
-    I.chain().some(function (e) { return e.evento.indexOf('▲ Subido') >= 0 && e.detalle.indexOf('workoutLog: 53') >= 0; }));
+  t('R3 · La traza del iPhone confirma la subida con el conteo real (53)',
+    I.sb.ppUploadTrace && I.sb.ppUploadTrace.result === 'ok' && I.sb.ppUploadTrace.releida === 53);
 
   console.log('\n== Windows procesa el evento del iPhone ==');
   W.sb.__flushTimers();                     // debounce del evento recibido
@@ -223,9 +223,9 @@ function makeDevice(name, user_id, workouts, onLine) {
   D.sb.__flushTimers();
   await sleep(40);
   server.voidMode = false;
-  t('R7 · Sin confirmación remota: NO declara éxito y marca error (sin "▲ Subido")',
-    !D.chain().some(function (e) { return e.evento.indexOf('▲ Subido') >= 0; })
-    && D.chain().some(function (e) { return e.evento.indexOf('✘ Supabase NO confirmó') >= 0; })
+  t('R7 · Sin confirmación remota: NO declara éxito y marca error',
+    D.sb.ppUploadTrace && D.sb.ppUploadTrace.result === 'fail'
+    && /enviado 53/.test(D.sb.ppUploadTrace.error || '')
     && D.sb.lastSyncKind === 'error');
   // v1.187.14: la traza identifica los 11 registros que faltan y su razón.
   t('R7b · La traza lista los 11 faltantes con razón (no aparecen en la fila guardada)',

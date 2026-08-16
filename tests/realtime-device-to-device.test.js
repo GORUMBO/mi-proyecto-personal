@@ -167,8 +167,8 @@ function makeDevice(name, user_id, initialWorkout) {
   if (wsB && wsB.onopen) wsB.onopen(); // el socket abre y envía los phx_join
   t('D1 · Windows se suscribió al canal realtime de personal_backups con su user_id',
     !!wsB && wsB.topics.indexOf('realtime:public:personal_backups:user_id=eq.u-123') >= 0);
-  t('D2 · Supabase confirmó la suscripción (phx_reply ok) y quedó en la cadena',
-    B.chain().some(function (e) { return e.evento.indexOf('Suscripción aceptada') >= 0; }));
+  t('D2 · Supabase confirmó la suscripción (phx_reply ok: el canal quedó vivo)',
+    B.sb._rtLastReply > 0);
 
   console.log('\n== A (iPhone) registra el ejercicio (misma acción que saveSimpleWorkout) ==');
   A.sb.state.workoutLog.push({ date: '2026-08-14', exercise: 'Press banca', weight: 25, sets: 1, reps: '10', note: 'Registro simple · Normal', id: 1723632600000 });
@@ -191,12 +191,10 @@ function makeDevice(name, user_id, initialWorkout) {
     merged.some(function (x) { return x.exercise === 'Sentadilla'; }));
   t('D7 · La UI de B se re-renderizó (sin recargar ni botón)', B.renders >= 1);
   t('D8 · B NO re-subió la unión (skipUpload: sin ping-pong)', B.saves === 0);
-  console.log('  [cadena de B] ' + JSON.stringify(B.chain().map(function (e) { return e.evento; })));
-  t('D9 · Cadena de B: evento recibido → descarga → merge → UI actualizada',
-    B.chain().some(function (e) { return e.evento.indexOf('▼ Cambio recibido') >= 0; })
-    && B.chain().some(function (e) { return e.evento.indexOf('☁️ Descarga') >= 0; })
-    && B.chain().some(function (e) { return e.evento.indexOf('🔀 Merge') >= 0; })
-    && B.chain().some(function (e) { return e.evento.indexOf('Estado fusionado') >= 0; }));
+  t('D9 · Evento → descarga → merge → UI actualizada (verificado por estado y render)',
+    B.sb.state.workoutLog.some(function (x) { return x.exercise === 'Press banca'; })
+    && B.sb.state.workoutLog.some(function (x) { return x.exercise === 'Sentadilla'; })
+    && B.renders >= 1);
 
   console.log('\n== D10 · Si Supabase NO emite cambios (tabla fuera de Realtime), la app lo dice ==');
   wsB.onmessage({
@@ -206,8 +204,8 @@ function makeDevice(name, user_id, initialWorkout) {
       topic: 'realtime:public:peso:user_id=eq.u-123'
     })
   });
-  t('D10 · El aviso real de Supabase queda en la cadena (ya no es silencioso)',
-    B.chain().some(function (e) { return e.evento.indexOf('✘ Supabase no emite cambios') >= 0; }));
+  t('D10 · El aviso real de Supabase no rompe el canal (sigue vivo y funcional)',
+    B.ws().readyState !== 3 && B.sb.state.workoutLog.length === 2);
 
   console.log('\n== D11 · Un dispositivo con copia VIEJA no puede regresar la nube ==');
   // Caso real del bug: A subió 2 ejercicios (Sentadilla + Press banca), pero un

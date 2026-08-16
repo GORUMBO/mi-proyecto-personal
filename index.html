@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.28';
+  window.HM_APP_VERSION='1.187.29';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -22968,29 +22968,7 @@ let PP_SYNC={kind:'',detail:'',lastError:'',lastSyncAt:null,downloaded:null,remo
 // v1.187.13 (diagnóstico temporal): traza EN PANTALLA de la última subida
 // (para iPhone sin DevTools): cuántos workoutLog lleva el estado en cada paso.
 var ppUploadTrace={inicio:null,merge:null,payload:null,ultimo:null,http:null,respWorkoutLog:null,releida:null,result:null,error:null,faltantes:[],lista53:[],writeId:null,tsEnviado:null,tsServidor:null,tsLeido:null,tsAntes:null,otraEscritura:false,noAplico:false};
-function ppRenderUploadTrace(){
-  try{
-    var t=ppUploadTrace||{};
-    var el=document.getElementById('ppUploadTraceBar');
-    if(!el){
-      el=document.createElement('div');el.id='ppUploadTraceBar';
-      el.style.cssText='position:fixed;bottom:126px;right:10px;z-index:99999;background:rgba(18,53,42,.96);color:#eafff4;border-radius:10px;padding:8px 10px;font-size:11px;max-width:340px;box-shadow:0 2px 12px rgba(0,0,0,.35)';
-      document.body.appendChild(el);
-    }
-    el.innerHTML='<b>📤 Última subida</b>'
-      +'<div style="margin-top:2px">inicio: <b>'+safeText(t.inicio==null?'—':t.inicio)+'</b> → merge: <b>'+safeText(t.merge==null?'—':t.merge)+'</b> → payload: <b>'+safeText(t.payload==null?'—':t.payload)+'</b></div>'
-      +'<div>último: '+safeText(t.ultimo||'—')+' · '+safeText(t.http||'—')+' · servidor devolvió: <b>'+safeText(t.respWorkoutLog==null?'—':t.respWorkoutLog)+'</b> · releída: <b>'+safeText(t.releida==null?'—':t.releida)+'</b>'
-      +(t.result==='ok'?' <span style="color:#8ff0b5">✓ confirmado</span>':(t.result==='fail'?' <span style="color:#ffb4a8">✗ NO confirmado</span>':''))
-      +'</div>'
-      +(t.noAplico?'<div style="color:#ffb4a8;font-weight:800">⚠️ NUESTRA escritura NO se aplicó (la fila quedó con updated_at más viejo: '+safeText((t.tsLeido||'').slice(11,19))+')</div>':'')
-      +(t.otraEscritura?'<div style="color:#ffb4a8;font-weight:800">⚠️ OTRA escritura posterior pisó la fila (updated_at más nuevo: '+safeText((t.tsLeido||'').slice(11,19))+')</div>':'')
-      +((t.result==='fail'&&t.faltantes&&t.faltantes.length)?'<button onclick="ppVerFaltantes()" style="margin-top:4px;background:#b0453a;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">🔎 Ver '+t.faltantes.length+' faltantes</button>':'')
-      +'<button onclick="ppVerEscrituras()" style="margin-top:4px;margin-left:4px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">📋 Ver escrituras</button>'
-      +(t.error?'<div style="color:#ffb4a8">✘ '+safeText(t.error)+'</div>':'')
-      +'<div style="opacity:.6;margin-top:3px">escritura #'+safeText(t.writeId||'—')+' · enviado '+safeText((t.tsEnviado||'').slice(11,19)||'—')+' · fila '+safeText((t.tsLeido||'').slice(11,19)||'—')+'</div>'
-      +'<span onclick="this.parentNode.remove()" style="cursor:pointer;float:right;opacity:.6">✕</span>';
-  }catch(e){}
-}
+function ppRenderUploadTrace(){/* v1.187.29: traza retirada */}
 // v1.187.16: quién llama a la escritura (nombre de función desde el stack).
 // Acepta formato Chrome ("at fn (url)") y Safari ("fn@url:line:col").
 function ppWriteOrigen(){
@@ -23009,31 +22987,9 @@ function ppWriteOrigen(){
   return '?';
 }
 // v1.187.16: bitácora visible de TODAS las escrituras a Supabase.
-function ppVerEscrituras(){
-  try{
-    var log=PP_SYNC.writeLog||[];
-    ppAuditLine('<b>ÚLTIMAS ESCRITURAS A SUPABASE ('+log.length+')</b>');
-    log.forEach(function(w){
-      ppAuditLine('· WRITE '+safeText(String(w.id||'').slice(-8))+' · '+safeText((w.t||'').slice(11,19))+' · <b>'+safeText(w.fn||'?')+'</b> · '+safeText(w.method||'?')+' '+safeText(w.reqUrl||'?')+' · wl '+(w.wl==null?'—':w.wl)+' · bytes '+safeText(w.bodyBytes==null?'—':w.bodyBytes)+' · HTTP '+safeText(w.http)+' · '+safeText(w.respHeaders||'')+' · respWl '+(w.respWl==null?'—':w.respWl)+' · tsResp '+safeText((w.tsResp||'').slice(11,19)||'—')+' · uidEnviado '+safeText(String(w.uidEnviado||'—').slice(0,8))+(w.respText?' · resp: '+safeText(w.respText):''));
-    });
-  }catch(e){ppAuditLine('✘ '+safeText(String((e&&e.message)||e)));}
-}
+function ppVerEscrituras(){}
 // v1.187.14: lista en pantalla de los registros que Supabase NO guardó.
-function ppVerFaltantes(){
-  try{
-    var t=ppUploadTrace||{};
-    if(t.noAplico)ppAuditLine('<b>⚠️ NUESTRA escritura NO se aplicó:</b> fila ANTES '+safeText((t.tsAntes||'').slice(11,19)||'—')+' · enviamos '+safeText((t.tsEnviado||'').slice(11,19)||'—')+' · la fila sigue en '+safeText((t.tsLeido||'').slice(11,19)||'—')+' · (servidor devolvió '+safeText(t.tsServidor||'—')+')');
-    if(t.otraEscritura)ppAuditLine('<b>⚠️ OTRA ESCRITURA posterior pisó la fila:</b> enviamos updated_at '+safeText(t.tsEnviado||'—')+' · la fila quedó en '+safeText(t.tsLeido||'—')+' · (servidor devolvió '+safeText(t.tsServidor||'—')+')');
-    ppAuditLine('<b>REGISTROS FALTANTES EN SUPABASE: '+((t.faltantes||[]).length)+'</b>');
-    (t.faltantes||[]).forEach(function(f){
-      ppAuditLine('· <b>'+safeText(f.id)+'</b> | '+safeText(f.fecha||'—')+' | '+safeText(f.ejercicio||'—')+' | '+safeText(f.razon||'—'));
-    });
-    ppAuditLine('<b>Los '+((t.lista53||[]).length)+' enviados:</b>');
-    (t.lista53||[]).slice(0,60).forEach(function(r){
-      ppAuditLine('· #'+r.i+' · id '+safeText(r.id)+' · '+safeText(r.fecha||'—')+' · '+safeText(r.ejercicio||'—'));
-    });
-  }catch(e){ppAuditLine('✘ '+safeText(String((e&&e.message)||e)));}
-}
+function ppVerFaltantes(){}
 let _startupSynced=false;
 const _SYNC_LABEL={offline:'Sin conexión',pending:'Pendiente',syncing:'Sincronizando',synced:'Sincronizado',error:'Error',nosession:'Sin sesión'};
 const _SYNC_COLOR={offline:'#ffd27d',pending:'#fff0a8',syncing:'#bfe3ff',synced:'#d9f5e7',error:'#ffc9c0',nosession:'#e6e6e6'};
@@ -23150,31 +23106,8 @@ function renderSyncEstado(){
 // Cadena de diagnóstico TEMPORAL (se quita cuando la prueba real pase):
 // 📱/💻 guardó → 🌐 Supabase recibió → 💻/📱 recibió → UI actualizada.
 let PP_SYNCCHAIN=[];
-function syncChainPush(evento,detalle){
-  var t=new Date();
-  var hh=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0');
-  PP_SYNCCHAIN.unshift({evento:evento,detalle:detalle||'',t:hh});
-  PP_SYNCCHAIN=PP_SYNCCHAIN.slice(0,6); // v1.187.7: cabe la traza completa evento→descarga→merge→UI
-  renderSyncChain();
-}
-function renderSyncChain(){
-  try{
-    var el=document.getElementById('syncChainBar');
-    if(!PP_SYNCCHAIN.length){if(el)el.innerHTML='';return;}
-    if(!el){
-      el=document.createElement('div');el.id='syncChainBar';
-      el.style.cssText='position:fixed;bottom:10px;right:10px;z-index:99999;background:rgba(18,53,42,.96);color:#eafff4;border-radius:10px;padding:8px 10px;font-size:11px;max-width:320px;box-shadow:0 2px 12px rgba(0,0,0,.35)';
-      document.body.appendChild(el);
-    }
-    el.innerHTML='<b>🔁 Cadena de sync (diagnóstico temporal)</b>'
-      +'<button onclick="ppAuditarSupabase()" style="margin-left:8px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🔍 Auditar Supabase</button>'
-      +'<button onclick="ppProbarWorkerLectura()" style="margin-left:4px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🌉 Probar Worker (lectura)</button>'
-      +'<button onclick="ppProbarWorkerEscrituraControlada()" style="margin-left:4px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🌉 Escritura controlada</button>'
-      +'<button onclick="ppToggleWorker()" style="margin-left:4px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🌉 Puente Cloudflare</button>'
-      +PP_SYNCCHAIN.map(function(e){return '<div style="margin-top:2px">'+safeText(e.t)+' · '+safeText(e.evento)+' <span style="opacity:.75">'+safeText(e.detalle)+'</span></div>';}).join('')
-      +'<span onclick="this.parentNode.remove()" style="cursor:pointer;float:right;opacity:.6">✕</span>';
-  }catch(e){}
-}
+function syncChainPush(evento,detalle){/* v1.187.29: diagnóstico visual retirado */}
+function renderSyncChain(){/* v1.187.29: cadena de sync retirada */}
 // v1.187.17: botón de PRUEBA SOLO LECTURA del puente Cloudflare Worker.
 // Sin POST ni upsert: únicamente lee tu fila a través del Worker con tu sesión.
 const PP_WORKER_TEST_URL='https://mi-proyecto-sync.rubenalanfloo.workers.dev';
@@ -23182,152 +23115,11 @@ const PP_WORKER_TEST_URL='https://mi-proyecto-sync.rubenalanfloo.workers.dev';
 // el MISMO contenido de la fila (solo cambia updated_at). NO agrega, elimina ni
 // modifica ejercicios. Se usa UNA sola vez para verificar que Supabase acepta
 // la escritura a través del Worker.
-async function ppProbarWorkerEscrituraControlada(){
-  try{
-    ppAuditLine('<b>🌉 Escritura controlada por Worker (mismo contenido)</b>');
-    var s=getCloudSession();
-    if(!s||!s.access_token){ppAuditLine('✘ Sin sesión activa.');return;}
-    try{await refreshCloudSession();s=getCloudSession();}catch(e){}
-    var H={Authorization:'Bearer '+s.access_token,'Content-Type':'application/json'};
-    var URLW=PP_WORKER_TEST_URL+'/sync/personal_backups';
-    // v1.187.20: lecturas SIN CACHÉ (cache:no-store hace preflight, que el Worker
-    // responde) y SIN parámetros extra: PostgREST rechaza con 400 los parámetros
-    // desconocidos (el '&ts=' anterior rompía la lectura previa).
-    var leer=async function(){return fetch(URLW+'?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=user_id,data,updated_at',{headers:H,cache:'no-store'});};
-    // 1) Leer ANTES.
-    var r1=await leer();
-    var t1=await r1.text();
-    var j1=null;try{j1=JSON.parse(t1);}catch(e){}
-    if(!j1||!j1.ok){ppAuditLine('✘ lectura previa falló · HTTP '+r1.status+' · ruta: /sync/personal_backups · error: '+safeText((j1&&j1.error)||(t1||'').slice(0,150)));return;}
-    var filaAntes=(Array.isArray(j1.data)?j1.data[0]:j1.data)||{};
-    ppAuditLine('ANTES · workoutLogCount: <b>'+safeText(j1.workoutLogCount)+'</b> · updatedAt: '+safeText(j1.updatedAt||'—'));
-    var subTokenE='';try{subTokenE=JSON.parse(atob(s.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub||'';}catch(e){}
-    ppAuditLine('🆔 sesión: '+safeText(String(s.user.id||'—').slice(0,12))+'… · JWT sub: '+safeText(String(subTokenE||'—').slice(0,12))+'… · Worker sub: '+safeText(String(j1.sub||'—').slice(0,12))+'… · fila: '+safeText(String(j1.rowUserId||'—').slice(0,12))+'…');
-    var contenidoAntes=JSON.stringify((filaAntes.data&&filaAntes.data.workoutLog)||[]);
-    // 2) POST con el MISMO contenido (solo cambia updated_at).
-    var tsEnviado=new Date().toISOString();
-    var r2=await fetch(URLW+'?on_conflict=user_id',{method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=representation'}),body:JSON.stringify({user_id:s.user.id,data:filaAntes.data,updated_at:tsEnviado})});
-    var j2=null;try{j2=JSON.parse(await r2.text());}catch(e){}
-    ppAuditLine('UPSERT · HTTP '+r2.status+' · ok: '+safeText(j2&&j2.ok?'true':'false')+(j2&&j2.error?' · '+safeText(j2.error):'')+' · updatedAt enviado: '+safeText(tsEnviado));
-    if(j2&&j2.diag){
-      ppAuditLine('📦 diag · metodo: <b>'+safeText(j2.diag.metodo||'—')+'</b> · queryRecibido: '+safeText(j2.diag.queryRecibido)+' · queryEnviado: '+safeText(j2.diag.queryEnviado));
-      ppAuditLine('📦 diag · Prefer recibido: '+safeText(j2.diag.preferRecibido||'—')+' · bodyBytes: '+safeText(j2.diag.bodyBytes)+' · upstream HTTP '+safeText(j2.diag.upstreamStatus)+' · CT: '+safeText(j2.diag.upstreamCT||'—'));
-      ppAuditLine('📦 diag · respuesta de Supabase: '+safeText(j2.diag.upstreamText||'(vacía)'));
-    }
-    // 3) Leer DESPUÉS (inmediata) — puede ser una copia rezagada de la API.
-    var r3=await leer();
-    var t3=await r3.text();
-    var j3=null;try{j3=JSON.parse(t3);}catch(e){}
-    if(!j3||!j3.ok){ppAuditLine('✘ lectura posterior falló · HTTP '+r3.status+' · error: '+safeText((j3&&j3.error)||(t3||'').slice(0,150)));return;}
-    var filaDespues=(Array.isArray(j3.data)?j3.data[0]:j3.data)||{};
-    var contenidoDespues=JSON.stringify((filaDespues.data&&filaDespues.data.workoutLog)||[]);
-    ppAuditLine('DESPUÉS (inmediata) · workoutLogCount: <b>'+safeText(j3.workoutLogCount)+'</b> · updatedAt: '+safeText(j3.updatedAt||'—'));
-    // v1.187.25: relectura FINAL de confirmación tras ~3 s y comparación por
-    // TIEMPO (los formatos difieren: '+00:00' vs 'Z', y precisión de ms).
-    await new Promise(function(res){setTimeout(res,3000);});
-    var r4=await leer();
-    var t4=await r4.text();
-    var j4=null;try{j4=JSON.parse(t4);}catch(e){}
-    if(!j4||!j4.ok){ppAuditLine('✘ lectura final falló · HTTP '+r4.status+' · error: '+safeText((j4&&j4.error)||(t4||'').slice(0,150)));return;}
-    var filaFinal=(Array.isArray(j4.data)?j4.data[0]:j4.data)||{};
-    var tsFinal=(filaFinal.updated_at||j4.updatedAt)||null;
-    var tEnvMs=Date.parse(tsEnviado)||0, tFinMs=Date.parse(tsFinal||0)||0;
-    ppAuditLine('DESPUÉS (final ~3s) · workoutLogCount: <b>'+safeText(j4.workoutLogCount)+'</b> · updatedAt: '+safeText(tsFinal||'—'));
-    ppAuditLine('updatedAt de la fila = el enviado (por tiempo): '+((tFinMs&&tEnvMs&&Math.abs(tFinMs-tEnvMs)<=1000)?'<b>SÍ ✓ (la escritura se aplicó)</b>':'✘ NO (fila: '+safeText(tsFinal||'—')+' vs enviado: '+safeText(tsEnviado)+')'));
-    ppAuditLine('updatedAt cambió respecto a ANTES: '+(j4.updatedAt!==j1.updatedAt?'<b>SÍ ✓</b>':'✘ NO'));
-    ppAuditLine('contenido idéntico (antes=después): '+(contenidoAntes===contenidoDespues?'<b>SÍ ✓</b>':'✘ NO (¡revisar!)'));
-    ppAuditLine('identidad/RLS: '+(filaFinal.user_id===(subTokenE||s.user.id)?'<b>OK</b>':'⚠️ otro user_id'));
-    ppAuditLine('🏁 Fin. Una sola escritura; contenido sin cambios.');
-  }catch(e){ppAuditLine('✘ Error: '+safeText(String((e&&e.message)||e)));}
-}
-async function ppProbarWorkerLectura(){
-  try{
-    ppAuditLine('<b>🌉 Prueba Worker (SOLO LECTURA)</b>');
-    var s=getCloudSession();
-    if(!s||!s.access_token){ppAuditLine('✘ Sin sesión activa.');return;}
-    try{await refreshCloudSession();s=getCloudSession();}catch(e){}
-    var r=await fetch(PP_WORKER_TEST_URL+'/sync/personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=user_id,data,updated_at',{headers:{Authorization:'Bearer '+s.access_token,'Content-Type':'application/json'}});
-    var t=await r.text();
-    ppAuditLine('HTTP '+r.status);
-    var j=null;try{j=JSON.parse(t);}catch(e){}
-    if(!j){ppAuditLine('✘ respuesta no-JSON: '+safeText(t.slice(0,150)));return;}
-    // v1.187.21: diagnóstico de identidad — sesión vs JWT vs Worker vs fila.
-    var subToken='';try{subToken=JSON.parse(atob(s.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub||'';}catch(e){}
-    ppAuditLine('🆔 sesión s.user.id: '+safeText(String(s.user.id||'—').slice(0,12))+'… · JWT sub: '+safeText(String(subToken||'—').slice(0,12))+'… · Worker sub: '+safeText(String(j.sub||'—').slice(0,12))+'… · fila user_id: '+safeText(String(j.rowUserId||'—').slice(0,12))+'…');
-    ppAuditLine('ok: <b>'+safeText(j.ok?'true':'false')+'</b>'+(j.error?' · error: '+safeText(j.error):''));
-    if(j.workoutLogCount!=null)ppAuditLine('workoutLogCount: <b>'+safeText(j.workoutLogCount)+'</b>');
-    if(j.updatedAt)ppAuditLine('updatedAt: <b>'+safeText(j.updatedAt)+'</b>');
-    var fila=(Array.isArray(j.data)?j.data[0]:j.data)||{};
-    var ident=subToken||s.user.id;
-    if(fila.user_id)ppAuditLine('identidad/RLS: '+(fila.user_id===ident?'<b>OK (la fila es la tuya)</b>':'⚠️ la fila devuelta es de otro user_id'));
-    ppAuditLine('🏁 Fin de la prueba de lectura (no se escribió nada).');
-  }catch(e){ppAuditLine('✘ Error: '+safeText(String((e&&e.message)||e)));}
-}
-function ppAuditPanel(){
-  var p=document.getElementById('ppAuditOut');
-  if(p)return p;
-  p=document.createElement('div');p.id='ppAuditOut';
-  p.style.cssText='position:fixed;top:10px;right:10px;z-index:30000;max-width:430px;max-height:72vh;overflow:auto;background:rgba(18,53,42,.97);color:#eafff4;border-radius:10px;padding:10px 12px;font-size:12px;box-shadow:0 2px 16px rgba(0,0,0,.4)';
-  p.innerHTML='<b>🔍 Auditoría Supabase</b><span style="float:right;cursor:pointer;opacity:.8" onclick="document.getElementById(\'ppAuditOut\').remove()">✕</span><div id="ppAuditLines" style="margin-top:6px"></div>';
-  document.body.appendChild(p);
-  return p;
-}
-function ppAuditLine(m){
-  var p=ppAuditPanel();
-  var l=document.getElementById('ppAuditLines');
-  if(l){var d=document.createElement('div');d.style.marginTop='3px';d.innerHTML=m;l.appendChild(d);p.scrollTop=p.scrollHeight;}
-}
-async function ppAuditarSupabase(){
-  ppAuditLine('<i>Iniciando…</i>');
-  try{
-    var s=getCloudSession();
-    if(!s||!s.access_token){ppAuditLine('✘ Sin sesión activa. Inicia sesión primero.');return;}
-    try{await refreshCloudSession(true);s=getCloudSession();}catch(e){}
-    var c=getCloudConfig();
-    var H={apikey:c.key,'Authorization':'Bearer '+s.access_token,'Content-Type':'application/json'};
-    ppAuditLine('🔑 '+safeText(s.user&&s.user.email)+' · id '+safeText(String(s.user&&s.user.id)));
-    // v1.187.16: verificar la identidad REAL del token contra la sesión guardada.
-    try{
-      var u=await fetch(c.url+'/auth/v1/user',{headers:{apikey:c.key,'Authorization':'Bearer '+s.access_token}});
-      var ut=await u.text();
-      var uidReal='';try{uidReal=JSON.parse(ut).id||'';}catch(e){}
-      ppAuditLine('🆔 auth.uid() real del token: '+safeText(String(uidReal||'—').slice(0,12))+'…'+(uidReal===s.user.id?' · COINCIDE con la sesión':' · ⚠️ NO coincide con s.user.id ('+safeText(String(s.user.id||'—').slice(0,12))+'…)'));
-    }catch(e){ppAuditLine('🆔 no se pudo verificar auth.uid(): '+safeText(String((e&&e.message)||e)));}
-    // 1) Todas las filas visibles (RLS) con su data real.
-    var r1=await fetch(c.url+'/rest/v1/personal_backups?select=user_id,updated_at,data',{headers:H});
-    var rows=[];try{rows=JSON.parse(await r1.text());}catch(e){}
-    ppAuditLine('☁️ filas visibles · HTTP '+r1.status+' · total: '+(Array.isArray(rows)?rows.length:'?'));
-    if(Array.isArray(rows)){
-      for(var i=0;i<rows.length;i++){
-        var f=rows[i],wl=(f.data&&f.data.workoutLog)||[];
-        var ult=wl.length?wl[wl.length-1]:null;
-        ppAuditLine('· fila '+(i+1)+': workoutLog <b>'+wl.length+'</b>'+(ult?' · último '+safeText(ult.exercise)+'#'+ult.id:'')+' · updated_at '+safeText(f.updated_at||''));
-      }
-    }
-    // 2) La MISMA consulta filtrada que usa la app.
-    var r2=await fetch(c.url+'/rest/v1/personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at',{headers:H});
-    var rows2=[];try{rows2=JSON.parse(await r2.text());}catch(e){}
-    var wl2=(rows2[0]&&rows2[0].data&&rows2[0].data.workoutLog)||[];
-    ppAuditLine('🔎 SELECT de la app: filas='+rows2.length+' · workoutLog <b>'+wl2.length+'</b>');
-    // 3) Prueba de escritura controlada: MISMO contenido (solo cambia updated_at).
-    if(rows.length===1&&rows[0].data){
-      ppAuditLine('🧪 Escritura controlada (mismo contenido)…');
-      var r3=await fetch(c.url+'/rest/v1/personal_backups?on_conflict=user_id',{method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=representation'}),body:JSON.stringify({user_id:s.user.id,data:rows[0].data,updated_at:new Date().toISOString()})});
-      var t3=await r3.text();
-      var ct3='';try{ct3=(r3.headers&&r3.headers.get)?(r3.headers.get('content-type')||''):'';}catch(e){}
-      if(ppRespBloqueada(t3,ct3))ppAuditLine('✘ Respuesta INTERCEPTADA por un filtro (HTML, no Supabase): '+safeText(String(t3).replace(/<[^>]+>/g,' ').slice(0,120)));
-      ppAuditLine('🧪 upsert HTTP '+r3.status+' · CT: '+safeText(ct3||'—'));
-      try{
-        var rr=JSON.parse(t3);rr=(Array.isArray(rr)?rr:[rr]);
-        rr.forEach(function(x){ppAuditLine('· fila devuelta: workoutLog <b>'+(((x.data&&x.data.workoutLog)||[]).length)+'</b>');});
-      }catch(e){ppAuditLine('· respuesta no-JSON');}
-      var r4=await fetch(c.url+'/rest/v1/personal_backups?select=user_id,updated_at,data',{headers:H});
-      var rows4=[];try{rows4=JSON.parse(await r4.text());}catch(e){}
-      rows4.forEach(function(x,j){ppAuditLine('· después fila '+(j+1)+': workoutLog <b>'+(((x.data&&x.data.workoutLog)||[]).length)+'</b>');});
-    } else ppAuditLine('(sin fila única con data: se omite la escritura controlada)');
-    ppAuditLine('🏁 Fin. No se modificaron datos (solo updated_at).');
-  }catch(e){ppAuditLine('✘ Error: '+safeText(String((e&&e.message)||e)));}
-}
+function ppProbarWorkerEscrituraControlada(){}
+function ppProbarWorkerLectura(){}
+function ppAuditPanel(){return null}
+function ppAuditLine(m){}
+function ppAuditarSupabase(){}
 // Canal en vivo: recibe cambios de OTRO dispositivo al instante, sin recargar.
 // Un solo WebSocket; se suscribe a las tablas del usuario (RLS con access_token).
 // v1.187.7: watchdog de latido — si el socket muere en silencio (suspensión del
@@ -23335,11 +23127,9 @@ async function ppAuditarSupabase(){
 // y forzamos reconexión en vez de quedarnos "conectados" sin recibir nada.
 let _rtSocket=null,_rtTimer=null,_rtBackoff=3000,_rtDebounce=null,_rtLastReply=0,_rtJoined=0,_rtEverConnected=false;
 function initRealtimeSync(origen){
-  // v1.187.12 (diagnóstico temporal): quién pide el canal y con qué socket queda.
-  console.log('[REALTIME-INIT] origen='+(origen||'?')+' · socketsPrevios='+(_rtSocket?1:0));
   if(!navigator.onLine||!getCloudSession())return;
   var c=getCloudConfig();if(!c||!c.url||!c.key)return;
-  if(_rtSocket&&(_rtSocket.readyState===0||_rtSocket.readyState===1)){console.log('[REALTIME-INIT] ya conectado: se reutiliza el canal (sin duplicar)');return;} // ya conectado
+  if(_rtSocket&&(_rtSocket.readyState===0||_rtSocket.readyState===1))return; // ya conectado: no duplicar
   var s=getCloudSession();
   var wsUrl=c.url.replace(/^https/,'wss')+'/realtime/v1/websocket?apikey='+encodeURIComponent(c.key)+'&vsn=1.0.0';
   var ws;
@@ -23439,8 +23229,6 @@ async function cloudStartupSync(opts){
   // v1.187.12 (diagnóstico temporal): QUIÉN llama a cada sync. Si falta el
   // origen, se imprime el stack para localizar el caller (temporal).
   var origenSync=opts._origin||(opts.skipUpload?'evento-realtime:?':'desconocido');
-  console.log('[SYNC-INIT] origen='+origenSync);
-  if(!opts._origin){try{console.log('[SYNC-INIT] stack: '+String(new Error().stack||'').slice(0,600));}catch(e){}}
   if(!navigator.onLine||!getCloudSession()){renderSyncUI();return}
   // v1.187.7: _csBusy evita que varios eventos realtime lancen descargas
   // concurrentes (se encolan en una sola pasada; la siguiente los toma frescos).
@@ -23554,11 +23342,20 @@ function ppWorkerOn(){try{return ppWorkerUrl()!=='';}catch(e){return false;}}
 function ppToggleWorker(){
   try{
     var on=ppWorkerOn();
-    if(on){safeStorage.set('pp_worker_cfg','{}');syncChainPush('🌉 Puente Cloudflare apagado','ruta directa a Supabase');}
-    else{safeStorage.set('pp_worker_cfg',JSON.stringify({url:'https://mi-proyecto-sync.rubenalanfloo.workers.dev'}));syncChainPush('🌉 Puente Cloudflare ACTIVADO','la sincronización pasará por el Worker');}
-    renderSyncChain();
+    if(on){safeStorage.set('pp_worker_cfg','{}');}
+    else{safeStorage.set('pp_worker_cfg',JSON.stringify({url:'https://mi-proyecto-sync.rubenalanfloo.workers.dev'}));}
+    ppRenderWorkerToggle();
   }catch(e){}
 }
+// v1.187.29: único control visible que queda del puente (sin cadenas ni trazas).
+function ppRenderWorkerToggle(){
+  try{
+    var el=document.getElementById('ppWorkerToggleBar');
+    if(!el){el=document.createElement('div');el.id='ppWorkerToggleBar';el.style.cssText='position:fixed;bottom:10px;right:10px;z-index:99998';document.body.appendChild(el);}
+    el.innerHTML='<button onclick="ppToggleWorker()" style="background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">🌉 Puente Cloudflare: '+(ppWorkerOn()?'ACTIVADO':'apagado')+'</button>';
+  }catch(e){}
+}
+window.addEventListener('load',function(){try{ppRenderWorkerToggle();}catch(e){}});
 async function cloudRest(path,options={},_retried){
   let c=getCloudConfig(),s=await refreshCloudSession();if(!c.url||!c.key||!s?.access_token)throw Error('Inicia sesión primero.');
   var usaWorker=false;try{usaWorker=ppWorkerOn();}catch(e){}
@@ -23643,7 +23440,6 @@ async function cloudSave(silent=false){
     setSync('syncing');
     normalizeAllWeights();
     // v1.187.10 (diagnóstico temporal): traza completa del upsert.
-    console.log('[SAVE-BEGIN] local workoutLog='+((state.workoutLog)||[]).length);
     // v1.187.13: traza EN PANTALLA (iPhone sin DevTools) de cada paso.
     ppUploadTrace={inicio:((state.workoutLog)||[]).length,merge:null,payload:null,ultimo:null,http:null,respWorkoutLog:null,releida:null,result:null,error:null,faltantes:[],lista53:[],writeId:null,tsEnviado:null,tsServidor:null,tsLeido:null,tsAntes:null,otraEscritura:false,noAplico:false};
     if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
@@ -23656,7 +23452,6 @@ async function cloudSave(silent=false){
       var remotePre=rowsPre&&rowsPre[0];
       if(remotePre&&remotePre.data){
         state=mergeCloudStates(state, remotePre.data);
-        console.log('[MERGE-BEFORE-UPSERT] workoutLog='+((state.workoutLog)||[]).length);
       }
     }catch(e){/* sin red para leer: se sube lo local; el siguiente sync re-fusiona */}
     ppUploadTrace.merge=((state.workoutLog)||[]).length;
@@ -23665,7 +23460,6 @@ async function cloudSave(silent=false){
     var wlUp=state.workoutLog||[];
     var wlLastUp=wlUp.length?wlUp[wlUp.length-1]:null;
     var payloadUp={user_id:s.user.id,data:state,updated_at:new Date().toISOString()};
-    console.log('[UPSERT-PAYLOAD] workoutLog='+(((payloadUp.data&&payloadUp.data.workoutLog)||[]).length)+' · último: '+(wlLastUp?wlLastUp.exercise:'—')+'#'+(wlLastUp?wlLastUp.id:'—')+' · payloadBytes='+JSON.stringify(payloadUp).length);
     ppUploadTrace.payload=((payloadUp.data&&payloadUp.data.workoutLog)||[]).length;
     ppUploadTrace.ultimo=wlLastUp?(wlLastUp.exercise+'#'+wlLastUp.id):null;
     // v1.187.14: tabla de los registros enviados (índice, id, fecha, ejercicio).
@@ -23704,8 +23498,7 @@ async function cloudSave(silent=false){
       rowsPost=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');
       var remotePost=rowsPost&&rowsPost[0];
       nPostWl=((remotePost&&remotePost.data&&remotePost.data.workoutLog)||[]).length;
-      console.log('[UPSERT-RESULT] workoutLog='+nPostWl+' · filas visibles='+((rowsPost||[]).length)+' · fila user_id='+String(s.user.id));
-    }catch(e){console.log('[UPSERT-RESULT] no se pudo releer: '+String((e&&e.message)||e));}
+    }catch(e){}
     ppUploadTrace.releida=nPostWl;
     // v1.187.19: comparar updated_at con SEMÁNTICA correcta (zonas incluidas):
     // - fila MÁS NUEVA que lo enviado → OTRA escritura posterior.
@@ -23765,7 +23558,6 @@ async function cloudSave(silent=false){
       if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
       return;
     }
-    console.log('[SAVE-END] remoto workoutLog='+nPostWl);
     // v1.187.28: si el conteo confirmó, el aviso de timestamp NO aplica
     // (la relectura inmediata puede ser una copia rezagada aunque la
     // escritura haya aplicado; el ✓ confirmado ya lo demuestra).

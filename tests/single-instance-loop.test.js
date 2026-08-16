@@ -203,10 +203,10 @@ function makeSingleInstance(user_id, renderImpl) {
   stable = server.uploads === uploadsTrasInicial && S.sb.__pendingTimers() === 0 && S.sb.state.offlineChanges === 0;
   t('L5 · Estable: cero uploads nuevos y cero temporizadores pendientes tras varias rondas (sin tocar nada)',
     stable && server.uploads === uploadsTrasInicial);
-  t('L6 · Cadena de diagnóstico coherente (subida → cambio recibido → fusionado)',
-    S.chain().some(function (e) { return e.evento.indexOf('▲ Subido') >= 0; })
-    && S.chain().some(function (e) { return e.evento.indexOf('▼ Cambio recibido') >= 0; })
-    && S.chain().some(function (e) { return e.evento.indexOf('Estado fusionado') >= 0; }));
+  t('L6 · Ciclo completo funcional: subida confirmada, merge del eco y render',
+    S.sb.ppUploadTrace && S.sb.ppUploadTrace.result === 'ok'
+    && server.backups['u-123'] && server.backups['u-123'].data.workoutLog.length === S.sb.state.workoutLog.length
+    && rendersTrasMerge >= 1);
 
   console.log('\n== calcMacros: ya no pisa el perfil ni guarda sin cambio material ==');
   // Caso B1: inputs de Perfil NO montados (otra pestaña activa).

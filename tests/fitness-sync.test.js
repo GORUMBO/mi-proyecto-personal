@@ -216,18 +216,13 @@ t('S9 · Con skipUpload (cambio remoto) NO se re-sube → sin ping-pong entre di
 
 console.log('\n== Cadena de diagnóstico visible ==');
 
-t('S10 · La cadena muestra subida, recepción y actualización de UI', function () {
+t('S10 · La cadena de diagnóstico fue retirada (no crea UI, no truena)', function () {
   sandbox.PP_SYNCCHAIN = [];
   for (const k in fakeEls) if (k === 'syncChainBar') delete fakeEls[k];
   fn.chainPush('▲ Subido a Supabase', 'la nube recibió el cambio');
   fn.chainPush('▼ Cambio recibido del otro dispositivo', 'tabla: peso');
-  fn.chainPush('✔ Estado fusionado · UI actualizada', 'sin recargar');
   fn.chainRender();
-  const html = (fakeEls['syncChainBar'] || {}).innerHTML || '';
-  return html.indexOf('▲ Subido a Supabase') >= 0
-    && html.indexOf('▼ Cambio recibido del otro dispositivo') >= 0
-    && html.indexOf('✔ Estado fusionado · UI actualizada') >= 0
-    && html.indexOf('diagnóstico temporal') >= 0;
+  return !fakeEls['syncChainBar'];
 }());
 
 console.log('\n==========================================');
