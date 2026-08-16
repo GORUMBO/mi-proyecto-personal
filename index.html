@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.188.0';
+  window.HM_APP_VERSION='1.188.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -484,6 +484,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       <span id="regionChip" style="cursor:pointer;background:#eaf9f0;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:4px 10px;font-weight:900;font-size:12px" onclick="abrirRegion()" title="Cambiar región">🌎</span>
       <span class="versionChip">v1.182</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncBadgeTap()">● Local</span>
+      <div id="syncLastLine" style="font-size:11px;opacity:.75;margin-top:2px;text-align:right"></div>
     </div>
   </div>
   <!-- Group tabs (top) -->
@@ -23041,15 +23042,25 @@ function renderSyncUI(){
   let b=document.getElementById('syncBadge');
   if(b){let base=_SYNC_LABEL[PP_SYNC.kind]||'Local';
     let extra=(PP_SYNC.detail&&(PP_SYNC.kind==='pending'||PP_SYNC.kind==='offline'))?' · '+PP_SYNC.detail:'';
-    // v1.188: mostrar discretamente la ÚLTIMA sincronización CONFIRMADA
-    // (lastSyncAt solo se asigna en setSync('synced'), nunca en un intento).
-    let ult='';
-    try{if(PP_SYNC.lastSyncAt)ult=' · últ. '+PP_SYNC.lastSyncAt.toLocaleString('es-US',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'});}catch(e){}
-    b.textContent='● '+base+extra+ult;b.style.color=_SYNC_COLOR[PP_SYNC.kind]||'#15704f';
+    // v1.188.1: estado únicamente 🟢/🟡/🔴, sin paneles técnicos.
+    let emoji=PP_SYNC.kind==='synced'?'🟢':(PP_SYNC.kind==='pending'||PP_SYNC.kind==='offline')?'🟡':(PP_SYNC.kind==='error')?'🔴':'●';
+    b.textContent=emoji+' '+base+extra;b.style.color=_SYNC_COLOR[PP_SYNC.kind]||'#15704f';
     // En error, el motivo NO se esconde: se ve al tocar y en el título.
     b.title = (PP_SYNC.kind==='error' && PP_SYNC.lastError)
       ? ('No se pudo sincronizar: '+PP_SYNC.lastError+' — toca para ver el motivo y reintentar')
       : 'Toca para sincronizar ahora';
+    // v1.188.1: línea discreta con la ÚLTIMA sincronización CONFIRMADA
+    // (lastSyncAt solo se asigna en setSync('synced'), nunca en un intento).
+    let line=document.getElementById('syncLastLine');
+    if(line){
+      if(PP_SYNC.lastSyncAt){
+        try{
+          let d=new Date(PP_SYNC.lastSyncAt),hoy=new Date();
+          let dia=(d.toDateString()===hoy.toDateString())?'hoy':((hoy-d)<86400000*2&&d.getDate()!==hoy.getDate())?'ayer':d.toLocaleDateString('es-US',{month:'numeric',day:'numeric'});
+          line.textContent='Última sync: '+dia+' '+d.toLocaleTimeString('es-US',{hour:'numeric',minute:'2-digit'});
+        }catch(e){line.textContent='';}
+      }else line.textContent='';
+    }
   }
   try{renderSyncEstado()}catch(e){}
 }

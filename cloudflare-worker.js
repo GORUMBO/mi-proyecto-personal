@@ -25,6 +25,12 @@ function json(data, status) {
     headers: Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, CORS_HEADERS),
   });
 }
+// v1.187.27: versión del Worker visible en TODAS las respuestas (verificable
+// desde fuera sin token).
+const WORKER_VERSION = '1.187.27';
+function jsonV(data, status) {
+  return json(Object.assign({ workerVersion: WORKER_VERSION }, data), status);
+}
 
 // Decodifica el JWT SOLO para validar exp/sub (la firma la valida Supabase).
 function decodeJwt(token) {
@@ -38,7 +44,7 @@ function decodeJwt(token) {
 async function proxyAuth(request, supabasePath) {
   var auth = request.headers.get('Authorization') || '';
   var token = auth.replace(/^Bearer\s+/i, '');
-  if (!token) return json({ ok: false, error: 'sin_sesion' }, 401);
+  if (!token) return jsonV({ ok: false, error: 'sin_sesion' }, 401);
   try {
     var bodyText = await request.text();
     var upstream = await fetch(SUPABASE_URL + supabasePath, {
@@ -52,12 +58,12 @@ async function proxyAuth(request, supabasePath) {
     });
     var text = await upstream.text();
     var ct = (upstream.headers.get('content-type') || '').toLowerCase();
-    if (ct.indexOf('application/json') < 0) return json({ ok: false, error: 'respuesta_invalida', status: upstream.status }, 502);
+    if (ct.indexOf('application/json') < 0) return jsonV({ ok: false, error: 'respuesta_invalida', status: upstream.status }, 502);
     var data = null;
-    try { data = JSON.parse(text); } catch (e) { return json({ ok: false, error: 'respuesta_invalida', status: upstream.status }, 502); }
-    return json({ ok: upstream.ok, status: upstream.status, data });
+    try { data = JSON.parse(text); } catch (e) { return jsonV({ ok: false, error: 'respuesta_invalida', status: upstream.status }, 502); }
+    return jsonV({ ok: upstream.ok, status: upstream.status, data });
   } catch (e) {
-    return json({ ok: false, error: 'supabase_inaccesible' }, 502);
+    return jsonV({ ok: false, error: 'supabase_inaccesible' }, 502);
   }
 }
 
@@ -72,36 +78,36 @@ async function handleRequest(request) {
 
   // 2) Solo rutas de datos permitidas: /sync/<tabla>
   var m = path.match(/^\/sync\/([a-z_]+)$/);
-  if (!m || !TABLAS.has(m[1])) return json({ ok: false, error: 'ruta_no_permitida', ruta: path }, 403);
+  if (!m || !TABLAS.has(m[1])) return jsonV({ ok: false, error: 'ruta_no_permitida', ruta: path }, 403);
   var tabla = m[1];
 
   // 3) JWT obligatorio.
   var auth = request.headers.get('Authorization') || '';
   var token = auth.replace(/^Bearer\s+/i, '');
-  if (!token) return json({ ok: false, error: 'sin_sesion' }, 401);
+  if (!token) return jsonV({ ok: false, error: 'sin_sesion' }, 401);
   var claims = decodeJwt(token);
-  if (!claims || !claims.sub) return json({ ok: false, error: 'token_invalido' }, 401);
-  if (claims.exp && Date.now() / 1000 > claims.exp) return json({ ok: false, error: 'sesion_caducada' }, 401);
+  if (!claims || !claims.sub) return jsonV({ ok: false, error: 'token_invalido' }, 401);
+  if (claims.exp && Date.now() / 1000 > claims.exp) return jsonV({ ok: false, error: 'sesion_caducada' }, 401);
 
   // 4) Solo GET, POST y PATCH (v1.187.27: PATCH para escrituras del puente).
   var method = request.method.toUpperCase();
-  if (method !== 'GET' && method !== 'POST' && method !== 'PATCH') return json({ ok: false, error: 'metodo_no_permitido', metodo: method }, 405);
+  if (method !== 'GET' && method !== 'POST' && method !== 'PATCH') return jsonV({ ok: false, error: 'metodo_no_permitido', metodo: method }, 405);
 
   // 5) Escrituras en personal_backups: el user_id del body debe ser el MISMO
   //    del JWT (defensa en profundidad; RLS decide al final).
   var body = null;
   if (method === 'POST' || method === 'PATCH') {
-    try { body = await request.text(); } catch (e) { return json({ ok: false, error: 'body_ilegible' }, 400); }
+    try { body = await request.text(); } catch (e) { return jsonV({ ok: false, error: 'body_ilegible' }, 400); }
     if (tabla === 'personal_backups') {
       try {
         var parsed = JSON.parse(body);
         var filas = Array.isArray(parsed) ? parsed : [parsed];
         for (var i = 0; i < filas.length; i++) {
           if (filas[i].user_id && filas[i].user_id !== claims.sub) {
-            return json({ ok: false, error: 'user_id_no_coincide_con_la_sesion' }, 403);
+            return jsonV({ ok: false, error: 'user_id_no_coincide_con_la_sesion' }, 403);
           }
         }
-      } catch (e) { return json({ ok: false, error: 'body_json_invalido' }, 400); }
+      } catch (e) { return jsonV({ ok: false, error: 'body_json_invalido' }, 400); }
     }
   }
 
@@ -146,7 +152,7 @@ async function handleRequest(request) {
       upstream = await fetch(supabaseUrl, { method: method, headers: headers, body: body || undefined });
     }
   } catch (e) {
-    return json({ ok: false, error: 'supabase_inaccesible' }, 502);
+    return jsonV({ ok: false, error: 'supabase_inaccesible' }, 502);
   }
 
   if (text === null) text = await upstream.text();
@@ -154,15 +160,15 @@ async function handleRequest(request) {
 
   // 7) La respuesta de Supabase DEBE ser JSON (si llega HTML: filtro/portal → error claro).
   if (ct.indexOf('application/json') < 0) {
-    return json({ ok: false, error: 'respuesta_invalida_de_supabase', status: upstream.status, contentType: ct }, 502);
+    return jsonV({ ok: false, error: 'respuesta_invalida_de_supabase', status: upstream.status, contentType: ct }, 502);
   }
   var data = null;
   try { data = JSON.parse(text); } catch (e) {
-    return json({ ok: false, error: 'respuesta_invalida_de_supabase', status: upstream.status }, 502);
+    return jsonV({ ok: false, error: 'respuesta_invalida_de_supabase', status: upstream.status }, 502);
   }
 
   if (!upstream.ok) {
-    return json({ ok: false, error: 'supabase_error', status: upstream.status, data }, upstream.status < 500 ? 400 : 502);
+    return jsonV({ ok: false, error: 'supabase_error', status: upstream.status, data }, upstream.status < 500 ? 400 : 502);
   }
 
   // 8) Éxito: para personal_backups, confirmar el conteo real de workoutLog.
@@ -186,7 +192,7 @@ async function handleRequest(request) {
     upstreamCT: ct,
     upstreamText: text.slice(0, 300)
   };
-  return json({ ok: true, status: upstream.status, workoutLogCount: workoutLogCount, updatedAt: updatedAt, sub: claims.sub, rowUserId: rowUserId, data: data, diag: diag });
+  return jsonV({ ok: true, status: upstream.status, workoutLogCount: workoutLogCount, updatedAt: updatedAt, sub: claims.sub, rowUserId: rowUserId, data: data, diag: diag });
 }
 
 export default {

@@ -1,15 +1,15 @@
 {
-  "latest": "1.188.0",
+  "latest": "1.188.1",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
     {
-      "version": "1.188.0",
+      "version": "1.188.1",
       "date": "2026-08-16",
       "type": "obligatoria",
       "nuevas": [
-        "El indicador de estado muestra discretamente la ULTIMA sincronizacion CONFIRMADA (ej. 'Sincronizado · ult. 8/16, 8:59 PM'); solo se marca tras una sincronizacion verificada, nunca en un intento.",
-        "Instantanea automatica DIARIA silenciosa en IndexedDB local (una por dia, se conservan las ultimas 10) como respaldo de seguridad extra."
+        "Estado de sincronizacion simple y limpio: 🟢 Sincronizado / 🟡 Pendiente / 🔴 Error, y debajo una linea discreta 'Ultima sync: hoy 9:06 PM' que SOLO se actualiza cuando la relectura confirma exito real.",
+        "Pruebas de proteccion: registro sin internet queda local y se sube solo al volver la conexion; conflicto entre dispositivos conserva ambos cambios sin borrar ninguno; la instantanea diaria se crea una vez al dia sin sobrescribir el estado."
       ],
       "cambios": [],
       "errores": []
