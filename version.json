@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.22",
+  "latest": "1.187.23",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.23",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "Escritura por Worker con PATCH filtrado: para personal_backups, el Worker hace primero PATCH estrictamente por user_id = sub del JWT enviando SOLO data y updated_at (Prefer return=representation); si no hay fila, usa el upsert POST como fallback. Ademas las lecturas piden la columna user_id (arregla el falso aviso de identidad). Sin tocar RLS, sin migraciones, sin cambios en la sincronizacion normal."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.22",
       "date": "2026-08-16",

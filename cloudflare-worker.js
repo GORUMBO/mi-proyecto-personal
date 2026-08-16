@@ -117,15 +117,36 @@ async function handleRequest(request) {
   var prefer = request.headers.get('Prefer');
   if (prefer) headers.Prefer = prefer;
 
-  var upstream;
+  var upstream, text = null, ct = null, metodoUsado = method;
   try {
-    upstream = await fetch(supabaseUrl, { method: method, headers: headers, body: body || undefined });
+    if (tabla === 'personal_backups' && method === 'POST') {
+      // v1.187.23: para personal_backups usar PATCH filtrado estrictamente por
+      // user_id = sub del JWT (UPDATE directo vía RLS), enviando SOLO data y
+      // updated_at. El upsert POST desde Cloudflare no aplicaba cambios.
+      var bObj = JSON.parse(body);
+      delete bObj.user_id;
+      var patchBody = JSON.stringify(bObj);
+      upstream = await fetch(SUPABASE_URL + '/rest/v1/personal_backups?user_id=eq.' + encodeURIComponent(claims.sub), { method: 'PATCH', headers: headers, body: patchBody });
+      text = await upstream.text();
+      ct = (upstream.headers.get('content-type') || '').toLowerCase();
+      var patchData = null; try { patchData = JSON.parse(text); } catch (e) {}
+      var patchRows = Array.isArray(patchData) ? patchData : (patchData ? [patchData] : []);
+      metodoUsado = 'PATCH';
+      if (patchRows.length === 0) {
+        // La fila no existe todavía: crearla con el upsert de siempre.
+        metodoUsado = 'POST';
+        upstream = await fetch(supabaseUrl, { method: 'POST', headers: headers, body: body || undefined });
+        text = null; ct = null;
+      }
+    } else {
+      upstream = await fetch(supabaseUrl, { method: method, headers: headers, body: body || undefined });
+    }
   } catch (e) {
     return json({ ok: false, error: 'supabase_inaccesible' }, 502);
   }
 
-  var text = await upstream.text();
-  var ct = (upstream.headers.get('content-type') || '').toLowerCase();
+  if (text === null) text = await upstream.text();
+  if (ct === null) ct = (upstream.headers.get('content-type') || '').toLowerCase();
 
   // 7) La respuesta de Supabase DEBE ser JSON (si llega HTML: filtro/portal → error claro).
   if (ct.indexOf('application/json') < 0) {
@@ -154,7 +175,7 @@ async function handleRequest(request) {
   var diag = {
     queryRecibido: url.search,
     queryEnviado: q,
-    metodo: method,
+    metodo: metodoUsado,
     preferRecibido: prefer || null,
     bodyBytes: body ? body.length : 0,
     upstreamStatus: upstream.status,
