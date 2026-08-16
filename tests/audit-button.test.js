@@ -50,6 +50,7 @@ const docStub = {
 };
 
 let hasSession = true;
+let workerUpdatedAt = '2026-08-15T20:20:46.691+00:00';
 const requests = [];
 const row42 = { user_id: 'u-123', updated_at: '2026-08-15T00:00:00Z', data: { workoutLog: Array.from({ length: 42 }, function (_, i) { return { id: i + 1, exercise: 'E' + (i + 1) }; }) } };
 
@@ -63,7 +64,9 @@ const sb = {
   fetch: async function (url, opts) {
     requests.push({ url: String(url), opts: opts || {} });
     if (String(url).indexOf('https://mi-proyecto-sync.rubenalanfloo.workers.dev') === 0) {
-      return { ok: true, status: 200, text: async function () { return JSON.stringify({ ok: true, status: 200, workoutLogCount: 42, updatedAt: '2026-08-15T20:20:46.691+00:00', data: [{ user_id: 'u-123', data: { workoutLog: Array(42) }, updated_at: '2026-08-15T20:20:46.691+00:00' }] }); } };
+      const isPost = (opts && opts.method === 'POST');
+      if (isPost) workerUpdatedAt = '2026-08-16T02:00:00.000+00:00'; // el servidor aplica la escritura
+      return { ok: true, status: 200, text: async function () { return JSON.stringify({ ok: true, status: 200, workoutLogCount: 42, updatedAt: workerUpdatedAt, data: [{ user_id: 'u-123', data: { workoutLog: Array(42) }, updated_at: workerUpdatedAt }] }); } };
     }
     const p = String(url).replace('https://xyz.supabase.co/rest/v1/', '');
     if (String(url).indexOf('/auth/v1/user') >= 0) return { ok: true, status: 200, text: async function () { return JSON.stringify({ id: 'u-123' }); } };
@@ -77,7 +80,7 @@ const sb = {
 };
 sb.window = sb;
 vm.createContext(sb);
-['ppAuditPanel', 'ppAuditLine', 'ppAuditarSupabase', 'ppProbarWorkerLectura', 'renderSyncChain', 'syncChainPush', 'ppRenderUploadTrace', 'ppVerFaltantes']
+['ppAuditPanel', 'ppAuditLine', 'ppAuditarSupabase', 'ppProbarWorkerLectura', 'ppProbarWorkerEscrituraControlada', 'renderSyncChain', 'syncChainPush', 'ppRenderUploadTrace', 'ppVerFaltantes']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sb); });
 // PP_WORKER_TEST_URL es una const de nivel superior en index.html.
 vm.runInContext((HTML.match(/const PP_WORKER_TEST_URL='[^']+';/) || ["const PP_WORKER_TEST_URL='https://mi-proyecto-sync.rubenalanfloo.workers.dev';"])[0], sb);
@@ -148,6 +151,32 @@ sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, htt
   await sleep(10);
   const wLineas2 = (fakeEls.ppAuditLines && fakeEls.ppAuditLines.children || []).map(function (c) { return c.innerHTML; });
   t('A10 · Sin sesión avisa y no llama al Worker', wLineas2.some(function (l) { return l.indexOf('Sin sesión activa') >= 0; }));
+
+  // A11: escritura controlada por Worker — mismo contenido, una sola escritura.
+  workerUpdatedAt = '2026-08-15T20:20:46.691+00:00';
+  const reqsWorker = [];
+  const fetchOrig = sb.fetch;
+  sb.fetch = async function (url, opts) {
+    if (String(url).indexOf('https://mi-proyecto-sync.rubenalanfloo.workers.dev') === 0) {
+      reqsWorker.push({ url: String(url), opts: opts || {} });
+      if (opts && opts.method === 'POST') workerUpdatedAt = '2026-08-16T02:00:00.000+00:00';
+      return { ok: true, status: 200, text: async function () { return JSON.stringify({ ok: true, status: 200, workoutLogCount: 42, updatedAt: workerUpdatedAt, data: [{ user_id: 'u-123', data: { workoutLog: Array(42) }, updated_at: workerUpdatedAt }] }); } };
+    }
+    return fetchOrig(url, opts);
+  };
+  fakeEls.ppAuditLines = makeEl('ppAuditLines');
+  hasSession = true;
+  await sb.ppProbarWorkerEscrituraControlada();
+  await sleep(10);
+  const eLineas = (fakeEls.ppAuditLines && fakeEls.ppAuditLines.children || []).map(function (c) { return c.innerHTML; });
+  const postsWorker = reqsWorker.filter(function (r) { return r.opts.method === 'POST'; });
+  t('A11 · Escritura controlada por Worker: UNA escritura, contenido idéntico, updatedAt cambió, identidad OK',
+    postsWorker.length === 1
+    && JSON.parse(postsWorker[0].opts.body).data.workoutLog.length === 42
+    && eLineas.some(function (l) { return l.indexOf('workoutLogCount: <b>42</b>') >= 0; })
+    && eLineas.some(function (l) { return l.indexOf('updatedAt cambió: <b>SÍ ✓</b>') >= 0; })
+    && eLineas.some(function (l) { return l.indexOf('contenido idéntico (antes=después): <b>SÍ ✓</b>') >= 0; })
+    && eLineas.some(function (l) { return l.indexOf('identidad/RLS: <b>OK</b>') >= 0; }));
 
   console.log('\n==========================================');
   console.log('Resultado: ' + passed + ' pasaron · ' + failed + ' fallaron');

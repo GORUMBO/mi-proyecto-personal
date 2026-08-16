@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.17",
-  "date": "2026-08-15",
+  "latest": "1.187.18",
+  "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.18",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "Boton 'Escritura controlada' por el Worker: re-envia EXACTAMENTE el mismo contenido de la fila (solo cambia updated_at, sin agregar/eliminar/modificar ejercicios) y muestra antes/despues: workoutLogCount, updatedAt (si cambio), contenido identico e identidad/RLS. Una sola escritura para verificar que Supabase acepta escrituras a traves del puente."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.17",
       "date": "2026-08-15",
