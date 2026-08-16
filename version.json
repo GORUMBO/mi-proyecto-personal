@@ -1,8 +1,20 @@
 {
-  "latest": "1.188.1",
+  "latest": "1.188.2",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.188.2",
+      "date": "2026-08-16",
+      "type": "recomendada",
+      "nuevas": [
+        "Calidad de contenido (Fase 1, ejercicios): se corrigen nombres mal traducidos (Press JM, Salto de estrella, Crunch inverso...), un musculo equivocado (Cargada colgante pasa de femoral a espalda), se eliminan 7 duplicados y el equipo queda en espanol (peso corporal). La biblioteca real es de 511 ejercicios (el texto decia 873).",
+        "Calidad de contenido (Fase 1, recetas): seguridad alimentaria corregida (higado a 71 grados como pide USDA, pollo entero en air fryer con tiempos reales, costillas 2 h tapadas), macros de licuados y pescados ajustadas con porciones claras, y las recetas frias ('frio'/'refri') ya no aparecen como 'Estufa'.",
+        "Mas rapida: se quita la copia duplicada de fotos de 2.66 MB que se descargaba sin usarse."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.188.1",
       "date": "2026-08-16",
