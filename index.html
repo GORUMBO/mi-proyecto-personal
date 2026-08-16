@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.27';
+  window.HM_APP_VERSION='1.187.28';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -23749,6 +23749,11 @@ async function cloudSave(silent=false){
           var remotePost2=rowsPost2&&rowsPost2[0];
           nPostWl=((remotePost2&&remotePost2.data&&remotePost2.data.workoutLog)||[]).length;
           ppUploadTrace.releida=nPostWl;
+          // v1.187.28: recomputar también el timestamp con la lectura final.
+          ppUploadTrace.tsLeido=(remotePost2&&remotePost2.updated_at)||null;
+          var tEnv2=Date.parse(ppUploadTrace.tsEnviado||0)||0, tLei2=Date.parse(ppUploadTrace.tsLeido||0)||0;
+          ppUploadTrace.otraEscritura=!!(tLei2&&tEnv2&&tLei2>tEnv2);
+          ppUploadTrace.noAplico=!!(tLei2&&tEnv2&&tLei2<tEnv2);
           if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
         }catch(e){}
       }
@@ -23761,6 +23766,11 @@ async function cloudSave(silent=false){
       return;
     }
     console.log('[SAVE-END] remoto workoutLog='+nPostWl);
+    // v1.187.28: si el conteo confirmó, el aviso de timestamp NO aplica
+    // (la relectura inmediata puede ser una copia rezagada aunque la
+    // escritura haya aplicado; el ✓ confirmado ya lo demuestra).
+    ppUploadTrace.noAplico=false;
+    ppUploadTrace.otraEscritura=false;
     await mirrorGranular(s.user.id).catch(err=>console.warn('[SYNC] Espejo granular pendiente',err));
     state.offlineChanges=0;safeStorage.set('pp_full',JSON.stringify(state));
     _syncRetries=0; // éxito: reiniciar contador

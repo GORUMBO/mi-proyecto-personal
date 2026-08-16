@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.27",
+  "latest": "1.187.28",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.28",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "Se elimina el falso aviso 'NUESTRA escritura NO se aplico' cuando el conteo ya quedo confirmado: la relectura inmediata podia traer un updated_at rezagado aunque la escritura hubiera aplicado. El reintento de verificacion del puente ahora tambien recalcula el timestamp con la lectura final. Sin cambios de logica, RLS ni datos."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.27",
       "date": "2026-08-16",
