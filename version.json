@@ -1,8 +1,19 @@
 {
-  "latest": "1.187.29",
+  "latest": "1.188.0",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.188.0",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "El indicador de estado muestra discretamente la ULTIMA sincronizacion CONFIRMADA (ej. 'Sincronizado · ult. 8/16, 8:59 PM'); solo se marca tras una sincronizacion verificada, nunca en un intento.",
+        "Instantanea automatica DIARIA silenciosa en IndexedDB local (una por dia, se conservan las ultimas 10) como respaldo de seguridad extra."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.29",
       "date": "2026-08-16",

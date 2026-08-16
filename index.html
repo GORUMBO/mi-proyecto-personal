@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.29';
+  window.HM_APP_VERSION='1.188.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -609,6 +609,27 @@ async function saveVersionSnapshot(json,label){
     let db=await openPersonalDB(),tx=db.transaction('backups','readwrite');
     tx.objectStore('backups').put({label,date:new Date().toISOString(),json},label);
   }catch(error){console.warn('No se pudo crear respaldo de versión',error)}
+}
+// v1.188: instantánea automática DIARIA, silenciosa y SOLO local (IndexedDB).
+// Una por día (label 'auto-<fecha>') y se conservan las últimas 10. No toca
+// la nube, el Worker ni la sincronización.
+async function ppAutoSnapshot(){
+  try{
+    var hoy=new Date().toISOString().slice(0,10);
+    var label='auto-'+hoy;
+    var db=await openPersonalDB();
+    var existe=await new Promise(function(resolve,reject){var req=db.transaction('backups','readonly').objectStore('backups').get(label);req.onsuccess=function(){resolve(!!req.result);};req.onerror=function(){reject(req.error);};});
+    if(!existe){
+      await saveVersionSnapshot(JSON.stringify(state),label);
+      var items=await new Promise(function(resolve,reject){var req=db.transaction('backups','readonly').objectStore('backups').getAll();req.onsuccess=function(){resolve(req.result||[]);};req.onerror=function(){reject(req.error);};});
+      items.sort(function(a,b){return String(b.date||'').localeCompare(String(a.date||''));});
+      var extras=items.slice(10);
+      if(extras.length){
+        var tx=db.transaction('backups','readwrite');
+        extras.forEach(function(x){tx.objectStore('backups').delete(x.label);});
+      }
+    }
+  }catch(e){}
 }
 // Registro de errores: captura fallos técnicos para poder verlos (Base de datos) y, a futuro, mandarlos al bot.
 function ppLogErr(where,e){
@@ -23020,7 +23041,11 @@ function renderSyncUI(){
   let b=document.getElementById('syncBadge');
   if(b){let base=_SYNC_LABEL[PP_SYNC.kind]||'Local';
     let extra=(PP_SYNC.detail&&(PP_SYNC.kind==='pending'||PP_SYNC.kind==='offline'))?' · '+PP_SYNC.detail:'';
-    b.textContent='● '+base+extra;b.style.color=_SYNC_COLOR[PP_SYNC.kind]||'#15704f';
+    // v1.188: mostrar discretamente la ÚLTIMA sincronización CONFIRMADA
+    // (lastSyncAt solo se asigna en setSync('synced'), nunca en un intento).
+    let ult='';
+    try{if(PP_SYNC.lastSyncAt)ult=' · últ. '+PP_SYNC.lastSyncAt.toLocaleString('es-US',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'});}catch(e){}
+    b.textContent='● '+base+extra+ult;b.style.color=_SYNC_COLOR[PP_SYNC.kind]||'#15704f';
     // En error, el motivo NO se esconde: se ve al tocar y en el título.
     b.title = (PP_SYNC.kind==='error' && PP_SYNC.lastError)
       ? ('No se pudo sincronizar: '+PP_SYNC.lastError+' — toca para ver el motivo y reintentar')
@@ -23833,10 +23858,9 @@ window.addEventListener('load',function(){setTimeout(migrateProgressPhotosToClou
 window.addEventListener('online',()=>{if(!getCloudSession()){setSync('nosession');return}setSync('pending',String(state.offlineChanges||0));syncChainPush('🌐 Internet recuperado','subiendo pendientes automáticamente');cloudStartupSync({_origin:'online'});initRealtimeSync('online');});
 window.addEventListener('offline',()=>setSync('offline',String(state.offlineChanges||0)));
 window.addEventListener('load',function(){
-  // v1.187.12 (diagnóstico temporal): la sesión se lee de localStorage; NO hay
-  // onAuthStateChange ni listeners de auth que puedan duplicarse.
-  console.log('[AUTH-INIT] una sola vez · sesión desde localStorage · sin listeners de auth');
   setTimeout(function(){cloudStartupSync({_origin:'arranque'});},1200);
+  // v1.188: instantánea diaria silenciosa (solo local, 8 s tras cargar).
+  setTimeout(function(){try{ppAutoSnapshot();}catch(e){}},8000);
 });
 window.addEventListener('load',()=>setTimeout(function(){ try{ avisoSinCuenta(); }catch(e){} },2500));
 window.addEventListener('load',()=>setTimeout(function(){ try{ iniciarPrueba(); }catch(e){} },3000));
