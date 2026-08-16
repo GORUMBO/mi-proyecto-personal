@@ -22,7 +22,7 @@ const CORS_HEADERS = {
 function json(data, status) {
   return new Response(JSON.stringify(data), {
     status: status || 200,
-    headers: Object.assign({ 'Content-Type': 'application/json' }, CORS_HEADERS),
+    headers: Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, CORS_HEADERS),
   });
 }
 
@@ -106,7 +106,9 @@ async function handleRequest(request) {
   }
 
   // 6) Reenviar a Supabase (el origen es Cloudflare: Canopy ya no está en el camino).
-  var supabaseUrl = SUPABASE_URL + '/rest/v1/' + tabla + url.search;
+  //    Quitar parámetros que PostgREST rechazaría (p. ej. ts de anti-caché).
+  var q = url.search.replace(/[?&]ts=[^&]*/g, '');
+  var supabaseUrl = SUPABASE_URL + '/rest/v1/' + tabla + q;
   var headers = {
     apikey: SUPABASE_ANON,
     Authorization: 'Bearer ' + token,

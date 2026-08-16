@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.19",
+  "latest": "1.187.20",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.20",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "Se arregla la lectura previa de la prueba 'Escritura controlada': se quito el parametro anti-cache 'ts' que PostgREST rechazaba con HTTP 400 (por eso decia 'lectura previa fallo'). La lectura mantiene cache:no-store y ahora muestra el error real (HTTP, ruta y motivo). El Worker ademas quita parametros desconocidos antes de reenviar y responde con Cache-Control: no-store."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.19",
       "date": "2026-08-16",

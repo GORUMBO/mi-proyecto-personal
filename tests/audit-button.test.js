@@ -179,6 +179,26 @@ sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, htt
     && eLineas.some(function (l) { return l.indexOf('contenido idéntico (antes=después): <b>SÍ ✓</b>') >= 0; })
     && eLineas.some(function (l) { return l.indexOf('identidad/RLS: <b>OK</b>') >= 0; }));
 
+  // A13: lectura previa fallida muestra HTTP, ruta y error reales (y NO hace POST).
+  const fetchOrig13 = sb.fetch;
+  sb.fetch = async function (url, opts) {
+    if (String(url).indexOf('https://mi-proyecto-sync.rubenalanfloo.workers.dev') === 0) {
+      reqsWorker.push({ url: String(url), opts: opts || {} });
+      return { ok: false, status: 400, text: async function () { return JSON.stringify({ ok: false, error: 'supabase_error', status: 400, data: { message: 'parámetro desconocido' } }); } };
+    }
+    return fetchOrig13(url, opts);
+  };
+  fakeEls.ppAuditLines = makeEl('ppAuditLines');
+  hasSession = true;
+  const reqsAntes13 = reqsWorker.length;
+  await sb.ppProbarWorkerEscrituraControlada();
+  await sleep(10);
+  const e13 = (fakeEls.ppAuditLines && fakeEls.ppAuditLines.children || []).map(function (c) { return c.innerHTML; });
+  t('A13 · La lectura previa fallida muestra HTTP, ruta y error reales (y no hace POST)',
+    e13.some(function (l) { return l.indexOf('lectura previa falló · HTTP 400') >= 0; })
+    && e13.some(function (l) { return l.indexOf('/sync/personal_backups') >= 0 && l.indexOf('supabase_error') >= 0; })
+    && !reqsWorker.slice(reqsAntes13).some(function (r) { return r.opts.method === 'POST'; }));
+
   // A12: con updated_at IGUAL al enviado (escritura aplicada) NO debe decir "NO se aplicó".
   sb.ppUploadTrace = { inicio: 42, merge: 42, payload: 42, result: 'ok', tsEnviado: '2026-08-16T02:07:37.000+00:00', tsLeido: '2026-08-16T02:07:37.000+00:00', noAplico: false, otraEscritura: false, faltantes: [] };
   sb.ppRenderUploadTrace();

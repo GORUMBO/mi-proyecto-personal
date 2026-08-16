@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.19';
+  window.HM_APP_VERSION='1.187.20';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -23187,12 +23187,15 @@ async function ppProbarWorkerEscrituraControlada(){
     try{await refreshCloudSession();s=getCloudSession();}catch(e){}
     var H={Authorization:'Bearer '+s.access_token,'Content-Type':'application/json'};
     var URLW=PP_WORKER_TEST_URL+'/sync/personal_backups';
-    // v1.187.19: lecturas SIN CACHÉ y con ts único (verificación real de la fila).
-    var leer=async function(){var r=await fetch(URLW+'?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at&ts='+Date.now(),{headers:H,cache:'no-store'});return r;};
+    // v1.187.20: lecturas SIN CACHÉ (cache:no-store hace preflight, que el Worker
+    // responde) y SIN parámetros extra: PostgREST rechaza con 400 los parámetros
+    // desconocidos (el '&ts=' anterior rompía la lectura previa).
+    var leer=async function(){return fetch(URLW+'?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at',{headers:H,cache:'no-store'});};
     // 1) Leer ANTES.
     var r1=await leer();
-    var j1=null;try{j1=JSON.parse(await r1.text());}catch(e){}
-    if(!j1||!j1.ok){ppAuditLine('✘ lectura previa falló: '+safeText((j1&&j1.error)||'respuesta inválida'));return;}
+    var t1=await r1.text();
+    var j1=null;try{j1=JSON.parse(t1);}catch(e){}
+    if(!j1||!j1.ok){ppAuditLine('✘ lectura previa falló · HTTP '+r1.status+' · ruta: /sync/personal_backups · error: '+safeText((j1&&j1.error)||(t1||'').slice(0,150)));return;}
     var filaAntes=(Array.isArray(j1.data)?j1.data[0]:j1.data)||{};
     ppAuditLine('ANTES · workoutLogCount: <b>'+safeText(j1.workoutLogCount)+'</b> · updatedAt: '+safeText(j1.updatedAt||'—'));
     var contenidoAntes=JSON.stringify((filaAntes.data&&filaAntes.data.workoutLog)||[]);
@@ -23203,8 +23206,9 @@ async function ppProbarWorkerEscrituraControlada(){
     ppAuditLine('UPSERT · HTTP '+r2.status+' · ok: '+safeText(j2&&j2.ok?'true':'false')+(j2&&j2.error?' · '+safeText(j2.error):'')+' · updatedAt enviado: '+safeText(tsEnviado));
     // 3) Leer DESPUÉS (GET independiente y sin caché).
     var r3=await leer();
-    var j3=null;try{j3=JSON.parse(await r3.text());}catch(e){}
-    if(!j3||!j3.ok){ppAuditLine('✘ lectura posterior falló: '+safeText((j3&&j3.error)||'respuesta inválida'));return;}
+    var t3=await r3.text();
+    var j3=null;try{j3=JSON.parse(t3);}catch(e){}
+    if(!j3||!j3.ok){ppAuditLine('✘ lectura posterior falló · HTTP '+r3.status+' · error: '+safeText((j3&&j3.error)||(t3||'').slice(0,150)));return;}
     var filaDespues=(Array.isArray(j3.data)?j3.data[0]:j3.data)||{};
     var contenidoDespues=JSON.stringify((filaDespues.data&&filaDespues.data.workoutLog)||[]);
     ppAuditLine('DESPUÉS · workoutLogCount: <b>'+safeText(j3.workoutLogCount)+'</b> · updatedAt: '+safeText(j3.updatedAt||'—'));
