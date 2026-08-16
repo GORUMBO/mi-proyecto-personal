@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.188.2';
+  window.HM_APP_VERSION='1.188.3';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -26281,18 +26281,20 @@ function exercisesPerSession(minutes){return minutes<=30?4:minutes<=45?5:minutes
 function buildCustomRoutine(cfg){
   let split=routineSplit(cfg.days),scheme=goalScheme(cfg.goal,cfg.exp),perDay=exercisesPerSession(cfg.minutes);
   let equipKey=cfg.equip==='casa'?'casa':cfg.equip==='mancuernas'?'mancuernas':'gym';
-  let days=split.map(([dayName,muscles])=>{
+  let days=split.map(([dayName,muscles],di)=>{
     let picks=[],usedByMuscle={};
     // fill up to perDay, cycling through the day's muscle list, preferring compounds first
     let mi=0,guard=0;
     while(picks.length<perDay&&guard<60){
       let m=muscles[mi%muscles.length];mi++;guard++;
       let pool=routineDB[m]||[];if(!pool.length)continue;
-      let idx=usedByMuscle[m]||0;
       // beginners prefer compounds/machines: sort compounds first for first pass
       let ordered=cfg.exp==='principiante'?pool.slice().sort((a,b)=>(b.compound?1:0)-(a.compound?1:0)):pool;
-      if(idx>=ordered.length)continue;
-      let ex=ordered[idx];usedByMuscle[m]=idx+1;
+      // Fase 2: rotación por día (rot) para que los días A y B usen ejercicios DISTINTOS
+      // del mismo músculo (ángulos y patrones diferentes, mismo objetivo). rot=0 en el día 0.
+      let rot=(di*Math.ceil(ordered.length/2))%ordered.length;
+      let idx=((usedByMuscle[m]||0)+rot)%ordered.length;
+      let ex=ordered[idx];usedByMuscle[m]=(usedByMuscle[m]||0)+1;
       picks.push({name:ex[equipKey],muscle:m,sets:scheme.sets,reps:scheme.reps,rest:scheme.rest});
     }
     return {day:dayName,exercises:picks};
@@ -26321,7 +26323,7 @@ function renderCustomRoutine(){
 function goalLabelSafe(g){return g==='fuerza'?'Fuerza':g==='resistencia'?'Resistencia':g==='bajar grasa'?'Bajar grasa':'Hipertrofia';}
 function useRoutineDayToday(di){
   let r=state.customRoutine;if(!r||!r.days[di])return;
-  let plan=r.days[di].exercises.map(x=>({name:x.name,muscle:x.muscle,sets:+String(x.sets).match(/\d+/)?.[0]||3,reps:x.reps,rest:parseInt(x.rest)||75,alts:[],note:'De tu rutina personalizada'}));
+  let plan=r.days[di].exercises.map(x=>({name:x.name,muscle:x.muscle,sets:+String(x.sets).match(/\d+/)?.[0]||3,reps:x.reps,rest:restSeconds(x.rest),alts:[],note:'De tu rutina personalizada'}));
   state.fitnessToday={date:todayISO(),ctx:{focus:r.days[di].day,equip:equipLabel(r.cfg.equip),hard:false,steps:0,energy:3,pain:0,sleep:7},plan,createdAt:new Date().toISOString(),fromCustom:true,checked:{},checkedDate:todayISO()};
   save();renderFitnessCoach();
   let out=document.getElementById('customRoutineStatus');if(out)out.innerHTML='<div class="ok" style="margin-top:8px">✅ Cargada como rutina de hoy. Ábrela en “Resultado completo de la rutina” o en el entrenamiento guiado.</div>';
@@ -26340,7 +26342,20 @@ function copyPlainText(txt,statusId){
 function fallbackCopy(txt,cb){try{let ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');document.body.removeChild(ta);cb&&cb();}catch(e){prompt('Copia manualmente:',txt);}}
 
 // ---- v41.44: CICLO CONECTADO — rotación de días + progresión de peso ----
-function restSeconds(str){let m=String(str).match(/\d+/g);if(!m)return 75;if(m.length>=2)return Math.round((+m[0]+ +m[1])/2);return +m[0];}
+function restSeconds(str){
+  // Fase 2: parser completo de descansos. "30 s"->30, "2 min"->120, "2-3 min"->150
+  // (nunca 2 segundos), "2–3 min" (guion largo) igual, "1:30"->90, "2 h"->7200.
+  var s=String(str||'').trim().toLowerCase().replace(/[–—]/g,'-');
+  if(!s)return 75;
+  var mm=s.match(/^(\d{1,2}):(\d{2})$/); if(mm)return (+mm[1])*60+(+mm[2]);
+  var nums=(s.match(/\d+(?:\.\d+)?/g)||[]).map(Number);
+  if(!nums.length)return 75;
+  var factor=1;
+  if(/horas?|\bhrs?|\bh\b/.test(s))factor=3600;
+  else if(/min/.test(s))factor=60;
+  var v=(nums.length>=2)?(nums[0]+nums[nums.length-1])/2:nums[0];
+  return Math.max(0,Math.round(v*factor));
+}
 function parseRepRange(reps){let m=String(reps).match(/\d+/g)||[];return {min:+m[0]||8,max:+m[1]|| +m[0]||12};}
 // 🎯 Sugerencia de hoy: analiza la SESIÓN anterior completa del ejercicio
 // v1.187: parámetro opcional opts={log,hoy} para poder calcular el objetivo de forma
@@ -26802,20 +26817,61 @@ function renderFitStatsPanel(){
   if(state.customRoutine)renderCustomRoutine();
 }
 function fitnessExerciseBank(){
+  // v1.188.3-Fase2: cada slot trae pools por equipo (casa/man). Gimnasio usa name+alts.
+  // casa = solo peso corporal, bandas, mochila o botellas (NUNCA máquinas, poleas ni barra).
   return {
-    press:{name:'Press inclinado mancuernas',muscle:'Pecho',sets:3,reps:'8-12',rest:90,alts:['Press máquina pecho','Press banca inclinada','Push up inclinado','Press plano mancuernas','Aperturas con mancuernas','Aperturas en cable (peck deck)','Press declinado','Fondos de pecho','Push up normal']},
-    row:{name:'Remo en máquina',muscle:'Espalda',sets:3,reps:'10-12',rest:90,alts:['Remo con mancuerna 1 brazo','Remo cable sentado','Remo con barra','Remo con mochila','Remo en T','Remo invertido','Remo pendlay','Remo agarre ancho']},
-    lat:{name:'Elevaciones laterales',muscle:'Hombro',sets:2,reps:'12-15',rest:60,alts:['Cable lateral','Máquina lateral','Elevación con mancuernas','Elevación con botellas','Press militar mancuerna','Arnold press','Elevación frontal','Press en máquina hombro']},
-    curl:{name:'Curl bíceps cable/barra',muscle:'Bíceps',sets:2,reps:'10-15',rest:60,alts:['Curl mancuerna alternado','Curl martillo','Curl predicador máquina','Curl con banda','Curl concentrado','Curl araña','Curl banco inclinado','Curl 21s']},
-    tri:{name:'Tríceps cuerda',muscle:'Tríceps',sets:2,reps:'10-15',rest:60,alts:['Extensión cable barra','Fondos en silla','Extensión mancuerna arriba','Press cerrado máquina','Patada de tríceps','Rompecráneos','Fondos en banca','Extensión sobre la cabeza cable']},
-    pull:{name:'Jalón al pecho',muscle:'Espalda',sets:3,reps:'10-12',rest:90,alts:['Jalón agarre neutro','Pullover en cable','Dominada asistida','Remo mancuerna','Jalón agarre cerrado','Dominada negativa','Jalón un brazo','Pull-over con mancuerna']},
-    face:{name:'Face pull',muscle:'Hombro posterior',sets:2,reps:'12-15',rest:60,alts:['Reverse fly máquina','Pájaros con mancuernas','Band pull apart','Remo alto ligero','Reverse fly en cable','Y-raise','Remo al cuello ligero']},
-    core:{name:'Plancha',muscle:'Core',sets:2,reps:'30-45s',rest:45,alts:['Dead bug','Plancha lateral','Pallof press','Crunch suave','Rueda abdominal','Elevación de piernas','Mountain climbers','Bicicleta abdominal','Hollow hold']},
-    hip:{name:'Hip thrust ligero',muscle:'Glúteo',sets:2,reps:'12-15',rest:75,alts:['Puente de glúteo','Patada en cable','Hip thrust mancuerna','Máquina glúteo','Abducción en máquina','Zancada trasera','Patada de burro']},
-    leg:{name:'Sentadilla',muscle:'Cuádriceps/Pierna',sets:3,reps:'8-12',rest:120,alts:['Prensa de pierna','Sentadilla goblet','Zancadas','Hack squat','Extensión de cuádriceps','Sentadilla búlgara','Step up','Sentadilla en Smith','Sentadilla frontal']},
-    ham:{name:'Peso muerto rumano',muscle:'Femoral/Isquios',sets:3,reps:'8-12',rest:100,alts:['Curl femoral tumbado','Curl femoral sentado','Peso muerto piernas rígidas','Buenos días','Curl femoral de pie','Peso muerto con mancuernas']},
-    calf:{name:'Elevación de pantorrilla de pie',muscle:'Pantorrilla',sets:3,reps:'12-20',rest:60,alts:['Elevación sentado','Elevación en prensa','Elevación en escalón','Saltos de pantorrilla']},
-    mobility:{name:'Movilidad cadera/espalda',muscle:'Recuperación',sets:2,reps:'45-60s',rest:30,alts:['Respiración 90/90','Estirar cadera','Foam rolling suave','Estirar pantorrilla','Gato-camello','Movilidad de hombro','Estiramiento de isquios']}
+    press:{name:'Press inclinado mancuernas',muscle:'Pecho',sets:3,reps:'8-12',rest:90,
+      alts:['Press máquina pecho','Press banca inclinada','Push up inclinado','Press plano mancuernas','Aperturas con mancuernas','Aperturas en cable (peck deck)','Press declinado','Fondos de pecho','Push up normal'],
+      casa:['Push up normal','Push up inclinado','Push up declinado (pies arriba)','Press con botellas'],
+      man:['Press inclinado mancuernas','Press plano mancuernas','Aperturas con mancuernas']},
+    row:{name:'Remo en máquina',muscle:'Espalda',sets:3,reps:'10-12',rest:90,
+      alts:['Remo con mancuerna 1 brazo','Remo cable sentado','Remo con barra','Remo con mochila','Remo en T','Remo invertido','Remo pendlay','Remo agarre ancho'],
+      casa:['Remo con mochila','Remo invertido','Remo con toalla en puerta'],
+      man:['Remo con mancuerna 1 brazo','Remo inclinado con mancuernas','Remo pendlay con mancuernas']},
+    lat:{name:'Elevaciones laterales',muscle:'Hombro',sets:2,reps:'12-15',rest:60,
+      alts:['Cable lateral','Máquina lateral','Elevación con mancuernas','Elevación con botellas','Press militar mancuerna','Arnold press','Elevación frontal','Press en máquina hombro'],
+      casa:['Elevación con botellas','Pike push up','Elevación frontal con mochila'],
+      man:['Elevaciones laterales','Elevación con mancuernas','Press militar mancuerna','Arnold press','Elevación frontal']},
+    curl:{name:'Curl bíceps cable/barra',muscle:'Bíceps',sets:2,reps:'10-15',rest:60,
+      alts:['Curl mancuerna alternado','Curl martillo','Curl predicador máquina','Curl con banda','Curl concentrado','Curl araña','Curl banco inclinado','Curl 21s'],
+      casa:['Curl con banda','Curl con mochila cargada','Curl isométrico con toalla'],
+      man:['Curl mancuerna alternado','Curl martillo','Curl concentrado','Curl araña','Curl con banda']},
+    tri:{name:'Tríceps cuerda',muscle:'Tríceps',sets:2,reps:'10-15',rest:60,
+      alts:['Extensión cable barra','Fondos en silla','Extensión mancuerna arriba','Press cerrado máquina','Patada de tríceps','Rompecráneos','Fondos en banca','Extensión sobre la cabeza cable'],
+      casa:['Fondos en silla','Fondos en banca','Lagartijas diamante','Extensión con banda'],
+      man:['Extensión mancuerna arriba','Patada de tríceps','Press cerrado con mancuernas','Fondos en silla']},
+    pull:{name:'Jalón al pecho',muscle:'Espalda',sets:3,reps:'10-12',rest:90,
+      alts:['Jalón agarre neutro','Pullover en cable','Dominada asistida','Remo mancuerna','Jalón agarre cerrado','Dominada negativa','Jalón un brazo','Pull-over con mancuerna'],
+      casa:['Superman en casa','Ángeles inversos en el piso'],
+      man:['Remo mancuerna','Pull-over con mancuerna']},
+    face:{name:'Face pull',muscle:'Hombro posterior',sets:2,reps:'12-15',rest:60,
+      alts:['Reverse fly máquina','Pájaros con mancuernas','Band pull apart','Remo alto ligero','Reverse fly en cable','Y-raise','Remo al cuello ligero'],
+      casa:['Band pull apart','Y-raise','Pájaros con botellas'],
+      man:['Pájaros con mancuernas','Y-raise']},
+    core:{name:'Plancha',muscle:'Core',sets:2,reps:'30-45s',rest:45,
+      alts:['Dead bug','Plancha lateral','Pallof press','Crunch suave','Rueda abdominal','Elevación de piernas','Mountain climbers','Bicicleta abdominal','Hollow hold'],
+      casa:['Plancha','Dead bug','Plancha lateral','Crunch suave','Elevación de piernas','Mountain climbers','Bicicleta abdominal','Hollow hold'],
+      man:['Plancha','Dead bug','Plancha lateral','Crunch suave','Elevación de piernas','Mountain climbers','Bicicleta abdominal','Hollow hold','Rueda abdominal']},
+    hip:{name:'Hip thrust ligero',muscle:'Glúteo',sets:2,reps:'12-15',rest:75,
+      alts:['Puente de glúteo','Patada en cable','Hip thrust mancuerna','Máquina glúteo','Abducción en máquina','Zancada trasera','Patada de burro'],
+      casa:['Hip thrust ligero','Puente de glúteo','Zancada trasera','Patada de burro'],
+      man:['Hip thrust ligero','Puente de glúteo','Hip thrust mancuerna','Zancada trasera','Patada de burro']},
+    leg:{name:'Sentadilla',muscle:'Cuádriceps/Pierna',sets:3,reps:'8-12',rest:120,
+      alts:['Prensa de pierna','Sentadilla goblet','Zancadas','Hack squat','Extensión de cuádriceps','Sentadilla búlgara','Step up','Sentadilla en Smith','Sentadilla frontal'],
+      casa:['Sentadilla','Zancadas','Sentadilla búlgara','Step up'],
+      man:['Sentadilla','Sentadilla goblet','Zancadas','Sentadilla búlgara','Step up']},
+    ham:{name:'Peso muerto rumano',muscle:'Femoral/Isquios',sets:3,reps:'8-12',rest:100,
+      alts:['Curl femoral tumbado','Curl femoral sentado','Peso muerto piernas rígidas','Buenos días','Curl femoral de pie','Peso muerto con mancuernas'],
+      casa:['Puente de glúteo a una pierna','Curl nórdico asistido'],
+      man:['Peso muerto rumano con mancuernas','Peso muerto con mancuernas','Curl nórdico asistido']},
+    calf:{name:'Elevación de pantorrilla de pie',muscle:'Pantorrilla',sets:3,reps:'12-20',rest:60,
+      alts:['Elevación sentado','Elevación en prensa','Elevación en escalón','Saltos de pantorrilla'],
+      casa:['Elevación de pantorrilla de pie','Elevación en escalón','Saltos de pantorrilla'],
+      man:['Elevación de pantorrilla de pie','Elevación en escalón','Saltos de pantorrilla']},
+    mobility:{name:'Movilidad cadera/espalda',muscle:'Recuperación',sets:2,reps:'45-60s',rest:30,
+      alts:['Respiración 90/90','Estirar cadera','Foam rolling suave','Estirar pantorrilla','Gato-camello','Movilidad de hombro','Estiramiento de isquios'],
+      casa:['Movilidad cadera/espalda','Respiración 90/90','Estirar cadera','Estirar pantorrilla','Gato-camello','Movilidad de hombro','Estiramiento de isquios'],
+      man:['Movilidad cadera/espalda','Respiración 90/90','Estirar cadera','Foam rolling suave','Estirar pantorrilla','Gato-camello','Movilidad de hombro','Estiramiento de isquios']}
   };
 }
 // Día del año (0-365): sirve para rotar los ejercicios cada día.
@@ -26919,11 +26975,16 @@ function buildFitnessTodayPlan(ctx){
   return keys.map((k,idx)=>{
     let x={...b[k]};
     // Biblioteca + variedad: cada músculo tiene varios ejercicios; se elige uno rotando por día/variación.
-    let pool=[x.name].concat(x.alts||[]).filter((v,i,a)=>v&&a.indexOf(v)===i);
-    let pick;
-    if(ctx.equip.includes('Casa')) pick=pool[pool.length-1]||x.name;
-    else if(ctx.equip.includes('Mancuernas')) pick=pool.find(a=>/mancuerna|mancuernas|botellas|mochila/i.test(a))||pool[0];
-    else { let s=seedBase+idx*3; pick=pool[((s%pool.length)+pool.length)%pool.length]; }
+    // Fase 2: el pool se filtra por equipo disponible. Casa = solo peso corporal/bandas/mochila/botellas;
+    // Mancuernas = sin máquinas ni poleas; Gimnasio = todo. Así "Variar" jamás mete una máquina en casa.
+    let pool;
+    if(ctx.equip.includes('Casa')) pool=(x.casa||[]).slice();
+    else if(ctx.equip.includes('Mancuernas')) pool=(x.man||[]).slice();
+    else pool=[x.name].concat(x.alts||[]);
+    pool=pool.filter((v,i,a)=>v&&a.indexOf(v)===i);
+    if(!pool.length) pool=[x.name];
+    let s=seedBase+idx*3;
+    let pick=pool[((s%pool.length)+pool.length)%pool.length];
     x.name=pick;
     x.alts=pool.filter(a=>a!==pick); // el resto queda como alternativas en "Cambiar si está ocupado"
     if(big&&!ctx.recovery){x.sets=Math.max(extreme?4:3,x.sets);x.note=(extreme?'Demasiado fuerte: 4-5 series, cerca del fallo (deja 1 en reserva), buen descanso y sube peso al completar las reps. Cuida la técnica.':'Crecer músculo: 3-4 series, cerca del fallo (deja 1-2 en reserva) y sube peso al completar las reps.')}

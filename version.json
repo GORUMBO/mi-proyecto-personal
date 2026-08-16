@@ -1,8 +1,20 @@
 {
-  "latest": "1.188.2",
+  "latest": "1.188.3",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.188.3",
+      "date": "2026-08-16",
+      "type": "recomendada",
+      "nuevas": [
+        "Rutinas con sentido real (Fase 2): si entrenas en casa, la rutina y el boton Variar solo usan peso corporal, bandas, mochila o botellas (nunca maquinas, poleas ni barra); con mancuernas, sin maquinas ni banco.",
+        "Plan semanal mejorado: los dias A y B ahora usan ejercicios DISTINTOS del mismo musculo (diferentes angulos y patrones), en splits de 4 y 6 dias, tambien para principiantes.",
+        "Descansos corregidos: 2-3 min ahora son 150 segundos (antes quedaba en 2-3 segundos), con soporte para segundos, minutos, horas, rangos con guion y formato 1:30."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.188.2",
       "date": "2026-08-16",
