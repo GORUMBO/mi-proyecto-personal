@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.23';
+  window.HM_APP_VERSION='1.187.24';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -23207,7 +23207,7 @@ async function ppProbarWorkerEscrituraControlada(){
     var j2=null;try{j2=JSON.parse(await r2.text());}catch(e){}
     ppAuditLine('UPSERT · HTTP '+r2.status+' · ok: '+safeText(j2&&j2.ok?'true':'false')+(j2&&j2.error?' · '+safeText(j2.error):'')+' · updatedAt enviado: '+safeText(tsEnviado));
     if(j2&&j2.diag){
-      ppAuditLine('📦 diag · queryRecibido: '+safeText(j2.diag.queryRecibido)+' · queryEnviado: '+safeText(j2.diag.queryEnviado));
+      ppAuditLine('📦 diag · metodo: <b>'+safeText(j2.diag.metodo||'—')+'</b> · queryRecibido: '+safeText(j2.diag.queryRecibido)+' · queryEnviado: '+safeText(j2.diag.queryEnviado));
       ppAuditLine('📦 diag · Prefer recibido: '+safeText(j2.diag.preferRecibido||'—')+' · bodyBytes: '+safeText(j2.diag.bodyBytes)+' · upstream HTTP '+safeText(j2.diag.upstreamStatus)+' · CT: '+safeText(j2.diag.upstreamCT||'—'));
       ppAuditLine('📦 diag · respuesta de Supabase: '+safeText(j2.diag.upstreamText||'(vacía)'));
     }

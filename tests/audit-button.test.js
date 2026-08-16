@@ -160,7 +160,7 @@ sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, htt
     if (String(url).indexOf('https://mi-proyecto-sync.rubenalanfloo.workers.dev') === 0) {
       reqsWorker.push({ url: String(url), opts: opts || {} });
       if (opts && opts.method === 'POST') workerUpdatedAt = JSON.parse(opts.body).updated_at; // la fila queda con lo enviado
-      const diag = { queryRecibido: '?on_conflict=user_id', queryEnviado: '?on_conflict=user_id', preferRecibido: 'resolution=merge-duplicates,return=representation', bodyBytes: 100, upstreamStatus: 200, upstreamCT: 'application/json', upstreamText: '[{"user_id":"u-123"}]' };
+      const diag = { queryRecibido: '?on_conflict=user_id', queryEnviado: '?user_id=eq.u-123', metodo: 'PATCH', preferRecibido: 'resolution=merge-duplicates,return=representation', bodyBytes: 100, upstreamStatus: 200, upstreamCT: 'application/json', upstreamText: '[{"user_id":"u-123"}]' };
       return { ok: true, status: 200, text: async function () { return JSON.stringify({ ok: true, status: 200, workoutLogCount: 42, updatedAt: workerUpdatedAt, data: [{ user_id: 'u-123', data: { workoutLog: Array(42) }, updated_at: workerUpdatedAt }], diag: diag }); } };
     }
     return fetchOrig(url, opts);
@@ -179,7 +179,9 @@ sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, htt
     && eLineas.some(function (l) { return l.indexOf('updatedAt cambió respecto a ANTES: <b>SÍ ✓</b>') >= 0; })
     && eLineas.some(function (l) { return l.indexOf('contenido idéntico (antes=después): <b>SÍ ✓</b>') >= 0; })
     && eLineas.some(function (l) { return l.indexOf('identidad/RLS: <b>OK</b>') >= 0; })
-    && eLineas.some(function (l) { return l.indexOf('📦 diag · Prefer recibido: resolution=merge-duplicates,return=representation') >= 0; }));
+    && eLineas.some(function (l) { return l.indexOf('📦 diag · Prefer recibido: resolution=merge-duplicates,return=representation') >= 0; })
+    && eLineas.some(function (l) { return l.indexOf('📦 diag · metodo: <b>PATCH</b>') >= 0; })
+    && eLineas.some(function (l) { return l.indexOf('queryEnviado: ?user_id=eq.u-123') >= 0; }));
 
   // A13: lectura previa fallida muestra HTTP, ruta y error reales (y NO hace POST).
   const fetchOrig13 = sb.fetch;

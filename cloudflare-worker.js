@@ -117,16 +117,20 @@ async function handleRequest(request) {
   var prefer = request.headers.get('Prefer');
   if (prefer) headers.Prefer = prefer;
 
-  var upstream, text = null, ct = null, metodoUsado = method;
+  var upstream, text = null, ct = null, metodoUsado = method, queryUpstream = q;
   try {
     if (tabla === 'personal_backups' && method === 'POST') {
-      // v1.187.23: para personal_backups usar PATCH filtrado estrictamente por
+      // v1.187.24: para personal_backups usar PATCH filtrado estrictamente por
       // user_id = sub del JWT (UPDATE directo vía RLS), enviando SOLO data y
       // updated_at. El upsert POST desde Cloudflare no aplicaba cambios.
       var bObj = JSON.parse(body);
       delete bObj.user_id;
       var patchBody = JSON.stringify(bObj);
-      upstream = await fetch(SUPABASE_URL + '/rest/v1/personal_backups?user_id=eq.' + encodeURIComponent(claims.sub), { method: 'PATCH', headers: headers, body: patchBody });
+      queryUpstream = '?user_id=eq.' + encodeURIComponent(claims.sub);
+      // PATCH SOLO con return=representation (resolution=merge-duplicates es
+      // exclusivo de POST y no debe acompañar al PATCH).
+      var patchHeaders = Object.assign({}, headers, { Prefer: 'return=representation' });
+      upstream = await fetch(SUPABASE_URL + '/rest/v1/personal_backups' + queryUpstream, { method: 'PATCH', headers: patchHeaders, body: patchBody });
       text = await upstream.text();
       ct = (upstream.headers.get('content-type') || '').toLowerCase();
       var patchData = null; try { patchData = JSON.parse(text); } catch (e) {}
@@ -174,7 +178,7 @@ async function handleRequest(request) {
   // por qué el upsert responde 200 pero la fila no cambia.
   var diag = {
     queryRecibido: url.search,
-    queryEnviado: q,
+    queryEnviado: queryUpstream,
     metodo: metodoUsado,
     preferRecibido: prefer || null,
     bodyBytes: body ? body.length : 0,

@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.23",
+  "latest": "1.187.24",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.24",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "El Worker ahora muestra en el diagnostico el metodo real del reenvio (PATCH o POST) y la query real enviada a Supabase; el PATCH de personal_backups envia unicamente Prefer: return=representation (resolution=merge-duplicates es exclusivo de POST). Sin tocar RLS, datos ni sincronizacion normal."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.23",
       "date": "2026-08-16",
