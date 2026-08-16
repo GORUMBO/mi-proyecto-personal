@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.25';
+  window.HM_APP_VERSION='1.187.26';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -22836,9 +22836,11 @@ async function refreshCloudSession(force){
   if(_refreshInFlight)return _refreshInFlight;
   _refreshInFlight=(async()=>{
     try{
-      let r=await fetch(c.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:c.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})});
+      var wAuth=false;try{wAuth=ppWorkerOn();}catch(e){}
+      let r=await fetch(wAuth?ppWorkerUrl()+'/auth/refresh':c.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:c.key,'Content-Type':'application/json',...(wAuth?{Authorization:'Bearer '+s.access_token}:{})},body:JSON.stringify({refresh_token:s.refresh_token})});
       let raw=await r.text(), data={}; try{ data=raw?JSON.parse(raw):{}; }catch(_e){ data={}; } // respuesta a veces no es JSON (blip de red/gateway)
-      if(!r.ok)throw Error(data.message||data.error_description||('No se pudo renovar la sesión (HTTP '+r.status+')'));
+      if(wAuth&&data&&data.ok===true)data=data.data||{};
+      if(!r.ok)throw Error(data.message||data.error_description||data.error||('No se pudo renovar la sesión (HTTP '+r.status+')'));
       if(!data.access_token)throw Error('No se pudo renovar la sesión (respuesta incompleta).');
       safeStorage.set('pp_cloud_session',JSON.stringify(data));
       return data;
@@ -23168,6 +23170,7 @@ function renderSyncChain(){
       +'<button onclick="ppAuditarSupabase()" style="margin-left:8px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🔍 Auditar Supabase</button>'
       +'<button onclick="ppProbarWorkerLectura()" style="margin-left:4px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🌉 Probar Worker (lectura)</button>'
       +'<button onclick="ppProbarWorkerEscrituraControlada()" style="margin-left:4px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🌉 Escritura controlada</button>'
+      +'<button onclick="ppToggleWorker()" style="margin-left:4px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🌉 Puente Cloudflare</button>'
       +PP_SYNCCHAIN.map(function(e){return '<div style="margin-top:2px">'+safeText(e.t)+' · '+safeText(e.evento)+' <span style="opacity:.75">'+safeText(e.detalle)+'</span></div>';}).join('')
       +'<span onclick="this.parentNode.remove()" style="cursor:pointer;float:right;opacity:.6">✕</span>';
   }catch(e){}
@@ -23545,9 +23548,23 @@ function ppRespBloqueada(text,contentType){
   }catch(e){}
   return false;
 }
+// v1.187.26: puente Cloudflare configurable y reversible (por dispositivo).
+function ppWorkerUrl(){try{return (JSON.parse(safeStorage.get('pp_worker_cfg')||'{}').url)||'';}catch(e){return '';}}
+function ppWorkerOn(){try{return ppWorkerUrl()!=='';}catch(e){return false;}}
+function ppToggleWorker(){
+  try{
+    var on=ppWorkerOn();
+    if(on){safeStorage.set('pp_worker_cfg','{}');syncChainPush('🌉 Puente Cloudflare apagado','ruta directa a Supabase');}
+    else{safeStorage.set('pp_worker_cfg',JSON.stringify({url:'https://mi-proyecto-sync.rubenalanfloo.workers.dev'}));syncChainPush('🌉 Puente Cloudflare ACTIVADO','la sincronización pasará por el Worker');}
+    renderSyncChain();
+  }catch(e){}
+}
 async function cloudRest(path,options={},_retried){
   let c=getCloudConfig(),s=await refreshCloudSession();if(!c.url||!c.key||!s?.access_token)throw Error('Inicia sesión primero.');
-  let r=await fetch(c.url+'/rest/v1/'+path,{...options,headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json',...(options.headers||{})}});let text=await r.text();
+  var usaWorker=false;try{usaWorker=ppWorkerOn();}catch(e){}
+  var baseUrl=c.url+'/rest/v1/'+(usaWorker?'':'');
+  if(usaWorker)baseUrl=ppWorkerUrl()+'/sync/';
+  let r=await fetch(baseUrl+path,{...options,headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json',...(options.headers||{})}});let text=await r.text();
   // v1.187.14 (diagnóstico): guardar el HTTP real de la última petición.
   try{PP_SYNC.lastHttp=r.status;}catch(e){}
   // v1.187.17: detectar respuestas de interceptores/filtros. Un 200 con HTML
@@ -23558,6 +23575,18 @@ async function cloudRest(path,options={},_retried){
       throw Error('Sincronización bloqueada/interceptada (la red devolvió una página, no Supabase): '+String(text||'').replace(/<[^>]+>/g,' ').slice(0,100));
     }
     return null; // lecturas: tratar como "sin datos" y conservar lo local
+  }
+  // v1.187.26: desempaquetar la respuesta del puente {ok, data} y tratar la
+  // sesión caducada como el 401 directo (renovar y reintentar una vez).
+  if(usaWorker){
+    var envW=null;try{envW=JSON.parse(text);}catch(e){}
+    if(!envW)throw Error('Respuesta inválida del puente (no JSON): '+String(text||'').slice(0,120));
+    if(!envW.ok){
+      if(/sin_sesion|sesion_caducada/.test(String(envW.error||''))&&!_retried){try{await refreshCloudSession(true);}catch(_e){}return cloudRest(path,options,true);}
+      throw Error('Puente: '+String(envW.error||'error')+' · HTTP '+String(envW.status!=null?envW.status:r.status));
+    }
+    if(envW.data===undefined)return null;
+    return envW.data;
   }
   // v1.187.16 (diagnóstico): bitácora de TODAS las escrituras a Supabase
   // (quién, qué tabla, cuántos workoutLog, updated_at enviado/devuelto, HTTP).
@@ -23699,6 +23728,21 @@ async function cloudSave(silent=false){
       ppUploadTrace.result='fail';ppUploadTrace.error='varias filas personal_backups';
       if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
       return;
+    }
+    if(nPostWl<wlUp.length){
+      // v1.187.26: con el puente activo, la lectura inmediata puede ser una copia
+      // rezagada de la API: UN reintento a los 3 s antes de declarar fallo.
+      var wVer=false;try{wVer=ppWorkerOn();}catch(e){}
+      if(wVer){
+        await new Promise(function(res){setTimeout(res,3000);});
+        try{
+          var rowsPost2=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');
+          var remotePost2=rowsPost2&&rowsPost2[0];
+          nPostWl=((remotePost2&&remotePost2.data&&remotePost2.data.workoutLog)||[]).length;
+          ppUploadTrace.releida=nPostWl;
+          if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
+        }catch(e){}
+      }
     }
     if(nPostWl<wlUp.length){
       syncChainPush('✘ Supabase NO confirmó la subida','enviado: '+wlUp.length+' · guardado: '+nPostWl+' — no se reintenta solo');

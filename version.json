@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.25",
+  "latest": "1.187.26",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.26",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "Sincronizacion normal por el puente Cloudflare (configurable y reversible con el boton 'Puente Cloudflare' en la barra de diagnostico, guardado por dispositivo): cloudRest y la renovacion de sesion pasan por el Worker cuando esta activo, con desempaquetado {ok,data} y todas las validaciones existentes. La verificacion de subida reintenta UNA vez a los 3 s por el retardo de lectura de la API. Sin tocar RLS, sin migraciones, sin borrar registros."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.25",
       "date": "2026-08-16",
