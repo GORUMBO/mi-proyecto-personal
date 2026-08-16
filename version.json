@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.24",
+  "latest": "1.187.25",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.25",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "La prueba de Escritura controlada por Worker ahora hace una relectura FINAL de confirmacion ~3 s despues del PATCH (la lectura inmediata podia devolver una copia rezagada) y compara updatedAt POR TIEMPO con tolerancia de 1 s (los formatos '+00:00' y 'Z' difieren aunque sea el mismo instante). Sin tocar RLS, datos ni sincronizacion."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.24",
       "date": "2026-08-16",

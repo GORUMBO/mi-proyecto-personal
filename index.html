@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.24';
+  window.HM_APP_VERSION='1.187.25';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -23211,18 +23211,29 @@ async function ppProbarWorkerEscrituraControlada(){
       ppAuditLine('📦 diag · Prefer recibido: '+safeText(j2.diag.preferRecibido||'—')+' · bodyBytes: '+safeText(j2.diag.bodyBytes)+' · upstream HTTP '+safeText(j2.diag.upstreamStatus)+' · CT: '+safeText(j2.diag.upstreamCT||'—'));
       ppAuditLine('📦 diag · respuesta de Supabase: '+safeText(j2.diag.upstreamText||'(vacía)'));
     }
-    // 3) Leer DESPUÉS (GET independiente y sin caché).
+    // 3) Leer DESPUÉS (inmediata) — puede ser una copia rezagada de la API.
     var r3=await leer();
     var t3=await r3.text();
     var j3=null;try{j3=JSON.parse(t3);}catch(e){}
     if(!j3||!j3.ok){ppAuditLine('✘ lectura posterior falló · HTTP '+r3.status+' · error: '+safeText((j3&&j3.error)||(t3||'').slice(0,150)));return;}
     var filaDespues=(Array.isArray(j3.data)?j3.data[0]:j3.data)||{};
     var contenidoDespues=JSON.stringify((filaDespues.data&&filaDespues.data.workoutLog)||[]);
-    ppAuditLine('DESPUÉS · workoutLogCount: <b>'+safeText(j3.workoutLogCount)+'</b> · updatedAt: '+safeText(j3.updatedAt||'—'));
-    ppAuditLine('updatedAt de la fila = el enviado: '+(j3.updatedAt===tsEnviado?'<b>SÍ ✓ (la escritura se aplicó)</b>':'✘ NO (fila: '+safeText(j3.updatedAt||'—')+' vs enviado: '+safeText(tsEnviado)+')'));
-    ppAuditLine('updatedAt cambió respecto a ANTES: '+(j3.updatedAt!==j1.updatedAt?'<b>SÍ ✓</b>':'✘ NO'));
+    ppAuditLine('DESPUÉS (inmediata) · workoutLogCount: <b>'+safeText(j3.workoutLogCount)+'</b> · updatedAt: '+safeText(j3.updatedAt||'—'));
+    // v1.187.25: relectura FINAL de confirmación tras ~3 s y comparación por
+    // TIEMPO (los formatos difieren: '+00:00' vs 'Z', y precisión de ms).
+    await new Promise(function(res){setTimeout(res,3000);});
+    var r4=await leer();
+    var t4=await r4.text();
+    var j4=null;try{j4=JSON.parse(t4);}catch(e){}
+    if(!j4||!j4.ok){ppAuditLine('✘ lectura final falló · HTTP '+r4.status+' · error: '+safeText((j4&&j4.error)||(t4||'').slice(0,150)));return;}
+    var filaFinal=(Array.isArray(j4.data)?j4.data[0]:j4.data)||{};
+    var tsFinal=(filaFinal.updated_at||j4.updatedAt)||null;
+    var tEnvMs=Date.parse(tsEnviado)||0, tFinMs=Date.parse(tsFinal||0)||0;
+    ppAuditLine('DESPUÉS (final ~3s) · workoutLogCount: <b>'+safeText(j4.workoutLogCount)+'</b> · updatedAt: '+safeText(tsFinal||'—'));
+    ppAuditLine('updatedAt de la fila = el enviado (por tiempo): '+((tFinMs&&tEnvMs&&Math.abs(tFinMs-tEnvMs)<=1000)?'<b>SÍ ✓ (la escritura se aplicó)</b>':'✘ NO (fila: '+safeText(tsFinal||'—')+' vs enviado: '+safeText(tsEnviado)+')'));
+    ppAuditLine('updatedAt cambió respecto a ANTES: '+(j4.updatedAt!==j1.updatedAt?'<b>SÍ ✓</b>':'✘ NO'));
     ppAuditLine('contenido idéntico (antes=después): '+(contenidoAntes===contenidoDespues?'<b>SÍ ✓</b>':'✘ NO (¡revisar!)'));
-    ppAuditLine('identidad/RLS: '+(filaDespues.user_id===(subTokenE||s.user.id)?'<b>OK</b>':'⚠️ otro user_id'));
+    ppAuditLine('identidad/RLS: '+(filaFinal.user_id===(subTokenE||s.user.id)?'<b>OK</b>':'⚠️ otro user_id'));
     ppAuditLine('🏁 Fin. Una sola escritura; contenido sin cambios.');
   }catch(e){ppAuditLine('✘ Error: '+safeText(String((e&&e.message)||e)));}
 }

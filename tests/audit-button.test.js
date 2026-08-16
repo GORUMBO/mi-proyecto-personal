@@ -58,6 +58,8 @@ const sb = {
   console: { log: function () {}, warn: function () {}, error: function () {} },
   document: docStub,
   safeText: function (s) { return String(s == null ? '' : s); },
+  setTimeout: function (fn, ms) { return setTimeout(fn, ms); },
+  atob: function (b64) { return Buffer.from(b64, 'base64').toString('binary'); },
   getCloudSession: function () { return hasSession ? { user: { id: 'u-123', email: 'x@y.z' }, access_token: 'e30.' + Buffer.from(JSON.stringify({ sub: 'u-123' })).toString('base64url') + '.sig' } : null; },
   getCloudConfig: function () { return { url: 'https://xyz.supabase.co', key: 'KEY' }; },
   refreshCloudSession: async function () { return sb.getCloudSession(); },
@@ -175,7 +177,7 @@ sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, htt
     postsWorker.length === 1
     && JSON.parse(postsWorker[0].opts.body).data.workoutLog.length === 42
     && eLineas.some(function (l) { return l.indexOf('workoutLogCount: <b>42</b>') >= 0; })
-    && eLineas.some(function (l) { return l.indexOf('updatedAt de la fila = el enviado: <b>SÍ ✓') >= 0; })
+    && eLineas.some(function (l) { return l.indexOf('updatedAt de la fila = el enviado (por tiempo): <b>SÍ ✓') >= 0; })
     && eLineas.some(function (l) { return l.indexOf('updatedAt cambió respecto a ANTES: <b>SÍ ✓</b>') >= 0; })
     && eLineas.some(function (l) { return l.indexOf('contenido idéntico (antes=después): <b>SÍ ✓</b>') >= 0; })
     && eLineas.some(function (l) { return l.indexOf('identidad/RLS: <b>OK</b>') >= 0; })
