@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.26",
+  "latest": "1.187.27",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.27",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "Con el puente Cloudflare activo, la escritura de personal_backups viaja como PATCH filtrado por user_id (Canopy bloqueaba tambien los POST hacia workers.dev; el PATCH ya estaba verificado). El Worker acepta PATCH y lo reenvia igual que su ruta interna. Sin puente, todo sigue como antes. Sin tocar RLS, mergeCloudStates ni datos."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.26",
       "date": "2026-08-16",

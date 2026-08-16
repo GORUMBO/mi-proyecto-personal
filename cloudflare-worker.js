@@ -14,7 +14,7 @@ const TABLAS = new Set(['personal_backups','peso','ejercicios','comidas','calori
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,PATCH,OPTIONS',
   'Access-Control-Allow-Headers': 'Authorization,apikey,Content-Type,Prefer',
   'Access-Control-Max-Age': '86400',
 };
@@ -83,14 +83,14 @@ async function handleRequest(request) {
   if (!claims || !claims.sub) return json({ ok: false, error: 'token_invalido' }, 401);
   if (claims.exp && Date.now() / 1000 > claims.exp) return json({ ok: false, error: 'sesion_caducada' }, 401);
 
-  // 4) Solo GET y POST.
+  // 4) Solo GET, POST y PATCH (v1.187.27: PATCH para escrituras del puente).
   var method = request.method.toUpperCase();
-  if (method !== 'GET' && method !== 'POST') return json({ ok: false, error: 'metodo_no_permitido', metodo: method }, 405);
+  if (method !== 'GET' && method !== 'POST' && method !== 'PATCH') return json({ ok: false, error: 'metodo_no_permitido', metodo: method }, 405);
 
   // 5) Escrituras en personal_backups: el user_id del body debe ser el MISMO
   //    del JWT (defensa en profundidad; RLS decide al final).
   var body = null;
-  if (method === 'POST') {
+  if (method === 'POST' || method === 'PATCH') {
     try { body = await request.text(); } catch (e) { return json({ ok: false, error: 'body_ilegible' }, 400); }
     if (tabla === 'personal_backups') {
       try {
@@ -119,8 +119,8 @@ async function handleRequest(request) {
 
   var upstream, text = null, ct = null, metodoUsado = method, queryUpstream = q;
   try {
-    if (tabla === 'personal_backups' && method === 'POST') {
-      // v1.187.24: para personal_backups usar PATCH filtrado estrictamente por
+    if (tabla === 'personal_backups' && (method === 'POST' || method === 'PATCH')) {
+      // v1.187.24/27: para personal_backups usar PATCH filtrado estrictamente por
       // user_id = sub del JWT (UPDATE directo vía RLS), enviando SOLO data y
       // updated_at. El upsert POST desde Cloudflare no aplicaba cambios.
       var bObj = JSON.parse(body);
