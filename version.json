@@ -1,8 +1,19 @@
 {
-  "latest": "1.187.16",
+  "latest": "1.187.17",
   "date": "2026-08-15",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.17",
+      "date": "2026-08-15",
+      "type": "obligatoria",
+      "nuevas": [
+        "Boton 'Probar Worker (lectura)': una SOLA lectura de tu fila a traves del puente Cloudflare (sin POST ni upsert) mostrando HTTP, ok, workoutLogCount, updatedAt e identidad/RLS en pantalla.",
+        "Deteccion de respuestas interceptadas (Canopy/HTML): la app ya no considera exito un HTTP 200 de un filtro; muestra 'Sincronizacion bloqueada/interceptada' y conserva los datos locales sin reintentar."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.16",
       "date": "2026-08-15",

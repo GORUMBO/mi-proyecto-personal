@@ -62,6 +62,9 @@ const sb = {
   refreshCloudSession: async function () { return sb.getCloudSession(); },
   fetch: async function (url, opts) {
     requests.push({ url: String(url), opts: opts || {} });
+    if (String(url).indexOf('https://mi-proyecto-sync.rubenalanfloo.workers.dev') === 0) {
+      return { ok: true, status: 200, text: async function () { return JSON.stringify({ ok: true, status: 200, workoutLogCount: 42, updatedAt: '2026-08-15T20:20:46.691+00:00', data: [{ user_id: 'u-123', data: { workoutLog: Array(42) }, updated_at: '2026-08-15T20:20:46.691+00:00' }] }); } };
+    }
     const p = String(url).replace('https://xyz.supabase.co/rest/v1/', '');
     if (String(url).indexOf('/auth/v1/user') >= 0) return { ok: true, status: 200, text: async function () { return JSON.stringify({ id: 'u-123' }); } };
     if (p.indexOf('personal_backups?select=user_id,updated_at,data') === 0) return { ok: true, status: 200, text: async function () { return JSON.stringify([row42]); } };
@@ -74,8 +77,10 @@ const sb = {
 };
 sb.window = sb;
 vm.createContext(sb);
-['ppAuditPanel', 'ppAuditLine', 'ppAuditarSupabase', 'renderSyncChain', 'syncChainPush', 'ppRenderUploadTrace', 'ppVerFaltantes']
+['ppAuditPanel', 'ppAuditLine', 'ppAuditarSupabase', 'ppProbarWorkerLectura', 'renderSyncChain', 'syncChainPush', 'ppRenderUploadTrace', 'ppVerFaltantes']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sb); });
+// PP_WORKER_TEST_URL es una const de nivel superior en index.html.
+vm.runInContext((HTML.match(/const PP_WORKER_TEST_URL='[^']+';/) || ["const PP_WORKER_TEST_URL='https://mi-proyecto-sync.rubenalanfloo.workers.dev';"])[0], sb);
 sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, http: null, respWorkoutLog: null, releida: null, result: null, error: null, faltantes: [], lista53: [] };
 
 (async function () {
@@ -123,6 +128,26 @@ sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, htt
   t('A7 · "Ver faltantes" lista cada registro perdido con id, fecha, ejercicio y razón',
     faltLineas.some(function (l) { return l.indexOf('REGISTROS FALTANTES EN SUPABASE: 1') >= 0; })
     && faltLineas.some(function (l) { return l.indexOf('<b>1011</b>') >= 0 && l.indexOf('Remo') >= 0; }));
+
+  // A9/A10: prueba SOLO LECTURA del puente Worker.
+  fakeEls.ppAuditLines = makeEl('ppAuditLines');
+  hasSession = true;
+  await sb.ppProbarWorkerLectura();
+  await sleep(10);
+  const wLineas = (fakeEls.ppAuditLines && fakeEls.ppAuditLines.children || []).map(function (c) { return c.innerHTML; });
+  t('A9 · La prueba de lectura por Worker muestra ok, conteo, updatedAt e identidad OK (sin ningún POST)',
+    wLineas.some(function (l) { return l.indexOf('ok: <b>true</b>') >= 0; })
+    && wLineas.some(function (l) { return l.indexOf('workoutLogCount: <b>42</b>') >= 0; })
+    && wLineas.some(function (l) { return l.indexOf('2026-08-15T20:20:46.691+00:00') >= 0; })
+    && wLineas.some(function (l) { return l.indexOf('identidad/RLS: <b>OK') >= 0; })
+    && !requests.some(function (r) { return r.opts.method === 'POST' && String(r.url).indexOf('workers.dev') >= 0; }));
+
+  fakeEls.ppAuditLines = makeEl('ppAuditLines');
+  hasSession = false;
+  await sb.ppProbarWorkerLectura();
+  await sleep(10);
+  const wLineas2 = (fakeEls.ppAuditLines && fakeEls.ppAuditLines.children || []).map(function (c) { return c.innerHTML; });
+  t('A10 · Sin sesión avisa y no llama al Worker', wLineas2.some(function (l) { return l.indexOf('Sin sesión activa') >= 0; }));
 
   console.log('\n==========================================');
   console.log('Resultado: ' + passed + ' pasaron · ' + failed + ' fallaron');

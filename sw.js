@@ -1,4 +1,4 @@
-const CACHE='mi-proyecto-v1-187-16';
+const CACHE='mi-proyecto-v1-187-17';
 const FILES=['./','./index.html'];
 
 // Descarga con límite de tiempo. Sin esto, un corte de red a media descarga

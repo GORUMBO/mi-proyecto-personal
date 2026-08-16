@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.187.16';
+  window.HM_APP_VERSION='1.187.17';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -23166,14 +23166,33 @@ function renderSyncChain(){
     }
     el.innerHTML='<b>🔁 Cadena de sync (diagnóstico temporal)</b>'
       +'<button onclick="ppAuditarSupabase()" style="margin-left:8px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🔍 Auditar Supabase</button>'
+      +'<button onclick="ppProbarWorkerLectura()" style="margin-left:4px;background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🌉 Probar Worker (lectura)</button>'
       +PP_SYNCCHAIN.map(function(e){return '<div style="margin-top:2px">'+safeText(e.t)+' · '+safeText(e.evento)+' <span style="opacity:.75">'+safeText(e.detalle)+'</span></div>';}).join('')
       +'<span onclick="this.parentNode.remove()" style="cursor:pointer;float:right;opacity:.6">✕</span>';
   }catch(e){}
 }
-// v1.187.12 (diagnóstico temporal): auditoría EN PANTALLA de la fila REAL de
-// personal_backups, con la MISMA sesión de la app (sin copiar tokens). La
-// prueba de escritura controlada re-envía el MISMO contenido de la fila
-// (solo cambia updated_at): no modifica datos.
+// v1.187.17: botón de PRUEBA SOLO LECTURA del puente Cloudflare Worker.
+// Sin POST ni upsert: únicamente lee tu fila a través del Worker con tu sesión.
+const PP_WORKER_TEST_URL='https://mi-proyecto-sync.rubenalanfloo.workers.dev';
+async function ppProbarWorkerLectura(){
+  try{
+    ppAuditLine('<b>🌉 Prueba Worker (SOLO LECTURA)</b>');
+    var s=getCloudSession();
+    if(!s||!s.access_token){ppAuditLine('✘ Sin sesión activa.');return;}
+    try{await refreshCloudSession();s=getCloudSession();}catch(e){}
+    var r=await fetch(PP_WORKER_TEST_URL+'/sync/personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at',{headers:{Authorization:'Bearer '+s.access_token,'Content-Type':'application/json'}});
+    var t=await r.text();
+    ppAuditLine('HTTP '+r.status);
+    var j=null;try{j=JSON.parse(t);}catch(e){}
+    if(!j){ppAuditLine('✘ respuesta no-JSON: '+safeText(t.slice(0,150)));return;}
+    ppAuditLine('ok: <b>'+safeText(j.ok?'true':'false')+'</b>'+(j.error?' · error: '+safeText(j.error):''));
+    if(j.workoutLogCount!=null)ppAuditLine('workoutLogCount: <b>'+safeText(j.workoutLogCount)+'</b>');
+    if(j.updatedAt)ppAuditLine('updatedAt: <b>'+safeText(j.updatedAt)+'</b>');
+    var fila=(Array.isArray(j.data)?j.data[0]:j.data)||{};
+    if(fila.user_id)ppAuditLine('identidad/RLS: '+(fila.user_id===s.user.id?'<b>OK (la fila es la tuya)</b>':'⚠️ la fila devuelta es de otro user_id'));
+    ppAuditLine('🏁 Fin de la prueba de lectura (no se escribió nada).');
+  }catch(e){ppAuditLine('✘ Error: '+safeText(String((e&&e.message)||e)));}
+}
 function ppAuditPanel(){
   var p=document.getElementById('ppAuditOut');
   if(p)return p;
@@ -23224,9 +23243,12 @@ async function ppAuditarSupabase(){
     if(rows.length===1&&rows[0].data){
       ppAuditLine('🧪 Escritura controlada (mismo contenido)…');
       var r3=await fetch(c.url+'/rest/v1/personal_backups?on_conflict=user_id',{method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=representation'}),body:JSON.stringify({user_id:s.user.id,data:rows[0].data,updated_at:new Date().toISOString()})});
-      ppAuditLine('🧪 upsert HTTP '+r3.status);
+      var t3=await r3.text();
+      var ct3='';try{ct3=(r3.headers&&r3.headers.get)?(r3.headers.get('content-type')||''):'';}catch(e){}
+      if(ppRespBloqueada(t3,ct3))ppAuditLine('✘ Respuesta INTERCEPTADA por un filtro (HTML, no Supabase): '+safeText(String(t3).replace(/<[^>]+>/g,' ').slice(0,120)));
+      ppAuditLine('🧪 upsert HTTP '+r3.status+' · CT: '+safeText(ct3||'—'));
       try{
-        var rr=JSON.parse(await r3.text());rr=(Array.isArray(rr)?rr:[rr]);
+        var rr=JSON.parse(t3);rr=(Array.isArray(rr)?rr:[rr]);
         rr.forEach(function(x){ppAuditLine('· fila devuelta: workoutLog <b>'+(((x.data&&x.data.workoutLog)||[]).length)+'</b>');});
       }catch(e){ppAuditLine('· respuesta no-JSON');}
       var r4=await fetch(c.url+'/rest/v1/personal_backups?select=user_id,updated_at,data',{headers:H});
@@ -23444,11 +23466,32 @@ async function syncNow(){
   if(PP_SYNC.kind==='synced')cloudStatus('✅ Sincronizado. Pesos en la nube descargados: '+(PP_SYNC.downloaded!=null?PP_SYNC.downloaded:(state.weight||[]).length));
   else if(PP_SYNC.kind==='error')cloudStatus('Error al sincronizar: '+PP_SYNC.lastError,false);
 }
+// v1.187.17: ¿la respuesta es de un interceptor/filtro (HTML, portal cautivo,
+// Canopy) en vez de Supabase? Un 200 con HTML NO es una confirmación válida.
+function ppRespBloqueada(text,contentType){
+  try{
+    var ct=String(contentType||'').toLowerCase();
+    var t=String(text||'');
+    if(ct.indexOf('text/html')>=0)return true;
+    if(/^\s*<!doctype\s+html|<html/i.test(t))return true;
+    if(/block\.canopy\.us/i.test(t.slice(0,500)))return true;
+  }catch(e){}
+  return false;
+}
 async function cloudRest(path,options={},_retried){
   let c=getCloudConfig(),s=await refreshCloudSession();if(!c.url||!c.key||!s?.access_token)throw Error('Inicia sesión primero.');
   let r=await fetch(c.url+'/rest/v1/'+path,{...options,headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json',...(options.headers||{})}});let text=await r.text();
   // v1.187.14 (diagnóstico): guardar el HTTP real de la última petición.
   try{PP_SYNC.lastHttp=r.status;}catch(e){}
+  // v1.187.17: detectar respuestas de interceptores/filtros. Un 200 con HTML
+  // NO es Supabase: la escritura NO se guardó.
+  var ctResp='';try{ctResp=(r.headers&&r.headers.get)?(r.headers.get('content-type')||''):'';}catch(e){}
+  if(ppRespBloqueada(text,ctResp)){
+    if(options&&options.method==='POST'){
+      throw Error('Sincronización bloqueada/interceptada (la red devolvió una página, no Supabase): '+String(text||'').replace(/<[^>]+>/g,' ').slice(0,100));
+    }
+    return null; // lecturas: tratar como "sin datos" y conservar lo local
+  }
   // v1.187.16 (diagnóstico): bitácora de TODAS las escrituras a Supabase
   // (quién, qué tabla, cuántos workoutLog, updated_at enviado/devuelto, HTTP).
   if(options&&options.method==='POST'){
@@ -23609,6 +23652,13 @@ async function cloudSave(silent=false){
     ppLogErr('sync',e);console.error('[SYNC] Error al subir a Supabase:',e);
     ppUploadTrace.result='fail';ppUploadTrace.error=String((e&&e.message)||e).slice(0,80);
     if(typeof ppRenderUploadTrace==='function')ppRenderUploadTrace();
+    // v1.187.17: si la red interceptó la subida (filtro/Canopy), NO reintentar
+    // y decirlo claro: los datos NO se guardaron y los locales están a salvo.
+    if(/bloquead|interceptad/i.test(String((e&&e.message)||e))){
+      syncChainPush('✘ Sincronización bloqueada/interceptada','los datos NO se guardaron en Supabase · tus datos locales están a salvo');
+      setSync('error','La red interceptó la subida (filtro/Canopy). Tus datos locales están a salvo; no se reemplazarán por la copia remota.');
+      return;
+    }
     if(_syncRetries===0)syncChainPush('✘ Error al subir',String(e&&e.message||'').slice(0,60));
     _syncRetries++;
     if(_syncRetries <= 5){
