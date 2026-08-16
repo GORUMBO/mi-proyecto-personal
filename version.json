@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.18",
+  "latest": "1.187.19",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.19",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "Correcciones de diagnostico: el detector de 'escritura no aplicada' ahora trata timestamp IGUAL al enviado como APLICADA (antes era un falso negativo); la prueba de Escritura controlada por Worker usa lecturas GET independientes sin cache (cache:no-store + ts unico) y compara 'updatedAt de la fila = el enviado'."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.18",
       "date": "2026-08-16",

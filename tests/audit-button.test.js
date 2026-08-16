@@ -159,7 +159,7 @@ sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, htt
   sb.fetch = async function (url, opts) {
     if (String(url).indexOf('https://mi-proyecto-sync.rubenalanfloo.workers.dev') === 0) {
       reqsWorker.push({ url: String(url), opts: opts || {} });
-      if (opts && opts.method === 'POST') workerUpdatedAt = '2026-08-16T02:00:00.000+00:00';
+      if (opts && opts.method === 'POST') workerUpdatedAt = JSON.parse(opts.body).updated_at; // la fila queda con lo enviado
       return { ok: true, status: 200, text: async function () { return JSON.stringify({ ok: true, status: 200, workoutLogCount: 42, updatedAt: workerUpdatedAt, data: [{ user_id: 'u-123', data: { workoutLog: Array(42) }, updated_at: workerUpdatedAt }] }); } };
     }
     return fetchOrig(url, opts);
@@ -170,13 +170,21 @@ sb.ppUploadTrace = { inicio: null, merge: null, payload: null, ultimo: null, htt
   await sleep(10);
   const eLineas = (fakeEls.ppAuditLines && fakeEls.ppAuditLines.children || []).map(function (c) { return c.innerHTML; });
   const postsWorker = reqsWorker.filter(function (r) { return r.opts.method === 'POST'; });
-  t('A11 · Escritura controlada por Worker: UNA escritura, contenido idéntico, updatedAt cambió, identidad OK',
+  t('A11 · Escritura controlada por Worker: UNA escritura, contenido idéntico, updatedAt aplicado, identidad OK',
     postsWorker.length === 1
     && JSON.parse(postsWorker[0].opts.body).data.workoutLog.length === 42
     && eLineas.some(function (l) { return l.indexOf('workoutLogCount: <b>42</b>') >= 0; })
-    && eLineas.some(function (l) { return l.indexOf('updatedAt cambió: <b>SÍ ✓</b>') >= 0; })
+    && eLineas.some(function (l) { return l.indexOf('updatedAt de la fila = el enviado: <b>SÍ ✓') >= 0; })
+    && eLineas.some(function (l) { return l.indexOf('updatedAt cambió respecto a ANTES: <b>SÍ ✓</b>') >= 0; })
     && eLineas.some(function (l) { return l.indexOf('contenido idéntico (antes=después): <b>SÍ ✓</b>') >= 0; })
     && eLineas.some(function (l) { return l.indexOf('identidad/RLS: <b>OK</b>') >= 0; }));
+
+  // A12: con updated_at IGUAL al enviado (escritura aplicada) NO debe decir "NO se aplicó".
+  sb.ppUploadTrace = { inicio: 42, merge: 42, payload: 42, result: 'ok', tsEnviado: '2026-08-16T02:07:37.000+00:00', tsLeido: '2026-08-16T02:07:37.000+00:00', noAplico: false, otraEscritura: false, faltantes: [] };
+  sb.ppRenderUploadTrace();
+  const bar12 = fakeEls.ppUploadTraceBar && fakeEls.ppUploadTraceBar.innerHTML;
+  t('A12 · Timestamp igual = aplicada (sin falso "NO se aplicó")',
+    bar12 && bar12.indexOf('NO se aplicó') < 0 && bar12.indexOf('confirmado') >= 0);
 
   console.log('\n==========================================');
   console.log('Resultado: ' + passed + ' pasaron · ' + failed + ' fallaron');
