@@ -149,7 +149,19 @@ async function handleRequest(request) {
     workoutLogCount = (rows[0].data.workoutLog || []).length;
     updatedAt = rows[0].updated_at || null;
   }
-  return json({ ok: true, status: upstream.status, workoutLogCount: workoutLogCount, updatedAt: updatedAt, sub: claims.sub, rowUserId: rowUserId, data: data });
+  // v1.187.22: diagnóstico crudo del reenvío (sin secretos) para localizar
+  // por qué el upsert responde 200 pero la fila no cambia.
+  var diag = {
+    queryRecibido: url.search,
+    queryEnviado: q,
+    metodo: method,
+    preferRecibido: prefer || null,
+    bodyBytes: body ? body.length : 0,
+    upstreamStatus: upstream.status,
+    upstreamCT: ct,
+    upstreamText: text.slice(0, 300)
+  };
+  return json({ ok: true, status: upstream.status, workoutLogCount: workoutLogCount, updatedAt: updatedAt, sub: claims.sub, rowUserId: rowUserId, data: data, diag: diag });
 }
 
 export default {

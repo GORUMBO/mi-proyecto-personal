@@ -1,8 +1,18 @@
 {
-  "latest": "1.187.21",
+  "latest": "1.187.22",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.187.22",
+      "date": "2026-08-16",
+      "type": "obligatoria",
+      "nuevas": [
+        "Diagnostico crudo del reenvio del Worker: la prueba muestra queryRecibido/queryEnviado, Prefer recibido, bytes del body, HTTP y texto real de la respuesta de Supabase — para localizar por que el upsert responde 200 pero la fila no cambia. Sin cambios de sincronizacion ni datos."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.187.21",
       "date": "2026-08-16",
