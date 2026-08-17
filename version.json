@@ -1,8 +1,20 @@
 {
-  "latest": "1.188.3",
+  "latest": "1.188.4",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.188.4",
+      "date": "2026-08-16",
+      "type": "recomendada",
+      "nuevas": [
+        "Fitness con criterio real (Fases 3a-3d): el generador usa una biblioteca verificada de ejercicios y reglas basadas en evidencia (ACSM, Schoenfeld, Grgic, Helms) registradas con sus fuentes; la variacion es por semilla y solo entre candidatos validos (nunca maquinas en casa, nunca otro musculo ni otro patron).",
+        "Como llegas hoy: 4 estados (Excelente/Normal/Cansado/Muy fatigado) que ajustan volumen y descansos SIN cambiar el objetivo; feedback al terminar (facil/dificil/dolor) que ajusta gradualmente y advierte sin diagnosticar; explicacion de por que cada rutina; nivel de entrenamiento seleccionable; dias A y B realmente distintos; 2 dias de entreno siempre separados.",
+        "Repetir esta rutina conserva tus ejercicios tal cual; Variar esta rutina genera una alternativa valida (o mantiene la actual y te explica por que); sugerencia de semana ligera solo si tu la activas."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.188.3",
       "date": "2026-08-16",

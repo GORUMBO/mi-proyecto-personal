@@ -67,7 +67,7 @@ vm.createContext(sandbox);
 
 ['parseRepRange', 'sugerenciaSesion', 'seriesValidasRegs', 'repsNum', 'seriesHoyEjercicio',
   'evaluarSesionHoy', 'actualizarResultadosHoy', 'fitResumenResultadoHoy', 'fitHistorialSesiones',
-  'esPrimeraSesionEjercicio',
+  'esPrimeraSesionEjercicio', 'f3TendenciaDificilSemanas',
   'syncSimpleFitnessInputs', 'quickFitnessToday', 'fitPeriodLogs', 'bestByExercise', 'repsTotal',
   'renderSimpleFitnessProgress']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sandbox); });

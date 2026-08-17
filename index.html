@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.188.3';
+  window.HM_APP_VERSION='1.188.4';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -19265,6 +19265,7 @@ function secEjercicio(){
       <div class="grid">
         <div><label>Qué quiero hoy</label><select id="simpleFitGoal" onchange="if(state.fitnessToday){createFitnessToday();quickFitnessToday();}"><option>Ganar músculo sin quedar molido</option><option>Tren superior</option><option>Tren inferior</option><option>Pecho</option><option>Espalda y hombros</option><option>Brazos</option><option>Pierna y glúteos</option><option>Calistenia</option><option>Yoga</option><option>Corrido (cardio)</option><option>Core y movilidad</option><option>Recuperar</option></select></div>
         <div><label>Equipo disponible</label><select id="simpleFitEquip"><option>Gimnasio</option><option>Mancuernas</option><option>Casa / sin equipo</option></select></div>
+        <div><label>Nivel de entrenamiento</label><select id="simpleFitNivel" onchange="setNivelFit(this.value)"><option value="principiante"${((state.profile&&state.profile.nivelFit)||'intermedio')==='principiante'?' selected':''}>Principiante</option><option value="intermedio"${((state.profile&&state.profile.nivelFit)||'intermedio')==='intermedio'?' selected':''}>Intermedio</option><option value="avanzado"${((state.profile&&state.profile.nivelFit)||'intermedio')==='avanzado'?' selected':''}>Avanzado</option></select></div>
       </div>
       <details class="fit-clean-details" style="margin-top:10px">
         <summary>Modificar manual solo hoy</summary>
@@ -25881,10 +25882,17 @@ function quickFitnessToday(){
   </div>
   ${(function(){var ef=state.fitEffort||'auto';return `<div style="margin:8px 0 10px">
     <div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Qué tan fuerte hoy?</div>
-    <div class="row" style="gap:6px;flex-wrap:wrap">${[['suave','🟢 Suave'],['auto','⚙️ Auto'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte · crecer'],['extremo','💥 Demasiado fuerte']].map(function(o){return '<button class="btn'+(ef===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}<button class="btn" style="font-size:12px;padding:7px 11px" onclick="varyFitnessToday()">🎲 Variar ejercicios</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveCurrentRoutine()">💾 Guardar esta rutina</button></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">${[['suave','🟢 Suave'],['auto','⚙️ Auto'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte · crecer'],['extremo','💥 Demasiado fuerte']].map(function(o){return '<button class="btn'+(ef===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}<button class="btn" style="font-size:12px;padding:7px 11px" onclick="varyFitnessToday()">🎲 Variar ejercicios</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveCurrentRoutine()">💾 Guardar esta rutina</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="repetirRutina()">🔁 Repetir esta rutina</button></div>
     <div class="muted" style="font-size:11px;margin-top:5px">Los ejercicios cambian cada día para no aburrirte. Toca 🎲 para otra variación, o "Cambiar si está ocupado" en cada uno.</div>
     ${(ef==='fuerte'||ef==='extremo')?'<div class="mini" style="margin-top:8px;font-size:12px">💪 <b>Para crecer músculo con tu trabajo físico:</b> come <b>de más</b> con proteína, sube el peso al completar las reps y duerme bien. Caminar/jardinear es cardio, no cuenta como músculo.</div>':''}
   </div>`;})()}
+  ${(function(){var es=state.fitEstado||'normal';var hoy=typeof todayISO==='function'?todayISO():'';var esHoy=(state.fitEstadoDate===hoy)?es:'normal';var lbls={excelente:'🟢 Excelente',normal:'🟡 Normal',cansado:'🟠 Cansado',muy_fatigado:'🔴 Muy fatigado'};return `<div style="margin:8px 0 10px">
+    <div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Cómo llegas hoy?</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">${Object.keys(lbls).map(function(k){return '<button class="btn'+(esHoy===k?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEstado(\''+k+'\')">'+lbls[k]+'</button>';}).join('')}<button class="btn" style="font-size:12px;padding:7px 11px" onclick="togglePorqueRutina()">❓ ¿Por qué esta rutina?</button></div>
+    <div id="porqueRutina" style="display:none;margin-top:8px;background:#f6fbf8;border:1px solid #cfe6d8;border-radius:10px;padding:8px 10px"></div>
+  </div>`;})()}
+  ${f3TendenciaDificilSemanas()&&state.deloadFecha!==todayISO()?`<div class="warn" style="margin:8px 0"><b>💤 Sugerencia:</b> tus últimas sesiones han sido difíciles de forma constante (2 semanas). Podrías beneficiarte de una semana más ligera.<div class="row" style="margin-top:6px"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="aplicarDeloadHoy()">Aplicar hoy (volumen −30%)</button></div></div>`:''}
+  ${hechos===plan.length&&plan.length?`<div style="margin:8px 0 10px">${(function(){var fb=state.fitFeedbackHoy&&state.fitFeedbackHoy.date===todayISO();return fb?'<div class="ok" style="font-size:12px">✔ Gracias, tu feedback quedó guardado y se usará gradualmente.</div>':`<div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Cómo se sintió esta rutina?</div><div class="row" style="gap:6px;flex-wrap:wrap">${[['muy_facil','Muy fácil'],['bien','Bien'],['dificil','Difícil'],['demasiado','Demasiado difícil'],['dolor','Dolor/molestia']].map(function(o){return '<button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveFitFeedback(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}</div>`;})()}</div>`:''}
   <div class="fit-list-compact">${plan.map((x,i)=>{
     let done=!!pack.checked[i];
     var _altP=((window._altPage||{})[i]||0);
@@ -25903,6 +25911,7 @@ function quickFitnessToday(){
                      min-height:28px;vertical-align:middle">👁️ ver</button>
           </div>
           <div class="fit-row-meta">${safeText(x.muscle)} · ${x.sets} series · ${safeText(x.reps)} reps · descanso ${x.rest}s</div>
+          ${x.note?`<div class="mini" style="margin-top:3px;font-size:11px;color:var(--m)">${safeText(x.note)}</div>`:''}
         </div>
       </div>
       <div class="fit-row-actions">
@@ -26043,7 +26052,11 @@ function quickFitnessToday(){
         ${(x.alts&&x.alts.filter(a=>!(state.fitDislikes&&state.fitDislikes.indexOf(a)>=0)).length>5)?`<div class="row" style="margin-top:6px;align-items:center;gap:6px"><button class="btn" style="font-size:12px;padding:6px 10px" onclick="altPagePrev(${i})">← Anteriores</button><span class="muted" style="font-size:11px;font-weight:800" id="altPageLbl_${i}">Página 1</span><button class="btn" style="font-size:12px;padding:6px 10px" onclick="altPageNext(${i})">Siguientes →</button></div>`:''}
       </details>
     </div>`;
-  }).join('')}</div>`;
+  }).join('')}</div>
+  <details style="margin-top:10px"><summary style="font-size:13px">📝 Feedback reciente</summary>
+    <div class="muted" style="font-size:11px;margin:4px 0">${(state.sessionFeedbacks||[]).length?'Toca 🗑 para borrar una entrada registrada por error.':'Aún no hay feedback de sesiones.'}</div>
+    ${(state.sessionFeedbacks||[]).slice(-8).reverse().map(function(f,i){var idx=(state.sessionFeedbacks.length-1-i);var lbl={muy_facil:'Muy fácil',bien:'Bien',dificil:'Difícil',demasiado:'Demasiado difícil',dolor:'Dolor/molestia'}[f.feel]||f.feel;var est={excelente:'🟢',normal:'🟡',cansado:'🟠',muy_fatigado:'🔴'}[f.estado]||'';return '<div class="row" style="justify-content:space-between;gap:6px;align-items:center;font-size:12px;padding:3px 0;border-bottom:1px dashed #e4ebe6"><span>'+safeText(f.date)+' · '+safeText(f.focus||'rutina')+' '+(est?'· estado '+est:'')+' · '+safeText(lbl)+'</span><button class="btn" style="font-size:11px;padding:3px 8px" onclick="borrarFitFeedback('+idx+')">🗑</button></div>';}).join('')}
+  </details>`;
   setTimeout(()=>out.scrollIntoView({behavior:'smooth',block:'nearest'}),30);
 }
 // MODO RÁPIDO: registrar todas las series de un ejercicio de una vez
@@ -26279,27 +26292,66 @@ function goalScheme(goal,exp){
 }
 function exercisesPerSession(minutes){return minutes<=30?4:minutes<=45?5:minutes<=60?6:7;}
 function buildCustomRoutine(cfg){
-  let split=routineSplit(cfg.days),scheme=goalScheme(cfg.goal,cfg.exp),perDay=exercisesPerSession(cfg.minutes);
-  let equipKey=cfg.equip==='casa'?'casa':cfg.equip==='mancuernas'?'mancuernas':'gym';
-  let days=split.map(([dayName,muscles],di)=>{
-    let picks=[],usedByMuscle={};
-    // fill up to perDay, cycling through the day's muscle list, preferring compounds first
-    let mi=0,guard=0;
-    while(picks.length<perDay&&guard<60){
-      let m=muscles[mi%muscles.length];mi++;guard++;
-      let pool=routineDB[m]||[];if(!pool.length)continue;
-      // beginners prefer compounds/machines: sort compounds first for first pass
-      let ordered=cfg.exp==='principiante'?pool.slice().sort((a,b)=>(b.compound?1:0)-(a.compound?1:0)):pool;
-      // Fase 2: rotación por día (rot) para que los días A y B usen ejercicios DISTINTOS
-      // del mismo músculo (ángulos y patrones diferentes, mismo objetivo). rot=0 en el día 0.
-      let rot=(di*Math.ceil(ordered.length/2))%ordered.length;
-      let idx=((usedByMuscle[m]||0)+rot)%ordered.length;
-      let ex=ordered[idx];usedByMuscle[m]=(usedByMuscle[m]||0)+1;
-      picks.push({name:ex[equipKey],muscle:m,sets:scheme.sets,reps:scheme.reps,rest:scheme.rest});
+  // ===== F3b: generación sobre EX_LIB + F3_RULES (estructura semanal primero) =====
+  // El split define músculos y patrones; la biblioteca define ejercicios válidos;
+  // el historial reciente dentro de la semana hace que A y B usen ejercicios
+  // distintos del mismo músculo. Formato de salida compatible con el anterior.
+  let scheme=goalScheme(cfg.goal,cfg.exp);
+  let ctx3={dias:+cfg.days||3,objetivo:(cfg.goal==='fuerza')?'fuerza':(cfg.goal==='resistencia')?'resistencia':(cfg.goal==='bajar grasa')?'bajar_grasa':'hipertrofia',nivel:cfg.exp||'intermedio',equip:(cfg.equip==='casa')?'Casa / sin equipo':(cfg.equip==='mancuernas')?'Mancuernas':'Gimnasio',estado:'normal'};
+  let perDay=exercisesPerSession(+cfg.minutes||45);
+  let sched=defaultWeekSchedule(+cfg.days||3);
+  let split=routineSplit(+cfg.days||3);
+  // F3c: la semana se valida completa; si falla un validador se descarta y se
+  // reintenta con otra semilla. NUNCA se guarda una semana no validada.
+  let days=null;
+  for(let seedI=0;seedI<5&&!days;seedI++){
+    let semana=f3SemanaReferencia(ctx3,seedI);
+    let cand=[];
+    for(let di=0;di<7;di++){
+      if(sched[di]==='rest')continue;
+      let dia=semana[di];
+      let plan=(dia.plan||[]).map(function(x){return {name:x.n,muscle:x.m,sets:x.sets,reps:x.reps,rest:x.rest};});
+      // Rellenar hasta la duración elegida (minutes) con músculos del propio día,
+      // máximo 6 ejercicios, sin salir de la biblioteca.
+      if(plan.length<perDay&&plan.length<6){
+        let musculos=split[sched[di]][1];
+        for(let k=0;k<musculos.length&&plan.length<perDay&&plan.length<6;k++){
+          let sl=f3SlotsParaMusculos([musculos[k]],0,di,{})[0];
+          if(!sl)continue;
+          let usados=plan.map(function(x){return f3IdPorNombre(x.name);});
+          let cands=f3Candidatos(sl.musc,sl.pat,Object.assign({dia:di},ctx3),{},usados);
+          if(!cands.length)continue;
+          let pick=f3Elegir(cands,plan.length,0);
+          let varEq=pick.var[f3EquipKey(ctx3.equip)];
+          plan.push({name:varEq.n,muscle:pick.m,sets:Math.max(1,Math.round(f3SetsBase(ctx3.objetivo,ctx3.nivel))),reps:(pick.clase==='tiempo')?pick.dflt.reps:f3RepsStr(ctx3.objetivo),rest:f3RestSeg(ctx3.objetivo,pick.clase)+' s'});
+        }
+      }
+      cand.push({day:dia.day,exercises:plan});
     }
-    return {day:dayName,exercises:picks};
-  });
-  return {createdAt:new Date().toISOString(),cfg,scheme,days,currentDay:0,history:[],weekSchedule:defaultWeekSchedule(days.length),selectedWeekday:null};
+    // Reconstruir la semana y validarla COMPLETA antes de aceptarla
+    let semanaV=sched.map(function(a,i){
+      if(a==='rest')return {di:i,rest:true};
+      let d=cand.find(function(dd){return dd.day===split[a][0];});
+      return {di:i,day:d?d.day:'D',tag:f3TagDeNombre(d?d.day:''),plan:d?d.exercises.map(function(x){
+        let id=f3IdPorNombre(x.name);
+        return {exId:id,n:x.name,m:x.muscle,pat:id?EX_LIB[id].pat:null,eq:id?EX_LIB[id].var[f3EquipKey(ctx3.equip)].eq:null,lv:id?EX_LIB[id].lv:1,sets:x.sets,reps:x.reps,rest:String(restSeconds(x.rest))+' s'};
+      }):[]};
+    });
+    if(!f3ValidarSemana(semanaV,ctx3).length)days=cand;
+  }
+  if(!days){
+    // Último recurso: semana base sin relleno (las pruebas de propiedad garantizan que es válida).
+    let semana=f3SemanaReferencia(ctx3,0);
+    days=[];
+    for(let di=0;di<7;di++){
+      if(sched[di]==='rest')continue;
+      let dia=semana[di];
+      days.push({day:dia.day,exercises:(dia.plan||[]).map(function(x){return {name:x.n,muscle:x.m,sets:x.sets,reps:x.reps,rest:x.rest};})});
+    }
+  }
+  return {createdAt:new Date().toISOString(),cfg,scheme,days,currentDay:0,history:[],weekSchedule:sched,selectedWeekday:null,
+    // F3d: explicación REAL de la estructura semanal (para "¿Por qué esta rutina?")
+    porque:['Objetivo: '+goalLabelSafe(cfg.goal)+' · Nivel: '+cfg.exp+' · Equipo: '+equipLabel(cfg.equip)+'.','Distribución semanal: '+cfg.days+' día(s) con descansos entre sesiones; los músculos grandes se trabajan 2 veces por semana cuando hay 3 o más días.','Los días A y B usan ejercicios distintos del mismo músculo (ángulos y patrones diferentes) para variar sin perder el objetivo.','Series, repeticiones y descansos salen de las reglas validadas según tu objetivo y nivel.']};
 }
 function generateCustomRoutine(){
   let exp=(document.getElementById('rbExp')||{}).value||'intermedio';
@@ -26317,6 +26369,7 @@ function renderCustomRoutine(){
   if(!r){out.innerHTML='<div class="muted">Elige experiencia, equipo, objetivo y días; toca “Crear mi rutina”.</div>';return}
   let c=r.cfg;
   out.innerHTML=`<div class="ok" style="margin-bottom:10px"><b>Tu rutina: ${c.days} días · ${goalLabelSafe(c.goal)} · ${equipLabel(c.equip)} · ${c.exp}</b><br><span class="muted">${r.scheme.sets} series · ${r.scheme.reps} reps · descanso ${r.scheme.rest}. ${c.goal==='bajar grasa'?'Para bajar grasa: mantén déficit de calorías y agrega 20-30 min de caminata o cardio suave los días que puedas.':'Sube el peso poco a poco cuando completes todas las reps con buena técnica.'}</span></div>
+  <details style="margin-bottom:10px"><summary style="font-size:13px;font-weight:800;color:#0d6043">❓ ¿Por qué esta rutina?</summary><div style="margin-top:6px;background:#f6fbf8;border:1px solid #cfe6d8;border-radius:10px;padding:8px 10px">${(r.porque||[]).map(function(s){return '<div style="font-size:12px;padding:3px 0;color:var(--m)">'+safeText(s)+'</div>';}).join('')}</div></details>
   ${r.days.map((d,di)=>`<details class="fit-clean-details" ${di===0?'open':''}><summary>Día ${di+1}: ${safeText(d.day)} <span class="muted">(${d.exercises.length} ejercicios)</span></summary><div class="fit-clean-details-body"><div class="list">${d.exercises.map((x,xi)=>`<div class="fit-ex"><div class="fit-ex-info"><div class="fit-ex-name">${xi+1}. ${safeText(x.name)}</div><div class="fit-ex-meta">${safeText(x.muscle)} · <b>${x.sets} series</b> · ${safeText(x.reps)} reps · ⏱️ ${safeText(x.rest)}</div></div><div class="fit-ex-actions"><button class="btn" onclick="exerciseHelp(x.name)" style="font-weight:800;text-align:center">🎬 GIF</button></div></div>`).join('')}</div><button class="btn primary" style="width:100%;margin-top:10px" onclick="useRoutineDayToday(${di})">▶️ Usar este día como rutina de hoy</button></div></details>`).join('')}
   <div class="row" style="margin-top:10px"><button class="btn" onclick="printRoutineText()">📋 Copiar rutina</button><button class="btn" onclick="state.customRoutine=null;save();renderCustomRoutine()">🗑️ Borrar</button></div>`;
 }
@@ -26628,10 +26681,12 @@ function fitHistorialSesiones(){
 }
 function routineDayPlan(di){
   let r=state.customRoutine;if(!r||!r.days[di])return [];
-  let equipKey=r.cfg.equip==='casa'?'casa':r.cfg.equip==='mancuernas'?'mancuernas':'gym';
+  let equipLabel3=r.cfg.equip==='casa'?'Casa / sin equipo':r.cfg.equip==='mancuernas'?'Mancuernas':'Gimnasio';
+  let eqKey3=f3EquipKey(equipLabel3);
   return r.days[di].exercises.map(x=>{
     let sug=suggestTargetWeight(x.name,x.muscle,x.reps,+String(x.sets).match(/\d+/)?.[0]||3);
-    let alts=(routineDB[x.muscle]||[]).map(e=>e[equipKey]).filter(n=>n&&n!==x.name);
+    // Alternativas desde EX_LIB (mismo músculo, equipo respetado)
+    let alts=f3Candidatos(x.muscle,null,{equip:equipLabel3,nivel:'avanzado',dia:0},{},[]).map(function(e){return e.var[eqKey3].n;}).filter(function(n){return n&&n!==x.name;});
     return {name:x.name,muscle:x.muscle,sets:+String(x.sets).match(/\d+/)?.[0]||3,reps:x.reps,rest:restSeconds(x.rest),alts:alts,target:sug.target,progressText:sug.text,lastWeight:sug.last?sug.last.weight:null,note:'De tu rutina · Día '+(di+1)};
   });
 }
@@ -26639,6 +26694,9 @@ const weekdayNames=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','
 const weekdayShort=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 function todayWeekdayIndex(){return (new Date().getDay()+6)%7;} // Lunes=0 … Domingo=6
 function defaultWeekSchedule(nDays){
+  // F3b: con 2 días los entrenamientos SIEMPRE van separados (lun+jue),
+  // nunca en días consecutivos (recuperación >=48h entre sesiones).
+  if(nDays===2)return [0,'rest','rest',1,'rest','rest','rest'];
   let map={3:[0,'rest',1,'rest',2,'rest','rest'],4:[0,1,'rest',2,3,'rest','rest'],5:[0,1,2,3,4,'rest','rest'],6:[0,1,2,3,4,5,'rest']};
   if(map[nDays])return map[nDays].slice();
   let arr=[];for(let i=0;i<7;i++)arr.push(i<nDays?i:'rest');return arr;
@@ -26874,9 +26932,553 @@ function fitnessExerciseBank(){
       man:['Movilidad cadera/espalda','Respiración 90/90','Estirar cadera','Foam rolling suave','Estirar pantorrilla','Gato-camello','Movilidad de hombro','Estiramiento de isquios']}
   };
 }
+// ============================================================
+// F3a · BIBLIOTECA DE EJERCICIOS + REGLAS DE PROGRAMACIÓN VALIDADAS
+// (v1.188.4-dev). Fuentes: ACSM 2009 (PMID 19204579), Schoenfeld 2017
+// (PMID 27433992), Schoenfeld 2016 (PMID 27102172), Grgic 2018
+// (PMID 28933024), Helms 2016 RIR (PMID 27531969), NSCA Essentials.
+// Estas estructuras son ADITIVAS: nada del motor existente las usa todavía
+// (se cablearán en F3b). Sin cambios de comportamiento en esta fase.
+// ============================================================
+
+// ----- RULE_SOURCES: registro de cada regla con su fuente -----
+// r: id de la regla en F3_RULES · val: valor/banda usada · obj: objetivo
+// src: fuente · anio: año · ref: referencia · notas: limitaciones
+const RULE_SOURCES=[
+ {r:'seriesPorEjercicio',val:'principiante 2-3 · intermedio 3-4 · avanzado 3-5',obj:'hipertrofia/fuerza',src:'ACSM Position Stand',anio:2009,ref:'PMID 19204579 · doi 10.1249/MSS.0b013e3181915670',notas:'Banda, no número fijo: la evidencia respalda 1-3 series en novatos y más en entrenados; el techo 5 es prudente.'},
+ {r:'reps',val:'hipertrofia 6-15 · fuerza 3-8 · resistencia 15-25 · bajar grasa 10-15',obj:'todos',src:'ACSM Position Stand + NSCA Essentials',anio:2009,ref:'PMID 19204579',notas:'Hipertrofia tiene rango amplio (evidencia de 6-30+); usamos 6-15 como zona principal sin prohibir el resto.'},
+ {r:'restMin',val:'fuerza 120-240 s · hipertrofia compuesto 90-180 s · aislamiento 60-120 s · resistencia 30-60 s · bajar grasa 30-90 s',obj:'todos',src:'ACSM 2009 + Grgic 2018 (revisión sistemática, solo fuerza)',anio:2018,ref:'PMID 28933024 · doi 10.1007/s40279-017-0788-x',notas:'Grgic es revisión sistemática (NO meta-análisis) y solo de fuerza: >2 min para fuerza en entrenados; 60-120 s bastan en novatos. Para hipertrofia usamos la banda ACSM.'},
+ {r:'volSemanal',val:'principiante 2-12 · intermedio 3-20 · avanzado 4-25 series/semana por músculo',obj:'hipertrofia',src:'Schoenfeld 2017 (meta-análisis dosis-respuesta)',anio:2017,ref:'PMID 27433992 · doi 10.1080/02640414.2016.1210197',notas:'Gradiente continuo (cada serie extra +0.37% de ganancia); la categoría 10+ fue solo tendencia (p=0.074). NO lo tratamos como umbral rígido: pisos muy permisivos (incluso <5 series crecen) y techo prudente 25.'},
+ {r:'frecuencia',val:'2 veces/semana por músculo cuando hay >=3 días; 1 vez válido con 2 días; core/pantorrilla hasta 4x',obj:'hipertrofia',src:'Schoenfeld 2016 (meta-análisis de frecuencia)',anio:2016,ref:'PMID 27102172 · doi 10.1007/s40279-016-0543-8',notas:'2x > 1x con volumen igualado; si 3x supera a 2x no está resuelto. No forzamos 3x. La excepción de 4x para músculos pequeños (core/pantorrilla) es práctica común, no posición formal.'},
+ {r:'horasRecuperacion',val:'>=48 h entre sesiones del mismo músculo · máx 1 día consecutivo',obj:'todos',src:'ACSM Position Stand',anio:2009,ref:'PMID 19204579',notas:'Aplica a trabajo moderado-alto del mismo músculo; movilidad/trabajo ligero puede repetirse.'},
+ {r:'incPesoPct',val:'sugerir +2.5-5% (o el incremento mínimo disponible) solo al dominar el rango; NUNCA automático',obj:'progresión',src:'NSCA Essentials (progresión doble)',anio:2016,ref:'Haff & Triplett, Essentials of Strength Training and Conditioning, 4a ed.',notas:'El usuario confirma el cambio; la app ya lo cumple (sugerenciaSesion).'},
+ {r:'fatigaDosis',val:'Excelente x1.0 · Normal x0.85 · Cansado x0.65 · Muy fatigado x0.5 del volumen base (+10-25% de descanso en cansado/muy fatigado)',obj:'ajuste del día',src:'Helms 2016 (RIR) + Zourdos 2016',anio:2016,ref:'PMID 27531969 · doi 10.1519/SSC.0000000000000218 · PMID 26049792',notas:'Heurística propia derivada del principio RIR: bajar VOLUMEN (y alargar descansos) cuando la preparación es baja; el estado NUNCA cambia el objetivo ni los músculos, y nunca sube volumen por fatiga. Bandas, no exactitud.'},
+ {r:'feedback',val:'Tendencia con >=3 de las últimas 5 sesiones similares; cambio máximo de 1 serie; dolor solo advierte y evita progresar ese ejercicio (sin diagnóstico)',obj:'ajuste gradual',src:'Heurística propia (autoregulación)',anio:2026,ref:'—',notas:'Una sola respuesta NO cambia nada. No existe una fórmula estándar de feedback por sesión: usamos tendencias conservadoras dentro de las bandas de volumen.'},
+ {r:'recientes',val:'ventana de 4 sesiones; repetir un ejercicio deprioritizado (nunca prohibido si es fundamental)',obj:'variación',src:'Heurística propia (variación controlada)',anio:2026,ref:'—',notas:'Sin fuente directa: es nuestra política para evitar monotonía sin violar programación.'},
+ {r:'patronesDia',val:'empuje: horizontal+vertical · jalón: tracción h+v · pierna: rodilla+bisagra · full: empuje+tracción+rodilla/bisagra',obj:'estructura semanal',src:'ACSM 2009 (equilibrio multiarticular) + NSCA',anio:2009,ref:'PMID 19204579',notas:'Evita días que repiten el mismo patrón disfrazado de ejercicios distintos.'},
+ {r:'pasosActividad',val:'influye en el estado del día (dosis), NO decide el objetivo ni prohíbe piernas',obj:'ajuste del día',src:'Heurística propia (sin regla dura)',anio:2026,ref:'—',notas:'Requerimiento explícito del usuario: muchos pasos = ajustar dosis, nunca cambiar el objetivo.'}
+];
+
+// ----- F3_RULES: valores derivados de RULE_SOURCES (bandas, no exactitudes) -----
+const F3_RULES={
+  seriesPorEjercicio:{hipertrofia:{p:[2,3],i:[3,4],a:[3,5]},fuerza:{p:[2,3],i:[3,4],a:[3,5]},resistencia:{p:[2,3],i:[2,3],a:[3,4]},bajar_grasa:{p:[2,3],i:[3,4],a:[3,4]}},
+  reps:{hipertrofia:[6,15],fuerza:[3,8],resistencia:[15,25],bajar_grasa:[10,15]},
+  restMin:{fuerza:[120,240],hipertrofia_comp:[90,180],hipertrofia_aisl:[60,120],resistencia:[30,60],bajar_grasa:[30,90]},
+  volSemanal:{p:[2,12],i:[3,20],a:[4,25]},
+  frecuenciaObjetivo:2, frecuenciaMin:1, frecuenciaMax:3,
+  horasRecuperacion:48, maxDiasConsecutivos:1,
+  incPesoPct:[2.5,5],
+  fatigaDosis:{fresco:1,excelente:1,normal:0.85,cansado:0.65,muy_cansado:0.5,muy_fatigado:0.5},
+  restFatiga:{excelente:1,normal:1,cansado:1.1,muy_fatigado:1.25},
+  feedback:{muestra:5,tendenciaMin:3,cambioMaxSets:1,retencion:30,diasDolor:14},
+  recientes:{ventana:4,soloDeprioritiza:true},
+  patronesDia:{empuje:['empuje_horizontal','empuje_vertical'],jalon:['traccion_horizontal','traccion_vertical'],pierna:['rodilla','bisagra'],superior:['empuje','traccion'],inferior:['rodilla','bisagra'],full:['empuje','traccion','rodilla']},
+  niveles:['p','i','a']
+};
+
+// ----- EX_LIB: biblioteca estructurada y verificada -----
+// Campos: n=nombre, m=músculo principal, s=secundarios, pat=patrón de movimiento,
+// clase=compuesto|aislamiento|tiempo, lv=1..3 (fácil..difícil), ins=instrucción básica,
+// src=fuente de validación, equiv=equivalentes (mismo músculo+patrón), incompat=incompatibles,
+// var={gym,man,casa} con {eq,n} (eq: pc|ban|man|bar|maq|pol), dflt={sets,reps,rest} referencia.
+// Solo ejercicios identificables y verificables. Los rechazados van en EX_RECHAZADOS.
+const EX_LIB={
+  press_plano:{n:'Press de banca',m:'pecho',s:['triceps','hombros'],pat:'empuje_horizontal',clase:'compuesto',lv:1,ins:'Acostado, baja la barra o mancuernas al pecho con control y empuja sin rebotar ni arquear de más.',src:'free-exercise-db: Barbell_Bench_Press',equiv:['press_inclinado','fondos'],incompat:[],var:{gym:{eq:'bar',n:'Press banca con barra'},man:{eq:'man',n:'Press plano con mancuernas'},casa:{eq:'pc',n:'Lagartijas (push ups)'}},dflt:{sets:3,reps:'8-12',rest:90}},
+  press_inclinado:{n:'Press inclinado',m:'pecho',s:['triceps','hombros'],pat:'empuje_horizontal',clase:'compuesto',lv:2,ins:'Banco a ~30-45 grados; baja al pecho alto y empuja. El ángulo cambia el énfasis a la parte superior.',src:'free-exercise-db: Incline_Barbell_Bench_Press',equiv:['press_plano'],incompat:[],var:{gym:{eq:'bar',n:'Press inclinado con barra'},man:{eq:'man',n:'Press inclinado con mancuernas'},casa:{eq:'pc',n:'Lagartijas inclinadas (pies arriba)'}},dflt:{sets:3,reps:'8-12',rest:90}},
+  aperturas:{n:'Aperturas',m:'pecho',s:['hombros'],pat:'empuje_horizontal',clase:'aislamiento',lv:1,ins:'Brazos en arco amplio, cierra como abrazo sin doblar mucho el codo; control al bajar.',src:'free-exercise-db: Dumbbell_Flyes',equiv:['cruce'],incompat:[],var:{gym:{eq:'maq',n:'Aperturas en máquina (pec deck)'},man:{eq:'man',n:'Aperturas con mancuernas'},casa:{eq:'pc',n:'Lagartijas amplias'}},dflt:{sets:2,reps:'10-15',rest:60}},
+  fondos:{n:'Fondos',m:'pecho',s:['triceps','hombros'],pat:'empuje_horizontal',clase:'compuesto',lv:3,ins:'Inclínate un poco al frente, baja controlado a 90 grados y empuja sin bloquear codos.',src:'free-exercise-db: Dips_-_Chest_Version',equiv:['press_plano'],incompat:[],var:{gym:{eq:'pc',n:'Fondos en paralelas'},man:{eq:'man',n:'Fondos en banca con mancuernas'},casa:{eq:'pc',n:'Fondos entre dos sillas'}},dflt:{sets:3,reps:'8-12',rest:90}},
+  cruce:{n:'Cruce de poleas',m:'pecho',s:['hombros'],pat:'empuje_horizontal',clase:'aislamiento',lv:2,ins:'De pie entre poleas, lleva las manos al frente en arco y junta al centro.',src:'free-exercise-db: Cable_Crossover',equiv:['aperturas'],incompat:[],var:{gym:{eq:'pol',n:'Cruce de poleas'},man:{eq:'ban',n:'Cruce con bandas'},casa:{eq:'ban',n:'Cruce con bandas'}},dflt:{sets:2,reps:'10-15',rest:60}},
+  jalon:{n:'Jalón al pecho',m:'espalda',s:['biceps'],pat:'traccion_vertical',clase:'compuesto',lv:1,ins:'Jala la barra al pecho alto sacando pecho, sin balancear el torso.',src:'free-exercise-db: Lat_Pulldown',equiv:['pullover'],incompat:[],var:{gym:{eq:'maq',n:'Jalón al pecho'},man:{eq:'ban',n:'Jalón con banda'},casa:{eq:'ban',n:'Jalón con banda'}},dflt:{sets:3,reps:'10-12',rest:90}},
+  remo:{n:'Remo',m:'espalda',s:['biceps','hombros'],pat:'traccion_horizontal',clase:'compuesto',lv:1,ins:'Espalda recta, jala hacia el abdomen apretando la escápula; no encorves.',src:'free-exercise-db: Bent_Over_Barbell_Row',equiv:[],incompat:[],var:{gym:{eq:'bar',n:'Remo con barra'},man:{eq:'man',n:'Remo inclinado con mancuernas'},casa:{eq:'pc',n:'Remo invertido bajo una mesa'}},dflt:{sets:3,reps:'10-12',rest:90}},
+  pullover:{n:'Pullover',m:'espalda',s:['pecho','triceps'],pat:'traccion_vertical',clase:'compuesto',lv:2,ins:'Acostado o en polea, lleva el peso atrás de la cabeza con brazos algo flexionados y regresa.',src:'free-exercise-db: Bent-Arm_Barbell_Pullover',equiv:['jalon'],incompat:[],var:{gym:{eq:'pol',n:'Pullover en polea'},man:{eq:'man',n:'Pullover con mancuerna'},casa:{eq:'pc',n:'Nadador en el piso'}},dflt:{sets:2,reps:'10-12',rest:75}},
+  hombro_posterior:{n:'Hombro posterior',m:'hombros',s:['espalda'],pat:'traccion_horizontal',clase:'aislamiento',lv:1,ins:'Inclinado o en máquina, abre los brazos hacia atrás apretando la parte trasera del hombro.',src:'free-exercise-db: Reverse_Flyes',equiv:[],incompat:[],var:{gym:{eq:'pol',n:'Face pull'},man:{eq:'man',n:'Pájaros con mancuernas'},casa:{eq:'ban',n:'Band pull apart'}},dflt:{sets:2,reps:'12-15',rest:60}},
+  press_hombro:{n:'Press de hombro',m:'hombros',s:['triceps'],pat:'empuje_vertical',clase:'compuesto',lv:1,ins:'De pie o sentado, empuja el peso arriba sin arquear la espalda baja.',src:'free-exercise-db: Barbell_Shoulder_Press',equiv:[],incompat:[],var:{gym:{eq:'bar',n:'Press militar con barra'},man:{eq:'man',n:'Press de hombro con mancuernas'},casa:{eq:'pc',n:'Pike push up'}},dflt:{sets:3,reps:'8-12',rest:90}},
+  laterales:{n:'Elevaciones laterales',m:'hombros',s:[],pat:'aislamiento',clase:'aislamiento',lv:1,ins:'Brazos casi rectos, sube a la altura del hombro sin impulso; baja despacio.',src:'free-exercise-db: Side_Lateral_Raise',equiv:['frontal'],incompat:[],var:{gym:{eq:'pol',n:'Elevaciones laterales en polea'},man:{eq:'man',n:'Elevaciones laterales con mancuernas'},casa:{eq:'pc',n:'Elevaciones laterales con botellas'}},dflt:{sets:2,reps:'12-15',rest:60}},
+  frontal:{n:'Elevación frontal',m:'hombros',s:[],pat:'aislamiento',clase:'aislamiento',lv:1,ins:'Sube el peso al frente hasta la altura del hombro con codos algo flexionados.',src:'free-exercise-db: Alternating_Deltoid_Raise',equiv:['laterales'],incompat:[],var:{gym:{eq:'pol',n:'Elevación frontal en polea'},man:{eq:'man',n:'Elevación frontal con mancuernas'},casa:{eq:'pc',n:'Elevación frontal con mochila'}},dflt:{sets:2,reps:'12-15',rest:60}},
+  curl:{n:'Curl de bíceps',m:'biceps',s:['antebrazos'],pat:'aislamiento',clase:'aislamiento',lv:1,ins:'Codos pegados al torso, sube el peso sin balanceo y baja controlado.',src:'free-exercise-db: Barbell_Curl',equiv:['curl_predicador','curl_martillo'],incompat:[],var:{gym:{eq:'bar',n:'Curl con barra'},man:{eq:'man',n:'Curl alternado con mancuernas'},casa:{eq:'pc',n:'Curl con mochila cargada'}},dflt:{sets:2,reps:'10-15',rest:60}},
+  curl_predicador:{n:'Curl predicador',m:'biceps',s:[],pat:'aislamiento',clase:'aislamiento',lv:1,ins:'Brazo apoyado en el banco, sube hasta casi estirar sin soltar la tensión.',src:'free-exercise-db: Preacher_Curl',equiv:['curl','curl_martillo'],incompat:[],var:{gym:{eq:'maq',n:'Curl predicador en máquina'},man:{eq:'man',n:'Curl concentrado'},casa:{eq:'pc',n:'Curl isométrico con toalla'}},dflt:{sets:2,reps:'10-15',rest:60}},
+  curl_martillo:{n:'Curl martillo',m:'biceps',s:['antebrazos'],pat:'aislamiento',clase:'aislamiento',lv:1,ins:'Agarre neutro (palmas mirándose), sube igual que el curl normal.',src:'free-exercise-db: Alternate_Hammer_Curl',equiv:['curl','curl_predicador'],incompat:[],var:{gym:{eq:'pol',n:'Curl en polea'},man:{eq:'man',n:'Curl martillo'},casa:{eq:'ban',n:'Curl con liga'}},dflt:{sets:2,reps:'10-15',rest:60}},
+  extension_triceps:{n:'Extensión de tríceps',m:'triceps',s:[],pat:'aislamiento',clase:'aislamiento',lv:1,ins:'Codos fijos, extiende los brazos por completo y baja controlando.',src:'free-exercise-db: Triceps_Pushdown',equiv:[],incompat:[],var:{gym:{eq:'pol',n:'Extensión de tríceps en cuerda'},man:{eq:'man',n:'Extensión con mancuerna sobre la cabeza'},casa:{eq:'ban',n:'Extensión con liga'}},dflt:{sets:2,reps:'10-15',rest:60}},
+  press_cerrado:{n:'Press cerrado',m:'triceps',s:['pecho','hombros'],pat:'empuje_horizontal',clase:'compuesto',lv:2,ins:'Agarre más cerrado que los hombros, baja al pecho y empuja manteniendo los codos cerca.',src:'free-exercise-db: Close-Grip_Barbell_Bench_Press',equiv:[],incompat:[],var:{gym:{eq:'maq',n:'Press cerrado en máquina'},man:{eq:'man',n:'Press cerrado con mancuernas'},casa:{eq:'pc',n:'Lagartijas diamante'}},dflt:{sets:2,reps:'8-12',rest:75}},
+  sentadilla:{n:'Sentadilla',m:'pierna',s:['gluteo','core'],pat:'rodilla',clase:'compuesto',lv:1,ins:'Pies al ancho de hombros, baja como a sentarte con el pecho arriba y empuja con todo el pie.',src:'free-exercise-db: Barbell_Squat',equiv:['prensa','zancada','extension_cuad'],incompat:[],var:{gym:{eq:'bar',n:'Sentadilla con barra'},man:{eq:'man',n:'Sentadilla goblet con mancuerna'},casa:{eq:'pc',n:'Sentadilla libre'}},dflt:{sets:3,reps:'8-12',rest:120}},
+  prensa:{n:'Prensa de piernas',m:'pierna',s:['gluteo'],pat:'rodilla',clase:'compuesto',lv:1,ins:'Empuja la plataforma sin bloquear rodillas y baja controlado a 90 grados.',src:'free-exercise-db: Leg_Press',equiv:['sentadilla','zancada'],incompat:[],var:{gym:{eq:'maq',n:'Prensa de piernas'},man:{eq:'man',n:'Step up con mancuernas'},casa:{eq:'pc',n:'Step up en escalón'}},dflt:{sets:3,reps:'10-15',rest:90}},
+  zancada:{n:'Zancada',m:'pierna',s:['gluteo'],pat:'rodilla',clase:'compuesto',lv:2,ins:'Paso largo al frente, baja hasta que ambas rodillas formen 90 grados y regresa.',src:'free-exercise-db: Barbell_Walking_Lunge',equiv:['sentadilla','prensa','extension_cuad'],incompat:[],var:{gym:{eq:'bar',n:'Zancadas con barra'},man:{eq:'man',n:'Zancadas con mancuernas'},casa:{eq:'pc',n:'Zancadas caminando'}},dflt:{sets:3,reps:'8-12',rest:90}},
+  rdl:{n:'Peso muerto rumano',m:'femoral',s:['gluteo','espalda_baja'],pat:'bisagra',clase:'compuesto',lv:1,ins:'Empuja la cadera atrás con rodillas casi fijas, baja el peso por las piernas y sube apretando glúteo.',src:'free-exercise-db: Romanian_Deadlift',equiv:['femoral_curl'],incompat:[],var:{gym:{eq:'bar',n:'Peso muerto rumano'},man:{eq:'man',n:'Peso muerto rumano con mancuernas'},casa:{eq:'pc',n:'Puente de glúteo a una pierna'}},dflt:{sets:3,reps:'8-12',rest:100}},
+  extension_cuad:{n:'Extensión de cuádriceps',m:'pierna',s:[],pat:'rodilla',clase:'aislamiento',lv:2,ins:'Sentado, extiende las piernas por completo y baja despacio.',src:'free-exercise-db: Leg_Extensions',equiv:['sentadilla','zancada'],incompat:[],var:{gym:{eq:'maq',n:'Extensión de cuádriceps'},man:{eq:'man',n:'Sentadilla búlgara con mancuernas'},casa:{eq:'pc',n:'Sentadilla búlgara'}},dflt:{sets:2,reps:'10-15',rest:75}},
+  femoral_curl:{n:'Curl femoral',m:'femoral',s:[],pat:'bisagra',clase:'aislamiento',lv:2,ins:'Flexiona la rodilla llevando el talón al glúteo, controlado.',src:'free-exercise-db: Lying_Leg_Curls',equiv:['rdl'],incompat:[],var:{gym:{eq:'maq',n:'Curl femoral en máquina'},man:{eq:'pc',n:'Curl nórdico asistido'},casa:{eq:'pc',n:'Curl nórdico asistido'}},dflt:{sets:2,reps:'10-15',rest:75}},
+  pantorrilla:{n:'Elevación de pantorrilla',m:'pantorrilla',s:[],pat:'pantorrilla',clase:'aislamiento',lv:1,ins:'De pie en el borde de un escalón, sube al máximo y baja estirando.',src:'free-exercise-db: Standing_Calf_Raises',equiv:[],incompat:[],var:{gym:{eq:'maq',n:'Elevación de pantorrilla en máquina'},man:{eq:'man',n:'Pantorrilla de pie con mancuernas'},casa:{eq:'pc',n:'Pantorrilla de pie en escalón'}},dflt:{sets:3,reps:'12-20',rest:60}},
+  hip_thrust:{n:'Hip thrust',m:'gluteo',s:['femoral'],pat:'cadera',clase:'compuesto',lv:1,ins:'Espalda alta apoyada, empuja la cadera arriba apretando el glúteo sin arquear la lumbar.',src:'free-exercise-db: Barbell_Hip_Thrust',equiv:['patada_gluteo','abduccion'],incompat:[],var:{gym:{eq:'bar',n:'Hip thrust con barra'},man:{eq:'man',n:'Hip thrust con mancuerna'},casa:{eq:'pc',n:'Puente de glúteo'}},dflt:{sets:2,reps:'12-15',rest:75}},
+  patada_gluteo:{n:'Patada de glúteo',m:'gluteo',s:[],pat:'cadera',clase:'aislamiento',lv:1,ins:'En cuadrupedia o en polea, extiende la cadera atrás apretando el glúteo.',src:'free-exercise-db: Glute_Kickback',equiv:['hip_thrust','abduccion'],incompat:[],var:{gym:{eq:'pol',n:'Patada en cable'},man:{eq:'ban',n:'Patada de glúteo con banda'},casa:{eq:'pc',n:'Patada de burro'}},dflt:{sets:2,reps:'12-15',rest:60}},
+  abduccion:{n:'Abducción de cadera',m:'gluteo',s:[],pat:'cadera',clase:'aislamiento',lv:1,ins:'Abre las piernas contra resistencia sin balancear el torso.',src:'free-exercise-db: Thigh_Abductor',equiv:['hip_thrust','patada_gluteo'],incompat:[],var:{gym:{eq:'maq',n:'Abducción en máquina'},man:{eq:'ban',n:'Abducción con banda'},casa:{eq:'ban',n:'Abducción con banda'}},dflt:{sets:2,reps:'12-15',rest:60}},
+  crunch:{n:'Crunch abdominal',m:'core',s:[],pat:'core',clase:'aislamiento',lv:1,ins:'Sube los hombros del piso enrollando el abdomen, sin jalar el cuello.',src:'free-exercise-db: Crunches',equiv:['elev_piernas','rueda'],incompat:[],var:{gym:{eq:'pol',n:'Crunch en polea'},man:{eq:'man',n:'Russian twist con mancuerna'},casa:{eq:'pc',n:'Plancha'}},dflt:{sets:2,reps:'10-20',rest:45}},
+  elev_piernas:{n:'Elevación de piernas',m:'core',s:[],pat:'core',clase:'aislamiento',lv:2,ins:'Sube las piernas sin balanceo y baja despacio sin tocar el piso.',src:'free-exercise-db: Hanging_Leg_Raise',equiv:['crunch','rueda'],incompat:[],var:{gym:{eq:'pc',n:'Elevación de piernas colgado'},man:{eq:'pc',n:'Elevación de piernas en banco'},casa:{eq:'pc',n:'Elevación de piernas en el piso'}},dflt:{sets:2,reps:'10-15',rest:45}},
+  rueda:{n:'Rueda abdominal',m:'core',s:['hombros'],pat:'core',clase:'compuesto',lv:3,ins:'De rodillas, rueda al frente manteniendo el abdomen firme y regresa sin hundir la lumbar.',src:'free-exercise-db: Ab_Roller',equiv:['crunch','elev_piernas'],incompat:[],var:{gym:{eq:'pc',n:'Rueda abdominal'},man:{eq:'pc',n:'Rueda abdominal'},casa:{eq:'pc',n:'Dead bug'}},dflt:{sets:2,reps:'8-12',rest:60}},
+  superman:{n:'Superman',m:'espalda_baja',s:['gluteo'],pat:'core',clase:'aislamiento',lv:1,ins:'Boca abajo, sube brazos y piernas a la vez un par de segundos y baja.',src:'free-exercise-db: Superman',equiv:[],incompat:[],var:{gym:{eq:'maq',n:'Hiperextensión en banco'},man:{eq:'pc',n:'Superman en el piso'},casa:{eq:'pc',n:'Superman en el piso'}},dflt:{sets:2,reps:'10-15',rest:45}},
+  movilidad:{n:'Movilidad cadera/espalda',m:'movilidad',s:[],pat:'movilidad',clase:'tiempo',lv:1,ins:'Movimientos suaves de cadera y columna, sin dolor y respirando lento.',src:'heuristicas propias (movilidad general)',equiv:[],incompat:[],var:{gym:{eq:'pc',n:'Movilidad cadera/espalda'},man:{eq:'pc',n:'Movilidad cadera/espalda'},casa:{eq:'pc',n:'Movilidad cadera/espalda'}},dflt:{sets:2,reps:'45-60s',rest:30}}
+};
+
+// ----- EX_RECHAZADOS: nombres del sistema previo que NO entran a rutinas -----
+// (motivo: músculo o patrón mal identificado, o no verificable como ejercicio)
+const EX_RECHAZADOS=[
+ {n:'Pullover con mancuerna como variante de PECHO',motivo:'El pullover es de espalda/dorsales; quedó reasignado a EX_LIB.pullover (espalda).'},
+ {n:'Peso muerto con mancuernas (core)',motivo:'El peso muerto no es ejercicio de core; se retiró como variante de core.'},
+ {n:'Pájaros en máquina como concepto aparte',motivo:'Duplicado de hombro posterior; fusionado en EX_LIB.hombro_posterior.'},
+ {n:'Fondos de pecho en máquina asistida',motivo:'No hay máquina asistida de pecho estándar; se usa fondos en paralelas.'},
+ {n:'Press con botellas como ejercicio formal',motivo:'Adaptación casera improvisada; se permite como nota, no como entrada principal.'}
+];
+
+// ----- F3_ALIASES: nombres del sistema previo -> id de EX_LIB -----
+// Sirven SOLO para emparejar el historial real (workoutLog) con la biblioteca
+// nueva: los registros viejos siguen contando para la progresión y los
+// "ejercicios recientes", aunque el nombre mostrado haya cambiado.
+const F3_ALIASES={
+  'press inclinado mancuernas':'press_inclinado','press banca':'press_plano','press mancuernas':'press_plano','press plano mancuernas':'press_plano','press máquina pecho':'press_plano','press banca inclinada':'press_inclinado','press declinado':'press_plano','push up inclinado':'press_inclinado','push up normal':'press_plano','push ups':'press_plano','push up declinado (pies arriba)':'press_inclinado',
+  'aperturas con mancuernas':'aperturas','aperturas en cable (peck deck)':'aperturas','fondos de pecho':'fondos','fondos en silla':'press_cerrado','fondos en banca':'press_cerrado','fondos en paralelas':'fondos','fondos entre dos sillas':'fondos',
+  'remo en máquina':'remo','remo cable sentado':'remo','remo con barra':'remo','remo con mochila':'remo','remo en t':'remo','remo invertido':'remo','remo pendlay':'remo','remo agarre ancho':'remo','remo con mancuerna 1 brazo':'remo','remo inclinado con mancuernas':'remo','remo con toalla en puerta':'remo','remo mancuerna':'remo','remo alto ligero':'remo','remo en cable':'remo',
+  'cable lateral':'laterales','máquina lateral':'laterales','elevación con mancuernas':'laterales','elevación con botellas':'laterales','elevaciones laterales':'laterales','press militar mancuerna':'press_hombro','arnold press':'press_hombro','elevación frontal':'frontal','elevación frontal con mochila':'frontal','press en máquina hombro':'press_hombro','pike push up':'press_hombro','press militar':'press_hombro',
+  'curl bíceps cable/barra':'curl','curl bíceps':'curl','curl mancuerna alternado':'curl','curl con banda':'curl','curl banco inclinado':'curl','curl 21s':'curl','curl con mochila cargada':'curl','curl martillo':'curl_martillo','curl en polea':'curl_martillo','curl con liga':'curl_martillo','curl predicador máquina':'curl_predicador','curl concentrado':'curl_predicador','curl araña':'curl_predicador','curl isométrico con toalla':'curl_predicador',
+  'tríceps cuerda':'extension_triceps','extensión cable barra':'extension_triceps','extensión mancuerna arriba':'extension_triceps','patada de tríceps':'extension_triceps','rompecráneos':'extension_triceps','extensión sobre la cabeza cable':'extension_triceps','extensión con banda':'extension_triceps','press cerrado máquina':'press_cerrado','press cerrado con mancuernas':'press_cerrado','lagartijas diamante':'press_cerrado',
+  'jalón agarre neutro':'jalon','jalón agarre cerrado':'jalon','jalón un brazo':'jalon','jalón con banda':'jalon','jalón al pecho':'jalon','dominada asistida':'jalon','dominada negativa':'jalon','dominadas en barra':'jalon','pullover en cable':'pullover','pull-over con mancuerna':'pullover','nadador en el piso':'pullover',
+  'face pull':'hombro_posterior','reverse fly máquina':'hombro_posterior','reverse fly en cable':'hombro_posterior','pájaros con mancuernas':'hombro_posterior','pájaros con botellas':'hombro_posterior','band pull apart':'hombro_posterior','y-raise':'hombro_posterior','remo al cuello ligero':'hombro_posterior','ángeles inversos en el piso':'hombro_posterior',
+  'plancha':'crunch','plancha lateral':'crunch','pallof press':'crunch','crunch suave':'crunch','crunch cable':'crunch','mountain climbers':'crunch','bicicleta abdominal':'crunch','hollow hold':'crunch','dead bug':'rueda','rueda abdominal':'rueda','elevación de piernas':'elev_piernas',
+  'hip thrust ligero':'hip_thrust','hip thrust':'hip_thrust','hip thrust mancuerna':'hip_thrust','puente de glúteo':'hip_thrust','puente glúteo':'hip_thrust','patada en cable':'patada_gluteo','patada cable':'patada_gluteo','patada de burro':'patada_gluteo','abducción en máquina':'abduccion','máquina glúteo':'abduccion','zancada trasera':'zancada',
+  'sentadilla goblet':'sentadilla','sentadilla goblet con mancuerna':'sentadilla','hack squat':'sentadilla','sentadilla en smith':'sentadilla','sentadilla frontal':'sentadilla','sentadilla libre':'sentadilla','sentadilla':'sentadilla','sentadilla búlgara':'extension_cuad','sentadilla búlgara con mancuernas':'extension_cuad','extensión de cuádriceps':'extension_cuad','prensa ligera':'prensa','prensa de pierna':'prensa','prensa de piernas':'prensa','zancadas':'zancada','zancadas cortas':'zancada','zancadas caminando':'zancada','zancadas con mancuernas':'zancada','step up':'zancada','step up bajo':'zancada',
+  'peso muerto rumano':'rdl','peso muerto rumano con mancuernas':'rdl','peso muerto con mancuernas':'rdl','peso muerto piernas rígidas':'rdl','buenos días':'rdl','puente de glúteo a una pierna':'rdl','curl femoral tumbado':'femoral_curl','curl femoral sentado':'femoral_curl','curl femoral de pie':'femoral_curl','curl nórdico asistido':'femoral_curl',
+  'elevación de pantorrilla de pie':'pantorrilla','elevación sentado':'pantorrilla','elevación en prensa':'pantorrilla','elevación en escalón':'pantorrilla','saltos de pantorrilla':'pantorrilla','pantorrilla de pie con mancuernas':'pantorrilla',
+  'movilidad cadera/espalda':'movilidad','respiración 90/90':'movilidad','estirar cadera':'movilidad','foam rolling suave':'movilidad','estirar pantorrilla':'movilidad','gato-camello':'movilidad','movilidad de hombro':'movilidad','estiramiento de isquios':'movilidad','superman en casa':'superman','superman en el piso':'superman'
+};
+// Resuelve un nombre (nuevo o viejo) a un id de EX_LIB; null si no existe.
+function f3IdPorNombre(nombre){
+  var n=String(nombre||'').toLowerCase().trim();
+  if(!n)return null;
+  if(F3_ALIASES[n])return F3_ALIASES[n];
+  var keys=Object.keys(EX_LIB);
+  for(var i=0;i<keys.length;i++){
+    var v=EX_LIB[keys[i]].var;
+    if((v.gym.n||'').toLowerCase()===n||(v.man.n||'').toLowerCase()===n||(v.casa.n||'').toLowerCase()===n)return keys[i];
+  }
+  return null;
+}
+// Historial reciente real (solo lectura de workoutLog): {id: diasAtras} para
+// deprioritizar ejercicios usados en las últimas sesiones, sin prohibirlos.
+function f3HistorialReciente(){
+  var hist={};
+  var log=(typeof state!=='undefined'&&state&&state.workoutLog)||[];
+  if(!log.length)return hist;
+  var hoy=(typeof todayLocal==='function')?todayLocal():(typeof todayISO==='function'?todayISO():'');
+  if(!hoy)return hist;
+  var visto={};
+  log.slice(-80).reverse().forEach(function(r){
+    var d=r.localDate||r.date||'';
+    if(!d||d>hoy)return;
+    var ms=(new Date(hoy+'T12:00:00')-new Date(d+'T12:00:00'))/86400000;
+    var diasAtras=Math.round(ms);
+    if(diasAtras<0||diasAtras>F3_RULES.recientes.ventana)return;
+    var id=f3IdPorNombre(r.exercise);
+    if(id&&!visto[id]){hist[id]=diasAtras;visto[id]=1;}
+  });
+  return hist;
+}
+// Slots (músculo+patrón) del plan del día según el foco. El patrón SIEMPRE se
+// conserva: la variación solo cambia el ejercicio dentro del patrón.
+function f3SlotsDia(focus,hardSel){
+  var f=String(focus||'');
+  if(f.includes('Recuperar'))return [{musc:'movilidad',pat:'movilidad'},{musc:'core',pat:'core'},{musc:'hombros',pat:'aislamiento'}];
+  if(f.includes('Pecho'))return hardSel?[{musc:'pecho',pat:'empuje_horizontal'},{musc:'hombros',pat:'empuje_vertical'},{musc:'triceps',pat:'aislamiento'}]:[{musc:'pecho',pat:'empuje_horizontal'},{musc:'hombros',pat:'empuje_vertical'},{musc:'triceps',pat:'aislamiento'},{musc:'espalda',pat:'traccion_vertical'}];
+  if(f.includes('Espalda'))return hardSel?[{musc:'espalda',pat:'traccion_vertical'},{musc:'espalda',pat:'traccion_horizontal'},{musc:'hombros',pat:'empuje_vertical'}]:[{musc:'espalda',pat:'traccion_vertical'},{musc:'espalda',pat:'traccion_horizontal'},{musc:'hombros',pat:'empuje_vertical'},{musc:'biceps',pat:'aislamiento'}];
+  if(f.includes('Brazos'))return hardSel?[{musc:'biceps',pat:'aislamiento'},{musc:'triceps',pat:'aislamiento'},{musc:'hombros',pat:'empuje_vertical'}]:[{musc:'biceps',pat:'aislamiento'},{musc:'triceps',pat:'aislamiento'},{musc:'hombros',pat:'empuje_vertical'},{musc:'core',pat:'core'}];
+  if(f.includes('Pierna')||f.includes('Tren inferior'))return hardSel?[{musc:'pierna',pat:'rodilla'},{musc:'femoral',pat:'bisagra'},{musc:'gluteo',pat:'cadera'}]:[{musc:'pierna',pat:'rodilla'},{musc:'femoral',pat:'bisagra'},{musc:'gluteo',pat:'cadera'},{musc:'pantorrilla',pat:'pantorrilla'}];
+  if(f.includes('Tren superior'))return hardSel?[{musc:'pecho',pat:'empuje_horizontal'},{musc:'espalda',pat:'traccion_vertical'},{musc:'hombros',pat:'empuje_vertical'},{musc:'biceps',pat:'aislamiento'}]:[{musc:'pecho',pat:'empuje_horizontal'},{musc:'espalda',pat:'traccion_vertical'},{musc:'hombros',pat:'empuje_vertical'},{musc:'biceps',pat:'aislamiento'},{musc:'triceps',pat:'aislamiento'}];
+  if(f.includes('Core'))return [{musc:'core',pat:'core'},{musc:'core',pat:'core'},{musc:'movilidad',pat:'movilidad'}];
+  // default: ganar músculo sin quedar molido
+  return hardSel?[{musc:'pecho',pat:'empuje_horizontal'},{musc:'espalda',pat:'traccion_vertical'},{musc:'hombros',pat:'empuje_vertical'},{musc:'core',pat:'core'}]:[{musc:'pecho',pat:'empuje_horizontal'},{musc:'espalda',pat:'traccion_vertical'},{musc:'pierna',pat:'rodilla'},{musc:'hombros',pat:'empuje_vertical'},{musc:'biceps',pat:'aislamiento'}];
+}
+// Slots extra para esfuerzo fuerte/extremo (dentro de las bandas de volumen).
+function f3SlotsExtras(focus){
+  var f=String(focus||'');
+  if(f.includes('Pecho'))return [{musc:'core',pat:'core'},{musc:'biceps',pat:'aislamiento'},{musc:'espalda',pat:'traccion_horizontal'}];
+  if(f.includes('Espalda'))return [{musc:'core',pat:'core'},{musc:'triceps',pat:'aislamiento'},{musc:'gluteo',pat:'cadera'}];
+  if(f.includes('Brazos'))return [{musc:'hombros',pat:'aislamiento'},{musc:'core',pat:'core'},{musc:'pierna',pat:'rodilla'}];
+  if(f.includes('Pierna')||f.includes('Tren inferior'))return [{musc:'core',pat:'core'},{musc:'pantorrilla',pat:'pantorrilla'},{musc:'biceps',pat:'aislamiento'}];
+  if(f.includes('Tren superior'))return [{musc:'core',pat:'core'},{musc:'gluteo',pat:'cadera'},{musc:'pantorrilla',pat:'pantorrilla'}];
+  if(f.includes('Core'))return [{musc:'biceps',pat:'aislamiento'},{musc:'pantorrilla',pat:'pantorrilla'},{musc:'gluteo',pat:'cadera'}];
+  return [{musc:'core',pat:'core'},{musc:'triceps',pat:'aislamiento'},{musc:'gluteo',pat:'cadera'}];
+}
+
+// ----- F3c: estado del día, feedback y explicación real -----
+// Tendencia del feedback: cuenta las últimas 5 sesiones (de foco similar cuando
+// hay >=3). Devuelve 'muy_facil' | 'dificil' | null. Una sola respuesta no cambia nada.
+function f3TendenciaFeedback(focus){
+  var fb=(typeof state!=='undefined'&&state&&state.sessionFeedbacks)||[];
+  if(!fb.length)return null;
+  var recientes=fb.slice(-F3_RULES.feedback.muestra);
+  var mismo=recientes.filter(function(f){return !focus||!f.focus||f.focus===focus;});
+  var muestra=(mismo.length>=3)?mismo:recientes;
+  if(!muestra.length)return null;
+  var min=F3_RULES.feedback.tendenciaMin;
+  var cuenta=function(feel){return muestra.filter(function(f){return f.feel===feel;}).length;};
+  if(cuenta('muy_facil')>=min)return 'muy_facil';
+  if(cuenta('demasiado')+cuenta('dificil')>=min)return 'dificil';
+  return null;
+}
+// Ejercicios con molestia reciente (últimos 14 días): se evita progresar sobre
+// ellos y se muestra advertencia prudente. NUNCA se diagnostica nada.
+function f3EjerciciosDolor(){
+  var ids={};
+  var fb=(typeof state!=='undefined'&&state&&state.sessionFeedbacks)||[];
+  if(!fb.length)return ids;
+  var hoy=(typeof todayISO==='function')?todayISO():'';
+  if(!hoy)return ids;
+  var dias=F3_RULES.feedback.diasDolor;
+  var corte=new Date((new Date(hoy+'T12:00:00')).getTime()-dias*86400000).toISOString().slice(0,10);
+  fb.forEach(function(f){
+    if(f.feel!=='dolor'||!f.date||f.date<corte)return;
+    (f.exIds||[]).forEach(function(id){ids[id]=1;});
+  });
+  return ids;
+}
+// Valida un plan con NOMBRES (los que produce el generador diario) mapeándolos a la biblioteca.
+function f3ValidarPlanNombres(plan,ctx){
+  var eq=f3EquipKey(ctx.equip);
+  var items=(plan||[]).map(function(x){
+    var id=f3IdPorNombre(x.name);
+    return {exId:id,n:x.name,m:x.muscle,pat:id?EX_LIB[id].pat:null,eq:id?EX_LIB[id].var[eq].eq:null,lv:id?EX_LIB[id].lv:1,sets:x.sets,reps:x.reps,rest:String(x.rest)+' s'};
+  });
+  return f3ValidarPlan(items,ctx);
+}
+// Sustitución válida: mismo músculo Y mismo patrón (no puede cambiar el objetivo del ejercicio).
+function f3ValidarSustitucion(exIdOriginal,exIdNueva){
+  var a=EX_LIB[exIdOriginal],b=EX_LIB[exIdNueva];
+  return !!(a&&b&&a.m===b.m&&a.pat===b.pat);
+}
+// Genera y valida: si una generación falla los validadores se descarta y se
+// reintenta con otra semilla; jamás se devuelve una rutina no validada.
+function f3GenerarSeguro(generar,ctx,validar,intentosMax){
+  for(var i=0;i<(intentosMax||5);i++){
+    var plan=generar(i);
+    if(plan&&!validar(plan).length)return plan;
+  }
+  return null; // el llamador usa el plan mínimo de seguridad
+}
+// ---- Estado del día (🟢🟡🟠🔴) y feedback de sesión (UI + guardado) ----
+function setFitEstado(e){
+  state.fitEstado=e;
+  state.fitEstadoDate=typeof todayISO==='function'?todayISO():'';
+  save();
+  try{createFitnessToday();}catch(err){}
+  try{quickFitnessToday();}catch(err){}
+}
+function saveFitFeedback(feel){
+  var hoy=typeof todayISO==='function'?todayISO():'';
+  var fuente=null;
+  var pack=state.fitnessToday;
+  if(pack&&pack.plan&&pack.plan.length){fuente={focus:(pack.ctx&&pack.ctx.focus)||'',exIds:pack.plan.map(function(x){return f3IdPorNombre(x.name);}).filter(Boolean)};}
+  else if(state.lastGuidedPlan&&state.lastGuidedPlan.date===hoy){fuente=state.lastGuidedPlan;}
+  if(!fuente)return;
+  state.sessionFeedbacks=state.sessionFeedbacks||[];
+  state.sessionFeedbacks.push({date:hoy,focus:fuente.focus||'',feel:feel,estado:(state.fitEstado&&state.fitEstadoDate===hoy)?state.fitEstado:null,exIds:fuente.exIds||[]});
+  state.sessionFeedbacks=state.sessionFeedbacks.slice(-F3_RULES.feedback.retencion);
+  state.fitFeedbackHoy={date:hoy,feel:feel};
+  save(true);
+  try{quickFitnessToday();}catch(e){}
+}
+function togglePorqueRutina(){
+  var el=document.getElementById('porqueRutina');if(!el)return;
+  if(el.style.display==='none'||el.style.display===''){
+    el.style.display='block';
+    var porque=(state.fitnessToday&&state.fitnessToday.porque)||[];
+    el.innerHTML=(porque.length?porque.map(function(s){return '<div style="font-size:12px;padding:3px 0;color:var(--m)">'+safeText(s)+'</div>';}).join(''):'<div class="muted" style="font-size:12px">No hay explicación guardada para esta rutina.</div>');
+  }else{el.style.display='none';}
+}
+
+// ----- F3d: nivel, deload sugerido, repetir, variar y feedback visible -----
+function setNivelFit(n){
+  state.profile=state.profile||{};
+  state.profile.nivelFit=n;
+  save();
+  try{createFitnessToday();}catch(e){}
+  try{quickFitnessToday();}catch(e){}
+}
+// Tendencia difícil sostenida (~2 semanas): 3+ sesiones difíciles en 14 días
+// con >=7 días entre la primera y la última. SOLO sugiere, nunca aplica solo.
+function f3TendenciaDificilSemanas(){
+  var fb=(typeof state!=='undefined'&&state&&state.sessionFeedbacks)||[];
+  if(!fb.length)return false;
+  var hoy=(typeof todayISO==='function')?todayISO():'';
+  if(!hoy)return false;
+  var corte=new Date((new Date(hoy+'T12:00:00')).getTime()-14*86400000).toISOString().slice(0,10);
+  var duras=fb.filter(function(f){return f.date>=corte&&(f.feel==='dificil'||f.feel==='demasiado');});
+  if(duras.length<3)return false;
+  var fechas=duras.map(function(f){return f.date;}).sort();
+  var span=(new Date(fechas[fechas.length-1]+'T12:00:00')-new Date(fechas[0]+'T12:00:00'))/86400000;
+  return span>=7;
+}
+// El usuario decide aplicar la semana ligera (volumen -30% HOY). Nunca automático.
+function aplicarDeloadHoy(){
+  state.deloadFecha=(typeof todayISO==='function')?todayISO():'';
+  save();
+  try{createFitnessToday();}catch(e){}
+  try{quickFitnessToday();}catch(e){}
+}
+// 🔁 Repetir esta rutina: conserva ejercicios, orden y estructura EXACTOS
+// (no genera nada nuevo); la progresión se sigue mostrando desde el historial.
+function repetirRutina(){
+  var pack=state.fitnessToday;if(!pack||!pack.plan||!pack.plan.length){alert('Primero crea tu rutina con "Mi rutina de hoy".');return;}
+  var nombre='Repetida · '+((typeof todayISO==='function')?todayISO():'hoy');
+  state.savedRoutines=state.savedRoutines||[];
+  if(state.savedRoutines.some(function(r){return r.name===nombre;})){alert('Ya guardaste tu rutina repetida de hoy. La encuentras en "Rutinas guardadas".');return;}
+  state.savedRoutines.push({id:ppUUID(),name:nombre,plan:JSON.parse(JSON.stringify(pack.plan)),date:nombre});
+  save();
+  var t=document.getElementById('saveToast');
+  if(t){t.textContent='🔁 Rutina repetida guardada ('+nombre+'). La encontrarás en "Rutinas guardadas".';t.style.opacity='1';clearTimeout(t._tid);t._tid=setTimeout(function(){t.style.opacity='0';},3500);}
+}
+// 🎲 Variar esta rutina: alternativa con EX_LIB + reglas + validadores (misma
+// semilla+1). Si no existe alternativa válida, se mantiene y se explica.
+function f3VariarHoy(){
+  var antes=((state.fitnessToday&&state.fitnessToday.plan)||[]).map(function(x){return x.name;}).join('|');
+  state.fitVariant=(state.fitVariant||0)+1;
+  save();
+  try{createFitnessToday();}catch(e){}
+  var despues=((state.fitnessToday&&state.fitnessToday.plan)||[]).map(function(x){return x.name;}).join('|');
+  try{quickFitnessToday();}catch(e){}
+  if(antes===despues)return {cambio:false,mensaje:'No hay alternativa válida para los ejercicios de hoy (equipo/nivel/recientes): se mantuvo la rutina actual.'};
+  return {cambio:true,mensaje:'Rutina variada con alternativas válidas (mismo objetivo, músculos y equipo).'};
+}
+// Borrar una entrada de feedback registrada por error
+function borrarFitFeedback(i){
+  if(!confirm('¿Borrar esta entrada de feedback?'))return;
+  state.sessionFeedbacks=(state.sessionFeedbacks||[]).filter(function(f,idx){return idx!==i;});
+  save();
+  try{quickFitnessToday();}catch(e){}
+}
+
+// ----- Helpers de selección controlada (variación SIN Math.random) -----
+function f3EquipKey(equip){var e=String(equip||'');if(e.includes('Casa'))return 'casa';if(e.includes('Mancuernas'))return 'man';return 'gym';}
+function f3NivelNum(nivel){var n=String(nivel||'').toLowerCase();if(n.startsWith('p'))return 1;if(n.startsWith('a'))return 3;return 2;}
+function f3NivelBand(nivel){var n=String(nivel||'').toLowerCase();if(n.startsWith('p'))return 'p';if(n.startsWith('a'))return 'a';return 'i';}
+function f3Mid(banda){return Math.round((+banda[0]+ +banda[1])/2);}
+function f3SetsBase(obj,nivel){var b=F3_RULES.seriesPorEjercicio[obj]||F3_RULES.seriesPorEjercicio.hipertrofia;return f3Mid(b[f3NivelBand(nivel)]||b.i);}
+function f3CapSets(obj,nivel){var b=F3_RULES.seriesPorEjercicio[obj]||F3_RULES.seriesPorEjercicio.hipertrofia;return (b[f3NivelBand(nivel)]||b.i)[1];}
+function f3RepsStr(obj){var r=F3_RULES.reps[obj]||F3_RULES.reps.hipertrofia;return r[0]+'-'+r[1];}
+function f3RestSeg(obj,clase){var k=(obj==='fuerza')?'fuerza':((obj==='resistencia'||obj==='bajar_grasa')?obj:((clase==='aislamiento'||clase==='tiempo')?'hipertrofia_aisl':'hipertrofia_comp'));return f3Mid(F3_RULES.restMin[k]||F3_RULES.restMin.hipertrofia_comp);}
+function f3FactorFatiga(estado){return F3_RULES.fatigaDosis[estado]||F3_RULES.fatigaDosis.normal;}
+function f3VolBand(nivel){return F3_RULES.volSemanal[f3NivelBand(nivel)]||F3_RULES.volSemanal.i;}
+
+// Candidatos válidos para (músculo, patrón, equipo, nivel): respeta equipo,
+// nivel, incompatibilidades con lo ya elegido y deprioritiza ejercicios recientes
+// (los fundamentales NUNCA se prohíben, solo bajan prioridad).
+function f3Candidatos(musc,pat,ctx,historial,plan){
+  var eq=f3EquipKey(ctx.equip), nivel=f3NivelNum(ctx.nivel), usados=(plan||[]).map(function(x){return (typeof x==='string')?x:x.exId;});
+  var list=Object.keys(EX_LIB).map(function(id){return Object.assign({id:id},EX_LIB[id]);}).filter(function(e){
+    if(musc&&e.m!==musc)return false;
+    if(pat&&e.pat!==pat)return false;
+    if(e.lv>nivel)return false;
+    if(!e.var[eq])return false;
+    if(usados.indexOf(e.id)!==-1)return false;
+    var mal=e.incompat.some(function(i){return usados.indexOf(i)!==-1;});
+    if(mal)return false;
+    return true;
+  });
+  // Deprioritizar (no prohibir): ejercicios usados en las últimas N sesiones van al final.
+  var ventana=F3_RULES.recientes.ventana, hoy=ctx.dia||0;
+  var esReciente=function(e){
+    return !!(historial&&historial[e.id]!=null&&(hoy-historial[e.id])>=0&&(hoy-historial[e.id])<=ventana);
+  };
+  list.sort(function(a,b){
+    var ra=esReciente(a)?1:0;
+    var rb=esReciente(b)?1:0;
+    if(ra!==rb)return ra-rb;
+    return a.lv-b.lv;
+  });
+  // Cuántos quedaron al final por ser recientes: la elección rotará solo entre
+  // los NO recientes cuando haya alternativa (los recientes solo se usan si el
+  // pool no alcanza, p.ej. un ejercicio fundamental sin sustituto).
+  list.recientesAlFinal=list.filter(esReciente).length;
+  return list;
+}
+
+// Elección determinista por semilla (nunca Math.random): solo dentro de candidatos válidos.
+// Si la lista tiene ejercicios recientes al final, rota SOLO entre los no recientes
+// (variación real sin repetir lo de ayer); si todo el pool es reciente, se permite.
+function f3Elegir(candidatos,seed,idx){
+  if(!candidatos||!candidatos.length)return null;
+  var len=candidatos.length;
+  var lim=len;
+  if(candidatos.recientesAlFinal&&len>candidatos.recientesAlFinal)lim=len-candidatos.recientesAlFinal;
+  var s=(+seed||0)+idx*3;
+  return candidatos[((s%lim)+lim)%lim];
+}
+
+// ----- Validadores (L): detectan rutinas absurdas -----
+function f3ValidarEjercicioLib(e,id){
+  var errs=[];
+  if(!e.n||!e.m||!e.pat||!e.clase||!e.ins||!e.src)errs.push('campos base faltantes');
+  if(['compuesto','aislamiento','tiempo'].indexOf(e.clase)<0)errs.push('clase inválida');
+  if(['pc','ban','man','bar','maq','pol'].indexOf((e.var&&e.var.gym&&e.var.gym.eq)||'')<0)errs.push('eq inválido');
+  if(e.lv<1||e.lv>3)errs.push('lv fuera de 1-3');
+  if(!e.var||!e.var.gym||!e.var.man||!e.var.casa)errs.push('faltan variantes gym/man/casa');
+  (e.equiv||[]).forEach(function(q){if(!EX_LIB[q])errs.push('equivalente inexistente: '+q);});
+  (e.incompat||[]).forEach(function(q){if(!EX_LIB[q])errs.push('incompatibilidad inexistente: '+q);});
+  return errs;
+}
+function f3ValidarPlan(plan,ctx){
+  var errs=[],vistos={},eq=f3EquipKey(ctx.equip),nivel=f3NivelNum(ctx.nivel),obj=ctx.objetivo||'hipertrofia';
+  (plan||[]).forEach(function(x,i){
+    if(vistos[x.exId])errs.push('duplicado: '+x.exId);
+    vistos[x.exId]=1;
+    var e=EX_LIB[x.exId];
+    if(!e){errs.push('ejercicio fuera de la biblioteca: '+x.exId);return;}
+    if(e.lv>nivel)errs.push(x.exId+' incompatible con nivel');
+    if(e.var[eq].eq!==x.eq)errs.push(x.exId+' equipo no coincide ('+x.eq+')');
+    var cap=f3CapSets(obj,ctx.nivel)+1;
+    if(x.sets<1||x.sets>cap)errs.push(x.exId+' series fuera de banda ('+x.sets+')');
+    if(e.clase==='tiempo'){if(!/s\b|\d+-\d+s/.test(String(x.reps)))errs.push(x.exId+' reps de tiempo mal formadas');}
+    else{
+      var pr=parseRepRange(x.reps), rb=F3_RULES.reps[obj]||F3_RULES.reps.hipertrofia;
+      if(pr.min<rb[0]-3||pr.max>rb[1]+3)errs.push(x.exId+' reps fuera de banda ('+x.reps+')');
+    }
+    var rmin=f3RestSeg(obj,e.clase), banda=(obj==='fuerza')?F3_RULES.restMin.fuerza:((obj==='resistencia'||obj==='bajar_grasa')?F3_RULES.restMin[obj]:((e.clase==='aislamiento'||e.clase==='tiempo')?F3_RULES.restMin.hipertrofia_aisl:F3_RULES.restMin.hipertrofia_comp));
+    var rs=restSeconds(x.rest);
+    if(rs<banda[0]-15||rs>banda[1]+15)errs.push(x.exId+' descanso mal interpretado ('+x.rest+'='+rs+'s)');
+  });
+  return errs;
+}
+function f3ValidarSemana(semana,ctx){
+  var errs=[],vol={},ultimoDia={},freq={};
+  var eq=f3EquipKey(ctx.equip);
+  (semana||[]).forEach(function(dia,di){
+    if(!dia.plan)return;
+    var errsDia=f3ValidarPlan(dia.plan,Object.assign({},ctx,{dia:di}));
+    errsDia.forEach(function(e){errs.push('dia '+di+': '+e);});
+    dia.plan.forEach(function(x){
+      var e=EX_LIB[x.exId];
+      vol[e.m]=(vol[e.m]||0)+x.sets;
+      freq[e.m]=(freq[e.m]||0)+1;
+      // Solo días CALENDARIO consecutivos (misma sesión con 2 ejercicios del mismo
+      // músculo es normal, p.ej. día de jalón con 2 de espalda). Músculos pequeños
+      // (core/pantorrilla) quedan exentos: toleran días seguidos (práctica común).
+      if(ultimoDia[e.m]!=null&&di-ultimoDia[e.m]===1&&['core','pantorrilla','movilidad'].indexOf(e.m)<0){
+        errs.push('dia '+di+': '+e.m+' sin 48h de recuperación (días consecutivos)');
+      }
+      ultimoDia[e.m]=di;
+    });
+    // músculos esperados según el tipo de día (un jalón no puede meter pecho)
+    var tag=(dia.tag||'');
+    var muscEsperados={empuje:['pecho','hombros','triceps','core'],jalon:['espalda','biceps','core'],pierna:['pierna','femoral','gluteo','pantorrilla','core'],inferior:['pierna','femoral','gluteo','pantorrilla','core']};
+    if(muscEsperados[tag]){
+      dia.plan.forEach(function(x){
+        var e=EX_LIB[x.exId];
+        if(e&&muscEsperados[tag].indexOf(e.m)<0)errs.push('dia '+di+' ('+tag+'): '+x.exId+' es de '+e.m+' (músculo que no corresponde al día)');
+      });
+    }
+    // cobertura de patrones según el tipo de día
+    var pats=(dia.plan||[]).map(function(x){return EX_LIB[x.exId].pat;});
+    if(tag==='empuje'){
+      if(pats.indexOf('empuje_horizontal')<0||pats.indexOf('empuje_vertical')<0)errs.push('dia '+di+' (empuje): falta patrón horizontal o vertical');
+    }else if(tag==='jalon'){
+      if(!pats.some(function(p){return p.indexOf('traccion')===0;}))errs.push('dia '+di+' (jalón): falta patrón de tracción');
+    }else if(tag==='pierna'||tag==='inferior'){
+      if(pats.indexOf('rodilla')<0||pats.indexOf('bisagra')<0)errs.push('dia '+di+' (pierna): falta rodilla o bisagra');
+    }else if(tag==='full'){
+      var tieneEmp=pats.some(function(p){return p.indexOf('empuje')===0;});
+      var tieneTra=pats.some(function(p){return p.indexOf('traccion')===0;});
+      if(!tieneEmp||!tieneTra||(pats.indexOf('rodilla')<0&&pats.indexOf('bisagra')<0))errs.push('dia '+di+' (full): patrón incompleto');
+    }
+  });
+  // cobertura semanal de tracción h+v cuando hay días de jalón (split de 6 días
+  // alterna vertical/horizontal entre días A y B)
+  var tags=(semana||[]).map(function(d){return d.tag;});
+  var patsSem=(semana||[]).reduce(function(a,d){return a.concat((d.plan||[]).map(function(x){return EX_LIB[x.exId].pat;}));},[]);
+  if(tags.indexOf('jalon')>=0){
+    if(patsSem.indexOf('traccion_horizontal')<0||patsSem.indexOf('traccion_vertical')<0)errs.push('semana: falta tracción horizontal o vertical');
+  }
+  // frecuencia semanal = DÍAS en que aparece el músculo (no ejercicios: un día
+  // de pierna con 2 ejercicios de cuádriceps sigue siendo 1 estímulo semanal)
+  var freqDias={};
+  (semana||[]).forEach(function(dia){ if(!dia.plan)return; var vistos={};
+    dia.plan.forEach(function(x){ var e=EX_LIB[x.exId]; if(e&&!vistos[e.m]){vistos[e.m]=1;freqDias[e.m]=(freqDias[e.m]||0)+1;} }); });
+  // frecuencia y volumen semanal por músculo
+  Object.keys(vol).forEach(function(m){
+    if(m==='movilidad'||m==='espalda_baja'||m==='pantorrilla')return;
+    var banda=f3VolBand(ctx.nivel);
+    // Piso escalado por frecuencia: un músculo entrenado 1x/semana acepta menos
+    // volumen semanal (gradiente dosis-respuesta, Schoenfeld 2017); el techo no cambia.
+    var piso=Math.min(banda[0]-1,(freq[m]||0));
+    if(vol[m]<piso||vol[m]>banda[1]+2)errs.push(m+': volumen semanal fuera de banda ('+vol[m]+')');
+    var f=freqDias[m]||0;
+    // Músculos pequeños (core/pantorrilla) toleran hasta 4x/semana (práctica común;
+    // el límite de 3x aplica a grupos grandes). Heurística propia, ver RULE_SOURCES.
+    var fmax=(m==='core'||m==='pantorrilla'||m==='movilidad')?4:F3_RULES.frecuenciaMax;
+    if(f<F3_RULES.frecuenciaMin||f>fmax)errs.push(m+': frecuencia fuera de banda ('+f+'x/sem)');
+    if(ctx.dias>=3&&(m==='pecho'||m==='espalda'||m==='pierna')&&f<F3_RULES.frecuenciaObjetivo)errs.push(m+': frecuencia objetivo 2x/sem no alcanzada ('+f+')');
+  });
+  return errs;
+}
+
+// ----- Generador de referencia (lo usa F3b; aquí alimenta las pruebas de propiedad) -----
+// Semana completa a partir de reglas: split -> descansos -> slots (músculo+patrón) ->
+// candidatos válidos -> elección por semilla. La fatiga modifica DOSIS, nunca el objetivo.
+function f3TagDeNombre(dayName){
+  var n=String(dayName||'').toLowerCase();
+  if(n.indexOf('empuje')>=0)return 'empuje';
+  if(n.indexOf('jalon')>=0||n.indexOf('jalón')>=0)return 'jalon';
+  if(n.indexOf('cuerpo completo')>=0)return 'full';
+  if(n.indexOf('superior')>=0)return 'superior';
+  if(n.indexOf('inferior')>=0)return 'inferior';
+  if(n.indexOf('pierna')>=0)return 'pierna';
+  return 'full';
+}
+function f3SlotsParaMusculos(musculos,seed,di,contador){
+  // 1a aparición de pierna = rodilla, 2a = bisagra, 3a+ = cadera (garantiza
+  // cobertura de patrones sin depender de la semilla: la variedad viene de los
+  // ejercicios elegidos dentro de cada patrón, nunca de cambiar el patrón).
+  // La espalda alterna vertical/horizontal con un contador GLOBAL de la semana
+  // (el split de 6 días tiene 1 sola espalda por día y debe alternar entre días).
+  var ocur={},out=[],cont=(contador||{});
+  (musculos||[]).forEach(function(m,idx){
+    var n=ocur[m]=(ocur[m]||0)+1;
+    if(m==='pecho')out.push({musc:'pecho',pat:'empuje_horizontal'});
+    else if(m==='espalda'){cont.espalda=(cont.espalda||0)+1;out.push({musc:'espalda',pat:(cont.espalda%2===1)?'traccion_vertical':'traccion_horizontal'});}
+    else if(m==='pierna'){var p=(n===1)?'rodilla':(n===2)?'bisagra':'cadera';out.push({musc:(p==='rodilla')?'pierna':(p==='bisagra')?'femoral':'gluteo',pat:p});}
+    else if(m==='hombro')out.push({musc:'hombros',pat:(n%2===1)?'empuje_vertical':'aislamiento'});
+    else if(m==='biceps')out.push({musc:'biceps',pat:'aislamiento'});
+    else if(m==='triceps')out.push({musc:'triceps',pat:(n%2===1)?'aislamiento':'empuje_horizontal'});
+    else if(m==='core')out.push({musc:'core',pat:'core'});
+  });
+  return out;
+}
+function f3SemanaReferencia(ctx,seed){
+  var dias=+ctx.dias||3, split=routineSplit(dias), sched=defaultWeekSchedule(dias);
+  var obj=ctx.objetivo||'hipertrofia', nivel=ctx.nivel||'intermedio', factor=f3FactorFatiga(ctx.estado||'normal');
+  var historial={}, semana=[], contador={};
+  for(var di=0;di<7;di++){
+    var asig=sched[di];
+    if(asig==='rest'){semana.push({di:di,rest:true});continue;}
+    var dayName=split[asig][0], musculos=split[asig][1];
+    var slots=f3SlotsParaMusculos(musculos,seed,di,contador);
+    var plan=[], usadosCtx=Object.assign({},ctx,{dia:di});
+    slots.forEach(function(sl,idx){
+      var cands=f3Candidatos(sl.musc,sl.pat,usadosCtx,historial,plan);
+      if(!cands.length)return;
+      var ex=f3Elegir(cands,seed*7+di,idx);
+      if(!ex)return;
+      historial[ex.id]=di;
+      var varEq=ex.var[f3EquipKey(ctx.equip)];
+      var sets=Math.max(1,Math.round(f3SetsBase(obj,nivel)*factor));
+      plan.push({exId:ex.id,n:varEq.n,m:ex.m,pat:ex.pat,eq:varEq.eq,lv:ex.lv,sets:sets,reps:(ex.clase==='tiempo')?ex.dflt.reps:f3RepsStr(obj),rest:f3RestSeg(obj,ex.clase)+' s'});
+    });
+    semana.push({di:di,day:dayName,tag:f3TagDeNombre(dayName),plan:plan});
+  }
+  return semana;
+}
+
 // Día del año (0-365): sirve para rotar los ejercicios cada día.
 function fitDaySeed(){ var d=new Date(); return Math.floor((d-new Date(d.getFullYear(),0,0))/86400000); }
-function varyFitnessToday(){ state.fitVariant=(state.fitVariant||0)+1; save(); try{createFitnessToday();}catch(e){} try{quickFitnessToday();}catch(e){} }
+function varyFitnessToday(){
+  var r=f3VariarHoy();
+  var t=document.getElementById('saveToast');
+  if(t){t.textContent='🎲 '+r.mensaje;t.style.opacity='1';clearTimeout(t._tid);t._tid=setTimeout(function(){t.style.opacity='0';},3500);}
+}
 // Formas de entrenar especiales (no por músculo): calistenia, yoga, cardio.
 const SPECIAL_WORKOUTS={
   calistenia:{exs:[
@@ -26955,43 +27557,77 @@ function buildFitnessTodayPlan(ctx){
       return o;
     });
   }
-  let b=fitnessExerciseBank();
-  // Esfuerzo elegido por el usuario: 'suave' | 'auto' | 'normal' | 'fuerte'. Por defecto 'auto' (detecta día pesado).
+  // ===== F3b: generación sobre EX_LIB + F3_RULES (variación controlada) =====
+  // El patrón de movimiento, el músculo, el equipo y el nivel NUNCA se violan;
+  // la semilla solo elige entre candidatos válidos. La fatiga reduce DOSIS,
+  // no cambia el objetivo.
   let effort=state.fitEffort||'auto';
   let extreme=effort==='extremo';
   let big=effort==='fuerte'||extreme;
   // "día pesado efectivo": suave o (auto en día pesado) acortan; normal, fuerte y extremo NO acortan aunque haya caminado mucho.
-  let hardSel = (effort==='suave') ? true : ((effort==='normal'||effort==='fuerte'||extreme) ? false : ctx.hard);
-  let keys=hardSel?['press','row','lat','core']:['press','row','pull','lat','curl'];
-  if(ctx.focus.includes('Espalda'))keys=hardSel?['row','pull','face','curl']:['row','pull','face','press','curl'];
-  if(ctx.focus.includes('Brazos'))keys=hardSel?['curl','tri','lat','core']:['press','row','curl','tri','lat'];
-  if(ctx.focus.includes('Pecho'))keys=hardSel?['press','row','tri']:['press','row','tri','lat'];
-  if(ctx.focus.includes('Core'))keys=hardSel?['mobility','core','face']:['core','face','row','mobility'];
-  if(ctx.focus.includes('Pierna')||ctx.focus.includes('Tren inferior'))keys=hardSel?['leg','hip','core']:['leg','ham','hip','calf'];
-  if(ctx.focus.includes('Tren superior'))keys=hardSel?['press','row','lat','core']:['press','row','pull','lat','curl','tri'];
-  if(ctx.recovery)keys=['mobility','core','face']; // seguridad: si vienes con dolor fuerte/energía muy baja, entrena suave aunque elijas fuerte
-  if(big&&!ctx.recovery){ let extra=(ctx.focus.includes('Pierna')||ctx.focus.includes('Tren inferior'))?['leg','ham','hip','calf','core']:['pull','tri','curl','face','hip']; keys=[...new Set([...keys,...extra])].slice(0,extreme?8:6); } // versión para crecer: 6 ejercicios (8 en "demasiado fuerte")
+  let hardSel=(effort==='suave')?true:((effort==='normal'||effort==='fuerte'||extreme)?false:ctx.hard);
+  let nivel=(state.profile&&state.profile.nivelFit)||'intermedio';
+  // F3c: estado del día (🟢🟡🟠🔴). El selector del usuario gana SOLO hoy; si no
+  // lo tocó, se deriva de recuperación/día pesado como antes.
+  let hoy=typeof todayISO==='function'?todayISO():'';
+  let estadosValidos=['excelente','normal','cansado','muy_fatigado'];
+  let estado=(state.fitEstado&&estadosValidos.indexOf(state.fitEstado)>=0&&state.fitEstadoDate===hoy)?state.fitEstado:(ctx.recovery?'muy_fatigado':(hardSel?'cansado':'normal'));
+  let slots=f3SlotsDia(ctx.focus||'',hardSel);
+  if(ctx.recovery)slots=[{musc:'movilidad',pat:'movilidad'},{musc:'core',pat:'core'},{musc:'hombros',pat:'aislamiento'}]; // seguridad: dolor fuerte/energía muy baja
+  else if(big)slots=slots.concat(f3SlotsExtras(ctx.focus||'').slice(0,extreme?3:1)); // crecer: hasta 6 (fuerte) u 8 (extremo)
   let seedBase=fitDaySeed()+(state.fitVariant||0); // cambia cada día y con el botón "Variar"
-  return keys.map((k,idx)=>{
-    let x={...b[k]};
-    // Biblioteca + variedad: cada músculo tiene varios ejercicios; se elige uno rotando por día/variación.
-    // Fase 2: el pool se filtra por equipo disponible. Casa = solo peso corporal/bandas/mochila/botellas;
-    // Mancuernas = sin máquinas ni poleas; Gimnasio = todo. Así "Variar" jamás mete una máquina en casa.
-    let pool;
-    if(ctx.equip.includes('Casa')) pool=(x.casa||[]).slice();
-    else if(ctx.equip.includes('Mancuernas')) pool=(x.man||[]).slice();
-    else pool=[x.name].concat(x.alts||[]);
-    pool=pool.filter((v,i,a)=>v&&a.indexOf(v)===i);
-    if(!pool.length) pool=[x.name];
-    let s=seedBase+idx*3;
-    let pick=pool[((s%pool.length)+pool.length)%pool.length];
-    x.name=pick;
-    x.alts=pool.filter(a=>a!==pick); // el resto queda como alternativas en "Cambiar si está ocupado"
-    if(big&&!ctx.recovery){x.sets=Math.max(extreme?4:3,x.sets);x.note=(extreme?'Demasiado fuerte: 4-5 series, cerca del fallo (deja 1 en reserva), buen descanso y sube peso al completar las reps. Cuida la técnica.':'Crecer músculo: 3-4 series, cerca del fallo (deja 1-2 en reserva) y sube peso al completar las reps.')}
-    else if(hardSel){x.sets=Math.min(2,x.sets);x.note='Día pesado: deja 1-2 repeticiones en reserva.'}
-    else x.note='Día normal: controla técnica y sube peso solo si se siente estable.';
-    return x;
-  });
+  let ctx3={equip:ctx.equip||'Gimnasio',nivel:nivel,dia:0};
+  let hist=f3HistorialReciente();
+  let bandSets=F3_RULES.seriesPorEjercicio.hipertrofia[f3NivelBand(nivel)];
+  let factor=f3FactorFatiga(estado); // el estado modifica DOSIS (nunca el objetivo)
+  let tendencia=f3TendenciaFeedback(ctx.focus||'');
+  let dolorIds=f3EjerciciosDolor();
+  let ctxVal={objetivo:'hipertrofia',nivel:nivel,equip:ctx3.equip};
+  let planOut=null,porqueOut=[];
+  // Intentos con semillas consecutivas: si una generación falla un validador se
+  // descarta y se busca otra combinación válida. NUNCA se muestra una inválida.
+  for(let intento=0;intento<5&&!planOut;intento++){
+    let sb=seedBase+intento;
+    let usadosDia=[];
+    let lineas=[];
+    let cand=slots.map(function(sl,idx){
+      let cands=f3Candidatos(sl.musc,sl.pat,ctx3,hist,usadosDia);
+      if(!cands.length)return null;
+      // Cansado/muy fatigado: variante más accesible (menor nivel) del MISMO
+      // patrón; excelente/normal: rotación por semilla. Nunca otro músculo/patrón.
+      let pick=(estado==='cansado'||estado==='muy_fatigado')?cands[0]:f3Elegir(cands,sb,idx);
+      if(!pick)return null;
+      usadosDia.push({exId:pick.id});
+      let varEq=pick.var[f3EquipKey(ctx3.equip)];
+      let setsBase=f3SetsBase('hipertrofia',nivel);
+      if(effort==='suave')setsBase=Math.min(2,setsBase);
+      else if(big)setsBase=Math.min(bandSets[1],setsBase+(extreme?1:0));
+      let sets=Math.max(1,Math.round(setsBase*factor));
+      let reps=(pick.clase==='tiempo')?pick.dflt.reps:f3RepsStr('hipertrofia');
+      let rest=Math.round(f3RestSeg('hipertrofia',pick.clase)*(F3_RULES.restFatiga[estado]||1));
+      let altsCands=f3Candidatos(sl.musc,null,ctx3,{},usadosDia);
+      let alts=altsCands.map(function(a){return a.var[f3EquipKey(ctx3.equip)].n;}).filter(function(n,i,arr){return n&&arr.indexOf(n)===i;});
+      let note=(big&&!ctx.recovery)?(extreme?'Demasiado fuerte: 4-5 series, cerca del fallo (deja 1 en reserva), buen descanso y sube peso al completar las reps. Cuida la técnica.':'Crecer músculo: 3-4 series, cerca del fallo (deja 1-2 en reserva) y sube peso al completar las reps.'):(hardSel?'Día pesado: deja 1-2 repeticiones en reserva.':'Día normal: controla técnica y sube peso solo si se siente estable.');
+      // Feedback gradual (tendencia >=3 de 5; una sola respuesta NO cambia nada)
+      if(tendencia==='dificil'){sets=Math.max(1,sets-1);note+=' Ajustado por tu historial: tus últimas sesiones similares se sintieron difíciles, así que hoy el volumen es un poco menor.';}
+      else if(tendencia==='muy_facil'){note+=' Estás dominando estas sesiones: intenta una repetición más por serie (o sube peso solo al completar el rango).';}
+      if(dolorIds[pick.id]){note+=' ⚠️ Registraste molestia con este ejercicio recientemente. No es diagnóstico médico: usa carga ligera, técnica limpia y detente si duele.';}
+      // Deload activado POR EL USUARIO (nunca automático): volumen -30% hoy
+      if(typeof state!=='undefined'&&state&&state.deloadFecha===hoy){sets=Math.max(1,Math.round(sets*0.7));note+=' Semana ligera (la activaste tú): hoy volumen reducido, técnica e intensidad moderadas.';}
+      // Explicación REAL de la decisión (para "¿Por qué esta rutina?")
+      lineas.push(sl.musc+': elegí '+varEq.n+' (patrón '+pick.pat+') porque cumple tu equipo ('+ctx3.equip+') y tu nivel, y '+(hist&&hist[pick.id]!=null?'es un ejercicio reciente, pero no hay alternativa válida':'no aparece en tus ejercicios recientes')+'.');
+      return {name:varEq.n,muscle:pick.m,sets:sets,reps:reps,rest:rest,alts:alts,note:note};
+    }).filter(function(x){return !!x;});
+    if(!f3ValidarPlanNombres(cand,ctxVal).length){planOut=cand;porqueOut=lineas;}
+  }
+  if(!planOut){
+    // Plan mínimo de seguridad (pasa los validadores): movilidad + core suave.
+    planOut=[{name:'Movilidad cadera/espalda',muscle:'movilidad',sets:1,reps:'45-60s',rest:60,alts:[],note:'Plan mínimo de recuperación.'},{name:'Plancha',muscle:'core',sets:1,reps:'8-12',rest:60,alts:[],note:'Plan mínimo de recuperación.'}];
+    porqueOut=['La generación normal no pasó los validadores, así que mostramos un plan mínimo de recuperación.'];
+  }
+  var lblEstado={excelente:'🟢 Excelente',normal:'🟡 Normal',cansado:'🟠 Cansado',muy_fatigado:'🔴 Muy fatigado'}[estado]||estado;
+  planOut.porque=['Hoy toca: '+ctx.focus+'.','Estado de hoy: '+lblEstado+' → volumen al '+Math.round(factor*100)+'%'+(estado==='cansado'||estado==='muy_fatigado'?' (con descansos un poco más largos)':'')+'.','Volumen: '+planOut.length+' ejercicios · series según tu nivel ('+nivel+') y objetivo (hipertrofia).'].concat(porqueOut);
+  return planOut;
 }
 function setFitEffort(e){
   state.fitEffort=e; save();
@@ -27154,6 +27790,9 @@ function createFitnessToday(){
   state.fitnessToday.date=ctx.date; state.fitnessToday.ctx=ctx; state.fitnessToday.plan=plan;
   state.fitnessToday.createdAt=new Date().toISOString(); state.fitnessToday.fromSemana=fromSemana;
   state.fitnessToday.semanaDayName=fromSemana?tr.dayName:null;
+  // F3c: guardar la explicación REAL del generador para "¿Por qué esta rutina?"
+  if(plan&&plan.porque){state.fitnessToday.porque=(fromSemana?['De tu plan semanal: hoy toca '+tr.dayName+'.']:[]).concat(plan.porque);delete plan.porque;}
+  else state.fitnessToday.porque=null;
   if(!state.fitnessToday.seriesCount)state.fitnessToday.seriesCount={};
   save();
   renderFitnessCoach();
@@ -27488,9 +28127,12 @@ function finishGuidedWorkout(){
     advanced=' La próxima sesión te tocará el Día '+(nextDay+1)+': '+safeText(r.days[nextDay].day)+'.';
   }
   aw.finishedAt=new Date().toISOString();
+  // F3c: guardar el resumen para el feedback (separado de workoutLog)
+  state.lastGuidedPlan={date:todayISO(),focus:(aw.fromRoutine?aw.routineDayName:''),exIds:(aw.done||[]).map(function(s){return f3IdPorNombre(s.name);}).filter(Boolean)};
   state.activeWorkout=null;
   save();
-  let out=getFitnessMainOut();if(out)out.innerHTML=`<div class="ok" style="margin-top:12px"><b>Rutina terminada.</b> Guardaste ${count} ejercicio(s). Come algo con proteína y agua.${advanced}</div>`;
+  let fbBtns='<div style="margin-top:10px"><div class="muted" style="font-size:12px;font-weight:800;margin-bottom:4px">¿Cómo se sintió esta rutina?</div><div class="row" style="gap:6px;flex-wrap:wrap">'+[['muy_facil','Muy fácil'],['bien','Bien'],['dificil','Difícil'],['demasiado','Demasiado difícil'],['dolor','Dolor/molestia']].map(function(o){return '<button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveFitFeedback(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')+'</div></div>';
+  let out=getFitnessMainOut();if(out)out.innerHTML=`<div class="ok" style="margin-top:12px"><b>Rutina terminada.</b> Guardaste ${count} ejercicio(s). Come algo con proteína y agua.${advanced}</div>`+fbBtns;
   renderFitnessProgressPanel();renderRoutineToday();try{renderFitStatsPanel()}catch(e){}
 }
 function renderFitnessProgressPanel(){

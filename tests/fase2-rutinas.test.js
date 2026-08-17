@@ -82,20 +82,50 @@ vm.runInNewContext(
   extractFunc('parseRepRange') + '\n' +
   extractFunc('routineSplit') + '\n' +
   extractFunc('goalScheme') + '\n' +
+  extractFunc('goalLabelSafe') + '\n' +
   extractFunc('exercisesPerSession') + '\n' +
   extractFunc('defaultWeekSchedule') + '\n' +
   extractFunc('buildCustomRoutine') + '\n' +
   extractFunc('equipLabel') + '\n' +
   extractFunc('useRoutineDayToday') + '\n' +
+  extractFunc('f3EquipKey') + '\n' +
+  extractFunc('f3NivelNum') + '\n' +
+  extractFunc('f3NivelBand') + '\n' +
+  extractFunc('f3Mid') + '\n' +
+  extractFunc('f3VolBand') + '\n' +
+  extractFunc('f3CapSets') + '\n' +
+  extractFunc('f3SetsBase') + '\n' +
+  extractFunc('f3RepsStr') + '\n' +
+  extractFunc('f3RestSeg') + '\n' +
+  extractFunc('f3FactorFatiga') + '\n' +
+  extractFunc('f3Candidatos') + '\n' +
+  extractFunc('f3Elegir') + '\n' +
+  extractFunc('f3IdPorNombre') + '\n' +
+  extractFunc('f3HistorialReciente') + '\n' +
+  extractFunc('f3SlotsDia') + '\n' +
+  extractFunc('f3SlotsExtras') + '\n' +
+  extractFunc('f3SlotsParaMusculos') + '\n' +
+  extractFunc('f3TagDeNombre') + '\n' +
+  extractFunc('f3SemanaReferencia') + '\n' +
+  extractFunc('f3TendenciaFeedback') + '\n' +
+  extractFunc('f3EjerciciosDolor') + '\n' +
+  extractFunc('f3ValidarPlan') + '\n' +
+  extractFunc('f3ValidarSemana') + '\n' +
+  extractFunc('f3ValidarPlanNombres') + '\n' +
   'var SPECIAL_WORKOUTS=' + extractConst('SPECIAL_WORKOUTS') + ';\n' +
-  'var routineDB=' + extractConst('routineDB') + ';',
+  'var routineDB=' + extractConst('routineDB') + ';\n' +
+  'var EX_LIB=' + extractConst('EX_LIB') + ';\n' +
+  'var F3_RULES=' + extractConst('F3_RULES') + ';\n' +
+  'var F3_ALIASES=' + extractConst('F3_ALIASES') + ';',
   sandbox
 );
 const bank = sandbox.fitnessExerciseBank();
-const unionCasa = Object.keys(bank).reduce((a, k) => a.concat(bank[k].casa || []), []);
-const unionMan = Object.keys(bank).reduce((a, k) => a.concat(bank[k].man || []), []);
-const unionGym = Object.keys(bank).reduce((a, k) => a.concat([bank[k].name], bank[k].alts || []), []);
-const MAQUINA = /máquina|cable|polea|smith|prensa|pec deck|barra|banco inclinado|dominada|jalón|remo en t|hack|extensión de cuádriceps|curl femoral|rompecráneos/i;
+// F3b: el plan diario se genera desde EX_LIB; las uniones de nombres válidos
+// por equipo salen de las variantes de la biblioteca.
+const unionCasa = Object.keys(sandbox.EX_LIB).reduce((a, k) => a.concat([sandbox.EX_LIB[k].var.casa.n]), []);
+const unionMan = Object.keys(sandbox.EX_LIB).reduce((a, k) => a.concat([sandbox.EX_LIB[k].var.man.n]), []);
+const unionGym = Object.keys(sandbox.EX_LIB).reduce((a, k) => a.concat([sandbox.EX_LIB[k].var.gym.n]), []);
+const MAQUINA = /máquina|cable|polea|smith|prensa|pec deck|banco inclinado|hack|extensión de cuádriceps|curl femoral|rompecráneos/i;
 
 function ctxFor(focus, equip) {
   return { date: '2026-08-15', steps: 5000, energy: 3, pain: 0, sleep: 7, focus, equip, hard: false, recovery: false };
@@ -223,10 +253,11 @@ function nombresDistintos(a, b) {
 }
 function verificaDia(r, cfg, di) {
   var dia = r.days[di];
+  var equip3 = cfg.equip === 'casa' ? 'Casa / sin equipo' : cfg.equip === 'mancuernas' ? 'Mancuernas' : 'Gimnasio';
+  var eqKey = sandbox.f3EquipKey(equip3);
   var okMusc = dia.exercises.every(function (x) {
-    var pool = sandbox.routineDB[x.muscle] || [];
-    var eqKey = cfg.equip === 'casa' ? 'casa' : cfg.equip === 'mancuernas' ? 'mancuernas' : 'gym';
-    return pool.some(function (e) { return e[eqKey] === x.name; });
+    var id = sandbox.f3IdPorNombre(x.name);
+    return !!id && sandbox.EX_LIB[id].m === x.muscle && sandbox.EX_LIB[id].var[eqKey].n === x.name;
   });
   var sinDup = new Set(nombres(dia)).size === dia.exercises.length;
   var cohe = dia.exercises.every(function (x) {

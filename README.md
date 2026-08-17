@@ -41,6 +41,15 @@ npm run build:win  # generar instalador para Windows
 | `main.js`, `preload.js` | Empaquetado Electron para escritorio. |
 | `CONFIGURAR-SUPABASE.sql` | Esquema y políticas de la base de datos. |
 
+## Protección de la sincronización (leer antes de tocar código)
+
+- [`SYNC_ARCHITECTURE.md`](./SYNC_ARCHITECTURE.md) — arquitectura real de la
+  sincronización (Supabase, Cloudflare Worker, PATCH, RLS, Realtime, merge,
+  IDs, offline, conflictos, invariantes).
+- [`DO_NOT_TOUCH.md`](./DO_NOT_TOUCH.md) — zonas protegidas y el protocolo
+  obligatorio antes de modificarlas.
+- [`CLAUDE.md`](./CLAUDE.md) — instrucciones permanentes para agentes.
+
 ## Licencia
 
 Uso personal (UNLICENSED).
