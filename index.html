@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.188.4';
+  window.HM_APP_VERSION='1.188.4.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -25882,7 +25882,7 @@ function quickFitnessToday(){
   </div>
   ${(function(){var ef=state.fitEffort||'auto';return `<div style="margin:8px 0 10px">
     <div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Qué tan fuerte hoy?</div>
-    <div class="row" style="gap:6px;flex-wrap:wrap">${[['suave','🟢 Suave'],['auto','⚙️ Auto'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte · crecer'],['extremo','💥 Demasiado fuerte']].map(function(o){return '<button class="btn'+(ef===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}<button class="btn" style="font-size:12px;padding:7px 11px" onclick="varyFitnessToday()">🎲 Variar ejercicios</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveCurrentRoutine()">💾 Guardar esta rutina</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="repetirRutina()">🔁 Repetir esta rutina</button></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">${[['suave','🟢 Suave'],['auto','⚙️ Auto'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte · crecer'],['extremo','💥 Demasiado fuerte']].map(function(o){return '<button class="btn'+(ef===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}<button class="btn" style="font-size:12px;padding:7px 11px" onclick="varyFitnessToday()">🎲 Variar ejercicios</button><button class="btn" style="font-size:12px;padding:7px 11px" <input id="routineNameInput" type="text" placeholder="✏️ Nombre (opcional)" value="${safeText(window._routineName||'')}" oninput="window._routineName=this.value" style="font-size:12px;padding:7px 9px;border-radius:10px;border:1px solid #cbd8cf;min-width:130px;flex:1;max-width:220px"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveCurrentRoutine()">💾 Guardar esta rutina</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="repetirRutina()">🔁 Repetir esta rutina</button></div>
     <div class="muted" style="font-size:11px;margin-top:5px">Los ejercicios cambian cada día para no aburrirte. Toca 🎲 para otra variación, o "Cambiar si está ocupado" en cada uno.</div>
     ${(ef==='fuerte'||ef==='extremo')?'<div class="mini" style="margin-top:8px;font-size:12px">💪 <b>Para crecer músculo con tu trabajo físico:</b> come <b>de más</b> con proteína, sube el peso al completar las reps y duerme bien. Caminar/jardinear es cardio, no cuenta como músculo.</div>':''}
   </div>`;})()}
@@ -27224,11 +27224,16 @@ function aplicarDeloadHoy(){
 // (no genera nada nuevo); la progresión se sigue mostrando desde el historial.
 function repetirRutina(){
   var pack=state.fitnessToday;if(!pack||!pack.plan||!pack.plan.length){alert('Primero crea tu rutina con "Mi rutina de hoy".');return;}
-  var nombre='Repetida · '+((typeof todayISO==='function')?todayISO():'hoy');
+  var nombre=f3NombreAGuardar(pack); // conserva el nombre que escribiste (o el automático)
   state.savedRoutines=state.savedRoutines||[];
-  if(state.savedRoutines.some(function(r){return r.name===nombre;})){alert('Ya guardaste tu rutina repetida de hoy. La encuentras en "Rutinas guardadas".');return;}
-  state.savedRoutines.push({id:ppUUID(),name:nombre,plan:JSON.parse(JSON.stringify(pack.plan)),date:nombre});
+  var hoy=(typeof todayISO==='function')?todayISO():'';
+  // Guard de duplicado por CONTENIDO + fecha (no por nombre): si ya guardaste
+  // esta misma rutina hoy, no se duplica aunque el campo se haya limpiado.
+  var firma=JSON.stringify((pack.plan||[]).map(function(x){return x.name;}));
+  if(state.savedRoutines.some(function(r){return r.date===hoy&&JSON.stringify((r.plan||[]).map(function(x){return x.name;}))===firma;})){alert('Ya guardaste esta misma rutina hoy. La encuentras en "Rutinas guardadas".');return;}
+  state.savedRoutines.push({id:ppUUID(),name:nombre,plan:JSON.parse(JSON.stringify(pack.plan)),date:hoy});
   save();
+  if(typeof window!=='undefined')window._routineName='';
   var t=document.getElementById('saveToast');
   if(t){t.textContent='🔁 Rutina repetida guardada ('+nombre+'). La encontrarás en "Rutinas guardadas".';t.style.opacity='1';clearTimeout(t._tid);t._tid=setTimeout(function(){t.style.opacity='0';},3500);}
 }
@@ -27250,6 +27255,41 @@ function borrarFitFeedback(i){
   state.sessionFeedbacks=(state.sessionFeedbacks||[]).filter(function(f,idx){return idx!==i;});
   save();
   try{quickFitnessToday();}catch(e){}
+}
+
+// ----- Nombre de rutina (editable, auto-generado si vacío) -----
+// Genera un nombre descriptivo a partir de los músculos de la rutina.
+// NUNCA muta la rutina: solo produce texto de presentación.
+function f3NombreRutinaAuto(plan,fecha){
+  var lbls={pecho:'Pecho',espalda:'Espalda',hombros:'Hombros',biceps:'Bíceps',triceps:'Tríceps',pierna:'Pierna',femoral:'Femoral',gluteo:'Glúteos',core:'Core',pantorrilla:'Pantorrilla',movilidad:'Movilidad'};
+  var vistos={},partes=[];
+  (plan||[]).forEach(function(x){var m=String(x.muscle||'').toLowerCase();var l=lbls[m];if(l&&!vistos[l]){vistos[l]=1;partes.push(l);}});
+  var nombre=partes.slice(0,2).join(' + ')||'Rutina';
+  if(fecha){
+    var meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    var p=String(fecha).split('-');
+    nombre+=' · '+((p.length===3)?(parseInt(p[2],10)+' '+meses[(parseInt(p[1],10)-1)||0]):fecha);
+  }
+  return nombre;
+}
+// Nombre de presentación: el guardado o uno generado al vuelo (no muta datos).
+function f3NombreMostrar(r){return (r&&r.name)?r.name:f3NombreRutinaAuto(r&&r.plan,r&&r.date);}
+// Nombre que se usará al guardar: el campo del usuario o el automático.
+function f3NombreAGuardar(pack){
+  var campo=(typeof window!=='undefined'&&window._routineName)?window._routineName:(typeof document!=='undefined'&&document.getElementById?((document.getElementById('routineNameInput')||{}).value):'');
+  campo=String(campo||'').trim();
+  return campo||f3NombreRutinaAuto(pack&&pack.plan,(typeof todayISO==='function')?todayISO():'');
+}
+// Renombrar: SOLO cambia el nombre; plan, fecha e id quedan intactos.
+function renombrarRutina(id){
+  var r=(state.savedRoutines||[]).find(function(x){return x.id===id;});if(!r)return;
+  var nuevo=prompt('Nuevo nombre para la rutina:',f3NombreMostrar(r));
+  if(nuevo==null)return;
+  nuevo=String(nuevo).trim();
+  if(!nuevo)return;
+  r.name=nuevo;
+  save();
+  try{renderSavedRoutines();}catch(e){}
 }
 
 // ----- Helpers de selección controlada (variación SIN Math.random) -----
@@ -27508,12 +27548,11 @@ function specialWorkoutKey(focus){focus=String(focus||'').toLowerCase();if(focus
 // ---- Guardar rutinas ----
 function saveCurrentRoutine(){
   var pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan.length){alert('Primero crea tu rutina con "Mi rutina de hoy".');return;}
-  var sug=(pack.loadedName||pack.semanaDayName||(pack.ctx&&pack.ctx.focus)||'Mi rutina');
-  var name=prompt('Nombre para guardar esta rutina:', String(sug));
-  if(name==null)return; name=String(name).trim()||'Rutina';
+  var name=f3NombreAGuardar(pack); // campo editable o nombre automático descriptivo
   if(!Array.isArray(state.savedRoutines))state.savedRoutines=[];
   state.savedRoutines.push({id:ppUUID(),name:name,plan:JSON.parse(JSON.stringify(pack.plan)),date:todayISO()});
   save(); try{renderSavedRoutines()}catch(e){}
+  if(typeof window!=='undefined')window._routineName='';
   alert('✅ Rutina guardada: '+name);
 }
 function renderSavedRoutines(){
@@ -27522,7 +27561,7 @@ function renderSavedRoutines(){
   if(!list.length){el.innerHTML='<p class="muted" style="margin:0">Aún no guardas rutinas. Crea una y toca "💾 Guardar esta rutina".</p>';return;}
   el.innerHTML='<div class="list">'+list.map(function(r){
     var exs=(r.plan||[]).slice(0,3).map(function(x){return safeText(x.name);}).join(', ');
-    return '<div class="item"><b>'+safeText(r.name)+'</b> <span class="muted" style="font-size:12px">· '+((r.plan||[]).length)+' ejercicios</span><div class="muted" style="font-size:12px;margin:2px 0">'+exs+((r.plan||[]).length>3?'…':'')+'</div><div class="row" style="gap:6px;margin-top:4px"><button class="btn primary" onclick="loadSavedRoutine(\''+r.id+'\')">▶ Usar hoy</button><button class="btn" onclick="deleteSavedRoutine(\''+r.id+'\')">🗑</button></div></div>';
+    return '<div class="item"><b>'+safeText(f3NombreMostrar(r))+'</b> <span class="muted" style="font-size:12px">· '+((r.plan||[]).length)+' ejercicios</span><div class="muted" style="font-size:12px;margin:2px 0">'+exs+((r.plan||[]).length>3?'…':'')+'</div><div class="row" style="gap:6px;margin-top:4px"><button class="btn primary" onclick="loadSavedRoutine(\''+r.id+'\')">▶ Usar hoy</button><button class="btn" title="Renombrar" onclick="renombrarRutina(\''+r.id+'\')">✏️</button><button class="btn" onclick="deleteSavedRoutine(\''+r.id+'\')">🗑</button></div></div>';
   }).join('')+'</div>';
 }
 function showSavedRoutines(){
@@ -27532,7 +27571,8 @@ function showSavedRoutines(){
 }
 function loadSavedRoutine(id){
   var r=(state.savedRoutines||[]).find(function(x){return x.id===id;}); if(!r)return;
-  state.fitnessToday={date:todayISO(),plan:JSON.parse(JSON.stringify(r.plan)),ctx:{focus:r.name,hard:false,steps:0,energy:3,pain:0,sleep:7,equip:'Gimnasio'},createdAt:new Date().toISOString(),loadedName:r.name};
+  var nombre=f3NombreMostrar(r); // rutinas antiguas sin nombre: presentación generada, datos intactos
+  state.fitnessToday={date:todayISO(),plan:JSON.parse(JSON.stringify(r.plan)),ctx:{focus:nombre,hard:false,steps:0,energy:3,pain:0,sleep:7,equip:'Gimnasio'},createdAt:new Date().toISOString(),loadedName:nombre};
   save(); try{quickFitnessToday()}catch(e){}
 }
 function deleteSavedRoutine(id){ if(!confirm('¿Borrar esta rutina guardada?'))return; state.savedRoutines=(state.savedRoutines||[]).filter(function(x){return x.id!==id;}); save(); try{renderSavedRoutines()}catch(e){} }

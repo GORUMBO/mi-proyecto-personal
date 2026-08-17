@@ -1,8 +1,18 @@
 {
-  "latest": "1.188.4",
+  "latest": "1.188.4.1",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.188.4.1",
+      "date": "2026-08-16",
+      "type": "recomendada",
+      "nuevas": [
+        "Nombre editable de rutina: escribe el nombre que quieras junto a Guardar esta rutina (ej. Pecho + Biceps A); si lo dejas vacio se genera uno descriptivo (ej. Pecho + Triceps · 16 ago). Puedes renombrar despues con el lapiz en Rutinas guardadas, y las rutinas viejas sin nombre se muestran con un nombre generado sin tocar sus datos. El nombre se sincroniza entre dispositivos como siempre."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.188.4",
       "date": "2026-08-16",

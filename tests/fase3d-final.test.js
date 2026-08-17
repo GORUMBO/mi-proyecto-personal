@@ -121,6 +121,9 @@ vm.runInNewContext(
   extractFunc('setNivelFit') + '\n' +
   extractFunc('f3TendenciaDificilSemanas') + '\n' +
   extractFunc('aplicarDeloadHoy') + '\n' +
+  extractFunc('f3NombreRutinaAuto') + '\n' +
+  extractFunc('f3NombreMostrar') + '\n' +
+  extractFunc('f3NombreAGuardar') + '\n' +
   extractFunc('repetirRutina') + '\n' +
   extractFunc('f3VariarHoy') + '\n' +
   extractFunc('borrarFitFeedback') + '\n' +
