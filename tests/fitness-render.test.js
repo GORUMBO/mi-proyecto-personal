@@ -68,6 +68,7 @@ vm.createContext(sandbox);
 ['parseRepRange', 'sugerenciaSesion', 'seriesValidasRegs', 'repsNum', 'seriesHoyEjercicio',
   'evaluarSesionHoy', 'actualizarResultadosHoy', 'fitResumenResultadoHoy', 'fitHistorialSesiones',
   'esPrimeraSesionEjercicio', 'f3TendenciaDificilSemanas',
+  'f3NombreRutinaAuto', 'f3NombreMostrar',
   'syncSimpleFitnessInputs', 'quickFitnessToday', 'fitPeriodLogs', 'bestByExercise', 'repsTotal',
   'renderSimpleFitnessProgress']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sandbox); });
@@ -230,6 +231,31 @@ t('R12 · actualizarResultadosHoy anota "primera" (🆕) en el storage', functio
   fn.actualizar();
   const ann = sandbox.state.fitnessDailyResults[0];
   return !!ann && ann.estado === 'primera' && ann.icon === '🆕';
+}());
+
+t('R14 · v1.188.4.2: rutina enlazada (por ID) muestra SU nombre en el campo', function () {
+  nuevoEstado();
+  sandbox.state.savedRoutines = [{ id: 'r1', name: 'Mi Rutina', plan: [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], date: '2026-08-10' }];
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], {});
+  sandbox.state.fitnessToday.loadedRoutineId = 'r1';
+  const html = fn.quick();
+  return html.indexOf('value="Mi Rutina"') >= 0 && html.indexOf('id="routineNameInput"') >= 0;
+}());
+
+t('R13 · v1.188.4.1: el campo de nombre de rutina tiene fila propia, etiqueta y ancho útil (anti-regresión del input colapsado)', function () {
+  nuevoEstado();
+  packPlan(77, [{ name: 'Aperturas con mancuernas', sets: 2, reps: '8-12' }], {});
+  const html = fn.quick();
+  const i = html.indexOf('id="routineNameInput"');
+  if (i < 0) return false;
+  const etiqueta = html.indexOf('✏️ Nombre de rutina (opcional)');
+  const guardar = html.indexOf('saveCurrentRoutine()');
+  const bloque = html.slice(Math.max(0, i - 60), i + 420);
+  // 1) etiqueta visible 2) fila propia ANTES de "Guardar" 3) ancho útil explícito
+  return etiqueta >= 0 && etiqueta < guardar && i < guardar
+    && /id="routineNameInput"[^>]*width:100%/.test(bloque)
+    && /max-width:340px/.test(bloque)
+    && bloque.indexOf('placeholder="Escribe un nombre…"') >= 0;
 }());
 
 console.log('\n== RENDER Ver progreso (renderSimpleFitnessProgress real) ==');

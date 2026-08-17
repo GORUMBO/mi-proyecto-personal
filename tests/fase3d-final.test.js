@@ -124,6 +124,7 @@ vm.runInNewContext(
   extractFunc('f3NombreRutinaAuto') + '\n' +
   extractFunc('f3NombreMostrar') + '\n' +
   extractFunc('f3NombreAGuardar') + '\n' +
+  extractFunc('f3FirmaRutina') + '\n' +
   extractFunc('repetirRutina') + '\n' +
   extractFunc('f3VariarHoy') + '\n' +
   extractFunc('borrarFitFeedback') + '\n' +

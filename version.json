@@ -1,8 +1,19 @@
 {
-  "latest": "1.188.4.1",
+  "latest": "1.188.4.2",
   "date": "2026-08-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.188.4.2",
+      "date": "2026-08-16",
+      "type": "recomendada",
+      "nuevas": [
+        "Nombre de rutina vinculado a la rutina existente por ID: si abres una rutina guardada, el campo muestra su nombre actual y al escribir la renombra a ella misma (guardado automatico con debounce y al salir del campo), sin crear duplicados. Si la rutina no esta guardada, el campo solo prepara el nombre para Guardar.",
+        "Eliminacion persistente de rutinas: al borrar una rutina queda un tombstone (deleted + updated_at) que el merge existente respeta, asi la rutina NO reaparece al recargar, cerrar/reabrir ni sincronizar (en Windows y iPhone, en ambos sentidos). Tus registros de entrenamiento no se tocan."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.188.4.1",
       "date": "2026-08-16",

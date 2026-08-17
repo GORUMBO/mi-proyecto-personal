@@ -61,6 +61,8 @@ const sandbox = {
   alert: function () {},
   promptResult: null,
   prompt: function () { return sandbox.promptResult; },
+  confirmResult: true,
+  confirm: function () { return sandbox.confirmResult !== false; },
   ppUUID: function () { sandbox._uuid = (sandbox._uuid || 0) + 1; return 'uuid-' + sandbox._uuid; },
   renderSavedRoutines: function () {},
   quickFitnessToday: function () {},
@@ -75,6 +77,12 @@ vm.runInNewContext(
   extractFunc('f3NombreRutinaAuto') + '\n' +
   extractFunc('f3NombreMostrar') + '\n' +
   extractFunc('f3NombreAGuardar') + '\n' +
+  extractFunc('f3FirmaRutina') + '\n' +
+  extractFunc('f3RenombrarEnlazada') + '\n' +
+  extractFunc('f3NombreInput') + '\n' +
+  extractFunc('f3NombreBlur') + '\n' +
+  extractFunc('deleteSavedRoutine') + '\n' +
+  extractFunc('f3RutinasActivas') + '\n' +
   extractFunc('renombrarRutina') + '\n' +
   extractFunc('saveCurrentRoutine') + '\n' +
   extractFunc('repetirRutina') + '\n' +
@@ -170,9 +178,127 @@ t('F3 · cargar una rutina antigua usa el nombre generado sin mutarla',
   && JSON.stringify(sandbox.state.savedRoutines[0]) === JSON.stringify(copiaVieja));
 
 // ============================================================
+// S · Guardar la misma rutina NO duplica: actualiza el nombre existente
+// ============================================================
+console.log('\n== S · Guardar sin duplicados ==');
+sandbox.state.savedRoutines = [];
+sandbox.state.fitnessToday = { date: '2026-08-16', ctx: { focus: 'Pecho' }, plan: JSON.parse(JSON.stringify(planEjemplo)) };
+sandbox._renders = 0;
+sandbox.renderSavedRoutines = function () { sandbox._renders++; };
+sandbox.window._routineName = 'Primer nombre';
+sandbox.saveCurrentRoutine();
+var antesId = sandbox.state.savedRoutines[0].id;
+var antesFecha = sandbox.state.savedRoutines[0].date;
+var antesPlan = JSON.stringify(sandbox.state.savedRoutines[0].plan);
+sandbox.window._routineName = 'Nombre actualizado';
+sandbox.saveCurrentRoutine();
+t('S1 · guardar la misma rutina NO crea duplicado', sandbox.state.savedRoutines.length === 1);
+t('S2 · actualiza el nombre de la rutina existente', sandbox.state.savedRoutines[0].name === 'Nombre actualizado');
+t('S3 · plan, fecha e id quedan intactos al actualizar el nombre',
+  JSON.stringify(sandbox.state.savedRoutines[0].plan) === antesPlan
+  && sandbox.state.savedRoutines[0].date === antesFecha
+  && sandbox.state.savedRoutines[0].id === antesId);
+t('S4 · la lista se re-renderiza al guardar (el nombre nuevo se ve al instante)', sandbox._renders >= 2);
+// Recarga/persistencia: el estado redondo (JSON) conserva el nombre actualizado
+var estadoRecargado = JSON.parse(JSON.stringify(sandbox.state));
+t('S5 · tras recargar/sincronizar el nombre actualizado persiste',
+  estadoRecargado.savedRoutines.length === 1 && estadoRecargado.savedRoutines[0].name === 'Nombre actualizado');
+// Una rutina DIFERENTE sí crea una entrada nueva
+sandbox.state.fitnessToday = { date: '2026-08-16', ctx: { focus: 'Pierna' }, plan: JSON.parse(JSON.stringify([{ name: 'Sentadilla con barra', muscle: 'pierna', sets: 3, reps: '6-15', rest: 180 }])) };
+sandbox.window._routineName = 'Día de pierna';
+sandbox.saveCurrentRoutine();
+t('S6 · una rutina distinta sí se guarda como entrada nueva', sandbox.state.savedRoutines.length === 2);
+t('S7 · workoutLog sigue intacto', (sandbox.state.workoutLog || []).length === 0);
+
+// ============================================================
+// T · Campo vinculado a la rutina por ID
+// ============================================================
+console.log('\n== T · Campo vinculado por ID ==');
+sandbox.state.savedRoutines = [
+  { id: 'r1', name: 'Mi Rutina', plan: JSON.parse(JSON.stringify(planEjemplo)), date: '2026-08-10' },
+  { id: 'r2', name: '', plan: [{ name: 'Sentadilla con barra', muscle: 'pierna', sets: 3, reps: '6-15', rest: 180 }], date: '2026-08-01' }
+];
+sandbox.state.fitnessToday = null;
+sandbox.loadSavedRoutine('r1');
+t('T1 · cargar una rutina guardada la ENLAZA por id (loadedRoutineId)',
+  sandbox.state.fitnessToday.loadedRoutineId === 'r1');
+var antesPlanT = JSON.stringify(sandbox.state.savedRoutines[0].plan);
+var antesFechaT = sandbox.state.savedRoutines[0].date;
+// Escribir + perder foco (blur) renombra ESA rutina por id
+sandbox.f3NombreBlur({ target: { value: 'Nombre escrito hoy' } });
+t('T2 · escribir y salir del campo renombra la rutina enlazada', sandbox.state.savedRoutines[0].name === 'Nombre escrito hoy');
+t('T3 · NO crea otra rutina ni toca plan/fecha/id',
+  sandbox.state.savedRoutines.length === 2
+  && JSON.stringify(sandbox.state.savedRoutines[0].plan) === antesPlanT
+  && sandbox.state.savedRoutines[0].date === antesFechaT
+  && sandbox.state.savedRoutines[0].id === 'r1');
+// Rutina sin nombre: vacío en el campo, presentación generada al mostrarla
+sandbox.f3RenombrarEnlazada('r2', '');
+t('T4 · vaciar el nombre no rompe nada: vuelve al nombre de presentación',
+  sandbox.state.savedRoutines[1].name === '' && sandbox.f3NombreMostrar(sandbox.state.savedRoutines[1]) === 'Pierna · 1 ago');
+// Persistencia: el enlace y el nombre sobreviven el round-trip (reload/sync)
+var estadoT = JSON.parse(JSON.stringify(sandbox.state));
+t('T5 · el enlace (loadedRoutineId) y el nombre persisten tras recargar/sincronizar',
+  estadoT.savedRoutines[0].name === 'Nombre escrito hoy' && estadoT.fitnessToday.loadedRoutineId === 'r1');
+// Rutina NO enlazada: el campo solo prepara el nombre para Guardar
+sandbox.state.fitnessToday = { date: '2026-08-16', ctx: { focus: 'Pecho' }, plan: JSON.parse(JSON.stringify(planEjemplo)) };
+sandbox.f3NombreInput({ target: { value: 'Nombre pendiente' } });
+t('T6 · sin enlace, escribir solo prepara el nombre (no crea rutinas)',
+  sandbox.window._routineName === 'Nombre pendiente' && sandbox.state.savedRoutines.length === 2);
+t('T7 · workoutLog sigue intacto', (sandbox.state.workoutLog || []).length === 0);
+
+// ============================================================
+// U · Eliminar rutina de forma PERSISTENTE (tombstone reutilizando el merge)
+// ============================================================
+console.log('\n== U · Eliminación persistente ==');
+sandbox.confirmResult = true;
+sandbox.state = {
+  workoutLog: [{ id: 1, date: '2026-08-15', localDate: '2026-08-15', exercise: 'Sentadilla', weight: 100, sets: 1, reps: '10' }],
+  savedRoutines: [{ id: 'r1', name: 'Mi Rutina', plan: JSON.parse(JSON.stringify(planEjemplo)), date: '2026-08-10' }],
+  fitnessToday: { date: '2026-08-16', plan: JSON.parse(JSON.stringify(planEjemplo)), loadedRoutineId: 'r1' }
+};
+sandbox.deleteSavedRoutine('r1');
+t('U1 · al eliminar desaparece de inmediato', sandbox.f3RutinasActivas().length === 0);
+t('U2 · queda un tombstone con updated_at (mecanismo del merge existente)',
+  sandbox.state.savedRoutines.length === 1 && sandbox.state.savedRoutines[0].deleted === true && !!sandbox.state.savedRoutines[0].updated_at);
+// F5 / cerrar y abrir: el estado redondo (JSON) sigue sin la rutina
+var estadoU = JSON.parse(JSON.stringify(sandbox.state));
+sandbox.state = estadoU;
+t('U3 · tras F5/recargar sigue eliminada', sandbox.f3RutinasActivas().length === 0);
+// Windows elimina → iPhone sincroniza (merge real _mergeArrays, ambos órdenes)
+var tomb = { id: 'r1', name: 'Mi Rutina', plan: [{ name: 'A' }], date: '2026-08-10', deleted: true, updated_at: '2026-08-16T10:00:00.000Z' };
+var copiaVieja = { id: 'r1', name: 'Mi Rutina', plan: [{ name: 'A' }], date: '2026-08-10' };
+var m1 = sandbox._mergeArrays([tomb], [copiaVieja]);
+var m2 = sandbox._mergeArrays([copiaVieja], [tomb]);
+t('U4 · la copia vieja del iPhone NO resucita la rutina (Windows eliminó)',
+  m1.length === 1 && m1[0].deleted === true && m2.length === 1 && m2[0].deleted === true);
+// iPhone elimina → Windows sincroniza (mismo merge, papeles invertidos)
+var m3 = sandbox._mergeArrays([copiaVieja], [tomb]);
+t('U5 · la copia vieja de Windows NO resucita la rutina (iPhone eliminó)',
+  m3.length === 1 && m3[0].deleted === true);
+t('U6 · workoutLog queda INTACTO al eliminar una rutina', sandbox.state.workoutLog.length === 1);
+// Cancelar no elimina nada
+sandbox.state.savedRoutines.push({ id: 'r2', name: 'R2', plan: [{ name: 'B' }], date: '2026-08-10' });
+sandbox.confirmResult = false;
+sandbox.deleteSavedRoutine('r2');
+t('U7 · cancelar el borrado no elimina nada',
+  sandbox.f3RutinasActivas().some(function (r) { return r.id === 'r2'; })
+  && !sandbox.state.savedRoutines.find(function (r) { return r.id === 'r2'; }).deleted);
+// Guardar la MISMA rutina después de eliminar → entrada NUEVA (no reutiliza la borrada)
+sandbox.confirmResult = true;
+sandbox.deleteSavedRoutine('r1');
+sandbox.state.fitnessToday = { date: '2026-08-16', ctx: { focus: 'Pecho' }, plan: JSON.parse(JSON.stringify(planEjemplo)) };
+sandbox.window._routineName = 'De nuevo';
+sandbox.saveCurrentRoutine();
+t('U8 · re-guardar la misma rutina crea una entrada NUEVA (id distinto, sin reutilizar la borrada)',
+  sandbox.f3RutinasActivas().some(function (r) { return r.id !== 'r1' && r.name === 'De nuevo'; })
+  && !sandbox.f3RutinasActivas().some(function (r) { return r.id === 'r1'; }));
+
+// ============================================================
 // G · El nombre viaja con la sincronización actual (merge por id)
 // ============================================================
 console.log('\n== G · Sincronización ==');
+var wlAntesG = JSON.stringify(sandbox.state.workoutLog || []);
 var fusion = sandbox._mergeArrays(
   [{ id: 'a', name: 'Rutina A', plan: [1] }, { id: 'b', plan: [2] }],
   [{ id: 'c', name: 'Rutina C', plan: [3] }]
@@ -180,7 +306,7 @@ var fusion = sandbox._mergeArrays(
 t('G1 · la unión conserva las rutinas con nombre de ambos dispositivos (0 pérdidas)',
   fusion.length === 3 && fusion.find(function (r) { return r.id === 'a'; }).name === 'Rutina A'
   && fusion.find(function (r) { return r.id === 'c'; }).name === 'Rutina C');
-t('G2 · workoutLog no se tocó en ningún paso', (sandbox.state.workoutLog || []).length === 0);
+t('G2 · el merge NO toca workoutLog', JSON.stringify(sandbox.state.workoutLog || []) === wlAntesG);
 
 // ============================================================
 // H · UI presente
