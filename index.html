@@ -364,7 +364,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.189.0';
+  window.HM_APP_VERSION='1.189.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -23563,23 +23563,27 @@ window.addEventListener('load',function(){try{ppRenderWorkerToggle();}catch(e){}
 async function cloudRest(path,options={},_retried){
   let c=getCloudConfig(),s=await refreshCloudSession();if(!c.url||!c.key||!s?.access_token)throw Error('Inicia sesión primero.');
   var usaWorker=false;try{usaWorker=ppWorkerOn();}catch(e){}
+  if(options&&options._sinPuente)usaWorker=false; // fallback: directo a Supabase
   var baseUrl=c.url+'/rest/v1/'+(usaWorker?'':'');
   if(usaWorker)baseUrl=ppWorkerUrl()+'/sync/';
-  let r=await fetch(baseUrl+path,{...options,headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json',...(options.headers||{})}});let text=await r.text();
+  let r=await fetch(baseUrl+path,{cache:'no-store',...options,headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json',...(options.headers||{})}});let text=await r.text();
   // v1.187.14 (diagnóstico): guardar el HTTP real de la última petición.
   try{PP_SYNC.lastHttp=r.status;}catch(e){}
   // v1.187.17: detectar respuestas de interceptores/filtros. Un 200 con HTML
   // NO es Supabase: la escritura NO se guardó.
   var ctResp='';try{ctResp=(r.headers&&r.headers.get)?(r.headers.get('content-type')||''):'';}catch(e){}
   if(ppRespBloqueada(text,ctResp)){
-    if(options&&options.method==='POST'){
-      throw Error('Sincronización bloqueada/interceptada (la red devolvió una página, no Supabase): '+String(text||'').replace(/<[^>]+>/g,' ').slice(0,100));
+    if(options&&(options.method==='POST'||options.method==='PATCH')){
+      // v1.189.1: si el puente devuelve HTML (filtro de red sobre workers.dev),
+      // se reintenta UNA vez directo a Supabase; el puente es opcional y reversible.
+      if(usaWorker&&!_retried&&!options._sinPuente){options._sinPuente=true;return cloudRest(path,options,true);}
+      throw Error('Sincronización bloqueada/interceptada (HTTP '+r.status+' '+ctResp+'; la red devolvió una página, no Supabase): '+String(text||'').replace(/<[^>]+>/g,' ').slice(0,100));
     }
     return null; // lecturas: tratar como "sin datos" y conservar lo local
   }
   // v1.187.26: desempaquetar la respuesta del puente {ok, data} y tratar la
   // sesión caducada como el 401 directo (renovar y reintentar una vez).
-  if(usaWorker){
+  if(usaWorker&&!(options&&options._sinPuente)){
     var envW=null;try{envW=JSON.parse(text);}catch(e){}
     if(!envW)throw Error('Respuesta inválida del puente (no JSON): '+String(text||'').slice(0,120));
     if(!envW.ok){

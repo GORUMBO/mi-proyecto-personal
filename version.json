@@ -1,8 +1,22 @@
 {
-  "latest": "1.189.0",
-  "date": "2026-08-20",
+  "latest": "1.189.1",
+  "date": "2026-08-21",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.189.1",
+      "date": "2026-08-21",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Hotfix de sincronizacion: si la subida por el puente Cloudflare recibe una pagina HTML (filtro de red como Canopy), la app reintenta automaticamente directo a Supabase sin perder el cambio; el error ahora muestra el HTTP y el tipo de respuesta reales.",
+        "El service worker ya no cachea las peticiones de sincronizacion (workers.dev y /sync/ pasan siempre a la red) y las escrituras llevan cache:no-store.",
+        "Nueva suite de pruebas de regresion de sincronizacion (18 pruebas: fallback, 401/403/5xx, sin sobrescritura local, reintento exacto)."
+      ],
+      "errores": [
+        "En redes con filtro (Canopy), la subida por workers.dev podia devolverse como pagina HTML y el guardado se reportaba bloqueado sin intentar la via directa."
+      ]
+    },
     {
       "version": "1.189.0",
       "date": "2026-08-20",

@@ -1,4 +1,4 @@
-const CACHE='mi-proyecto-v1-189-0';
+const CACHE='mi-proyecto-v1-189-1';
 const FILES=['./','./index.html'];
 
 // Descarga con límite de tiempo. Sin esto, un corte de red a media descarga
@@ -55,7 +55,7 @@ self.addEventListener('message',function(e){
 self.addEventListener('fetch',function(e){
   const url=e.request.url;
   // NUNCA interceptar ni cachear peticiones a Supabase (auth/rest/storage): deben ir siempre a la red en vivo.
-  if(/supabase\.(co|in)\//.test(url)||/\/auth\/v1\/|\/rest\/v1\/|\/storage\/v1\//.test(url))return; // pasa directo a la red
+  if(/supabase\.(co|in)\//.test(url)||/\/auth\/v1\/|\/rest\/v1\/|\/storage\/v1\//.test(url)||/workers\.dev\//.test(url)||/\/sync\//.test(url))return; // pasa directo a la red (sync NUNCA se cachea)
   // version.json siempre desde la red (para detectar versiones nuevas sin cache).
   if(/version\.json(\?|$)/.test(url))return;
   if(e.request.method!=='GET')return;
