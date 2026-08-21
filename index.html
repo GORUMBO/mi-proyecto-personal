@@ -23566,17 +23566,29 @@ async function cloudRest(path,options={},_retried){
   if(options&&options._sinPuente)usaWorker=false; // fallback: directo a Supabase
   var baseUrl=c.url+'/rest/v1/'+(usaWorker?'':'');
   if(usaWorker)baseUrl=ppWorkerUrl()+'/sync/';
-  let r=await fetch(baseUrl+path,{cache:'no-store',...options,headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json',...(options.headers||{})}});let text=await r.text();
+  var opD=null;try{opD=ppDiagInicio(usaWorker?'worker':'supabase',(options&&options.method)||'GET',path);ppDiagIntento(opD,1,baseUrl+path,(options&&options.method)||'GET',!!(options&&options._sinPuente));}catch(e){}
+  let r,text;
+  try{
+    r=await fetch(baseUrl+path,{cache:'no-store',...options,headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json',...(options.headers||{})}});text=await r.text();
+  }catch(e){
+    try{if(opD)ppDiagResultado(opD,'fetch_error',String((e&&e.message)||e));}catch(_e){}
+    throw e;
+  }
   // v1.187.14 (diagnóstico): guardar el HTTP real de la última petición.
   try{PP_SYNC.lastHttp=r.status;}catch(e){}
   // v1.187.17: detectar respuestas de interceptores/filtros. Un 200 con HTML
   // NO es Supabase: la escritura NO se guardó.
   var ctResp='';try{ctResp=(r.headers&&r.headers.get)?(r.headers.get('content-type')||''):'';}catch(e){}
+  try{if(opD){var itD=opD.intentos[opD.intentos.length-1];itD.status=r.status;itD.ct=ctResp;itD.tipo=ppDiagTipo(text,ctResp);itD.resultado='respuesta';}}catch(e){}
   if(ppRespBloqueada(text,ctResp)){
     if(options&&(options.method==='POST'||options.method==='PATCH')){
       // v1.189.1: si el puente devuelve HTML (filtro de red sobre workers.dev),
       // se reintenta UNA vez directo a Supabase; el puente es opcional y reversible.
-      if(usaWorker&&!_retried&&!options._sinPuente){options._sinPuente=true;return cloudRest(path,options,true);}
+      if(usaWorker&&!_retried&&!options._sinPuente){
+        try{if(opD)ppDiagResultado(opD,'html_worker_fallback');}catch(e){}
+        options._sinPuente=true;return cloudRest(path,options,true);
+      }
+      try{if(opD)ppDiagResultado(opD,'html_bloqueada','HTTP '+r.status+' '+ctResp);}catch(e){}
       throw Error('Sincronización bloqueada/interceptada (HTTP '+r.status+' '+ctResp+'; la red devolvió una página, no Supabase): '+String(text||'').replace(/<[^>]+>/g,' ').slice(0,100));
     }
     return null; // lecturas: tratar como "sin datos" y conservar lo local
@@ -23585,9 +23597,10 @@ async function cloudRest(path,options={},_retried){
   // sesión caducada como el 401 directo (renovar y reintentar una vez).
   if(usaWorker&&!(options&&options._sinPuente)){
     var envW=null;try{envW=JSON.parse(text);}catch(e){}
-    if(!envW)throw Error('Respuesta inválida del puente (no JSON): '+String(text||'').slice(0,120));
+    if(!envW){try{if(opD)ppDiagResultado(opD,'json_invalido');}catch(e){}throw Error('Respuesta inválida del puente (no JSON): '+String(text||'').slice(0,120));}
     if(!envW.ok){
       if(/sin_sesion|sesion_caducada/.test(String(envW.error||''))&&!_retried){try{await refreshCloudSession(true);}catch(_e){}return cloudRest(path,options,true);}
+      try{if(opD)ppDiagResultado(opD,'error_puente',String(envW.error||'error'));}catch(e){}
       throw Error('Puente: '+String(envW.error||'error')+' · HTTP '+String(envW.status!=null?envW.status:r.status));
     }
     if(envW.data===undefined)return null;
@@ -23610,10 +23623,10 @@ async function cloudRest(path,options={},_retried){
     }catch(e){}
   }
   // Si el token fue rechazado (401), fuerza UN refresco y reintenta una sola vez antes de fallar.
-  if(r.status===401 && !_retried){ try{await refreshCloudSession(true);}catch(_e){} return cloudRest(path,options,true); }
-  if(!r.ok)throw Error(text||'Error de base de datos');
+  if(r.status===401 && !_retried){ try{if(opD)ppDiagResultado(opD,'401_retry');}catch(e){} try{await refreshCloudSession(true);}catch(_e){} return cloudRest(path,options,true); }
+  if(!r.ok){try{if(opD)ppDiagResultado(opD,'http_error','HTTP '+r.status);}catch(e){}throw Error(text||'Error de base de datos');}
   if(!text)return null;
-  try{ return JSON.parse(text); }
+  try{ try{if(opD)ppDiagResultado(opD,'ok','HTTP '+r.status);}catch(e){} return JSON.parse(text); }
   catch(_e){
     // 2xx con cuerpo no-JSON (respuesta cortada / gateway). Reintenta UNA vez; si vuelve a pasar,
     // devuelve null en vez de tronar con "json parse error" y romper la sincronización.
@@ -23621,6 +23634,78 @@ async function cloudRest(path,options={},_retried){
     return null;
   }
 }
+// ===== DIAGNOSTICO DE SINCRONIZACION (SOLO DEBUG, sin secretos) =====
+// Activa con ?syncdebug=1 en la URL. Guarda en memoria los ULTIMOS 5 intentos
+// con datos seguros: endpoint (sin query), metodo, status, Content-Type, tipo
+// de cuerpo (json/html/vacio/otro), si hubo fallback y el resultado.
+// NUNCA tokens, apikey, Authorization, cookies ni cuerpos.
+window.PP_DIAG=window.PP_DIAG||{ops:[],_id:0};
+function ppDiagSanear(url){
+  try{var u=String(url||'');var q=u.indexOf('?');if(q>=0)u=u.slice(0,q);return u.replace(/^https?:\/\//,'');}catch(e){return String(url||'');}
+}
+function ppDiagDom(url){
+  try{var u=String(url||'');if(/workers.dev/.test(u))return 'worker';if(/supabase.(co|in)/.test(u))return 'supabase';return 'otro';}catch(e){return 'otro';}
+}
+function ppDiagTipo(text,ct){
+  try{var t=String(text||'');if(/^\s*<!doctype\s+html|<html/i.test(t))return 'html';if(ct&&String(ct).toLowerCase().indexOf('text/html')>=0)return 'html';if(t==='')return 'vacio';try{JSON.parse(t);return 'json';}catch(e){return 'otro';}}catch(e){return 'otro';}
+}
+function ppDiagInicio(modo,metodo,path){
+  var d=window.PP_DIAG;var op={id:++d._id,t:new Date().toISOString(),modo:modo,metodo:metodo||'?',path:ppDiagSanear(path),intentos:[],resultado:null};
+  d.ops.unshift(op);d.ops=d.ops.slice(0,5);
+  return op;
+}
+function ppDiagIntento(op,n,url,metodo,fallback){
+  op.intentos.push({n:n||1,t:new Date().toISOString(),endpoint:ppDiagSanear(url),dominio:ppDiagDom(url),metodo:metodo||'?',fallback:!!fallback,status:null,ct:null,tipo:null,resultado:'pendiente',error:null});
+}
+function ppDiagResultado(op,resultado,extra){
+  var it=op.intentos[op.intentos.length-1];
+  if(it){it.resultado=resultado;if(extra)it.error=String(extra).slice(0,140);}
+  op.resultado=resultado;
+}
+function ppDiagCopiar(){
+  var d=window.PP_DIAG||{};var lineas=[];
+  lineas.push('DIAGNOSTICO DE SINCRONIZACION · '+new Date().toISOString());
+  (d.ops||[]).forEach(function(op){
+    lineas.push('');lineas.push('--- operacion '+op.id+' · '+op.t+' · modo='+op.modo+' · '+op.metodo+' '+op.path+' · resultado='+(op.resultado||'—'));
+    (op.intentos||[]).forEach(function(it){
+      lineas.push('  intento '+it.n+' · '+it.endpoint+' · '+it.metodo+' · status='+(it.status==null?'—':it.status)+' · ct='+(it.ct||'—')+' · tipo='+(it.tipo||'—')+' · fallback='+(it.fallback?'si':'no')+' · resultado='+it.resultado+(it.error?(' · '+it.error):''));
+    });
+  });
+  var txt=lineas.join(String.fromCharCode(10));
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){ppDiagMsg('📋 Diagnóstico copiado');},function(){ppDiagMsg(txt);});}
+  else{ppDiagMsg(txt);}
+}
+function ppDiagMsg(t){var m=document.getElementById('ppDiagMsg');if(m){m.textContent=t;clearTimeout(m._t);m._t=setTimeout(function(){m.textContent='';},2200);}}
+function ppDiagHTML(){
+  var d=window.PP_DIAG||{};
+  if(!(d.ops||[]).length)return '<div class="muted" style="font-size:12px">Sin intentos registrados todavía. Haz un guardado y vuelve a abrir el panel.</div>';
+  var filas=(d.ops||[]).map(function(op){
+    var its=(op.intentos||[]).map(function(it){
+      return '<div style="font-size:11px;padding:4px 0;border-top:1px dashed #dce7e0">• '+it.endpoint+' · '+it.metodo+' · status='+(it.status==null?'—':it.status)+' · ct='+(it.ct||'—')+' · tipo='+(it.tipo||'—')+' · fallback='+(it.fallback?'si':'no')+' · <b>'+it.resultado+'</b>'+(it.error?(' · '+safeText(it.error)):'')+'</div>';
+    }).join('');
+    return '<div style="margin-bottom:10px"><b>Op '+op.id+' · '+op.modo+' · '+op.metodo+' '+safeText(op.path)+'</b><div class="muted" style="font-size:10px">'+op.t+' · resultado final: <b>'+safeText(op.resultado||'—')+'</b></div>'+its+'</div>';
+  }).join('');
+  return filas;
+}
+function ppDiagPanelHTML(){
+  return '<div id="ppDiagPanel" style="position:fixed;left:8px;bottom:86px;width:min(420px,calc(100vw - 16px));max-height:52vh;overflow:auto;background:#fff;border:1.5px solid #9dd5b4;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:99995;padding:10px;display:none">'
+    +'<div class="row" style="justify-content:space-between;align-items:center;gap:6px"><b style="font-size:13px">🔍 Diagnóstico de sincronización</b><button class="btn" style="font-size:12px;padding:4px 8px" onclick="document.getElementById(&quot;ppDiagPanel&quot;).style.display=&quot;none&quot;">✕</button></div>'
+    +'<div id="ppDiagOut" style="margin-top:6px">'+ppDiagHTML()+'</div>'
+    +'<div id="ppDiagMsg" class="muted" style="font-size:11px;margin-top:4px"></div>'
+    +'<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn primary" style="flex:1;min-width:0" onclick="ppDiagCopiar()">📋 Copiar diagnóstico</button><button class="btn" onclick="ppDiagLimpiar()">🧹 Limpiar</button></div>'
+    +'</div>'
+    +'<button id="ppDiagBtn" style="position:fixed;left:8px;bottom:40px;z-index:99994;background:#2e6b52;color:#fff;border:0;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer" onclick="var p=document.getElementById(&quot;ppDiagPanel&quot;);p.style.display=(p.style.display==&quot;none&quot;?&quot;block&quot;:&quot;none&quot;);document.getElementById(&quot;ppDiagOut&quot;).innerHTML=ppDiagHTML();">🔍 Sync debug</button>';
+}
+function ppDiagLimpiar(){window.PP_DIAG={ops:[],_id:0};var o=document.getElementById('ppDiagOut');if(o)o.innerHTML=ppDiagHTML();}
+function ppDiagActivar(){
+  try{
+    if(!/[?&]syncdebug=1/.test(location.search)&&!sessionStorage.getItem('pp_syncdebug'))return;
+    sessionStorage.setItem('pp_syncdebug','1');
+    window._ppDebug=true;
+    var host=document.createElement('div');host.id='ppDiagHost';host.innerHTML=ppDiagPanelHTML();document.body.appendChild(host);
+  }catch(e){}
+}
+window.addEventListener('load',function(){try{ppDiagActivar();}catch(e){}});
 let _autoSyncTimer=null,_syncing=false,_csBusy=false;
 function scheduleAutoSync(){
   state.offlineChanges=(state.offlineChanges||0)+1;
