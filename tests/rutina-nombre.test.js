@@ -67,7 +67,8 @@ const sandbox = {
   renderSavedRoutines: function () {},
   quickFitnessToday: function () {},
   document: {
-    getElementById: function () { return { value: '', innerHTML: '', textContent: '', style: { opacity: '' } }; }
+    getElementById: function () { return { value: '', innerHTML: '', textContent: '', style: { opacity: '' }, getBoundingClientRect: function () { return { top: 0 }; } }; },
+    addEventListener: function () {}
   },
   setTimeout: setTimeout,
   clearTimeout: clearTimeout
@@ -78,11 +79,19 @@ vm.runInNewContext(
   extractFunc('f3NombreMostrar') + '\n' +
   extractFunc('f3NombreAGuardar') + '\n' +
   extractFunc('f3FirmaRutina') + '\n' +
+  extractFunc('f3AnclarEl') + '\n' +
+  extractFunc('f3DiasRutina') + '\n' +
+  extractFunc('f3IrARutina') + '\n' +
+  extractFunc('f3InitIrAListeners') + '\n' +
   extractFunc('f3RenombrarEnlazada') + '\n' +
   extractFunc('f3NombreInput') + '\n' +
   extractFunc('f3NombreBlur') + '\n' +
   extractFunc('deleteSavedRoutine') + '\n' +
   extractFunc('f3RutinasActivas') + '\n' +
+  extractFunc('f3CampoNombreHTML') + '\n' +
+  extractFunc('openCreateRoutine') + '\n' +
+  extractFunc('crearRutina') + '\n' +
+  extractFunc('createFitnessToday') + '\n' +
   extractFunc('renombrarRutina') + '\n' +
   extractFunc('saveCurrentRoutine') + '\n' +
   extractFunc('repetirRutina') + '\n' +
@@ -90,6 +99,9 @@ vm.runInNewContext(
   extractFunc('_mergeArrays'),
   sandbox
 );
+// La función REAL de createFitnessToday se captura aquí: la sección V2 la
+// sombrea temporalmente con un stub y V5/V6 la restauran para probarla de verdad.
+var createFitnessTodayReal = sandbox.createFitnessToday;
 
 const planEjemplo = [
   { name: 'Press banca con barra', muscle: 'pecho', sets: 3, reps: '6-15', rest: 135, alts: [], note: '' },
@@ -295,6 +307,54 @@ t('U8 · re-guardar la misma rutina crea una entrada NUEVA (id distinto, sin reu
   && !sandbox.f3RutinasActivas().some(function (r) { return r.id === 'r1'; }));
 
 // ============================================================
+// V · Nombre en "Crear rutina" (reutiliza el componente único)
+// ============================================================
+console.log('\n== V · Nombre en Crear rutina ==');
+t('V1 · el constructor incluye el MISMO componente de nombre',
+  String(sandbox.openCreateRoutine).indexOf('f3CampoNombreHTML()') >= 0);
+// crearRutina con nombre escrito → la rutina queda guardada YA con ese nombre
+sandbox.state = { profile: {}, savedRoutines: [], workoutLog: [], fitnessToday: null };
+sandbox.createFitnessToday = function () {
+  sandbox.state.fitnessToday = { date: '2026-08-16', ctx: { focus: 'Pierna' }, plan: [{ name: 'Sentadilla con barra', muscle: 'pierna', sets: 3, reps: '6-15', rest: 180 }] };
+};
+sandbox.quickFitnessToday = function () {};
+sandbox.window._routineName = 'Pierna martes';
+sandbox.crearRutina();
+t('V2 · al crear con nombre, la rutina queda guardada con ese nombre desde el principio',
+  sandbox.state.savedRoutines.length === 1 && sandbox.state.savedRoutines[0].name === 'Pierna martes');
+t('V3 · queda enlazada por ID (el campo la renombrará a ella, no creará otra)',
+  sandbox.state.fitnessToday.loadedRoutineId === sandbox.state.savedRoutines[0].id);
+// Sin nombre → NO auto-guarda (el usuario puede Guardar después con auto-nombre)
+sandbox.state.savedRoutines = [];
+sandbox.window._routineName = '';
+sandbox.crearRutina();
+t('V4 · sin nombre no auto-guarda (el campo vacío genera el automático al Guardar)',
+  sandbox.state.savedRoutines.length === 0);
+// createFitnessToday: plan nuevo desenlaza; plan de semana conserva
+sandbox.state = { profile: {}, savedRoutines: [], workoutLog: [], fitnessToday: { date: '2026-08-16', loadedRoutineId: 'r1' } };
+sandbox.readFitnessContext = function () { return { date: '2026-08-16', steps: 5000, energy: 3, pain: 0, sleep: 7, focus: 'Pecho', equip: 'Gimnasio', hard: false, recovery: false }; };
+sandbox.todayRoutinePlan = function () { return null; };
+sandbox.buildFitnessTodayPlan = function () { return [{ name: 'Press banca con barra', muscle: 'pecho', sets: 3, reps: '6-15', rest: 135, alts: [], note: '' }]; };
+sandbox.renderFitnessCoach = function () {};
+sandbox.createFitnessToday = createFitnessTodayReal; // restaurar la real (V2 la sombreó)
+sandbox.createFitnessToday();
+t('V5 · al regenerar un plan NUEVO el campo se desenlaza (prepara nombre nuevo)',
+  sandbox.state.fitnessToday.loadedRoutineId === null);
+sandbox.state.fitnessToday = { date: '2026-08-16', loadedRoutineId: 'r1' };
+sandbox.todayRoutinePlan = function () { return { rest: false, plan: [{ name: 'X' }], dayName: 'Pierna' }; };
+sandbox.createFitnessToday();
+t('V6 · el plan de la semana conserva su enlace', sandbox.state.fitnessToday.loadedRoutineId === 'r1');
+// Uso posterior desde Rutinas guardadas (recargar + cargar)
+var estadoV = JSON.parse(JSON.stringify(sandbox.state));
+estadoV.savedRoutines = [{ id: 'r9', name: 'Pierna martes', plan: [{ name: 'Sentadilla con barra', muscle: 'pierna', sets: 3, reps: '6-15', rest: 180 }], date: '2026-08-16' }];
+sandbox.state = estadoV;
+sandbox.state.fitnessToday = null;
+sandbox.loadSavedRoutine('r9');
+t('V7 · al usarla desde Rutinas guardadas, el nombre aparece y sigue editable',
+  sandbox.state.fitnessToday.loadedRoutineId === 'r9' && sandbox.state.fitnessToday.loadedName === 'Pierna martes');
+t('V8 · workoutLog sigue intacto', (sandbox.state.workoutLog || []).length === 0);
+
+// ============================================================
 // G · El nombre viaja con la sincronización actual (merge por id)
 // ============================================================
 console.log('\n== G · Sincronización ==');
@@ -324,3 +384,4 @@ if (failed) {
   process.exit(1);
 }
 process.exit(0);
+

@@ -73,7 +73,7 @@ const sandbox = {
   setTimeout: setTimeout,
   clearTimeout: clearTimeout,
   ppUUID: function () { return 'uuid-' + Math.random().toString(36).slice(2); },
-  document: { getElementById: function () { return { innerHTML: '', textContent: '', style: { opacity: '' } }; } }
+  document: { getElementById: function () { return { innerHTML: '', textContent: '', style: { opacity: '' }, getBoundingClientRect: function () { return { top: 0 }; } }; } }
 };
 vm.runInNewContext(
   extractFunc('fitnessExerciseBank') + '\n' +
@@ -89,6 +89,10 @@ vm.runInNewContext(
   extractFunc('buildCustomRoutine') + '\n' +
   extractFunc('equipLabel') + '\n' +
   extractFunc('useRoutineDayToday') + '\n' +
+  extractFunc('f3EqsPermitidos') + '\n' +
+  extractFunc('f3KeyEquipo') + '\n' +
+  extractFunc('f3InventarioEquipo') + '\n' +
+  extractFunc('f3EquipoActualLabel') + '\n' +
   extractFunc('f3EquipKey') + '\n' +
   extractFunc('f3NivelNum') + '\n' +
   extractFunc('f3NivelBand') + '\n' +
@@ -98,6 +102,12 @@ vm.runInNewContext(
   extractFunc('f3RepsStr') + '\n' +
   extractFunc('f3RestSeg') + '\n' +
   extractFunc('f3FactorFatiga') + '\n' +
+  extractFunc('f3FactorActividad') + '\n' +
+  extractFunc('fitEffortHoy') + '\n' +
+  extractFunc('f3ActividadNormalizada') + '\n' +
+  extractFunc('f3MaxSimilitudGuardada') + '\n' +
+  extractFunc('f3AltsBanco') + '\n' +
+  extractFunc('f3AnclarEl') + '\n' +
   extractFunc('f3VolBand') + '\n' +
   extractFunc('f3Candidatos') + '\n' +
   extractFunc('f3Elegir') + '\n' +
@@ -108,6 +118,9 @@ vm.runInNewContext(
   extractFunc('f3SlotsParaMusculos') + '\n' +
   extractFunc('f3TagDeNombre') + '\n' +
   extractFunc('f3SemanaReferencia') + '\n' +
+  extractFunc('f3SemanaDesdeDias') + '\n' +
+  extractFunc('f3ElegirSplit') + '\n' +
+  extractFunc('f3SetsContexto') + '\n' +
   extractFunc('f3ValidarEjercicioLib') + '\n' +
   extractFunc('f3ValidarPlan') + '\n' +
   extractFunc('f3ValidarSemana') + '\n' +
@@ -215,7 +228,7 @@ t('D6 · 2 difíciles no bastan (sin falsa alarma)',
   (function () { sandbox.state.sessionFeedbacks = [{ date: '2026-08-12', focus: 'P', feel: 'dificil', exIds: [] }, { date: '2026-08-15', focus: 'P', feel: 'dificil', exIds: [] }]; var r2 = sandbox.f3TendenciaDificilSemanas(); sandbox.state.sessionFeedbacks = []; return r2 === false; })());
 
 // ============================================================
-// E · 🔁 Repetir esta rutina
+// E · 🔁 Repetir esta rutina
 // ============================================================
 console.log('\n== E · Repetir esta rutina ==');
 sandbox.state = {
@@ -299,3 +312,4 @@ if (failed) {
   process.exit(1);
 }
 process.exit(0);
+

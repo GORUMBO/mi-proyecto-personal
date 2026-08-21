@@ -88,6 +88,10 @@ vm.runInNewContext(
   extractFunc('buildCustomRoutine') + '\n' +
   extractFunc('equipLabel') + '\n' +
   extractFunc('useRoutineDayToday') + '\n' +
+  extractFunc('f3EqsPermitidos') + '\n' +
+  extractFunc('f3KeyEquipo') + '\n' +
+  extractFunc('f3InventarioEquipo') + '\n' +
+  extractFunc('f3EquipoActualLabel') + '\n' +
   extractFunc('f3EquipKey') + '\n' +
   extractFunc('f3NivelNum') + '\n' +
   extractFunc('f3NivelBand') + '\n' +
@@ -98,6 +102,13 @@ vm.runInNewContext(
   extractFunc('f3RepsStr') + '\n' +
   extractFunc('f3RestSeg') + '\n' +
   extractFunc('f3FactorFatiga') + '\n' +
+  extractFunc('f3FactorActividad') + '\n' +
+  extractFunc('fitEffortHoy') + '\n' +
+  extractFunc('f3ActividadNormalizada') + '\n' +
+  extractFunc('f3MaxSimilitudGuardada') + '\n' +
+  extractFunc('f3AltsBanco') + '\n' +
+  extractFunc('f3AnclarEl') + '\n' +
+  extractFunc('f3IrARutina') + '\n' +
   extractFunc('f3Candidatos') + '\n' +
   extractFunc('f3Elegir') + '\n' +
   extractFunc('f3IdPorNombre') + '\n' +
@@ -107,6 +118,9 @@ vm.runInNewContext(
   extractFunc('f3SlotsParaMusculos') + '\n' +
   extractFunc('f3TagDeNombre') + '\n' +
   extractFunc('f3SemanaReferencia') + '\n' +
+  extractFunc('f3SemanaDesdeDias') + '\n' +
+  extractFunc('f3ElegirSplit') + '\n' +
+  extractFunc('f3SetsContexto') + '\n' +
   extractFunc('f3TendenciaFeedback') + '\n' +
   extractFunc('f3EjerciciosDolor') + '\n' +
   extractFunc('f3ValidarPlan') + '\n' +
@@ -195,6 +209,7 @@ sandbox.state.fitVariant = 0;
 
 // Esfuerzo fuerte y extremo también respetan casa
 sandbox.state.fitEffort = 'fuerte';
+sandbox.state.fitEffortDate = sandbox.todayISO(); // el esfuerzo es de HOY (fitEffortHoy)
 var planFuerte = sandbox.buildFitnessTodayPlan(ctxFor('Ganar músculo sin quedar molido', 'Casa / sin equipo'));
 t('B11 · Fuerte en casa: 6 ejercicios, todos de casa',
   planFuerte.length === 6 && planFuerte.every(function (x) { return unionCasa.indexOf(x.name) >= 0; }));
@@ -203,6 +218,7 @@ var planExtremo = sandbox.buildFitnessTodayPlan(ctxFor('Ganar músculo sin queda
 t('B12 · Extremo en casa: hasta 8 ejercicios, todos de casa',
   planExtremo.length <= 8 && planExtremo.every(function (x) { return unionCasa.indexOf(x.name) >= 0; }));
 sandbox.state.fitEffort = 'normal';
+sandbox.state.fitEffortDate = null;
 
 // Calistenia en casa (forma especial de entrenar): sin MÁQUINAS de gimnasio
 // (la barra de dominadas es parte del equipo de calistenia, no una máquina)
@@ -334,3 +350,4 @@ if (failed) {
   process.exit(1);
 }
 process.exit(0);
+

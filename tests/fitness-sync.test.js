@@ -138,6 +138,50 @@ t('S4 · Peso: gana updated_at por client_id y se ordena por fecha', function ()
   return out.length === 2 && out[0].w === 128.5 && out[1].w === 128;
 }());
 
+t('S4c · los días de una rutina configurada (r.dias) sobreviven al merge de sincronización', function () {
+  var local = {
+    lastModified: '2026-08-18T03:00:00Z',
+    savedRoutines: [{ id: 'rA', name: 'RUBEN A', updated_at: '2026-08-18T03:00:00Z', plan: [{ name: 'Press banca con barra', muscle: 'pecho' }], dias: [{ di: 5, n: 'Sáb', exs: [{ name: 'Curl con barra', muscle: 'biceps', sets: 3, reps: '8-12', rest: 60 }] }] }]
+  };
+  var remote = {
+    lastModified: '2026-08-18T01:00:00Z',
+    savedRoutines: [{ id: 'rA', name: 'RUBEN A', updated_at: '2026-08-18T01:00:00Z', plan: [{ name: 'Press banca con barra', muscle: 'pecho' }] }] // copia vieja SIN días
+  };
+  var m = sandbox.mergeCloudStates(local, remote);
+  var r = (m.savedRoutines || []).find(function (x) { return x.id === 'rA'; });
+  return !!r && Array.isArray(r.dias) && r.dias.length === 1 && r.dias[0].di === 5;
+}());
+
+t('S4b · fitnessToday: la copia de OTRO día NO pisa la de hoy; ambas de hoy → gana la más reciente', function () {
+  sandbox.todayISO = function () { return '2026-08-18'; };
+  var local = {
+    lastModified: '2026-08-18T01:00:00Z',
+    fitnessToday: { date: '2026-08-18', createdAt: '2026-08-18T01:00:00Z', plan: [{ name: 'Local hoy' }] }
+  };
+  var remoteViejo = {
+    lastModified: '2026-08-18T02:00:00Z', // la nube es MÁS nueva…
+    fitnessToday: { date: '2026-08-17', createdAt: '2026-08-17T23:00:00Z', plan: [{ name: 'Ayer' }] }
+  };
+  var m1 = sandbox.mergeCloudStates(local, remoteViejo);
+  var okViejoNoPisa = m1.fitnessToday.date === '2026-08-18' && m1.fitnessToday.plan[0].name === 'Local hoy';
+  var localViejo = {
+    lastModified: '2026-08-18T00:00:00Z',
+    fitnessToday: { date: '2026-08-17', createdAt: '2026-08-17T23:00:00Z', plan: [{ name: 'Ayer' }] }
+  };
+  var remoteHoy = {
+    lastModified: '2026-08-18T02:00:00Z',
+    fitnessToday: { date: '2026-08-18', createdAt: '2026-08-18T01:30:00Z', plan: [{ name: 'Remoto hoy' }] }
+  };
+  var m2 = sandbox.mergeCloudStates(localViejo, remoteHoy);
+  var okRemotoHoy = m2.fitnessToday.date === '2026-08-18' && m2.fitnessToday.plan[0].name === 'Remoto hoy';
+  var localHoy = { lastModified: '2026-08-18T03:00:00Z', fitnessToday: { date: '2026-08-18', createdAt: '2026-08-18T03:00:00Z', plan: [{ name: 'Local reciente' }] } };
+  var remoteHoy2 = { lastModified: '2026-08-18T02:00:00Z', fitnessToday: { date: '2026-08-18', createdAt: '2026-08-18T01:00:00Z', plan: [{ name: 'Remoto hoy viejo' }] } };
+  var m3 = sandbox.mergeCloudStates(localHoy, remoteHoy2);
+  var okReciente = m3.fitnessToday.plan[0].name === 'Local reciente';
+  delete sandbox.todayISO;
+  return okViejoNoPisa && okRemotoHoy && okReciente;
+}());
+
 console.log('\n== Canal Realtime (WebSocket simulado) ==');
 
 t('S5 · Se suscribe a todas las tablas con filtro user_id y access_token', function () {

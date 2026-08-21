@@ -82,6 +82,10 @@ vm.runInNewContext(
   extractFunc('buildCustomRoutine') + '\n' +
   extractFunc('equipLabel') + '\n' +
   extractFunc('useRoutineDayToday') + '\n' +
+  extractFunc('f3EqsPermitidos') + '\n' +
+  extractFunc('f3KeyEquipo') + '\n' +
+  extractFunc('f3InventarioEquipo') + '\n' +
+  extractFunc('f3EquipoActualLabel') + '\n' +
   extractFunc('f3EquipKey') + '\n' +
   extractFunc('f3NivelNum') + '\n' +
   extractFunc('f3NivelBand') + '\n' +
@@ -91,6 +95,11 @@ vm.runInNewContext(
   extractFunc('f3RepsStr') + '\n' +
   extractFunc('f3RestSeg') + '\n' +
   extractFunc('f3FactorFatiga') + '\n' +
+  extractFunc('f3FactorActividad') + '\n' +
+  extractFunc('fitEffortHoy') + '\n' +
+  extractFunc('f3ActividadNormalizada') + '\n' +
+  extractFunc('f3MaxSimilitudGuardada') + '\n' +
+  extractFunc('f3AltsBanco') + '\n' +
   extractFunc('f3VolBand') + '\n' +
   extractFunc('f3Candidatos') + '\n' +
   extractFunc('f3Elegir') + '\n' +

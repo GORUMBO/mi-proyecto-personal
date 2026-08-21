@@ -71,7 +71,7 @@ const sandbox = {
   todayLocal: function () { return '2026-08-16'; },
   save: function () {},
   renderFitnessCoach: function () {},
-  document: { getElementById: function () { return { innerHTML: '' }; } }
+  document: { getElementById: function () { return { innerHTML: '', getBoundingClientRect: function () { return { top: 0 }; } }; } }
 };
 vm.runInNewContext(
   extractFunc('fitnessExerciseBank') + '\n' +
@@ -87,6 +87,10 @@ vm.runInNewContext(
   extractFunc('buildCustomRoutine') + '\n' +
   extractFunc('equipLabel') + '\n' +
   extractFunc('useRoutineDayToday') + '\n' +
+  extractFunc('f3EqsPermitidos') + '\n' +
+  extractFunc('f3KeyEquipo') + '\n' +
+  extractFunc('f3InventarioEquipo') + '\n' +
+  extractFunc('f3EquipoActualLabel') + '\n' +
   extractFunc('f3EquipKey') + '\n' +
   extractFunc('f3NivelNum') + '\n' +
   extractFunc('f3NivelBand') + '\n' +
@@ -96,6 +100,13 @@ vm.runInNewContext(
   extractFunc('f3RepsStr') + '\n' +
   extractFunc('f3RestSeg') + '\n' +
   extractFunc('f3FactorFatiga') + '\n' +
+  extractFunc('f3FactorActividad') + '\n' +
+  extractFunc('fitEffortHoy') + '\n' +
+  extractFunc('f3ActividadNormalizada') + '\n' +
+  extractFunc('f3MaxSimilitudGuardada') + '\n' +
+  extractFunc('f3AltsBanco') + '\n' +
+  extractFunc('f3AnclarEl') + '\n' +
+  extractFunc('f3IrARutina') + '\n' +
   extractFunc('f3VolBand') + '\n' +
   extractFunc('f3Candidatos') + '\n' +
   extractFunc('f3Elegir') + '\n' +
@@ -106,6 +117,9 @@ vm.runInNewContext(
   extractFunc('f3SlotsParaMusculos') + '\n' +
   extractFunc('f3TagDeNombre') + '\n' +
   extractFunc('f3SemanaReferencia') + '\n' +
+  extractFunc('f3SemanaDesdeDias') + '\n' +
+  extractFunc('f3ElegirSplit') + '\n' +
+  extractFunc('f3SetsContexto') + '\n' +
   extractFunc('f3ValidarEjercicioLib') + '\n' +
   extractFunc('f3ValidarPlan') + '\n' +
   extractFunc('f3ValidarSemana') + '\n' +
@@ -236,7 +250,11 @@ console.log('\n== E · Alias de historial ==');
 const alias = [
   ['Press inclinado mancuernas', 'press_inclinado'],
   ['Tríceps cuerda', 'extension_triceps'],
-  ['Plancha', 'crunch'],
+  ['Plancha', 'plancha'],
+  ['Plancha lateral', 'plancha_lateral'],
+  ['Dead bug', 'dead_bug'],
+  ['Curl 21s', 'curl_21s'],
+  ['Patada de tríceps', 'patada_triceps'],
   ['Peso muerto con mancuernas', 'rdl'],
   ['Jalón al pecho', 'jalon'],
   ['Curl bíceps cable/barra', 'curl'],
@@ -298,7 +316,7 @@ let malasSemanas = 0, totalSem = 0;
         var ctx = { objetivo: goal === 'fuerza' ? 'fuerza' : goal === 'resistencia' ? 'resistencia' : goal === 'bajar grasa' ? 'bajar_grasa' : 'hipertrofia', nivel: exp, equip: equip === 'casa' ? 'Casa / sin equipo' : equip === 'mancuernas' ? 'Mancuernas' : 'Gimnasio', dias: dias };
         var semanaV = r.weekSchedule.map(function (a, i) {
           if (a === 'rest') return { di: i, rest: true };
-          var d = r.days.find(function (dd) { return dd.day === sandbox.routineSplit(dias)[a][0]; });
+          var d = r.days[a];
           return { di: i, day: d ? d.day : 'D', tag: sandbox.f3TagDeNombre(d ? d.day : ''), plan: d ? d.exercises.map(function (x) {
             var id = sandbox.f3IdPorNombre(x.name);
             return { exId: id, n: x.name, m: x.muscle, pat: id ? EX_LIB[id].pat : null, eq: id ? EX_LIB[id].var[sandbox.f3EquipKey(ctx.equip)].eq : null, lv: id ? EX_LIB[id].lv : 1, sets: x.sets, reps: x.reps, rest: String(sandbox.restSeconds(x.rest)) + ' s' };
@@ -320,3 +338,4 @@ if (failed) {
   process.exit(1);
 }
 process.exit(0);
+
