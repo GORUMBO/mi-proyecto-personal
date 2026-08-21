@@ -1,8 +1,22 @@
 {
-  "latest": "1.188.4.2",
-  "date": "2026-08-16",
+  "latest": "1.189.0",
+  "date": "2026-08-20",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.189.0",
+      "date": "2026-08-20",
+      "type": "recomendada",
+      "nuevas": [
+        "Un solo centro de configuracion en Ajustes: Mi perfil, Alimentacion, Mi cocina, Entrenamiento, Apariencia, Notificaciones y Cuenta, con resumenes reales en cada tarjeta y acordeones exclusivos (una seccion abierta a la vez).",
+        "Barra inteligente de guardado: aparece solo con cambios reales, con estados reales (Guardando / Guardado local / Sincronizado / Error con reintento) y un unico boton de guardado que usa el mismo flujo de persistencia y sincronizacion.",
+        "Equipo disponible con inventario (Gimnasio, Casa sin equipo, Casa con equipo, Personalizado): el motor solo propone ejercicios compatibles con lo que tienes, con aviso y Adaptar rutina si cambias de equipo.",
+        "Plan semanal con dias reales (marca Lun..Dom) y tipos de split (Automatica, Full Body, Upper/Lower, Torso/Pierna, PPL, Push/Pull, Arnold, Bro Split, Especializacion, Hibrida, Personalizada), recuperacion incluyendo domingo->lunes, y modo guiado opcional como preferencia.",
+        "Mas alternativas reales en Cambiar ejercicio (banco de ejercicios ampliado con metadatos por equipo) y un solo panel de entrenamiento del dia."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.188.4.2",
       "date": "2026-08-16",
