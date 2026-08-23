@@ -1,8 +1,21 @@
 {
-  "latest": "1.190.0",
-  "date": "2026-08-22",
+  "latest": "1.191.0",
+  "date": "2026-08-23",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.191.0",
+      "date": "2026-08-23",
+      "type": "recomendada",
+      "nuevas": [
+        "Caminata diaria rediseñada con el mismo lenguaje visual de Fitness: hero con tus pasos de hoy y progreso contra tu objetivo diario, distancia (millas y km), minutos y calorías estimadas cuando hay registro, promedio de 7 días, récord personal y total semanal, mini-gráfica de los últimos 7 días con racha, e historial compacto con editar y borrar.",
+        "Al guardar una caminata ya se conservan los minutos (el campo existía pero se ignoraba) y si guardas dos veces el mismo día se actualiza el registro en vez de duplicarlo."
+      ],
+      "cambios": [
+        "Nueva suite de regresión de Caminata (42 pruebas): estado vacío sin inventar datos, registro de hoy, upsert por fecha, borrado con recálculo de estadísticas, resumen de 7 días, racha y persistencia."
+      ],
+      "errores": []
+    },
     {
       "version": "1.190.0",
       "date": "2026-08-22",
