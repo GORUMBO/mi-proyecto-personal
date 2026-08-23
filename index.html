@@ -350,6 +350,58 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 .fit-clean-top{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}.fit-clean-title{font-size:20px;font-weight:950;margin:0;color:#12352a}.fit-clean-note{color:var(--m);font-size:13px;line-height:1.35;margin-top:4px}.fit-clean-status{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin-top:10px}.fit-clean-chip{background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:10px}.fit-clean-chip b{display:block;color:#15704f;font-size:18px;line-height:1.1}.fit-clean-chip span{font-size:12px;color:#63706a;font-weight:800}.fit-clean-result{scroll-margin-top:120px}.fit-clean-details{border:1px solid #d9e3db;border-radius:16px;background:#fff;margin:10px 0;padding:0;overflow:hidden}.fit-clean-details>summary{padding:14px 16px;background:#f7fff9;color:#15704f;font-size:16px}.fit-clean-details-body{padding:12px}.fit-clean-tip{background:#eaf5ef;border:1px solid #9dd5b4;border-radius:14px;padding:10px;font-size:13px;color:#295141;font-weight:800}.fit-list-compact{display:grid;gap:8px;margin-top:10px}.fit-row-compact{border:1px solid #d9e3db;border-radius:14px;background:#fff;padding:10px}.fit-row-main{display:flex;gap:10px;align-items:flex-start}.fit-check-small{width:32px;height:32px;border-radius:50%;border:2px solid #9dd5b4;display:grid;place-items:center;font-weight:900;color:#fff;flex:0 0 auto}.fit-row-compact.done{background:#f0faf4;border-color:#9dd5b4;opacity:.78}.fit-row-compact.done .fit-check-small{background:#15704f;border-color:#15704f}.fit-row-name{font-weight:900}.fit-row-meta{font-size:13px;color:#63706a;margin-top:2px}.fit-row-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.fit-row-actions .btn{padding:8px 10px;font-size:12px;border-radius:12px}.fitness-old-advanced{margin-top:10px}
 @media(max-width:680px){.fit-clean-top{grid-template-columns:1fr}.fit-clean-status{grid-template-columns:repeat(2,minmax(0,1fr))}.fit-row-actions{display:grid;grid-template-columns:1fr 1fr}.fit-clean-hero{padding:12px}.mode-bridge.minimal .mode-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:420px){.fit-clean-status{grid-template-columns:1fr}.fit-row-actions{grid-template-columns:1fr}}
+/* v1.190-rediseño Fitness v2: reorganización visual real (SOLO presentación) */
+.fit5-wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.fit5-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 2px;flex-wrap:wrap}
+.fit5-head h2{margin:0;font-size:19px;font-weight:950}
+.fit5-statuschip{background:#eaf5ef;color:#15704f;border:1px solid #9dd5b4;border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:800}
+.fit5-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:stretch}
+.fit5-hero{background:linear-gradient(135deg,#0d6043,#15704f 70%);color:#fff;border-radius:24px;padding:18px;box-shadow:0 8px 28px rgba(13,96,67,.28)}
+.fit5-hero-head{display:flex;align-items:center;gap:12px;cursor:pointer}
+.fit5-hero-icon{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);color:#fff;display:grid;place-items:center;font-size:22px;flex:0 0 auto}
+.fit5-hero-title{font-size:18px;font-weight:900;color:#fff}
+.fit5-hero-sub{font-size:12.5px;color:rgba(255,255,255,.85);font-weight:700;margin-top:2px}
+.fit5-hero-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.fit5-hero-stat{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:7px 12px;font-size:11px;font-weight:800}
+.fit5-hero-stat b{font-size:15px;display:block;color:#fff}
+.fit5-hero-progress{height:9px;background:rgba(255,255,255,.22);border-radius:99px;overflow:hidden;margin-top:12px}
+.fit5-hero-fill{height:100%;background:#fff;border-radius:99px;transition:width .3s}
+.fit5-cta{display:inline-flex;align-items:center;gap:6px;background:#fff;color:#0d6043;border:0;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:900;cursor:pointer;margin-top:14px;box-shadow:0 3px 12px rgba(0,0,0,.18)}
+.fit5-hero .fit2-rutina-head{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:14px}
+.fit5-hero .fit2-rutina-head b{color:#fff}
+.fit5-hero .fit2-rutina-head span{color:rgba(255,255,255,.8)}
+.fit5-hero .fit-progress{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22)}
+.fit5-hero .fit-progress-top{color:#fff}
+.fit5-hero .fit-progress-num{background:rgba(255,255,255,.25);color:#fff}
+.fit5-hero .fit-progress-bar{background:rgba(255,255,255,.22)}
+.fit5-hero .fit-progress-fill{background:#fff}
+.fit5-hero .muted{color:rgba(255,255,255,.8)}
+.fit5-side{display:flex;flex-direction:column;gap:10px}
+.fit5-tile{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e3ece6;border-radius:18px;padding:13px 14px;box-shadow:0 2px 10px rgba(21,112,79,.06);cursor:pointer;text-align:left;min-height:70px}
+.fit5-tile-icon{width:42px;height:42px;border-radius:13px;background:#eaf5ef;color:#15704f;display:grid;place-items:center;font-size:20px;flex:0 0 auto}
+.fit5-tile b{display:block;font-size:14px;color:#17231e;font-weight:900}
+.fit5-tile span{display:block;font-size:11px;color:#63706a;font-weight:600;margin-top:1px}
+.fit3-card{background:#fff;border:1px solid #e3ece6;border-radius:20px;padding:14px;box-shadow:0 2px 12px rgba(21,112,79,.06)}
+.fit5-seg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;background:#eef2f0;border-radius:999px;padding:3px;margin-top:12px}
+.fit5-seg-btn{border:0;background:transparent;border-radius:999px;padding:8px 0;text-align:center;cursor:pointer;font-size:11px;font-weight:800;color:#63706a;line-height:1.2;min-width:0}
+.fit5-seg-btn .fit5-dot{width:6px;height:6px;border-radius:99px;margin:4px auto 0;background:#15704f}
+.fit5-seg-btn.fit5-rest .fit5-dot{background:#cbd5cf}
+.fit5-seg-btn .fit5-tag{display:block;font-size:8px;font-weight:700;margin-top:1px;opacity:.7}
+.fit5-seg-btn.fit5-sel{background:#fff;color:#15704f;box-shadow:0 2px 6px rgba(0,0,0,.12);font-weight:900}
+.fit5-seg-btn.fit5-hoy:not(.fit5-sel){box-shadow:inset 0 0 0 1.5px #9dd5b4}
+.fit5-daycard{background:#fbfefc;border:1px solid #e3ece6;border-radius:16px;padding:12px 14px;margin-top:10px}
+.fit5-daycard-active{border-color:#9dd5b4;background:#f4fcf7}
+.fit2-rutina-head{display:flex;flex-direction:column;gap:1px;background:linear-gradient(135deg,#f7fff9,#fff);border:1px solid #9dd5b4;border-radius:14px;padding:10px 13px;margin-bottom:10px}
+.fit2-rutina-head b{color:#12352a;font-size:15px}
+.fit2-rutina-head span{font-size:11.5px;color:#63706a}
+.fit-progress{background:linear-gradient(135deg,#f7fff9,#fff);border:1px solid #d9e3db;border-radius:16px;padding:12px 14px;box-shadow:0 1px 8px rgba(21,112,79,.05)}
+.fit-progress-bar{height:10px}
+.fit3-modal-backdrop{position:fixed;inset:0;background:rgba(16,52,38,.38);z-index:99980;overflow:auto;padding:10px;-webkit-overflow-scrolling:touch}
+.fit3-modal{max-width:540px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:0 12px 44px rgba(0,0,0,.28);padding:14px;padding-bottom:0}
+.fit3-config-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.fit3-full{grid-column:1/-1}
+.fit3-savebar{position:sticky;bottom:0;display:flex;gap:8px;margin:14px -14px 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.97);border-top:1px solid #e3ece6;border-radius:0 0 20px 20px;z-index:5}
+@media(max-width:760px){.fit5-grid{grid-template-columns:1fr}.fit5-side{flex-direction:row}.fit5-side .fit5-tile{flex:1;flex-direction:column;text-align:center;gap:6px;padding:10px 6px;min-width:0}}
 /* Encabezado reutilizable para dar jerarquía pareja a todas las secciones */
 .sec-hero{background:linear-gradient(135deg,#f7fff9,#fff);border:1.5px solid #9dd5b4;border-radius:18px;padding:14px 16px;margin:10px 0}
 .sec-hero h2{margin:0;font-size:21px}
@@ -919,9 +971,9 @@ function showGroup(gid,shouldScroll=true){
     snav.innerHTML = chipTabs.map((t,i)=>{
       let ti = tabs.indexOf(t);
       return `<button onclick="showTab(${ti},this)" id="stab_${ti}"
-        style="border:1.5px solid var(--b);border-radius:999px;padding:7px 14px;
-        font-weight:800;font-size:13px;background:#fff;color:#3b4943;
-        white-space:nowrap;cursor:pointer;transition:.15s"
+        style="border:1.5px solid #e3ece6;border-radius:999px;padding:6px 13px;
+        font-weight:800;font-size:12.5px;background:#fff;color:#3b4943;
+        white-space:nowrap;cursor:pointer;transition:.15s;box-shadow:0 1px 3px rgba(21,112,79,.04)"
       >${conIcono(t, tabLabel(t), 'nav-icon')}</button>`;
     }).join('');
     // Mostrar la pestaña de contenido (la del grupo si existe, si no la primera)
@@ -19247,6 +19299,8 @@ function secEjercicio(){
   let last=logs.length?logs[logs.length-1]:null;
   let title=pack&&pack.adaptedOnlyToday?'Rutina adaptada hoy':pack?'Rutina lista':'Sin rutina creada';
   let length=pack&&pack.plan?pack.plan.length:0;
+  let hechos=pack&&pack.plan?pack.plan.filter(function(x,i){return pack.checked&&pack.checked[i];}).length:0;
+  let pct=length?Math.round(hechos/length*100):0;
   let mins=pack&&pack.adaptation?pack.adaptation.minutes+' min':(pack&&pack.ctx&&pack.ctx.hard?'20-25 min':'30-40 min');
   let advanced = mode==='pro'?`<details class="fit-clean-details fitness-old-advanced">
     <summary>⭐ Avanzado: gráficas, 3D, fotos y registro completo</summary>
@@ -19294,22 +19348,41 @@ function secEjercicio(){
       </details>
     </div>
   </details>`:'';
-  return `<h2>💪 Fitness</h2>
-  <div class="card">
-    <p class="muted" style="margin-top:0">Elige qué hacer hoy. Todo aparece aquí mismo — sin cambiar de pantalla.</p>
-    <div class="row" style="gap:8px;flex-wrap:wrap">
-      <button class="btn primary" onclick="quickFitnessToday()">🏋️ Mi rutina de hoy</button>
-      <button class="btn" onclick="openCreateRoutine()">🛠️ Crear rutina</button>
-      <button class="btn" onclick="renderSimpleFitnessProgress()">📊 Progreso</button>
-      <button class="btn" onclick="showSavedRoutines()">📁 Rutinas guardadas</button>
+  return `<div class="fit5-wrap">
+  <div class="fit5-head">
+    <h2>💪 Fitness</h2>
+    <span class="fit5-statuschip">${safeText(title)}</span>
+  </div>
+  <div class="fit5-grid">
+    <div class="fit5-hero">
+      <div class="fit5-hero-head" onclick="quickFitnessToday()">
+        <span class="fit5-hero-icon">🏋️</span>
+        <div style="flex:1;min-width:0">
+          <div class="fit5-hero-title">Mi rutina de hoy</div>
+          <div class="fit5-hero-sub">${safeText(title)} · ${weekCount} registros esta semana</div>
+        </div>
+      </div>
+      <div class="fit5-hero-stats">
+        <div class="fit5-hero-stat"><b>${length||'—'}</b>ejercicios</div>
+        <div class="fit5-hero-stat"><b>${hechos} de ${length||0}</b>completados</div>
+        <div class="fit5-hero-stat"><b>${pct}%</b>avance</div>
+      </div>
+      <div class="fit5-hero-progress"><div class="fit5-hero-fill" style="width:${pct}%"></div></div>
+      <button class="fit5-cta" onclick="quickFitnessToday();var _d=document.getElementById('simpleFitnessOut');if(_d)setTimeout(function(){_d.scrollIntoView({behavior:'smooth',block:'start'});},60);">▶ Ver mi rutina</button>
     </div>
-    <div class="fit-clean-status" style="margin-top:12px">
-      <div class="fit-clean-chip"><b>${safeText(title)}</b><span>estado de hoy</span></div>
-      <div class="fit-clean-chip"><b>${length||'—'}</b><span>ejercicios</span></div>
-      <div class="fit-clean-chip"><b>${weekCount}</b><span>registros esta semana</span></div>
+    <div class="fit5-side">
+      <button class="fit5-tile" onclick="openCreateRoutine()"><span class="fit5-tile-icon">🛠️</span><span><b>Crear rutina</b><span>arma tu plan semanal</span></span></button>
+      <button class="fit5-tile" onclick="renderSimpleFitnessProgress()"><span class="fit5-tile-icon">📊</span><span><b>Progreso</b><span>estadísticas y récords</span></span></button>
+      <button class="fit5-tile" onclick="showSavedRoutines()"><span class="fit5-tile-icon">📁</span><span><b>Rutinas guardadas</b><span>tus plantillas</span></span></button>
     </div>
+  </div>
+  <div class="fit3-card">
     <div id="routineTodayOut"></div>
-    <div id="simpleFitnessOut" class="fit-clean-result" style="margin-top:12px"><div class="muted"><b>🏋️ Mi rutina de hoy:</b> te genera los ejercicios del día automáticamente según tu peso, pasos y energía. Si ya armaste tu <b>🛠️ plan semanal</b>, toma el entrenamiento que toca hoy. <b>Los ejercicios cambian cada día</b> para no aburrirte.</div></div>
+  </div>
+  <div class="fit3-card">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:15px;color:#12352a">🏋️ Entrenamiento de hoy</b><span class="muted" style="font-size:11px">peso · series · reps · historial</span></div>
+    <div id="simpleFitnessOut" class="fit-clean-result"><div class="muted"><b>🏋️ Mi rutina de hoy:</b> te genera los ejercicios del día automáticamente según tu peso, pasos y energía. Si ya armaste tu <b>🛠️ plan semanal</b>, toma el entrenamiento que toca hoy. <b>Los ejercicios cambian cada día</b> para no aburrirte.</div></div>
+  </div>
   </div>
   <details id="savedRoutinesDetails" class="fit-clean-details" ontoggle="fitAcordeonPrincipal(this)">
     <summary>📁 Rutinas guardadas</summary>
@@ -23557,8 +23630,8 @@ function ppToggleWorker(){
 function ppRenderWorkerToggle(){
   try{
     var el=document.getElementById('ppWorkerToggleBar');
-    if(!el){el=document.createElement('div');el.id='ppWorkerToggleBar';el.style.cssText='position:fixed;bottom:10px;right:10px;z-index:99998';document.body.appendChild(el);}
-    el.innerHTML='<button onclick="ppToggleWorker()" style="background:#2e6b52;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">🌉 Puente Cloudflare: '+(ppWorkerOn()?'ACTIVADO':'apagado')+'</button>';
+    if(!el){el=document.createElement('div');el.id='ppWorkerToggleBar';el.style.cssText='position:fixed;bottom:calc(8px + env(safe-area-inset-bottom,0px));right:10px;z-index:99990';document.body.appendChild(el);}
+    el.innerHTML='<button onclick="ppToggleWorker()" style="background:rgba(46,107,82,.8);color:#fff;border:0;border-radius:999px;padding:3px 10px;font-size:10px;font-weight:700;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.2)">🌉 Puente Cloudflare: '+(ppWorkerOn()?'ACTIVADO':'apagado')+'</button>';
   }catch(e){}
 }
 window.addEventListener('load',function(){try{ppRenderWorkerToggle();}catch(e){}});
@@ -26177,7 +26250,7 @@ function quickFitnessToday(){
   ${semanaMsg}
   ${respaldoMsg}
   ${equipoMsg}
-  <div class="ok" style="margin-bottom:10px"><b>Rutina lista.</b> Marca cada ejercicio cuando lo termines. Lo avanzado queda cerrado para no estorbar.</div>
+  <div class="fit2-rutina-head"><b>Rutina lista.</b><span>Marca cada ejercicio al terminarlo · lo avanzado queda cerrado para no estorbar.</span></div>
   <div class="fit-progress">
     <div class="fit-progress-top"><b>Avance de hoy</b><span class="fit-progress-num">${hechos} de ${plan.length}</span></div>
     <div class="fit-progress-bar"><div class="fit-progress-fill" style="width:${pct}%"></div></div>
@@ -26572,7 +26645,7 @@ function renderSimpleFitnessProgress(days){
     +(rows||'<p class="muted">Aún no registras pesos en este periodo. Registra tus ejercicios para ver resultados aquí.</p>')
     +fitHistorialSesiones()
     +'</div>';
-  setTimeout(function(){out.scrollIntoView({behavior:'smooth',block:'nearest'});},30);
+  setTimeout(function(){out.scrollIntoView({behavior:'smooth',block:'start'});},30);
 }
 // ===== v41.43: CONSTRUCTOR DE RUTINA MULTI-DÍA, GRASA CORPORAL Y GRÁFICAS DE PROGRESO =====
 // Banco grande de ejercicios por músculo, con variantes por equipo.
@@ -27137,23 +27210,23 @@ function renderRoutineToday(){
   let editing=!!r._editWeek;
   let bar=weekdayShort.map((wd,i)=>{
     let a=r.weekSchedule[i],isRest=(a==='rest'),isSel=i===sel,isToday=i===today;
-    return `<button onclick="selectWeekday(${i})" style="flex:1;min-width:0;padding:7px 2px;border-radius:11px;border:1.5px solid ${isSel?'#15704f':'#dfe7e2'};background:${isSel?'#15704f':'#fff'};color:${isSel?'#fff':'#2b3a33'};font-size:11px;font-weight:800;line-height:1.15;cursor:pointer">${wd}<div style="font-size:8px;font-weight:600;opacity:${isSel?'.9':'.6'}">${isToday?'hoy':(isRest?'descanso':'entreno')}</div><div style="width:6px;height:6px;border-radius:99px;margin:4px auto 0;background:${isRest?(isSel?'#cfe6d8':'#cbd5cf'):(isSel?'#bff0d2':'#15704f')}"></div></button>`;
+    return `<button class="fit5-seg-btn${isSel?' fit5-sel':''}${isToday?' fit5-hoy':''}${isRest?' fit5-rest':''}" onclick="selectWeekday(${i})">${wd}<span class="fit5-tag">${isToday?'hoy':(isRest?'descanso':'entreno')}</span><div class="fit5-dot"></div></button>`;
   }).join('');
   let detail;
   if(assign==='rest'){
-    detail=`<div style="border:1px solid #e6ede9;background:#f8fbf9;border-radius:14px;padding:16px;margin-top:12px;text-align:center"><div style="font-size:30px">😴</div><b>Día de descanso</b><p class="muted" style="margin:6px 0 0;font-size:13px">Recupérate: duerme bien, come suficiente proteína y camina suave. El músculo crece descansando.</p></div>`;
+    detail=`<div class="fit5-daycard"><div style="font-size:30px">😴</div><b>Día de descanso</b><p class="muted" style="margin:6px 0 0;font-size:13px">Recupérate: duerme bien, come suficiente proteína y camina suave. El músculo crece descansando.</p></div>`;
   }else{
     let plan=routineDayPlan(assign),day=r.days[assign];
-    detail=`<div style="border:2px solid #15704f;background:#f7fff9;border-radius:14px;padding:12px;margin-top:10px">
+    detail=`<div class="fit5-daycard fit5-daycard-active">
       <div class="row" style="justify-content:space-between;align-items:baseline"><b style="font-size:15px">${safeText(day.day)}</b><span class="muted" style="font-size:11px">${weekdayNames[sel]}${sel===today?' · hoy':''}</span></div>
       <div style="margin-top:8px">${plan.map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #eef3f0"><div style="min-width:0;font-size:13px;line-height:1.35"><b>${safeText(x.name)}</b> <span class="muted">${x.sets}×${safeText(x.reps)}</span>${x.target!=null?' · <span style="color:#15704f">🎯'+x.target+' lb</span>':''}</div><button class="btn" style="padding:4px 9px;font-size:13px;flex-shrink:0" onclick="exerciseHelp('${String(x.name).replace(/'/g,"\\'")}')">🖼️</button></div>`).join('')}</div>
     </div>`;
   }
   let edit=editing?`<div style="border:1px solid #e6ede9;border-radius:12px;padding:12px;margin-top:14px;background:#fbfcfb"><b style="font-size:14px">✏️ Cambiar qué rutina va cada día</b><p class="muted" style="font-size:12px;margin:4px 0 8px">Elige qué día de tu rutina entrenas cada día de la semana, o ponlo en descanso.</p>${weekdayNames.map((wd,i)=>`<div class="row" style="justify-content:space-between;align-items:center;margin-top:8px"><span style="font-size:13px">${wd}</span><select onchange="setWeekdayAssignment(${i},this.value)" style="width:62%"><option value="rest" ${r.weekSchedule[i]==='rest'?'selected':''}>😴 Descanso</option>${r.days.map((d,di)=>`<option value="${di}" ${r.weekSchedule[i]===di?'selected':''}>Día ${di+1}: ${safeText(d.day)}</option>`).join('')}</select></div>`).join('')}<button class="btn primary" style="width:100%;margin-top:12px" onclick="toggleEditWeek()">✓ Listo, volver a mi entrenamiento</button></div>`:'';
-  out.innerHTML=`<div class="card" style="margin-bottom:12px">
-    <div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">🗓️ Mi semana</h3><button class="btn" style="padding:6px 12px;font-size:12px" onclick="toggleEditWeek()">${editing?'✓ Listo':'✏️ Cambiar días'}</button></div>
-    <div class="muted" style="font-size:12px;margin-top:2px">Toca un día para ver tu entrenamiento.</div>
-    <div style="display:flex;gap:4px;margin-top:10px">${bar}</div>
+  out.innerHTML=`<div>
+    <div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0;font-size:15px">🗓️ Mi semana</h3><button class="btn" style="padding:6px 12px;font-size:12px;border-radius:999px" onclick="toggleEditWeek()">${editing?'✓ Listo':'✏️ Cambiar días'}</button></div>
+    <div class="muted" style="font-size:11.5px;margin-top:2px">Toca un día para ver tu entrenamiento.</div>
+    <div class="fit5-seg">${bar}</div>
     ${detail}${edit}
   </div>`;
 }
@@ -28950,7 +29023,7 @@ function renderRoutineConfig(){
   var chips='';
   for(var i=0;i<7;i++){
     var activo=cfgDiaIdx(i)>=0;
-    chips+='<button class="btn'+(activo?' primary':'')+'" style="font-size:12px;padding:6px 9px" onclick="cfgToggleDia('+i+')">'+(activo?'✓ ':'')+diasSem[i]+'</button>';
+    chips+='<button class="btn'+(activo?' primary':'')+'" style="font-size:12px;padding:7px 11px;border-radius:999px" onclick="cfgToggleDia('+i+')">'+(activo?'✓ ':'')+diasSem[i]+'</button>';
   }
   var diasSemFull=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
   var hoyW=(typeof todayWeekdayIndex==='function')?todayWeekdayIndex():-1;
@@ -28983,12 +29056,12 @@ function renderRoutineConfig(){
       ?'<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--m)">Avanzado · Plan de respaldo</summary>'+cuerpoB+'</details>'
       :cuerpoB;
   }
-  el.innerHTML='<div style="border:2px solid #15704f;background:#f7fff9;border-radius:14px;padding:12px">'
+  el.innerHTML='<div class="fit3-modal-backdrop"><div class="fit3-modal">'
     +'<div style="font-weight:900;color:#0d6043;font-size:15px">⚙️ Configurar rutina</div>'
     +'<div class="muted" style="font-size:11px;margin:2px 0 8px">Edita la PLANTILLA guardada (permanente). El 🔧 Ajuste de HOY es otra cosa: solo cambia el entrenamiento de hoy.</div>'
     +'<div><label style="font-size:12px;font-weight:800">Nombre de rutina</label><input id="cfgName" value="'+safeText(cfg.name)+'" oninput="cfgSetNombre(event)" style="width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border:1.5px solid #cbd8cf;border-radius:10px"></div>'
-    +'<div class="grid" style="margin-top:8px">'
-    +'<div><label style="font-size:12px;font-weight:800">Objetivo</label><select id="cfgGoal" onchange="cfgSetCampo(\'goal\',event)" style="width:100%">'+FIT_GOALS.map(function(g){return '<option'+(cfg.goal===g?' selected':'')+'>'+safeText(g)+'</option>';}).join('')+'</select></div>'
+    +'<div class="fit3-config-grid">'
+    +'<div class="fit3-full"><label style="font-size:12px;font-weight:800">Objetivo</label><select id="cfgGoal" onchange="cfgSetCampo(\'goal\',event)" style="width:100%">'+FIT_GOALS.map(function(g){return '<option'+(cfg.goal===g?' selected':'')+'>'+safeText(g)+'</option>';}).join('')+'</select></div>'
     +'<div><label style="font-size:12px;font-weight:800">Nivel</label><select id="cfgNivel" onchange="cfgSetCampo(\'nivel\',event)" style="width:100%">'+['principiante','intermedio','avanzado'].map(function(n){return '<option value="'+n+'"'+(cfg.nivel===n?' selected':'')+'>'+safeText(n)+'</option>';}).join('')+'</select></div>'
     +'<div><label style="font-size:12px;font-weight:800">Equipo</label><select id="cfgEquip" onchange="cfgSetCampo(\'equip\',event)" style="width:100%">'+['Gimnasio','Mancuernas','Casa / sin equipo'].map(function(e){return '<option'+(cfg.equip===e?' selected':'')+'>'+safeText(e)+'</option>';}).join('')+'</select></div>'
     +'<div><label style="font-size:12px;font-weight:800">Duración</label><select id="cfgMinutes" onchange="cfgSetCampo(\'minutes\',event)" style="width:100%">'+['30','45','60','75+'].map(function(m){return '<option value="'+m+'"'+(cfg.minutes===m?' selected':'')+'>'+m+' min</option>';}).join('')+'</select></div>'
@@ -28997,8 +29070,8 @@ function renderRoutineConfig(){
     +'<div style="margin-top:10px"><label style="font-size:12px;font-weight:800">Días de entrenamiento</label><div class="muted" style="font-size:11px;margin:2px 0 6px">Marca o desmarca cualquier día. Al añadir un día se propone un plan coherente (lo ves antes de guardar).</div><div class="row" style="gap:5px;flex-wrap:wrap">'+chips+'</div></div>'
     +filasDias
     +filaBase
-    +'<div class="row" style="gap:8px;margin-top:12px"><button class="btn primary" style="flex:1;padding:11px;font-size:14px" onclick="cfgGuardar()">💾 Guardar cambios</button><button class="btn" style="flex:1;padding:11px;font-size:14px" onclick="cfgCancelar()">Cancelar</button></div>'
-    +'</div>';
+    +'<div class="fit3-savebar"><button class="btn primary" style="flex:1;padding:12px;font-size:14px;border-radius:999px" onclick="cfgGuardar()">💾 Guardar cambios</button><button class="btn" style="flex:1;padding:12px;font-size:14px;border-radius:999px" onclick="cfgCancelar()">Cancelar</button></div>'
+    +'</div></div>';
 }
 function cfgGuardar(){
   var cfg=window._routineCfg;if(!cfg)return;
@@ -29361,7 +29434,7 @@ function openCreateRoutine(){
     +'<div id="crEffortRow" class="row" style="gap:6px;flex-wrap:wrap;margin-top:4px">'+FIT_EFFORTS.map(function(o){return '<button class="btn'+(eff===o[0]?' primary':'')+'" data-e="'+o[0]+'" onclick="setCrEffort(\''+o[0]+'\');setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')+'</div>'
     +'</div>';
   try{f3CrTipoCambio();}catch(e){}
-  try{out.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+  try{out.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}
 }
 function crearRutina(){
   var g=function(id){return document.getElementById(id);};
