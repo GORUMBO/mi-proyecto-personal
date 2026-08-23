@@ -560,6 +560,7 @@ state.calendarEvents=state.calendarEvents||[];
 state.wellnessLog=state.wellnessLog||[];
 state.bodyMeasures=state.bodyMeasures||[];
 state.customRoutine=state.customRoutine||null;
+try{ppMigrarRutinaSemanal();}catch(e){}
 state.bodyFat=state.bodyFat||[];
 state.fitSettings=state.fitSettings||{};
 state.moneyGoals=state.moneyGoals||[];
@@ -23475,6 +23476,7 @@ async function cloudStartupSync(opts){
     var localOnlyD=opts.skipUpload?((state.workoutLog)||[]).filter(function(x){return !(x&&x.id!=null&&rwIdsD['id:'+x.id]);}).length:0;
     syncChainPush('☁️ Descarga de Supabase','remoto: '+rwD.length+' · último: '+(rwLastD?rwLastD.exercise:'—')+'#'+(rwLastD?rwLastD.id:'—')+' · local: '+((state.workoutLog)||[]).length+' · nuevos del remoto: '+nuevosD+(localOnlyD?' · propios sin subir: '+localOnlyD:''));
     if(remote&&remote.data)state=mergeCloudStates(state, remote.data);
+    try{ppMigrarRutinaSemanal();}catch(e){}
     syncChainPush('🔀 Merge','workoutLog total: '+((state.workoutLog)||[]).length);
     // Si la nube confirma que el usuario YA existe, restaura el perfil y salta
     // el registro inicial aunque el localStorage local estuviera vacío
@@ -27069,7 +27071,7 @@ function defaultWeekSchedule(nDays){
   if(map[nDays])return map[nDays].slice();
   let arr=[];for(let i=0;i<7;i++)arr.push(i<nDays?i:'rest');return arr;
 }
-function ensureWeekSchedule(){let r=state.customRoutine;if(!r)return;if(!Array.isArray(r.weekSchedule)||r.weekSchedule.length!==7)r.weekSchedule=defaultWeekSchedule(r.days.length);}
+function ensureWeekSchedule(){let r=state.customRoutine;if(!r)return;if(!Array.isArray(r.weekSchedule)||r.weekSchedule.length!==7)r.weekSchedule=defaultWeekSchedule(r.days.length);for(var i=0;i<7;i++){var v=r.weekSchedule[i];if(v==='rest')continue;if(v==null||v===''){r.weekSchedule[i]='rest';continue;}var n=+v;if(!(n>=0&&n<r.days.length))r.weekSchedule[i]='rest';else if(n!==v)r.weekSchedule[i]=n;}}
 function selectWeekday(i){
   if(!state.customRoutine)return;
   state.customRoutine.selectedWeekday=i;
@@ -27086,6 +27088,44 @@ function setWeekdayAssignment(i,val){
   if(i===f3DiaActivo(state.customRoutine)){try{activarDiaEntrenamiento(i);}catch(e){}}
 }
 function toggleEditWeek(){if(!state.customRoutine)return;state.customRoutine._editWeek=!state.customRoutine._editWeek;save();renderRoutineToday();}
+// MIGRACION (una sola vez, no destructiva): si customRoutine no existe pero hay
+// una rutina guardada con dias (la plantilla semanal de ⚙️ Configurar), se
+// reconstruye customRoutine/weekSchedule con ESOS mismos datos (nombres,
+// ejercicios, series, reps y dias). No borra ni reemplaza nada mas.
+function ppMigrarRutinaSemanal(){
+  try{
+    if(state.customRoutine)return;
+    var list=[];
+    try{list=(typeof f3RutinasActivas==='function')?f3RutinasActivas():[];}catch(e){list=(state.savedRoutines||[]).filter(function(r){return r&&!r.deleted;});}
+    var valida=function(r){return r&&Array.isArray(r.dias)&&r.dias.length&&r.dias.some(function(d){return d&&d.exs&&d.exs.length;});};
+    var src=null;
+    var linkedId=(state.fitnessToday&&state.fitnessToday.loadedRoutineId)||null;
+    if(linkedId){for(var k0=0;k0<list.length;k0++){if(list[k0]&&list[k0].id===linkedId&&valida(list[k0])){src=list[k0];break;}}}
+    if(!src){for(var k=0;k<list.length;k++){if(valida(list[k])){src=list[k];break;}}}
+    if(!src)return;
+    var equipL=(src.cfg&&src.cfg.equip)||'Gimnasio';
+    var equipK=(equipL==='Mancuernas')?'mancuernas':(equipL==='Casa / sin equipo')?'casa':(equipL==='Casa con equipo')?'casa_equipo':(equipL==='Equipo personalizado')?'personalizado':'gym';
+    var diasValidos=src.dias.filter(function(d){return d&&d.exs&&d.exs.length;});
+    if(!diasValidos.length)return;
+    var days=diasValidos.map(function(d){
+      return {day:(d.n||('Día '+(1))),exercises:d.exs.map(function(x){return {name:x.name,muscle:x.muscle||'',sets:x.sets||3,reps:x.reps||'8-12',rest:x.rest||90};})};
+    });
+    var sched=['rest','rest','rest','rest','rest','rest','rest'];
+    var hayEspecifico=false;
+    diasValidos.forEach(function(d,idx){
+      if(d.di>=0&&d.di<=6){sched[d.di]=idx;hayEspecifico=true;}
+    });
+    if(!hayEspecifico){for(var s2=0;s2<7;s2++)sched[s2]=0;}
+    var primero=(days[0].exercises||[])[0]||{sets:3,reps:'8-12',rest:90};
+    state.customRoutine={
+      createdAt:new Date().toISOString(),
+      cfg:{equip:equipK,exp:(src.cfg&&src.cfg.nivel)||'intermedio',goal:'hipertrofia',days:days.length},
+      scheme:{sets:(+String(primero.sets||'3').replace(/[^0-9]/g,''))||3,reps:primero.reps||'8-12',rest:primero.rest||90},
+      days:days,currentDay:0,history:[],weekSchedule:sched,selectedWeekday:null,
+      porque:['Reconstruida de tu rutina guardada: '+((src.name)||'rutina')+'.','Los ejercicios, series, repeticiones y dias son los que ya tenias guardados.']
+    };
+  }catch(e){}
+}
 function renderRoutineToday(){
   let out=document.getElementById('routineTodayOut');if(!out)return;
   let r=state.customRoutine;
@@ -28806,7 +28846,7 @@ function f3CfgCopia(r){
     goal:(r.cfg&&r.cfg.goal)||'Ganar músculo sin quedar molido',
     nivel:(r.cfg&&r.cfg.nivel)||((state.profile&&state.profile.nivelFit)||'intermedio'),
     equip:(r.cfg&&r.cfg.equip)||'Gimnasio',
-    minutes:(r.cfg&&r.cfg.minutes)||'75+',
+    minutes:String((r.cfg&&r.cfg.minutes)||'75+').split(' ')[0],
     intensidad:(r.cfg&&r.cfg.intensidad)||'normal',
     dias:(dias||[f3DiaDePlan(r.plan)]).map(function(d){return {di:d.di,n:d.n,motivo:d.motivo||null,exs:(((d.exs||d.exercises||d.plan))||[]).map(function(x){return {name:x.name,muscle:x.muscle,sets:x.sets,reps:x.reps,rest:x.rest,alts:x.alts||[]};})};}),
     editDia:null
@@ -28951,7 +28991,7 @@ function renderRoutineConfig(){
     +'<div><label style="font-size:12px;font-weight:800">Objetivo</label><select id="cfgGoal" onchange="cfgSetCampo(\'goal\',event)" style="width:100%">'+FIT_GOALS.map(function(g){return '<option'+(cfg.goal===g?' selected':'')+'>'+safeText(g)+'</option>';}).join('')+'</select></div>'
     +'<div><label style="font-size:12px;font-weight:800">Nivel</label><select id="cfgNivel" onchange="cfgSetCampo(\'nivel\',event)" style="width:100%">'+['principiante','intermedio','avanzado'].map(function(n){return '<option value="'+n+'"'+(cfg.nivel===n?' selected':'')+'>'+safeText(n)+'</option>';}).join('')+'</select></div>'
     +'<div><label style="font-size:12px;font-weight:800">Equipo</label><select id="cfgEquip" onchange="cfgSetCampo(\'equip\',event)" style="width:100%">'+['Gimnasio','Mancuernas','Casa / sin equipo'].map(function(e){return '<option'+(cfg.equip===e?' selected':'')+'>'+safeText(e)+'</option>';}).join('')+'</select></div>'
-    +'<div><label style="font-size:12px;font-weight:800">Duración</label><select id="cfgMinutes" onchange="cfgSetCampo(\'minutes\',event)" style="width:100%">'+['30','45','60','75+'].map(function(m){return '<option'+(cfg.minutes===m?' selected':'')+'>'+m+' min</option>';}).join('')+'</select></div>'
+    +'<div><label style="font-size:12px;font-weight:800">Duración</label><select id="cfgMinutes" onchange="cfgSetCampo(\'minutes\',event)" style="width:100%">'+['30','45','60','75+'].map(function(m){return '<option value="'+m+'"'+(cfg.minutes===m?' selected':'')+'>'+m+' min</option>';}).join('')+'</select></div>'
     +'<div><label style="font-size:12px;font-weight:800">Intensidad BASE</label><select id="cfgIntensidad" onchange="cfgSetCampo(\'intensidad\',event)" style="width:100%">'+[['suave','Suave'],['normal','Normal'],['fuerte','Fuerte'],['extremo','Demasiado fuerte']].map(function(o){return '<option value="'+o[0]+'"'+(cfg.intensidad===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>'
     +'</div>'
     +'<div style="margin-top:10px"><label style="font-size:12px;font-weight:800">Días de entrenamiento</label><div class="muted" style="font-size:11px;margin:2px 0 6px">Marca o desmarca cualquier día. Al añadir un día se propone un plan coherente (lo ves antes de guardar).</div><div class="row" style="gap:5px;flex-wrap:wrap">'+chips+'</div></div>'
