@@ -1,8 +1,23 @@
 {
-  "latest": "1.189.1",
-  "date": "2026-08-21",
+  "latest": "1.190.0",
+  "date": "2026-08-22",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.190.0",
+      "date": "2026-08-22",
+      "type": "recomendada",
+      "nuevas": [
+        "Rediseño completo de Fitness: hero de Mi rutina de hoy con resumen (estado, ejercicios, avance y barra de progreso), accesos Crear rutina / Progreso / Rutinas guardadas como tarjetas, Mi semana con selector estilo iOS (Lun-Dom con día actual resaltado) y tarjeta de la rutina del día, y sección Entrenamiento de hoy con las tarjetas detalladas de ejercicios.",
+        "Configurar rutina ahora es una pantalla tipo modal con campos en dos columnas (Nivel+Equipo, Duración+Intensidad), días como chips, vista previa semanal y botón Guardar fijo abajo."
+      ],
+      "cambios": [
+        "Panel de diagnóstico Sync debug (activado con ?syncdebug=1): muestra las últimas operaciones de sincronización sin secretos.",
+        "Mi semana restaurada: migración no destructiva que reconstruye la rutina semanal desde tus rutinas guardadas si estaba vacía.",
+        "Arreglado: la Duración de una rutina guardada no conservaba el valor elegido al reabrir."
+      ],
+      "errores": []
+    },
     {
       "version": "1.189.1",
       "date": "2026-08-21",
