@@ -402,6 +402,27 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 .fit3-full{grid-column:1/-1}
 .fit3-savebar{position:sticky;bottom:0;display:flex;gap:8px;margin:14px -14px 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.97);border-top:1px solid #e3ece6;border-radius:0 0 20px 20px;z-index:5}
 @media(max-width:760px){.fit5-grid{grid-template-columns:1fr}.fit5-side{flex-direction:row}.fit5-side .fit5-tile{flex:1;flex-direction:column;text-align:center;gap:6px;padding:10px 6px;min-width:0}}
+/* Caminata (mismo lenguaje visual fit5) */
+.fitw-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.fitw-stat{background:#fff;border:1px solid #e3ece6;border-radius:18px;padding:12px 10px;text-align:center;box-shadow:0 2px 10px rgba(21,112,79,.06)}
+.fitw-stat b{display:block;color:#15704f;font-size:18px;font-weight:900;line-height:1.1}
+.fitw-stat span{font-size:10.5px;color:#63706a;font-weight:800}
+.fitw-bars{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;margin-top:10px}
+.fitw-bar{text-align:center}
+.fitw-bar-fill{background:linear-gradient(180deg,#15704f,#22b573);border-radius:8px 8px 4px 4px;margin:0 auto;width:70%;min-height:3px}
+.fitw-bar-rest{background:#dcebe2}
+.fitw-bar b{display:block;font-size:10px;color:#12352a;margin-top:2px;font-weight:900}
+.fitw-bar span{font-size:10px;color:#63706a;font-weight:800}
+.fitw-bar.hoy .fitw-bar-fill{background:linear-gradient(180deg,#0d6043,#15704f);box-shadow:0 2px 8px rgba(21,112,79,.35)}
+.fitw-form{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-top:10px;align-items:end}
+.fitw-form .btn{border-radius:999px;padding:11px 16px;font-weight:900}
+.fitw-hist{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.fitw-row{display:flex;align-items:center;gap:10px;background:#fbfefc;border:1px solid #e3ece6;border-radius:14px;padding:9px 12px;flex-wrap:wrap}
+.fitw-row.hoy{border-color:#9dd5b4;background:#f4fcf7}
+.fitw-row .fitw-fecha{font-weight:900;font-size:12.5px;color:#12352a;min-width:76px}
+.fitw-row .fitw-datos{font-size:12px;color:#63706a;font-weight:700;flex:1;min-width:120px}
+.fitw-row .btn{font-size:11px;padding:5px 10px;border-radius:999px}
+@media(max-width:560px){.fitw-form{grid-template-columns:1fr 1fr}.fitw-form .btn{grid-column:1/-1;width:100%}}
 /* Encabezado reutilizable para dar jerarquía pareja a todas las secciones */
 .sec-hero{background:linear-gradient(135deg,#f7fff9,#fff);border:1.5px solid #9dd5b4;border-radius:18px;padding:14px 16px;margin:10px 0}
 .sec-hero h2{margin:0;font-size:21px}
@@ -19502,7 +19523,83 @@ function secEjercicio(){
   <div id="fitnessCoachOut" style="display:none"></div><div id="guidedWorkoutOut" style="display:none"></div><div id="fitnessProgressOut" style="display:none"></div>`
 }
 function secPeso(){return `${secHero('⚖️','Peso','Registra tu peso y observa la tendencia.', weightHeroChips())}<div class="grid card"><input id="wDate" type="date"><input id="wVal" type="number" step="0.1" inputmode="decimal" placeholder="peso en ${U.pesoUnidad()}"><button class="btn primary" onclick="addWeight()">Guardar</button></div><div id="weightOut"></div>`}
-function secCaminata(){return `${secHero('🚶','Caminata diaria','Tus pasos cuentan como ejercicio y suben tus calorías del día.', (state.walks&&state.walks.length)?[{v:(state.walks.slice(-1)[0].steps||'—'),l:'último registro'},{v:state.walks.length,l:'días guardados'}]:[])}<div class="grid card"><input id="walkDate" type="date"><input id="steps" value="22000" type="number"><input id="mins" value="420" type="number"><button class="btn primary" onclick="addWalk()">Guardar caminata</button></div><div id="walkOut"></div>`}
+function secCaminata(){
+  var hoy=typeof todayISO==='function'?todayISO():new Date().toISOString().slice(0,10);
+  var walks=state.walks||[];
+  var hoyW=walks.find(function(x){return x.d===hoy;})||null;
+  var objetivo=+((state.profile&&state.profile.pasosDia))||22000;
+  var pasosHoy=hoyW?(+hoyW.steps||0):0;
+  var pct=objetivo?Math.min(100,Math.round(pasosHoy/objetivo*100)):0;
+  var miHoy=(hoyW&&hoyW.mi!=null)?(+hoyW.mi).toFixed(1):null;
+  var kmHoy=miHoy!=null?(+miHoy*1.60934).toFixed(1):null;
+  var calHoy=(hoyW&&hoyW.cal!=null)?Math.round(+hoyW.cal):null;
+  var minsHoy=(hoyW&&hoyW.mins!=null)?(+hoyW.mins):null;
+  var hace7=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
+  var semana=walks.filter(function(x){return x&&x.d&&x.d>=hace7;});
+  var avg7=(function(){var a=walks.slice(-7).map(function(x){return +x.steps||0;}).filter(Boolean);return a.length?Math.round(a.reduce(function(x,y){return x+y;},0)/a.length):0;})();
+  var record=0;walks.forEach(function(x){if((+x.steps||0)>record)record=+x.steps;});
+  var total7=semana.reduce(function(a,x){return a+(+x.steps||0);},0);
+  var racha=0;
+  (function(){
+    var t=Date.now()-(hoyW?0:86400000);
+    for(var k=0;k<400;k++){
+      var ds=new Date(t-k*86400000).toISOString().slice(0,10);
+      if(walks.some(function(x){return x.d===ds&&(+x.steps||0)>0;}))racha++;
+      else break;
+    }
+  })();
+  var dias=[],nombres=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  for(var k=6;k>=0;k--){
+    var dd=new Date(Date.now()-k*86400000);
+    var ds2=dd.toISOString().slice(0,10);
+    var rec=walks.find(function(x){return x.d===ds2;});
+    dias.push({nombre:nombres[((dd.getUTCDay()+6)%7)],v:rec?(+rec.steps||0):0,hoy:(k===0)});
+  }
+  var maxD=Math.max.apply(null,dias.map(function(x){return x.v;}).concat([1]));
+  return `<div class="fit5-wrap">
+  <div class="fit5-head"><h2>🚶 Caminata diaria</h2><span class="fit5-statuschip">${hoyW?'Registrada hoy':'Sin registro hoy'}</span></div>
+  <div class="fit5-hero">
+    <div class="fit5-hero-head" onclick="abrirFormCaminata()">
+      <span class="fit5-hero-icon">🚶</span>
+      <div style="flex:1;min-width:0">
+        <div class="fit5-hero-title">Caminata de hoy</div>
+        <div class="fit5-hero-sub">${pasosHoy.toLocaleString()} de ${objetivo.toLocaleString()} pasos objetivo · ${pct}%</div>
+      </div>
+      <div style="text-align:right"><div style="font-size:30px;font-weight:950;line-height:1">${pasosHoy.toLocaleString()}</div><div style="font-size:11px;opacity:.85">pasos</div></div>
+    </div>
+    <div class="fit5-hero-stats">
+      <div class="fit5-hero-stat"><b>${miHoy!=null?miHoy:'—'}</b>millas</div>
+      <div class="fit5-hero-stat"><b>${kmHoy!=null?kmHoy:'—'}</b>distancia km</div>
+      <div class="fit5-hero-stat"><b>${minsHoy!=null?minsHoy+' min':'—'}</b>tiempo</div>
+      <div class="fit5-hero-stat"><b>${calHoy!=null?calHoy:'—'}</b>kcal aprox.</div>
+    </div>
+    <div class="fit5-hero-progress"><div class="fit5-hero-fill" style="width:${pct}%"></div></div>
+    <button class="fit5-cta" onclick="abrirFormCaminata()">${hoyW?'✏️ Editar caminata de hoy':'✏️ Registrar caminata'}</button>
+  </div>
+  <div class="fitw-stats">
+    <div class="fitw-stat"><b>${avg7?avg7.toLocaleString():'—'}</b><span>promedio 7 días</span></div>
+    <div class="fitw-stat"><b>${record?record.toLocaleString():'—'}</b><span>récord personal</span></div>
+    <div class="fitw-stat"><b>${total7?total7.toLocaleString():'—'}</b><span>total semana</span></div>
+  </div>
+  <div class="fit3-card">
+    <b style="font-size:14px;color:#12352a">📅 Últimos 7 días</b>${racha>=2?` <span class="muted" style="font-size:11px">· 🔥 racha: ${racha} días</span>`:''}
+    <div class="fitw-bars">${dias.map(function(d){var h=Math.max(3,Math.round(d.v/maxD*54));return '<div class="fitw-bar'+(d.hoy?' hoy':'')+'"><b>'+(d.v?d.v.toLocaleString():'—')+'</b><div class="fitw-bar-fill'+(d.v?'':' fitw-bar-rest')+'" style="height:'+(d.v?h:3)+'px"></div><span>'+d.nombre+'</span></div>';}).join('')}</div>
+  </div>
+  <div class="fit3-card">
+    <b style="font-size:14px;color:#12352a">📜 Historial</b>
+    <div id="walkOut"></div>
+  </div>
+  <div class="fit3-card" id="walkFormCard" style="display:none">
+    <b style="font-size:14px;color:#12352a">${hoyW?'✏️ Editar caminata':'✏️ Registrar caminata'}</b>
+    <div class="fitw-form">
+      <div><label>Fecha</label><input id="walkDate" type="date" style="width:100%"></div>
+      <div><label>Pasos</label><input id="steps" type="number" inputmode="numeric" placeholder="Ej. 12000" style="width:100%"></div>
+      <div><label>Minutos</label><input id="mins" type="number" inputmode="numeric" placeholder="Ej. 60" style="width:100%"></div>
+      <button class="btn primary" onclick="addWalk()">💾 Guardar</button>
+    </div>
+  </div>
+  </div>`;
+}
 function secTips(){return `<h2>Tips para subir calorías y proteína</h2><div class="grid">${tips.map(x=>`<div class="mini">${x}</div>`).join('')}</div><details open><summary>Creatina, proteína y ganador de peso</summary><div class="card"><p>Creatina: normalmente 3-5g diarios, con agua o licuado. Busca marcas simples: creatina monohidratada sin mezclas raras.</p><p>Ganador de peso barato casero: leche entera + avena + plátano + crema de cacahuate + yogurt. Suele salir más barato que polvo comercial.</p><p>Dónde buscar en Maui: Costco, Walmart, Target, Safeway/Times si urge. Compara precio por porción, no solo el bote.</p></div></details>`}
 function gastoHeroChips(){
   var ex=state.expenses||[];if(!ex.length)return [];
@@ -30071,7 +30168,21 @@ function addWeight(){var tecleado=+$('#wVal').value;if(!tecleado){alert('Escribe
   // Avisa que se actualizó en todas partes
   var el=$('#weightOut');if(el){var msg=document.createElement('div');msg.className='ok';msg.style.cssText='margin-top:8px;background:#e6f7ee;border:1px solid #9dd5b4;color:#15704f;font-weight:700';msg.textContent='✓ Peso guardado y actualizado en tu perfil ('+nuevoPeso+' lb).';el.parentNode&&el.parentNode.insertBefore(msg,el);setTimeout(function(){msg.remove();},4000);}
 } function renderWeight(){let el=$('#weightOut'); if(el)el.innerHTML=state.weight.slice(-10).map(x=>`<div class="item">${x.d}: ${x.w} lb</div>`).join('')}
-function addWalk(){let steps=+$('#steps').value||0,mi=steps*2.5/5280,cal=steps*.045;state.walks.push({d:$('#walkDate').value||new Date().toISOString().slice(0,10),steps,mi,cal});save();renderWalks();drawGrafica();} function renderWalks(){let el=$('#walkOut');if(el)el.innerHTML=state.walks.slice(-10).map(x=>`<div class="item">${x.d}: ${x.steps} pasos · ${x.mi.toFixed(1)} mi · ${Math.round(x.cal)} kcal aprox.</div>`).join('')}
+function abrirFormCaminata(){
+  var hoy=typeof todayISO==='function'?todayISO():new Date().toISOString().slice(0,10);
+  var f=document.getElementById('walkFormCard');if(!f)return;
+  f.style.display='block';
+  var wd=document.getElementById('walkDate');if(wd)wd.value=hoy;
+  var hoyW=(state.walks||[]).find(function(x){return x.d===hoy;});
+  if(hoyW){
+    var s=document.getElementById('steps');if(s)s.value=hoyW.steps||'';
+    var m=document.getElementById('mins');if(m)m.value=(hoyW.mins!=null)?hoyW.mins:'';
+  }
+  setTimeout(function(){f.scrollIntoView({behavior:'smooth',block:'start'});},60);
+}
+function addWalk(){let steps=+$('#steps').value||0,mi=steps*2.5/5280,cal=steps*.045;var d=$('#walkDate').value||new Date().toISOString().slice(0,10);var mins=+((document.getElementById('mins')||{}).value)||0;var x=state.walks.find(w=>w.d===d);if(x){x.steps=steps;x.mi=mi;x.cal=cal;x.mins=mins;}else{state.walks.push({d:d,steps,mi,cal,mins,id:ppUUID()});}save();renderWalks();drawGrafica();}
+function delWalk(ref){if(!confirm('¿Borrar este registro de caminata?'))return;state.walks=state.walks.filter(function(x){return String(x.id||x.d)!==String(ref);});save();renderWalks();drawGrafica();}
+function renderWalks(){let el=$('#walkOut');if(el)el.innerHTML=state.walks.slice(-10).reverse().map(x=>{var hoy=typeof todayISO==='function'?todayISO():'';var esHoy=x.d===hoy;return `<div class="fitw-row${esHoy?' hoy':''}"><span class="fitw-fecha">${x.d}${esHoy?' · HOY':''}</span><span class="fitw-datos">${(+x.steps||0).toLocaleString()} pasos${x.mi!=null?' · '+Number(x.mi).toFixed(1)+' mi':''}${x.cal!=null?' · '+Math.round(+x.cal)+' kcal':''}${x.mins!=null?' · '+x.mins+' min':''}</span><button class="btn" onclick="abrirFormCaminata();var wd=document.getElementById('walkDate');if(wd)wd.value='${x.d}';var s=document.getElementById('steps');if(s)s.value='${x.steps}';var m=document.getElementById('mins');if(m)m.value='${x.mins!=null?x.mins:''}';">✏️</button><button class="btn" onclick="delWalk('${x.id||x.d}')">🗑</button></div>`;}).join('')||'<div class="muted">Aún no hay registros. Toca "Registrar caminata".</div>'}
 
 let ticketDataUrl='';
 function previewTicket(input){
