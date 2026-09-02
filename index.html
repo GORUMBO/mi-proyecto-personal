@@ -28980,10 +28980,16 @@ function f3AlimentacionSectionHTML(){
     +'<div><label>Preferencias de comida</label><input id="cfgPreferencias" value="'+safeText(p.preferencias||'')+'" placeholder="Ej: sin cerdo, más pollo" onchange="state.profile.preferencias=this.value;quickSaved()"></div>'
     +'<div><label>Restricciones / alergias</label><input id="cfgRestricciones" value="'+safeText(p.restricciones||'')+'" placeholder="Ej: sin lactosa, sin nuez" onchange="state.profile.restricciones=this.value;quickSaved()"></div>'
     +'</div>'
-    +'<div class="muted" style="font-size:12px;margin-top:8px">El cálculo de cuánto comer usa tu peso, altura, edad, sexo, objetivo y pasos.</div>';
+    +'<div class="muted" style="font-size:12px;margin-top:8px">El cálculo de cuánto comer usa tu peso, altura, edad, sexo, objetivo y pasos.</div>'
+    +'<div class="card" style="margin-top:10px;border:1.5px solid #d9e3db;padding:12px"><b style="font-size:13px">⚖️ Objetivo del día</b>'
+    +'<div class="muted" style="font-size:11px;margin:2px 0 8px">El objetivo base es tu meta de calorías. Con "Ajustar por actividad" se suma un porcentaje de las kcal gastadas caminando HOY (nunca se suman como comida).</div>'
+    +'<div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn'+(((p.modoActividad||'fijo')==='fijo')?' primary':'')+'" style="border-radius:999px;font-size:12px;padding:7px 12px" onclick="state.profile.modoActividad=\'fijo\';quickSaved();try{f3RefrescarConfigUI()}catch(e){}">🎯 Objetivo fijo</button><button class="btn'+(((p.modoActividad||'fijo')==='ajustar')?' primary':'')+'" style="border-radius:999px;font-size:12px;padding:7px 12px" onclick="state.profile.modoActividad=\'ajustar\';quickSaved();try{f3RefrescarConfigUI()}catch(e){}">🔧 Ajustar por actividad</button></div>'
+    +(((p.modoActividad||'fijo')==='ajustar')?'<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><span class="muted" style="font-size:11px;align-self:center">% del gasto de caminata:</span>'+[0,50,75,100].map(function(x){return '<button class="btn'+(((+p.pctActividad||75)===x)?' primary':'')+'" style="border-radius:999px;font-size:12px;padding:6px 12px" onclick="state.profile.pctActividad='+x+';quickSaved();try{f3RefrescarConfigUI()}catch(e){}">'+x+'%</button>';}).join('')+'</div>':'')
+    +'</div>';
 }
 function f3CocinaSectionHTML(){
   var kt=state.kitchenTools||{};
+
   if(typeof KITCHEN_TOOLS_ORDER==='undefined')return '<p class="muted">Sin aparatos configurados.</p>';
   return '<p class="muted" style="margin:0 0 8px">Marca los aparatos que tienes. Las recetas de Comer usan esto para ofrecerte los métodos más rápidos y adecuados.</p>'
     +'<div class="row" style="gap:6px;flex-wrap:wrap">'+KITCHEN_TOOLS_ORDER.map(function(key){var m=KITCHEN_METHODS[key];var on=!!(kt[key]);return '<button class="btn"'+(on?' primary':'')+'" data-tool="'+key+'" onclick="toggleKitchenTool(&quot;'+key+'&quot;)">'+m.icon+' '+m.label+(on?' ✓':'')+'</button>';}).join('')+'</div>';
@@ -32020,13 +32026,13 @@ let _currentMealKey = 'breakfast';
 window.setCurrentMealKey = function(k){ if(k) _currentMealKey = k; };
 
 function openAddFood(mealKey){
-  _currentMealKey = mealKey;
+  _currentMealKey=mealKey;
   window._foodModalAbierto=true; // subpantalla abierta: el sync se pospone hasta volver
   window._foodVerMas=false;
   clearTimeout(window._foodSearchT);
   window._carrito=[];
   window._guardandoCarrito=false;
-  window._extrasActuales = [];
+  window._extrasActuales=[];
   window._comerScrollY=(typeof window!=='undefined'&&typeof window.scrollY==='number')?window.scrollY:0;
   var main=document.getElementById('comerMain');if(main)main.style.display='none';
   var view=document.getElementById('foodAddView');if(view)view.style.display='block';
