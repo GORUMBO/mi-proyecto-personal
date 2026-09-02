@@ -423,6 +423,12 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 .fitw-row .fitw-datos{font-size:12px;color:#63706a;font-weight:700;flex:1;min-width:120px}
 .fitw-row .btn{font-size:11px;padding:5px 10px;border-radius:999px}
 @media(max-width:560px){.fitw-form{grid-template-columns:1fr 1fr}.fitw-form .btn{grid-column:1/-1;width:100%}}
+/* Peso (mismo lenguaje fit5) */
+.fitp-range{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.fitp-dup{background:#fff8f0;border:1px solid #e8c99a;border-radius:14px;padding:8px 12px;margin-top:10px;font-size:12px;color:#8a5a2a;font-weight:700}
+.fitp-dup summary{cursor:pointer}
+.fitw-stats.fitp-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:700px){.fitw-stats.fitp-4{grid-template-columns:repeat(2,1fr)}}
 /* Encabezado reutilizable para dar jerarquía pareja a todas las secciones */
 .sec-hero{background:linear-gradient(135deg,#f7fff9,#fff);border:1.5px solid #9dd5b4;border-radius:18px;padding:14px 16px;margin:10px 0}
 .sec-hero h2{margin:0;font-size:21px}
@@ -9089,9 +9095,11 @@ function render(){
     eraRutina=!!(document.querySelector&&document.querySelector('.fit-list-compact'));
   }catch(e){}
   let app=$('#app');
+  var _tabPrevia=_activeTab; // preservar la subtab activa (Peso/Caminata/etc.): initNav restablece la primera del grupo
   app.innerHTML=tabs.map((t,i)=>`<section id="tab_${i}" class="tab ${i==0?'active':''}" data-built="0"><div class="card"><div class="skeleton-line"></div></div></section>`).join('');
   buildTabIfNeeded(0,true);
   initNav();
+  if(_tabPrevia!=null&&_tabPrevia!==_activeTab){showTab(_tabPrevia,null);} // volver a la subtab donde estaba el usuario
   buildTabIfNeeded(_activeTab||0);
   bindAll();
   // 1) Re-dibujar la rutina ANTES de restaurar la posición, y restaurar TODO
@@ -12869,7 +12877,7 @@ function miRegion(){
     state.region = {id:'maui', cambio:REGIONES.maui.cambio, factor:REGIONES.maui.factor};
   }
   let base = REGIONES[state.region.id];
-  return {...base, id:state.region.id,
+  return {...base, id:state.region.id, sistema: state.region.sistema || base.sistema,
           cambio: (+state.region.cambio) || base.cambio,
           factor: (state.region.factor!=null ? +state.region.factor : base.factor)};
 }
@@ -12878,7 +12886,7 @@ function esMetrico(){ return miRegion().sistema === 'metrico'; }
 function setRegion(id){
   if(!REGIONES[id]) return;
   let auto = state.region ? state.region.autoFX : undefined;
-  state.region = {id, cambio:REGIONES[id].cambio, factor:REGIONES[id].factor, autoFX:auto};
+  state.region = {id, cambio:REGIONES[id].cambio, factor:REGIONES[id].factor, autoFX:auto, sistema:state.region.sistema};
   // Si ya teníamos un cambio guardado y fresco, úsalo de inmediato.
   let c = cambioGuardado();
   if(REGIONES[id].moneda==='MXN' && c.tasa && autoFXon()) state.region.cambio = c.tasa;
@@ -19588,7 +19596,126 @@ function secEjercicio(){
   </details>
   <div id="fitnessCoachOut" style="display:none"></div><div id="guidedWorkoutOut" style="display:none"></div><div id="fitnessProgressOut" style="display:none"></div>`
 }
-function secPeso(){return `${secHero('⚖️','Peso','Registra tu peso y observa la tendencia.', weightHeroChips())}<div class="grid card"><input id="wDate" type="date"><input id="wVal" type="number" step="0.1" inputmode="decimal" placeholder="peso en ${U.pesoUnidad()}"><button class="btn primary" onclick="addWeight()">Guardar</button></div><div id="weightOut"></div>`}
+function secPeso(){return `<div class="fit5-wrap" id="pesoRoot"></div>`;}
+// Peso (rediseño v1.191.0-Caminata-style): mismo estado, mismas unidades, misma sync.
+function pesoHTML(){
+  var wl=(state.weight||[]).slice().sort(function(a,b){return (a.d||'')<(b.d||'')?-1:1;});
+  var hoy=typeof todayISO==='function'?todayISO():new Date().toISOString().slice(0,10);
+  var hoyW=null;
+  for(var i=wl.length-1;i>=0;i--){if(wl[i].d===hoy){hoyW=wl[i];break;}}
+  var last=wl[wl.length-1]||null;
+  var prev=wl.length>1?wl[wl.length-2]:null;
+  var unit=U.pesoUnidad(),esM=esMetrico();
+  function fmtW(w){return U.peso(w);}
+  function delta(w1,w2){var d=(+w2)-(+w1);if(!isFinite(d))return null;if(esM)d=d*0.4536;return (d>=0?'+':'')+d.toFixed(1);}
+  var dPrev=(last&&prev&&last.w!=null&&prev.w!=null)?delta(prev.w,last.w):null;
+  var hace7=new Date(Date.now()-6*86400000).toISOString().slice(0,10);
+  var r7=wl.filter(function(x){return x.d>=hace7;});
+  var d7=(r7.length>=2&&r7[0].w!=null&&r7[r7.length-1].w!=null)?delta(r7[0].w,r7[r7.length-1].w):null;
+  var dIni=(wl.length>=2&&wl[0].w!=null&&last.w!=null)?delta(wl[0].w,last.w):null;
+  var objNum=+((state.profile&&(state.profile.pesoObjetivo||state.profile.objetivoPeso)))||null;
+  var objTxt=(state.profile&&state.profile.objetivo)||'';
+  var pctObj=null;
+  if(objNum&&last&&wl.length>=2){var desde=wl[0].w,total=objNum-desde;if(total!==0)pctObj=Math.min(100,Math.max(0,Math.round((last.w-desde)/total*100)));}
+  var mapa={};wl.forEach(function(x){mapa[x.d]=(mapa[x.d]||0)+1;});
+  var dupes=Object.keys(mapa).filter(function(d){return mapa[d]>1;});
+  var hace30=new Date(Date.now()-29*86400000).toISOString().slice(0,10);
+  var r30=wl.filter(function(x){return x.d>=hace30;});
+  var d30=(r30.length>=2&&r30[0].w!=null&&r30[r30.length-1].w!=null)?delta(r30[0].w,r30[r30.length-1].w):null;
+  var avg7=(r7.length?r7.reduce(function(a,x){return a+(+x.w||0);},0)/r7.length:null);
+  var ws=wl.map(function(x){return +x.w;}).filter(function(w){return isFinite(w);});
+  var maxW=ws.length?Math.max.apply(null,ws):null,minW=ws.length?Math.min.apply(null,ws):null;
+  var objetivoLinea=(objNum
+    ?'<div class="fit5-hero-progress"><div class="fit5-hero-fill" style="width:'+pctObj+'%"></div></div><div style="margin-top:4px;font-size:11px;opacity:.85">Progreso al objetivo: '+fmtW(objNum)+' ('+pctObj+'%)</div>'
+    :'<div style="margin-top:10px;font-size:12px;opacity:.9">🎯 '+(objTxt?('Objetivo: '+safeText(objTxt)):'Sin objetivo configurado')+' <button class="btn" style="font-size:11px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3);margin-left:6px" onclick="openTab(\'👤 Perfil\')">Ir a Perfil</button></div>');
+  return '<div class="fit5-head"><h2>⚖️ Peso</h2><div class="row" style="gap:6px;align-items:center"><span class="fit5-statuschip">'+(hoyW?'Registrado hoy':'Sin registro hoy')+'</span><span class="fitp-unit">'+['lb','kg'].map(function(u){return '<button class="btn'+(U.pesoUnidad()===u?' primary':'')+'" style="border-radius:999px;font-size:11px;padding:4px 11px" onclick="setUnidadPeso(\''+u+'\')">'+u+'</button>';}).join('')+'</span></div></div>'
+    +'<div class="fit5-hero">'
+    +'<div class="fit5-hero-head"><span class="fit5-hero-icon">⚖️</span>'
+    +'<div style="flex:1;min-width:0"><div class="fit5-hero-title">Peso de hoy</div>'
+    +'<div class="fit5-hero-sub">'+(last?('cambio vs anterior: '+(dPrev!=null?dPrev+' '+unit:'—')+' · 7 días: '+(d7!=null?d7+' '+unit:'—')+' · desde el inicio: '+(dIni!=null?dIni+' '+unit:'—')):'Sin registros todavía')+'</div></div>'
+    +'<div style="text-align:right"><div style="font-size:30px;font-weight:950;line-height:1">'+(last?fmtW(last.w):'—')+'</div><div style="font-size:11px;opacity:.85">'+unit+'</div></div>'
+    +'</div>'
+    +'<div class="fit5-hero-stats">'
+    +'<div class="fit5-hero-stat"><b>'+(dPrev!=null?dPrev:'—')+'</b>vs anterior</div>'
+    +'<div class="fit5-hero-stat"><b>'+(d7!=null?d7:'—')+'</b>7 días</div>'
+    +'<div class="fit5-hero-stat"><b>'+(dIni!=null?dIni:'—')+'</b>total</div>'
+    +'</div>'
+    +objetivoLinea
+    +'<button class="fit5-cta" onclick="abrirFormPeso()">'+(hoyW?'✏️ Editar peso de hoy':'✏️ Registrar peso')+'</button>'
+    +'</div>'
+    +'<div class="fit3-card"><b style="font-size:14px;color:#12352a">📈 Tendencia</b>'
+    +'<div class="fitp-range">'+['7d','30d','3m'].map(function(r){return '<button class="btn'+((window._pesoRango||'7d')===r?' primary':'')+'" style="border-radius:999px;font-size:11px;padding:5px 12px" onclick="setPesoRango(\''+r+'\')">'+(r==='7d'?'7 días':r==='30d'?'30 días':'3 meses')+'</button>';}).join('')+'</div>'
+    +'<div id="pesoChartOut" style="margin-top:8px"></div></div>'
+    +'<div class="fitw-stats fitp-4">'
+    +'<div class="fitw-stat"><b>'+(avg7!=null?fmtW(avg7):'—')+'</b><span>promedio 7 días</span></div>'
+    +'<div class="fitw-stat"><b>'+(maxW!=null?fmtW(maxW):'—')+'</b><span>peso máximo</span></div>'
+    +'<div class="fitw-stat"><b>'+(minW!=null?fmtW(minW):'—')+'</b><span>peso mínimo</span></div>'
+    +'<div class="fitw-stat"><b>'+(d30!=null?d30+' '+unit:'—')+'</b><span>cambio 30 días</span></div>'
+    +'</div>'
+    +(dupes.length?'<div class="fitp-dup"><details><summary>⚠️ '+dupes.length+' fecha(s) con registros duplicados (históricos, sin tocar)</summary>'+dupes.map(function(d){return '<div>'+d+' × '+mapa[d]+'</div>';}).join('')+'</details></div>':'')
+    +'<div class="fit3-card"><b style="font-size:14px;color:#12352a">📜 Historial</b><div id="weightOut"></div></div>'
+    +'<div class="fit3-card" id="wFormCard" style="display:none">'
+    +'<b style="font-size:14px;color:#12352a">'+(hoyW?'✏️ Editar peso':'✏️ Registrar peso')+'</b>'
+    +'<div class="fitw-form">'
+    +'<div><label>Fecha</label><input id="wDate" type="date" style="width:100%"></div>'
+    +'<div><label>Peso ('+unit+')</label><input id="wVal" type="number" step="0.1" inputmode="decimal" placeholder="Ej. 165" style="width:100%"></div>'
+    +'<button class="btn primary" onclick="addWeight()">💾 Guardar</button>'
+    +'</div></div>';
+}
+function renderPesoInterno(){
+  var root=document.getElementById('pesoRoot');if(!root)return;
+  var dV=null,vV=null,abierto=false;
+  try{var dE=document.getElementById('wDate');dV=dE?dE.value:null;}catch(e){}
+  try{var vE=document.getElementById('wVal');vV=vE?vE.value:null;}catch(e){}
+  try{var fE=document.getElementById('wFormCard');abierto=!!(fE&&fE.style.display==='block');}catch(e){}
+  root.innerHTML=pesoHTML();
+  if(abierto){var f2=document.getElementById('wFormCard');if(f2)f2.style.display='block';}
+  if(dV!=null){var d2=document.getElementById('wDate');if(d2)d2.value=dV;}
+  if(vV!=null){var v2=document.getElementById('wVal');if(v2)v2.value=vV;}
+  renderPesoChart();
+  renderWeight();
+}
+function renderPesoChart(){
+  var out=document.getElementById('pesoChartOut');if(!out)return;
+  var wl=(state.weight||[]).slice().sort(function(a,b){return (a.d||'')<(b.d||'')?-1:1;});
+  var rango=window._pesoRango||'7d';
+  var dias=rango==='30d'?30:(rango==='3m'?90:7);
+  var desde=new Date(Date.now()-(dias-1)*86400000).toISOString().slice(0,10);
+  var recs=wl.filter(function(x){return x.d>=desde&&x.w!=null;});
+  if(recs.length<2){out.innerHTML='<div class="muted" style="font-size:12px">'+(recs.length?'Con un solo registro no hay tendencia todavía: registra otro peso en este periodo.':'Sin registros en este periodo.')+'</div>';return;}
+  var ws=recs.map(function(x){return +x.w;});
+  var min=Math.min.apply(null,ws),max=Math.max.apply(null,ws),span=(max-min)||1;
+  var W=320,H=110,pad=8;
+  function px(i){return pad+(recs.length>1?(W-2*pad)*i/(recs.length-1):pad);}
+  function py(w){return H-pad-((w-min)/span)*(H-2*pad);}
+  var pts=ws.map(function(w,i){return px(i).toFixed(1)+','+py(w).toFixed(1);}).join(' ');
+  var ma=[];
+  for(var i=0;i<ws.length;i++){
+    var s=0,n=0;
+    for(var k=Math.max(0,i-1);k<=Math.min(ws.length-1,i+1);k++){s+=ws[k];n++;}
+    ma.push(s/n);
+  }
+  var ptsMa=ma.map(function(w,i){return px(i).toFixed(1)+','+py(w).toFixed(1);}).join(' ');
+  out.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block">'
+    +'<polyline fill="none" stroke="#22b573" stroke-width="1" opacity=".5" stroke-dasharray="4 4" points="'+ptsMa+'"></polyline>'
+    +'<polyline fill="none" stroke="#15704f" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="'+pts+'"></polyline>'
+    +ws.map(function(w,i){return '<circle cx="'+px(i).toFixed(1)+'" cy="'+py(w).toFixed(1)+'" r="2.6" fill="#15704f"></circle>';}).join('')
+    +'</svg><div class="row" style="justify-content:space-between;font-size:11px;color:#63706a;margin-top:4px"><span>'+recs[0].d+' · '+U.peso(ws[0])+'</span><span class="muted">— línea suave: promedio móvil</span><span>'+recs[recs.length-1].d+' · '+U.peso(ws[ws.length-1])+'</span></div>';
+}
+function setPesoRango(r){window._pesoRango=r;renderPesoInterno();}
+function setUnidadPeso(u){if(!state.region)state.region={};state.region.sistema=(u==='kg')?'metrico':'imperial';save();renderPesoInterno();}
+function abrirFormPeso(){
+  var hoy=typeof todayISO==='function'?todayISO():new Date().toISOString().slice(0,10);
+  var f=document.getElementById('wFormCard');if(!f)return;
+  f.style.display='block';
+  var wd=document.getElementById('wDate');if(wd)wd.value=hoy;
+  var hoyW=null;
+  (state.weight||[]).forEach(function(x){if(x.d===hoy)hoyW=x;});
+  if(hoyW){
+    var wv=document.getElementById('wVal');if(wv)wv.value=esMetrico()?(+hoyW.w*0.4536).toFixed(1):hoyW.w;
+  }
+  setTimeout(function(){f.scrollIntoView({behavior:'smooth',block:'start'});},60);
+}
 function secCaminata(){
   var hoy=typeof todayISO==='function'?todayISO():new Date().toISOString().slice(0,10);
   var walks=state.walks||[];
@@ -24488,7 +24615,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);try{hydrateCloudImages(document)}catch(e){}try{renderVeggies()}catch(e){}try{renderVegCombine()}catch(e){}try{renderHorno()}catch(e){}}
+function bindAll(){try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();try{renderPesoInterno()}catch(e){}renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);try{hydrateCloudImages(document)}catch(e){}try{renderVeggies()}catch(e){}try{renderVegCombine()}catch(e){}try{renderHorno()}catch(e){}}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -31055,18 +31182,39 @@ function exportWorkoutLog(){
 }
 function muscle(m){let arr=exercises[m]||[];$('#muscleOut').innerHTML=`<h3>${m}</h3>`+arr.map(x=>`<div class="item">${x} <button class="btn" onclick="exerciseHelp(x)" style="font-weight:800;text-align:center">🎬 GIF</button></div>`).join('')}
 function rotateBody(v){}
-function addWeight(){var tecleado=+$('#wVal').value;if(!tecleado){alert('Escribe tu peso primero.');return;}
+function addWeight(){
+  var tecleado=+((document.getElementById('wVal')||{}).value);
+  if(!isFinite(tecleado)||tecleado<=0){alert('Escribe un peso válido primero.');return;}
   // El usuario teclea en SU unidad (kg o lb). Por dentro SIEMPRE guardamos en lb.
   var nuevoPeso=+U.aLb(tecleado).toFixed(1);
-  var entry=normalizeWeightEntry({d:$('#wDate').value||new Date().toISOString().slice(0,10),w:nuevoPeso,updated_at:new Date().toISOString()});
-  state.weight.push(entry);
+  if(nuevoPeso<30||nuevoPeso>1500){alert('Peso fuera de rango razonable (30–1500 lb). Revisa el valor.');return;}
+  var d=(document.getElementById('wDate')||{}).value||new Date().toISOString().slice(0,10);
+  var entry=normalizeWeightEntry({d:d,w:nuevoPeso,updated_at:new Date().toISOString()});
+  // UPSERT por fecha: una fecha = un registro. Nunca se crea segunda fila para el mismo día.
+  var matches=state.weight.filter(function(x){return x.d===d;});
+  if(matches.length){var ex=matches[matches.length-1];ex.w=nuevoPeso;ex.updated_at=entry.updated_at;}
+  else{state.weight.push(entry);}
   console.log('[SYNC] Peso guardado localmente:',entry);
   // Sincroniza automáticamente el peso en tu perfil (se usa en calorías y otras secciones)
   if(state.profile){state.profile.peso=nuevoPeso;}
-  save();renderWeight();drawGrafica();
-  // Avisa que se actualizó en todas partes
-  var el=$('#weightOut');if(el){var msg=document.createElement('div');msg.className='ok';msg.style.cssText='margin-top:8px;background:#e6f7ee;border:1px solid #9dd5b4;color:#15704f;font-weight:700';msg.textContent='✓ Peso guardado y actualizado en tu perfil ('+nuevoPeso+' lb).';el.parentNode&&el.parentNode.insertBefore(msg,el);setTimeout(function(){msg.remove();},4000);}
-} function renderWeight(){let el=$('#weightOut'); if(el)el.innerHTML=state.weight.slice(-10).map(x=>`<div class="item">${x.d}: ${x.w} lb</div>`).join('')}
+  save();renderPesoInterno();drawGrafica();
+}
+function delWeight(ref){if(!confirm('¿Borrar este registro de peso?'))return;state.weight=state.weight.filter(function(x){return String(x.client_id||x.id||x.d)!==String(ref);});save();renderPesoInterno();drawGrafica();}
+function renderWeight(){
+  var el=document.getElementById('weightOut');if(!el)return;
+  var wl=(state.weight||[]).slice().sort(function(a,b){return (a.d||'')<(b.d||'')?-1:1;});
+  var hoy=typeof todayISO==='function'?todayISO():'';
+  var esM=esMetrico(),unit=U.pesoUnidad();
+  var rows=[];
+  for(var i=wl.length-1;i>=0&&rows.length<10;i--){
+    var x=wl[i],ant=(i>0?wl[i-1]:null);
+    var dAnt=null;
+    if(ant&&x.w!=null&&ant.w!=null){var dd=x.w-ant.w;if(esM)dd=dd*0.4536;dAnt=(dd>=0?'+':'')+dd.toFixed(1);}
+    var esHoy=x.d===hoy;
+    rows.push('<div class="fitw-row'+(esHoy?' hoy':'')+'"><span class="fitw-fecha">'+x.d+(esHoy?' · HOY':'')+'</span><span class="fitw-datos"><b>'+U.peso(x.w)+'</b>'+(dAnt!=null?' <span class="muted">· '+dAnt+' '+unit+' vs anterior</span>':'')+'</span><button class="btn" onclick="abrirFormPeso();var wd=document.getElementById(\'wDate\');if(wd)wd.value=\''+x.d+'\';var wv=document.getElementById(\'wVal\');if(wv)wv.value=\''+(esM?(+x.w*0.4536).toFixed(1):x.w)+'\';">✏️</button><button class="btn" onclick="delWeight(\''+(x.client_id||x.id||x.d)+'\')">🗑</button></div>');
+  }
+  el.innerHTML=rows.join('')||'<div class="muted">Aún no hay registros. Toca "Registrar peso".</div>';
+}
 function abrirFormCaminata(){
   var hoy=typeof todayISO==='function'?todayISO():new Date().toISOString().slice(0,10);
   var f=document.getElementById('walkFormCard');if(!f)return;
