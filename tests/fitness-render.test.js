@@ -84,7 +84,7 @@ sandbox.window = sandbox;
 sandbox._hoyLocal = '2026-08-13';
 vm.createContext(sandbox);
 
-['parseRepRange', 'sugerenciaSesion', 'seriesValidasRegs', 'repsNum', 'seriesHoyEjercicio',
+['ppUUID', 'parseRepRange', 'sugerenciaSesion', 'seriesValidasRegs', 'repsNum', 'seriesHoyEjercicio',
   'evaluarSesionHoy', 'actualizarResultadosHoy', 'fitResumenResultadoHoy', 'fitHistorialSesiones',
   'esPrimeraSesionEjercicio', 'f3TendenciaDificilSemanas',
   'f3NombreRutinaAuto', 'f3NombreMostrar', 'f3CampoNombreHTML',

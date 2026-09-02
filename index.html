@@ -27285,6 +27285,12 @@ function quickFitnessToday(){
         var exerciseKey=String(x.name||'').toLowerCase().trim();
         // Serie válida = peso>0 Y reps reales (no rangos, no vacíos)
         var esSerieValida=function(r){var v=(r.reps||'');var repsValida=v!=='—'&&v!=='no registradas'&&v!==''&&!/^\d+[-–]\d+$/.test(v);return +r.weight>0 && repsValida;};
+        // Serie VISIBLE = misma sesión + mismo ejercicio + datos reales:
+        // con peso se muestra SIEMPRE, aunque reps venga vacío/'—' (registro
+        // solo-peso desde el móvil). esSerieValida se usa ÚNICAMENTE para
+        // conteos/progreso/veredicto.
+        var esSerieVisible=function(r){return +r.weight>0 || esSerieValida(r);};
+        var sessionVisibles=(state.workoutLog||[]).filter(function(r){return (r.localDate||r.date||'')===hoy && String(r.exercise||'').toLowerCase().trim()===exerciseKey && r.sessionId===sid && esSerieVisible(r);});
         // Series de HOY en ESTA sesión — solo válidas
         var sessionRegs=(state.workoutLog||[]).filter(function(r){return (r.localDate||r.date||'')===hoy && String(r.exercise||'').toLowerCase().trim()===exerciseKey && r.sessionId===sid && esSerieValida(r);});
         // Historial: días anteriores, solo series válidas
@@ -27342,20 +27348,20 @@ function quickFitnessToday(){
           }
         }
         var regHTML=lastHTML;
-        if(sessionRegs.length){
+        if(sessionVisibles.length){
           // Formato fecha legible: "12 ago 2026"
-          var fechaLocal=(sessionRegs[0].localDate||sessionRegs[0].date||hoy);
+          var fechaLocal=(sessionVisibles[0].localDate||sessionVisibles[0].date||hoy);
           var fechaParts=fechaLocal.split('-');
           var meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
           var fechaBonita=(fechaParts.length===3)?(parseInt(fechaParts[2],10)+' '+meses[(parseInt(fechaParts[1],10)-1)||0]+' '+fechaParts[0]):fechaLocal;
           regHTML+='<div style="margin-top:4px;font-size:12px;font-weight:800;color:#15704f">Series de hoy: '+doneNormales+'/'+goal+' '+dots+'</div>'
             +'<div style="font-size:10px;color:var(--m);margin-top:1px">📅 '+fechaBonita+'</div>'
             +'<div style="font-size:12px;margin-top:3px">'
-            +sessionRegs.map(function(r,ri){
+            +sessionVisibles.map(function(r,ri){
               return '<span data-wlogid="'+r.id+'" style="display:inline-block;background:#eaf9f0;border:1px solid #9dd5b4;border-radius:6px;padding:2px 7px;margin:0 4px 4px 0;white-space:nowrap">'
                 +'<b>'+(r.weight?r.weight+' '+U.pesoUnidad()+' × ':'')+safeText(r.reps||'—')+'</b>'
-                +'<span onclick=\"event.stopPropagation();editWorkoutLogEntry('+r.id+')\" style=\"cursor:pointer;margin-left:3px;opacity:.5;font-size:10px\" title=\"Editar\">✎</span>'
-                +'<span onclick=\"event.stopPropagation();deleteWorkoutEntry('+r.id+')\" style=\"cursor:pointer;margin-left:2px;opacity:.4;font-size:10px\" title=\"Eliminar\">✕</span>'
+                +'<span onclick=\"event.stopPropagation();editWorkoutLogEntry('+JSON.stringify(String(r.id))+')\" style=\"cursor:pointer;margin-left:3px;opacity:.5;font-size:10px\" title=\"Editar\">✎</span>'
+                +'<span onclick=\"event.stopPropagation();deleteWorkoutEntry('+JSON.stringify(String(r.id))+')\" style=\"cursor:pointer;margin-left:2px;opacity:.4;font-size:10px\" title=\"Eliminar\">✕</span>'
                 +'</span>';
             }).join('')
             +'</div>';
@@ -27491,7 +27497,7 @@ function logRoutineQuick(i){
   var seriesFaltantes=goal-yaRegistradas;
   // Crear UNA entrada por serie (todas con el mismo peso/reps)
   for(var s=0;s<seriesFaltantes;s++){
-    state.workoutLog.push({id:Date.now()+s,date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:weight,sets:1,reps:repsStr,note:'Rutina · '+(x.muscle||'')+' · Serie '+(yaRegistradas+s+1)});
+    state.workoutLog.push({id:ppUUID(),date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:weight,sets:1,reps:repsStr,note:'Rutina · '+(x.muscle||'')+' · Serie '+(yaRegistradas+s+1)});
   }
   console.log('[QUICK] creadas '+seriesFaltantes+' series de '+goal+' para '+x.name);
   if(!pack.checked)pack.checked={}; pack.checked[i]=true; pack.checkedDate=todayISO();
@@ -27521,7 +27527,7 @@ function editWorkoutLogEntry(id){
   div.style.cssText='display:inline-flex;gap:4px;align-items:center;background:#fff;border:1px solid #9dd5b4;border-radius:6px;padding:3px 6px;margin:0 4px 4px 0';
   div.innerHTML='<input type="number" inputmode="decimal" value="'+(entry.weight||'')+'" placeholder="Peso" style="width:56px;font-size:12px;padding:2px">'
     +'<input type="text" inputmode="numeric" value="'+safeText(entry.reps||'')+'" placeholder="Reps" style="width:48px;font-size:12px;padding:2px">'
-    +'<button class="btn" style="padding:2px 7px;font-size:11px" onclick="saveWorkoutEntryEdit('+id+',this)">✓</button>'
+    +'<button class="btn" style="padding:2px 7px;font-size:11px" onclick="saveWorkoutEntryEdit('+JSON.stringify(String(id))+',this)">✓</button>'
     +'<button class="btn" style="padding:2px 7px;font-size:11px" onclick="quickFitnessToday()">✕</button>';
   chip.replaceWith(div);
   div.querySelector('input').focus();
@@ -30625,7 +30631,7 @@ function logRoutineExercise(i, btn){
   var key=x.name;
   pack.seriesCount[key]=(pack.seriesCount[key]||0)+1;
   var serieNum=pack.seriesCount[key];
-  state.workoutLog.push({id:Date.now(),date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:w,sets:x.sets||0,reps:reps,note:'Rutina · '+(x.muscle||'')+' · Serie '+serieNum});
+  state.workoutLog.push({id:ppUUID(),date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:w,sets:x.sets||0,reps:reps,note:'Rutina · '+(x.muscle||'')+' · Serie '+serieNum});
   console.log('[REG] DESPUES DEL PUSH — workoutLog='+state.workoutLog.length+' serie='+serieNum);
   // v1.187.9 (diagnóstico temporal): deja el ID del registro en la cadena para
   // seguirlo extremo a extremo (iPhone → Supabase → Windows).
