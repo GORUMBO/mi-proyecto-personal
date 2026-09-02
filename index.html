@@ -6048,7 +6048,7 @@ function recChipsHTML(){
   return set.map(x=>`<button class="r2-chip${chip===x[0]?' on':''}" onclick="recSetChip('${x[0]}')">${x[1]}</button>`).join('');
 }
 function refreshRecetasTab(){let i=tabs.indexOf('🍽️ Recetas');if(i>=0){buildTabIfNeeded(i,true);try{bindAll()}catch(e){}}}
-function recSetTab(t){window._recTab=t;window._recChip='';_recipePage=1;refreshRecetasTab();}
+function recSetTab(t){window._recTab=t;window._recChip='';window._recMethod='todas';window._portableFormat='todas';window._recSearchText='';_recipePage=1;refreshRecetasTab();}
 function recSetChip(v){window._recChip=(window._recChip===v?'':v);_recipePage=1;refreshRecetasTab();}
 // Suplementos (whey, creatina, vitaminas) que se consiguen en Amazon. Info general, no consejo médico.
 const SUPPLEMENTS=[
@@ -8378,7 +8378,7 @@ function secRecetas(){
   </div>
   <div class="r2-tabs">${[['todas','Todas'],['tipo','Tipo'],['costo','Costo'],['tiempo','Tiempo'],['objetivo','Objetivo']].map(x=>`<button class="r2-tab${_tab===x[0]?' on':''}" onclick="recSetTab('${x[0]}')">${x[1]}</button>`).join('')}</div>
   <div class="r2-chips" id="recChips">${recChipsHTML()}</div>
-  <div class="r2-favrow"><span class="r2-count" id="recMethodLabel"></span><button class="r2-fav${window._portableFormat==='favoritas'?' on':''}" onclick="toggleFavoritesFilter()">⭐ Favoritas${_favN}</button></div>
+  <div class="r2-favrow"><span class="r2-count" id="recMethodLabel"></span><button class="r2-fav${window._portableFormat==='favoritas'?' on':''}" onclick="toggleFavoritesFilter()">⭐ Favoritas${_favN}</button><button class="btn" style="font-size:12px;padding:6px 10px;margin-left:6px" onclick="abrirAuditoriaRecetas()">🩺 Necesitan revisión</button></div>
   ${suplementosHTML()}
   <div id="recipes"></div>
 </div>
@@ -24700,7 +24700,10 @@ function renderThermomixPlan(recipe){
   </div>`;
 }
 function openLinkedRecipe(name){
-  window._recMethod='salsa';window._portableFormat='todas';_recipePage=1;
+  // El buscador (nombre+tags+ingredientes+pasos) ya encuentra la receta enlazada;
+  // NO fijar filtros ocultos: dejaban el catálogo filtrado a "salsa" al volver a Todas.
+  window._recMethod='todas';window._portableFormat='todas';_recipePage=1;
+  window._recSearchText=name; // sobrevive a reconstrucciones de la pestaña
   let filter=document.getElementById('recFilter'),search=document.getElementById('recSearch');
   if(filter)filter.value='todas';if(search)search.value=name;
   document.querySelectorAll('.rec-method').forEach(button=>button.className=button.dataset.method==='salsa'?'btn primary rec-method':'btn rec-method');
@@ -24854,6 +24857,809 @@ function toggleRecipeStep(recIdx,stepIdx){
   }
 }
 // Render perezoso de una categoría agrupada: dibuja sus tarjetas solo al abrir su <details>.
+/* ===== FASE A · Modo fácil (🪄 Rápido / 👨‍🍳 Paso a paso / 📖 Completo + porciones) =====
+   CONSERVADOR: nunca inventa cantidades, tiempos, macros ni parámetros TM5.
+   Lo que no se puede parsear se muestra como texto original. */
+var RECETA_FRACCIONES={'½':0.5,'¼':0.25,'¾':0.75,'⅓':1/3,'⅔':2/3,'⅛':0.125};
+function recetaPorciones(r){
+  // Solo enteros positivos razonables, con unidad opcional conocida.
+  var s=String(r&&r.porciones||'').trim();
+  if(!s)return null;
+  var m=s.match(/^(\d+)\s*(.*)$/);
+  if(!m)return null;
+  var n=parseInt(m[1],10);
+  if(!(n>0)||n>50)return null;
+  var unidad=(m[2]||'').trim().toLowerCase();
+  if(unidad&&!/^(vasos?|tazas?|piezas?|porciones?|personas?|rebanadas?|filetes?|lata|latas?|huevos?|unidades?)$/.test(unidad))return null;
+  return {n:n,unidad:unidad};
+}
+function recetaTiempoPaso(texto){
+  // Extrae SOLO un tiempo explícito del paso: "10-12 min", "5 seg", "1 h".
+  var t=String(texto||'');
+  var m=t.match(/(\d+(?:[.,]\d+)?)(?:\s*[-–]\s*(\d+(?:[.,]\d+)?))?\s*(min|minutos?|seg|segundos?|horas?|h)\b/i);
+  if(!m)return null;
+  var val=parseFloat(String(m[1]).replace(',','.'));
+  var u=String(m[3]||'').toLowerCase();
+  var seg=0,label='';
+  if(/^h/.test(u)){seg=Math.round(val*3600);label=Math.round(val*60)+' min';}
+  else if(/^min/.test(u)){seg=Math.round(val*60);label=val+' min';}
+  else{seg=Math.round(val);label=val+' seg';}
+  if(!(seg>0)||seg>14400)return null;
+  return {seg:seg,label:label};
+}
+function recetaParseIngrediente(txt){
+  // [cantidad][unidad conocida] resto → parseable. Si no: texto original intacto.
+  var s=String(txt||'').trim();
+  if(!s)return null;
+  var m=s.match(/^(\d+\s+\d+\/\d+|\d+\/\d+|[½¼¾⅓⅔⅛]|\d+(?:[.,]\d+)?)\s*(.*)$/);
+  if(!m)return {parseable:false,original:s,texto:s,cant:null,unidad:'',nombre:s};
+  var raw=m[1],resto=m[2]||'';
+  var cant;
+  var pm=raw.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if(pm){cant=+pm[1]+(+pm[2]/+pm[3]);}
+  else{var fm=raw.match(/^(\d+)\/(\d+)$/);
+    if(fm)cant=+fm[1]/+fm[2];
+    else if(RECETA_FRACCIONES[raw]!=null)cant=RECETA_FRACCIONES[raw];
+    else cant=parseFloat(raw.replace(',','.'));}
+  if(!isFinite(cant)||cant<=0||cant>1000)return {parseable:false,original:s,texto:s,cant:null,unidad:'',nombre:s};
+  var um=resto.match(/^(g|gr|gramos?|kg|kilos?|ml|l\b|litros?|taza|tazas?|cda|cdas?|cucharada|cucharadas?|cdita|cditas?|cucharadita|cucharaditas?|pza|pzas?|pieza|piezas?|rebanada|rebanadas?|lata|latas?|diente|dientes?|filete|filetes?|cubo|cubos|rodaja|rodajas|ramo|ramos|hoja|hojas|sobre|sobres|botella|botellas|vaso|vasos|huevo|huevos|unidad|unidades)\b\s*/i);
+  var unidad=um?um[1].toLowerCase():'';
+  // Conservador: el resto se conserva TAL CUAL (incluye "de", p. ej. "tazas de arroz").
+  var nombre=um?resto.slice(um[0].length).trim():resto.trim();
+  if(!nombre)return {parseable:false,original:s,texto:s,cant:null,unidad:'',nombre:s};
+  return {parseable:true,cant:cant,unidad:unidad,nombre:nombre,original:s,texto:s};
+}
+function recetaIngredientes(r,factor){
+  factor=factor||1;
+  return String(r&&r.ingredients||'').split(',').map(function(x){return x.trim();}).filter(Boolean).map(function(x){
+    var p=recetaParseIngrediente(x);
+    if(p&&p.parseable&&factor!==1){
+      var c=Math.round(p.cant*factor*10)/10;
+      return {parseable:true,original:x,texto:String(c)+(p.unidad?(' '+p.unidad):'')+' '+p.nombre,cant:c,unidad:p.unidad,nombre:p.nombre};
+    }
+    return {parseable:!!(p&&p.parseable),original:x,texto:x,cant:p?p.cant:null,unidad:p?p.unidad:'',nombre:p?p.nombre:x};
+  });
+}
+function recetaPasosResumen(steps){
+  // Resumen conservador: ≤7 pasos → todos; más → primeros 5 + último (sin inventar texto).
+  steps=steps||[];
+  if(steps.length<=7)return {items:steps.map(function(s,i){return {num:i+1,texto:s};}),omitidos:0};
+  var items=steps.slice(0,5).map(function(s,i){return {num:i+1,texto:s};});
+  items.push({num:steps.length,texto:steps[steps.length-1]});
+  return {items:items,omitidos:steps.length-6};
+}
+function recetaRapidoHTML(r,factor){
+  var ing=recetaIngredientes(r,factor);
+  var res=recetaPasosResumen(r.steps);
+  var h='<div style="margin-top:12px"><div style="font-weight:900;font-size:13px;color:#15704f;margin-bottom:6px">NECESITAS</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px">'+ing.map(function(i){
+      return '<div style="display:flex;gap:8px;align-items:flex-start;font-size:15px;line-height:1.35"><span style="color:#15704f;font-weight:900">•</span><span>'+safeText(i.texto)+'</span></div>';
+    }).join('')+'</div></div>';
+  h+='<div style="margin-top:14px"><div style="font-weight:900;font-size:13px;color:#15704f;margin-bottom:6px">PASOS</div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    +res.items.map(function(p,i){
+      var omitir=res.omitidos>0&&i===res.items.length-1;
+      return (omitir?'<div class="muted" style="font-size:12px;padding:2px 0">… ('+res.omitidos+' pasos intermedios en Paso a paso)</div>':'')
+        +'<div style="display:flex;gap:10px;align-items:flex-start"><span style="background:#15704f;color:#fff;border-radius:999px;min-width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0">'+p.num+'</span><span style="font-size:15px;line-height:1.4">'+safeText(p.texto)+'</span></div>';
+    }).join('')+'</div></div>';
+  h+='<div style="margin-top:16px;background:#eaf9f0;border:1px solid #9dd5b4;border-radius:12px;padding:14px;text-align:center;font-weight:900;color:#0d6043;font-size:16px">✅ Listo.</div>';
+  return h;
+}
+function recetaPasoHTML(r,factor,idx,vista){
+  vista=vista||{};
+  var steps=r.steps||[];
+  var n=steps.length;
+  if(!n)return '<div class="muted" style="margin-top:12px">Esta receta no tiene pasos.</div>';
+  idx=Math.max(0,Math.min(n-1,idx||0));
+  var t=recetaTiempoPaso(steps[idx]);
+  var h='<div style="margin-top:12px"><div style="text-align:center;font-weight:900;font-size:14px;color:#63706a">Paso '+(idx+1)+' de '+n+'</div>'
+    +recetaAvisosPreparacionHTML(r,vista)
+    +'<div style="background:#fff;border:1px solid #d9e3db;border-radius:16px;padding:20px;margin-top:10px;min-height:150px"><div style="font-size:19px;line-height:1.55;font-weight:600">'+safeText(steps[idx])+'</div></div>'
+    +((vista.metodo==='tm5')?(function(){
+      var k=recetaPasoTM5(steps[idx]);
+      var icono=(k==='tm5')?'🤖 TM5':((k==='externo'||k==='mixto')?'🍳 Fuera de TM5':'🔧 Manual');
+      var par=recetaPasoTM5Parametros(steps[idx]);
+      return '<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="background:#eaf9f0;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:900">'+icono+'</span>'
+        +((k==='tm5'&&!par.tiene)?'<span class="muted" style="font-size:12px">'+par.nota+'</span>':'')+'</div>';
+    })():'')
+    +recetaComponentesEnPaso(steps[idx]).filter(function(c){return recetaComponenteRelevante(c,steps[idx]);}).map(function(c){return recetaComponenteHTML(c,steps[idx],vista,r);}).join('')
+    +((function(){var p=recetaPreparacionPrevia(steps[idx]);return p?recetaPreviaHTML(p,r,idx,vista):'';})())
+    +(t?'<button class="btn primary" style="width:100%;margin-top:12px;padding:15px;font-size:16px;min-height:50px" onclick="recetaPasoTimer()">⏱ Iniciar temporizador '+t.label+'</button>':'')
+    +'<div style="position:sticky;bottom:0;background:#f0f4f1;padding:10px 0 6px;margin-top:14px;display:flex;gap:10px">'
+    +'<button class="btn" style="flex:1;padding:15px;font-size:16px;min-height:52px" '+(idx===0?'disabled':'onclick="recetaPaso(-1)"')+'>← Anterior</button>'
+    +'<button class="btn primary" style="flex:1;padding:15px;font-size:16px;min-height:52px" '+(idx===n-1?'onclick="cerrarReceta()"':'onclick="recetaPaso(1)"')+'>'+(idx===n-1?'✅ Terminar':'Siguiente →')+'</button>'
+    +'</div></div>';
+  return h;
+}
+function recetaCompletoHTML(r){
+  var ing=String(r.ingredients||'').split(',').map(function(x){return x.trim();}).filter(Boolean);
+  var h='<div style="margin-top:12px"><div style="font-weight:900;font-size:13px;color:#15704f;margin-bottom:6px">INGREDIENTES (receta original)</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px">'+ing.map(function(i){return '<div style="font-size:15px;line-height:1.4">• '+safeText(i)+'</div>';}).join('')+'</div></div>';
+  h+='<div style="margin-top:14px"><div style="font-weight:900;font-size:13px;color:#15704f;margin-bottom:6px">PASOS</div>'
+    +(r.steps||[]).map(function(s,i){
+      return '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px"><span style="background:#15704f;color:#fff;border-radius:999px;min-width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0">'+(i+1)+'</span><span style="font-size:15px;line-height:1.4">'+safeText(s)+'</span></div>';
+    }).join('')+'</div>';
+  // Nutrición: SOLO datos existentes. Nunca inventar carbs/grasas.
+  if(r.carbs!=null&&r.grasas!=null){
+    h+='<div style="margin-top:14px;background:#f8fff9;border:1px solid #d9e3db;border-radius:14px;padding:12px"><div style="font-weight:900;font-size:13px;margin-bottom:8px">INFORMACIÓN NUTRICIONAL</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'
+      +'<div style="background:#fff;border-radius:10px;padding:8px;text-align:center"><b style="color:#15704f;font-size:18px">'+(r.k||0)+'</b><div class="muted" style="font-size:10px">kcal</div></div>'
+      +'<div style="background:#fff;border-radius:10px;padding:8px;text-align:center"><b style="color:#e67e22;font-size:18px">'+(r.p||0)+' g</b><div class="muted" style="font-size:10px">proteína</div></div>'
+      +'<div style="background:#fff;border-radius:10px;padding:8px;text-align:center"><b style="color:#3498db;font-size:18px">'+(r.carbs||0)+' g</b><div class="muted" style="font-size:10px">carbs</div></div>'
+      +'<div style="background:#fff;border-radius:10px;padding:8px;text-align:center"><b style="color:#9b59b6;font-size:18px">'+(r.grasas||0)+' g</b><div class="muted" style="font-size:10px">grasa</div></div>'
+      +'</div></div>';
+  } else {
+    h+='<div style="margin-top:14px;background:#f8fff9;border:1px solid #d9e3db;border-radius:14px;padding:12px"><b>🔥 '+(r.k||0)+' kcal</b> · <b>🍗 '+(r.p||0)+' g proteína</b>'
+      +'<div class="muted" style="margin-top:6px;font-size:13px">Información nutricional no disponible (carbohidratos/grasas).</div></div>';
+  }
+  if(r.time)h+='<div style="margin-top:10px;font-size:14px">⏱️ Tiempo: '+r.time+' min</div>';
+  if(r.temp&&String(r.temp).length>3)h+='<div style="margin-top:6px;font-size:14px">🔥 '+safeText(r.temp)+'</div>';
+  if(r.method)h+='<div style="margin-top:6px;font-size:14px">🍳 Método: '+safeText(r.method)+'</div>';
+  if(r.conservar)h+='<div style="margin-top:6px;font-size:14px">📦 '+safeText(r.conservar)+'</div>';
+  if(r.cost!=null)h+='<div style="margin-top:6px;font-size:14px">💰 Costo: $'+r.cost+'</div>';
+  return h;
+}
+function recetaDetalleHTML(){
+  var v=window._recetaVista; if(!v)return '';
+  var r=baseRecipes[v.idx]; if(!r)return '';
+  var porc=recetaPorciones(r);
+  var factor=(v.personas&&porc)?(v.personas/porc.n):1;
+  var kEsc=Math.round((r.k||0)*factor), pEsc=+((r.p||0)*factor).toFixed(1);
+  var chip=function(txt,bg){return '<span style="background:'+bg+';border-radius:999px;padding:5px 11px;font-size:12px;font-weight:800;color:#12352a;white-space:nowrap">'+txt+'</span>';};
+  var hayPadre=(window._recetaPila||[]).length>0;
+  var cab='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+    +'<button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="recetaVolverPadre()">← '+(hayPadre?'Volver':'Recetas')+'</button>'
+    +'<b style="font-size:17px;color:#12352a;flex:1;line-height:1.3">'+safeText(r.name)+'</b></div>';
+  var meta='<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:12px">'
+    +(r.time?chip('⏱️ '+r.time+' min','#e8f5e9'):'')
+    +(porc?chip('👥 '+porc.n+(porc.unidad?(' '+porc.unidad):''),'#e0f2f1'):'')
+    +chip('🔥 '+(v.modo==='completo'?(r.k||0):kEsc)+' kcal'+(factor!==1&&v.modo!=='completo'?' ×'+factor:''),'#fff3e0')
+    +'</div>';
+  var tabs='<div class="row" style="gap:6px;margin-bottom:10px;flex-wrap:wrap">'
+    +[['rapido','🪄 Rápido'],['pasoapaso','👨‍🍳 Paso a paso'],['completo','📖 Completo']].map(function(p){
+      return '<button class="btn '+(v.modo===p[0]?'primary':'')+'" style="flex:1;min-width:104px;padding:12px 8px;font-size:14px;min-height:46px" onclick="recetaModo(\''+p[0]+'\')">'+p[1]+'</button>';
+    }).join('')+'</div>';
+  // TM5: badge + selector Normal/TM5 + adaptación detallada
+  var cTM5=recetaClasificarTM5(r);
+  var metodoRow='<div class="row" style="gap:6px;margin-bottom:10px;flex-wrap:wrap">'
+    +'<button class="btn '+(v.metodo!=='tm5'?'primary':'')+'" style="flex:1;min-width:100px;padding:10px 8px;min-height:44px" onclick="recetaMetodo(\'normal\')">Normal</button>'
+    +'<button class="btn '+(v.metodo==='tm5'?'primary':'')+'" style="flex:1;min-width:100px;padding:10px 8px;min-height:44px" onclick="recetaMetodo(\'tm5\')">'+(cTM5.nivel==='🟡'?'TM5 asistida':'TM5')+'</button></div>';
+  var tm5Badge='<div style="margin-bottom:10px;background:'+(cTM5.nivel==='🟢'?'#eaf9f0':cTM5.nivel==='🟡'?'#fff8f0':cTM5.nivel==='🔴'?'#fdecec':'#f4f6f5')+';border:1px solid '+(cTM5.nivel==='🟢'?'#9dd5b4':cTM5.nivel==='🟡'?'#f0d9a8':cTM5.nivel==='🔴'?'#e6b9b9':'#d9e3db')+';border-radius:12px;padding:10px;font-size:13px;font-weight:800;color:#12352a">'+cTM5.nivel+' '+recetaTM5TextoCorto(cTM5)+'</div>'
+    +'<details style="margin-bottom:10px"><summary style="font-size:13px;font-weight:800;cursor:pointer">Ver adaptación TM5</summary>'+recetaTM5ListaHTML(r,cTM5)+'</details>';
+  var sel='';
+  if(porc&&v.modo!=='completo'){
+    sel='<div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:10px">'
+      +'<button class="btn" style="border-radius:999px;padding:8px 20px;font-size:20px;min-height:48px" onclick="recetaPersonas(-1)">−</button>'
+      +'<div style="text-align:center"><div style="font-weight:900;font-size:22px">'+v.personas+'</div><div class="muted" style="font-size:11px">persona'+(v.personas!==1?'s':'')+'</div></div>'
+      +'<button class="btn" style="border-radius:999px;padding:8px 20px;font-size:20px;min-height:48px" onclick="recetaPersonas(1)">+</button></div>';
+  }
+  var contenido=v.modo==='rapido'?recetaRapidoHTML(r,factor):(v.modo==='pasoapaso'?recetaPasoHTML(r,factor,v.paso,v):recetaCompletoHTML(r));
+  return cab+meta+tabs+metodoRow+tm5Badge+sel+contenido;
+}
+function recetaMetodo(m){
+  var v=window._recetaVista; if(!v)return;
+  v.metodo=m;
+  var ov=document.getElementById('recetaDetalle');
+  if(ov)ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
+}
+window._recetaVista=null;
+window._recetaPila=[];
+function abrirReceta(idx,modo){
+  var r=baseRecipes[idx]; if(!r)return;
+  var prev=window._recetaVista;
+  var pila=window._recetaPila||[];
+  // Pila de recetas padre (conserva paso/modo/porciones/componentes; evita ciclos).
+  var cadena=(prev?[prev.idx]:[]).concat(pila.map(function(p){return p.idx;}));
+  if(prev&&prev.idx!==idx&&!recetaPilaContiene(cadena,idx)){
+    pila=pila.concat([{idx:prev.idx,modo:prev.modo,paso:prev.paso,personas:prev.personas,componentesListos:prev.componentesListos||{},metodo:prev.metodo||'normal'}]);
+  }
+  window._recetaPila=pila;
+  window._recetaVista={idx:idx,modo:modo||'rapido',personas:null,paso:0,componentesListos:{},subAbierta:null,metodo:'normal',prepAbierta:null};
+  var porc=recetaPorciones(r);
+  if(porc)window._recetaVista.personas=porc.n;
+  var ov=document.getElementById('recetaDetalle');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='recetaDetalle';
+    ov.style.cssText='position:fixed;inset:0;background:#f0f4f1;z-index:23000;overflow-y:auto;padding:14px;box-sizing:border-box;-webkit-overflow-scrolling:touch';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
+  try{ov.scrollTop=0;}catch(e){}
+}
+function cerrarReceta(){var ov=document.getElementById('recetaDetalle');if(ov)ov.remove();window._recetaVista=null;window._recetaPila=[];}
+function recetaVolverPadre(){
+  var pila=window._recetaPila||[];
+  if(pila.length){
+    var p=pila.pop();
+    window._recetaPila=pila;
+    window._recetaVista={idx:p.idx,modo:p.modo,personas:p.personas,paso:p.paso,componentesListos:p.componentesListos||{},subAbierta:null,metodo:p.metodo||'normal',prepAbierta:null};
+    var ov=document.getElementById('recetaDetalle');
+    if(ov)ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
+    try{ov.scrollTop=0;}catch(e){}
+    return;
+  }
+  cerrarReceta();
+}
+function recetaModo(m){
+  if(!window._recetaVista)return;
+  window._recetaVista.modo=m; window._recetaVista.paso=0;
+  var ov=document.getElementById('recetaDetalle');
+  if(ov)ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
+}
+function recetaPersonas(d){
+  var v=window._recetaVista; if(!v)return;
+  var r=baseRecipes[v.idx]; var porc=recetaPorciones(r); if(!porc)return;
+  v.personas=Math.max(1,Math.min(20,(v.personas||porc.n)+d));
+  var ov=document.getElementById('recetaDetalle');
+  if(ov)ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
+}
+function recetaPaso(d){
+  var v=window._recetaVista; if(!v)return;
+  var r=baseRecipes[v.idx]; var n=(r.steps||[]).length; if(!n)return;
+  v.paso=Math.max(0,Math.min(n-1,(v.paso||0)+d));
+  var ov=document.getElementById('recetaDetalle');
+  if(ov){ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';try{ov.scrollTop=0;}catch(e){}}
+}
+function recetaPasoTimer(){
+  var v=window._recetaVista; if(!v)return;
+  var r=baseRecipes[v.idx]; var paso=(r.steps||[])[v.paso||0]; if(!paso)return;
+  var t=recetaTiempoPaso(paso); if(!t)return;
+  if(typeof openAppTimer==='function')openAppTimer('Paso '+((v.paso||0)+1)+': '+r.name,t.seg);
+}
+/* Filtros de Recetas: agrupado SOLO con catálogo completo; descripción honesta del filtro activo. */
+function recetaModoAgrupado(tab,chip,s,sort,m,pf){
+  return tab==='todas' && !chip && !s && (sort||'none')==='none' && m==='todas' && pf==='todas';
+}
+function recetaFiltroDesc(f,m,pf,s,tab,chip){
+  if(m!=='todas')return (m==='thermomix'?'Thermomix':m);
+  if(pf==='favoritas')return 'Favoritas';
+  if(pf!=='todas')return pf;
+  if(f!=='todas')return f;
+  if(tab==='tipo'&&chip)return chip;
+  if(tab!=='todas')return tab;
+  if(s)return 'búsqueda';
+  return '';
+}
+/* ===== Fase A+ · Componentes/subrecetas en Paso a paso =====
+   PRIORIDAD 1: la receta ya prepara el componente → referenciarlo, no repetir.
+   PRIORIDAD 2: subreceta compatible en la biblioteca existente.
+   PRIORIDAD 3: no hay datos → NO inventar: aviso + "Usar preparada" + buscar. */
+var RECETA_COMPONENTES=[
+  {k:'salsa',rx:/\bsalsas?\b/i,label:'salsa',tipos:['salsa','aderezo']},
+  {k:'aderezo',rx:/\baderezos?\b/i,label:'aderezo',tipos:['aderezo','salsa']},
+  {k:'caldo',rx:/\bcaldos?\b/i,label:'caldo',tipos:['sopa']},
+  {k:'marinada',rx:/\bmarinad[ao]s?\b/i,label:'marinada',tipos:['aderezo','salsa']},
+  {k:'masa',rx:/\bmasas?\b/i,label:'masa',tipos:['pan','postre']},
+  {k:'crema',rx:/\bcremas?\b/i,label:'crema',tipos:['aderezo','salsa','postre']},
+  {k:'mezcla',rx:/\b(la|el|una|su|tu|esta|esa|nuestra)\s+mezclas?\b/i,label:'mezcla',tipos:[]},
+  {k:'guarnición',rx:/\bguarnici[óo]n(es)?\b/i,label:'guarnición',tipos:['verdura','arroz','fruta']}
+];
+var RECETA_PREPVERB=/lic[uú]a|muele|hierve|cocina|prepara|bate|fr[ií]e|tuesta|asa|desmenuza|deshebra|sofr[ií]e|calienta|mezcla|machaca|sazona|dora/i;
+function recetaComponentesEnPaso(texto){
+  return RECETA_COMPONENTES.filter(function(c){return c.rx.test(String(texto||''));}).map(function(c){
+    var m=String(texto).match(c.rx);
+    return {k:c.k,rx:c.rx,label:c.label,frase:m?m[0]:c.label,tipos:c.tipos.slice(),calif:recetaComponenteCalif(texto,c)};
+  });
+}
+function recetaPreparacionPrevia(texto){
+  // "usa pollo cocido", "agrega arroz preparado" → preparación previa requerida.
+  var m=String(texto||'').match(/\b(usa|agrega|añade|incorpora|utiliza)\s+([a-záéíóúñ\s]{2,20}?)\s+(preparado|preparada|cocido|cocida)s?\b/i);
+  if(!m)return null;
+  var label=String(m[2]).trim()+' '+String(m[3]);
+  if(label.length<5||label.length>30)return null;
+  return {label:label,frase:m[0]};
+}
+function recetaPreviaInterna(r,prev,idx){
+  var noun=prev.label.split(' ')[0].toLowerCase();
+  return (r&&r.steps||[]).slice(0,Math.max(0,idx)).some(function(s){
+    return new RegExp('\\b'+noun+'\\w*\\b','i').test(s)&&(typeof RECETA_PREPVERB!=='undefined')&&RECETA_PREPVERB.test(s);
+  });
+}
+function recetaPreviaHTML(prev,r,idx,vista){
+  var listo=!!(vista.componentesListos&&vista.componentesListos[prev.label]);
+  if(listo)return '<div style="margin-top:10px;display:flex;gap:8px;align-items:center;background:#eaf9f0;border:1px solid #9dd5b4;border-radius:12px;padding:10px"><span style="font-size:18px">☑</span><span style="font-size:14px;font-weight:800;color:#0d6043">'+safeText(prev.label)+' listo</span></div>';
+  if(recetaPreviaInterna(r,prev,idx)){
+    return '<div style="margin-top:10px;background:#fff8f0;border:1px solid #f0d9a8;border-radius:12px;padding:10px"><div style="font-size:14px;font-weight:800;color:#8a5a2a">🍗 Necesitas '+safeText(prev.label)+'. La receta ya explica cómo prepararlo antes.</div><button class="btn" style="margin-top:8px;padding:10px 14px;min-height:44px" onclick="recetaComponenteListo(\''+safeText(prev.label)+'\')">☑ Listo</button></div>';
+  }
+  return '<div style="margin-top:10px;background:#fff;border:1px solid #d9e3db;border-radius:12px;padding:10px"><div style="font-size:14px;font-weight:800;color:#12352a">🍗 Necesitas '+safeText(prev.label)+'.</div><div class="muted" style="font-size:13px;margin:4px 0 8px">Esta receta no incluye cómo prepararlo.</div><button class="btn" style="padding:11px;min-height:46px" onclick="recetaComponenteListo(\''+safeText(prev.label)+'\')">☑ Listo (ya lo tengo preparado)</button></div>';
+}
+/* Sobre-detección: ingredientes simples + verbos de servicio NO disparan
+   bloque de preparación. "Sirve con crema" es crema lista, no subreceta. */
+var RECETA_INGREDIENTES_SIMPLES=['crema','queso','cebolla','cilantro','sal','pimienta','limón','aguacate','aceite','mantequilla','leche','azúcar','huevo','huevos','ajo','tortillas','pan'];
+var RECETA_VERBO_SERVICIO=/sirve con|servir con|decora|decorar|espolvorea|espolvorear|acompaña|acompañar|pon encima|poner encima|termina con|terminar con|agrega|agregar|añade|añadir|incorpora|incorporar|sírvelo|sírvela/i;
+function recetaComponenteRelevante(comp,texto){
+  // Simple + verbo de servicio → no es preparación obligatoria.
+  if(RECETA_INGREDIENTES_SIMPLES.indexOf(comp.label)<0)return true;
+  var t=String(texto||'');
+  if(!RECETA_VERBO_SERVICIO.test(t))return true;
+  // Excepciones de especificidad: "crema de chipotle preparada" sí se analiza.
+  if(comp.calif)return true;
+  if(/\bpreparad[oa]s?\b/i.test(t))return true;
+  return false;
+}
+function recetaComponenteCalif(texto,c){
+  var m=String(texto||'').match(new RegExp('\\b'+c.k+'\\w*\\s+([a-záéíóúñ]{3,})','i'));
+  if(!m)return null;
+  var w=String(m[1]).toLowerCase();
+  if(/^(de|del|la|el|los|las|o|y|que|para|al|un|una|unos|unas|con|sin|ya|preparado|preparada|listo|lista|caliente|frío|fria|fria)$/.test(w))return null;
+  return w;
+}
+function recetaPreparaComponenteInterno(r,comp){
+  var seccion=new RegExp('para la '+comp.label+'|para el '+comp.label+'|de la '+comp.label+'|del '+comp.label,'i');
+  if(seccion.test(String(r&&r.ingredients||'')))return true;
+  return (r&&r.steps||[]).some(function(s){
+    if(!(comp.rx&&comp.rx.test(s)))return false;
+    // Probar el verbo de preparación SOBRE el texto sin la mención del componente
+    // (evita el auto-match: "la mezcla" no es el verbo "mezcla").
+    var resto=String(s).replace(comp.rx,' ');
+    return (typeof RECETA_PREPVERB!=='undefined')&&RECETA_PREPVERB.test(resto);
+  });
+}
+function recetaSubrecetas(comp,cadenaIdx){
+  if(!comp.tipos.length)return [];
+  var prohibidos={};
+  (cadenaIdx||[]).forEach(function(i){prohibidos[i]=1;});
+  var out=[];
+  baseRecipes.forEach(function(r,idx){
+    if(prohibidos[idx])return;
+    if(comp.tipos.indexOf(r.type)<0)return;
+    var nombre=String(r.name||'').toLowerCase();
+    var score=0;
+    if(nombre.indexOf(comp.label)>=0)score+=3;
+    if(comp.calif&&nombre.indexOf(comp.calif)>=0)score+=2;
+    if(r.tags&&String(r.tags).toLowerCase().indexOf(comp.label)>=0)score+=1;
+    if(score>0)out.push({idx:idx,r:r,score:score});
+  });
+  out.sort(function(a,b){return b.score-a.score;});
+  return out.slice(0,3);
+}
+function recetaPilaContiene(arrIdx,idx){return (arrIdx||[]).indexOf(idx)>=0;}
+function recetaComponenteListo(label){
+  var v=window._recetaVista; if(!v)return;
+  v.componentesListos=v.componentesListos||{};
+  v.componentesListos[label]=true;
+  var ov=document.getElementById('recetaDetalle');
+  if(ov)ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
+}
+function recetaAbrirSub(idx){
+  var v=window._recetaVista; if(!v)return;
+  v.subAbierta=(v.subAbierta===idx)?null:idx;
+  var ov=document.getElementById('recetaDetalle');
+  if(ov)ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
+}
+function recetaAbrirCompleta(idx){
+  var v=window._recetaVista; if(!v)return;
+  var pila=window._recetaPila||[];
+  var cadena=[v.idx].concat(pila.map(function(p){return p.idx;}));
+  if(recetaPilaContiene(cadena,idx)){
+    alert('Esa receta ya está en tu camino de preparación. No se abre de nuevo para evitar ciclos.');
+    return;
+  }
+  abrirReceta(idx,'pasoapaso');
+}
+function recetaSubPasoTimer(subIdx,si){
+  var sub=baseRecipes[subIdx]; if(!sub)return;
+  var paso=(sub.steps||[])[si]; if(!paso)return;
+  var t=recetaTiempoPaso(paso); if(!t)return;
+  if(typeof openAppTimer==='function')openAppTimer(sub.name+': paso '+(si+1),t.seg);
+}
+function recetaSubHTML(subIdx,label,cadenaIdx,abiertoForzado){
+  var v=window._recetaVista; if(!v)return '';
+  var sub=baseRecipes[subIdx]; if(!sub)return '';
+  var abierto=(abiertoForzado!==undefined)?abiertoForzado:!!(v.subAbierta===subIdx);
+  var h='<div style="margin-top:8px;background:#f7fff9;border:1px solid #9dd5b4;border-radius:12px;padding:12px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b style="color:#0d6043;font-size:14px">🍅 '+safeText(sub.name)+'</b>'
+    +'<button class="btn" style="padding:9px 12px;min-height:42px;font-size:13px" onclick="recetaAbrirSub('+subIdx+')">'+(abierto?'Cerrar':'Ver cómo prepararla')+'</button></div>';
+  if(!abierto)return h+'</div>';
+  // mostrar cantidades ORIGINALES de la subreceta (sin escalado: no hay relación fiable)
+  h+='<div style="margin-top:8px"><div style="font-weight:900;font-size:12px;color:#15704f">NECESITAS</div>'
+    +String(sub.ingredients||'').split(',').map(function(i){return i.trim();}).filter(Boolean).map(function(i){return '<div style="font-size:13px;margin-top:3px">• '+safeText(i)+'</div>';}).join('')
+    +'<div style="font-weight:900;font-size:12px;color:#15704f;margin-top:8px">PASOS</div>'
+    +(sub.steps||[]).map(function(s,si){
+      var t=recetaTiempoPaso(s);
+      return '<div style="margin-top:6px;font-size:13px;line-height:1.4"><b>'+(si+1)+'</b>. '+safeText(s)+(t?' <button class="btn" style="padding:4px 10px;font-size:12px;border-radius:999px" onclick="recetaSubPasoTimer('+subIdx+','+si+')">⏱ '+t.label+'</button>':'')+'</div>';
+    }).join('')
+    +'</div>'
+    +'<div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap">'
+    +'<button class="btn primary" style="flex:1;min-width:120px;padding:11px;min-height:46px" onclick="recetaComponenteListo(\''+label+'\')">✓ '+label+' lista</button>'
+    +'<button class="btn" style="flex:1;min-width:120px;padding:11px;min-height:46px" onclick="recetaAbrirCompleta('+subIdx+')">Abrir receta completa</button></div>';
+  return h+'</div>';
+}
+function recetaComponenteHTML(comp,texto,vista,r){
+  var listo=!!(vista.componentesListos&&vista.componentesListos[comp.label]);
+  if(listo){
+    return '<div style="margin-top:10px;display:flex;gap:8px;align-items:center;background:#eaf9f0;border:1px solid #9dd5b4;border-radius:12px;padding:10px"><span style="font-size:18px">☑</span><span style="font-size:14px;font-weight:800;color:#0d6043">'+safeText(comp.label)+' listo</span></div>';
+  }
+  var cadena=[vista.idx].concat((vista.pila||[]).map(function(p){return p.idx;}));
+  if(recetaPreparaComponenteInterno(r,comp)){
+    return '<div style="margin-top:10px;background:#fff8f0;border:1px solid #f0d9a8;border-radius:12px;padding:10px"><div style="font-size:14px;font-weight:800;color:#8a5a2a">🍅 La receta ya incluye cómo preparar la '+safeText(comp.label)+'.</div><button class="btn" style="margin-top:8px;padding:10px 14px;min-height:44px" onclick="recetaComponenteListo(\''+comp.label+'\')">☑ '+safeText(comp.label)+' lista</button></div>';
+  }
+  var simple=RECETA_INGREDIENTES_SIMPLES.indexOf(comp.label)>=0;
+  // Ingrediente simple: NUNCA buscar subrecetas (Fresas con crema no enseña crema).
+  var subs=simple?[]:recetaSubrecetas(comp,cadena);
+  var h='<div style="margin-top:10px;background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:12px">';
+  if(subs.length){
+    h+='<div style="font-size:14px;font-weight:800;color:#12352a">🍅 Esta receta necesita '+safeText(comp.label)+(comp.calif?(' ('+safeText(comp.calif)+')'):'')+'.</div>';
+    h+='<div class="muted" style="font-size:12px;margin:4px 0 6px">Preparaciones que ya tienes en tu biblioteca:</div>';
+    h+=subs.map(function(s){return recetaSubHTML(s.idx,comp.label,cadena);}).join('');
+    h+='<button class="btn" style="width:100%;margin-top:8px;padding:12px;min-height:46px" onclick="recetaComponenteListo(\''+comp.label+'\')">🛒 Usar '+safeText(comp.label)+' preparada</button>';
+  } else if(simple){
+    h+='<div style="font-size:14px;font-weight:800;color:#12352a">🍅 '+safeText(comp.label)+(comp.calif?(' ('+safeText(comp.calif)+')'):'')+'</div>';
+    h+='<div class="muted" style="font-size:13px;margin:4px 0 8px">Ingrediente simple: úsalo listo o búscalo en Recetas.</div>';
+    h+='<div class="row" style="gap:6px;flex-wrap:wrap">'
+      +'<button class="btn" style="flex:1;min-width:130px;padding:11px;min-height:46px" onclick="recetaComponenteListo(\''+comp.label+'\')">🛒 Usar '+safeText(comp.label)+' preparada</button>'
+      +'<button class="btn" style="flex:1;min-width:130px;padding:11px;min-height:46px" onclick="buscarComponenteEnRecetas(\''+comp.label+'\')">🔎 Buscar en Recetas</button></div>';
+  } else {
+    h+='<div style="font-size:14px;font-weight:800;color:#b03030">⚠ Preparación incompleta</div>';
+    h+='<div class="muted" style="font-size:13px;margin:4px 0 8px">Esta receta indica usar '+safeText(comp.label)+', pero no incluye cómo prepararla'+(comp.tipos.length?' y no se encontró una receta compatible en tu biblioteca.':'')+'</div>';
+    h+='<div class="row" style="gap:6px;flex-wrap:wrap">'
+      +'<button class="btn" style="flex:1;min-width:130px;padding:11px;min-height:46px" onclick="recetaComponenteListo(\''+comp.label+'\')">🛒 Usar '+safeText(comp.label)+' preparada</button>'
+      +'<button class="btn" style="flex:1;min-width:130px;padding:11px;min-height:46px" onclick="buscarComponenteEnRecetas(\''+comp.label+'\')">🔎 Buscar en Recetas</button></div>';
+  }
+  return h+'</div>';
+}
+function buscarComponenteEnRecetas(label){
+  window._recSearchText=label;
+  window._recMethod='todas'; window._portableFormat='todas'; _recipePage=1;
+  var i=tabs.indexOf('🍽️ Recetas');
+  cerrarReceta();
+  if(i>=0){try{showTab(i,null);}catch(e){}}
+  try{refreshRecetasTab();}catch(e){}
+}
+/* ===== Auditoría de lógica culinaria (NO destructiva) =====
+   Detecta estados preparados sin proceso, pasos sin tiempo/criterio,
+   TM5 sin parámetros, temperatura sin método y método sin criterio.
+   NUNCA completa datos automáticamente: solo marca. */
+var RECETA_ESTADOS=['cocido','cocida','cocidos','cocidas','hervido','hervida','hervidos','hervidas','dorado','dorada','dorados','doradas','asado','asada','asados','asadas','sofrito','sofrita','sofritos','sofritas','reducido','reducida','reducidos','reducidas','caramelizado','caramelizada','caramelizados','caramelizadas','derretido','derretida','derretidos','derretidas','escurrido','escurrida','escurridos','escurridas','precocido','precocida','precocidos','precocidas','tostado','tostada','tostados','tostadas','blanqueado','blanqueada','blanqueados','blanqueadas','reposado','reposada','reposados','reposadas','marinado','marinada','marinados','marinadas'];
+var RECETA_ESTADOS_RX=new RegExp('\\b('+RECETA_ESTADOS.join('|')+')\\b','i');
+var RECETA_COCCION_VERB=/hierve|hiervan|hervir|cuece|cueza|cuecen|cocina|cocinar|cocínal|cocinal|dora|doren|dorar|asa|asá|tuesta|tuéstal|sofríe|sofría|fríe|fría|calienta|hornea|saltea|marina|derrite|escurre|blanquea|reduce|carameliza|reposa/i;
+var RECETA_CRITERIO_RX=/hasta que|hasta estar|cuando (esté|estén|cambie|empiece|empiecen)|que espese|que dore|que esté|que estén|que quede|que queden|suave|suaves|tierno|tiernos|firme|firmes|al dente|transparente|dorad|cremoso|cremosa|espesa|se deshaga|se deshagan|empiece a hervir|empiecen a hervir|burbuje|°C|fuego (medio|alto|bajo|medio-alto|medio-bajo)/i;
+function recetaSujetoDe(ing){
+  // Hasta 2 palabras antes del estado ("salsa verde cocida" → sujeto "salsa verde"),
+  // quitando medidas/artículos al inicio ("½ taza arroz cocido" → "arroz").
+  var m=String(ing||'').match(new RegExp('\\b([a-záéíóúñ]{2,20}(?:\\s+[a-záéíóúñ]{2,20})?)\\s+('+RECETA_ESTADOS.join('|')+')\\b','i'));
+  if(!m)return null;
+  var palabras=String(m[1]).toLowerCase().trim().split(/\s+/);
+  var medida=/^(taza|tazas|kg|kilos?|gramos?|g|ml|l|lb|cda|cdas|cucharada|cucharadas|cdita|cditas|pieza|piezas|pza|pzas|rebanada|rebanadas|lata|latas|diente|dientes|filete|filetes|vaso|vasos|unidad|unidades|de|del|la|el|los|las|una|un|unos|unas|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)$/;
+  while(palabras.length&&medida.test(palabras[0]))palabras.shift();
+  if(palabras.length&&/^(ya|previamente)$/.test(palabras[palabras.length-1]))palabras.pop();
+  var sujeto=palabras.join(' ').trim();
+  if(!sujeto||sujeto.length<2)return null;
+  return {sujeto:sujeto,estado:String(m[2]).toLowerCase(),texto:String(ing).trim()};
+}
+function recetaExplicaPreparacion(r,sujeto){
+  var rx=new RegExp('\\b'+sujeto+'\\w*\\b','i');
+  return (r&&r.steps||[]).some(function(s){return rx.test(s)&&RECETA_COCCION_VERB.test(s);});
+}
+/* Clasificación A/B/C de preparaciones asumidas (sin editar recetas). */
+var RECETA_COCCION_VERB_PROFUNDO=/pon a hervir|deja hervir|dejar hervir|pon a cocer|deja cocer|sancocha|sancochar|cocer|hervir|hornear|vapor|escalfa|fríe|fría|asa|tuesta|dora|cuece|cocina|hierve/i;
+function recetaStemDe(w){w=String(w||'').toLowerCase();return w.length>5?w.slice(0,5):w;}
+function recetaRxSujeto(sujeto){
+  var s=String(sujeto||'').toLowerCase().trim();
+  var partes=s.split(/\s+/);
+  var alt='\\b'+s.replace(/\s+/g,'\\s+')+'\\w*\\b';
+  // raíz solo para palabra única (evita falsos positivos tipo "taza").
+  if(partes.length===1&&partes[0].length>4)alt+='|\\b'+partes[0].slice(0,5)+'\\w*\\b';
+  // para frases: también la primera palabra ("chiles verdes" matchea "los chiles").
+  if(partes.length>1&&partes[0].length>4)alt+='|\\b'+partes[0]+'\\w*\\b';
+  return new RegExp(alt,'i');
+}
+function recetaExplicaPreparacionProfunda(r,sujeto){
+  // A) la misma receta SÍ explica el proceso pero no estaba enlazado:
+  // - sujeto (o su raíz) + verbo de cocción amplio en un paso;
+  // - o paso con objeto genérico ("cuécelos", "ponlos a hervir") y el sujeto
+  //   aparece en el paso anterior o en los ingredientes.
+  var rxS=recetaRxSujeto(sujeto);
+  var pasos=r&&r.steps||[];
+  return pasos.some(function(st,i){
+    var t=String(st);
+    if(rxS.test(t)&&RECETA_COCCION_VERB_PROFUNDO.test(t))return true;
+    if(/cuécelos|cuécelas|cocínalos|cocínalas|hiérvelos|hiérvelas|escúrrelos|escúrrelas|ponlos a hervir|ponlas a hervir|deja hervir|déjalos hervir|déjalas hervir/i.test(t)&&RECETA_COCCION_VERB_PROFUNDO.test(t)){
+      var ctx=(pasos[i-1]||'')+' '+String(r.ingredients||'');
+      if(rxS.test(ctx))return true;
+    }
+    return false;
+  });
+}
+function recetaSubrecetaPreparacion(r,sujeto){
+  // B) subreceta local confiable: OTRA receta que ancla el sujeto (nombre o
+  // ingredientes) y cuyos pasos lo nombran o traen un verbo de cocción con tiempo.
+  var rxS=recetaRxSujeto(sujeto);
+  var out=[];
+  baseRecipes.forEach(function(o,idx){
+    if(o===r)return;
+    if(!rxS.test(String(o.name||'')+' '+String(o.ingredients||'')))return;
+    var explica=(o.steps||[]).some(function(st){
+      return rxS.test(st)||(RECETA_COCCION_VERB_PROFUNDO.test(st)&&recetaTiempoPaso(st));
+    });
+    if(explica)out.push({idx:idx,nombre:o.name});
+  });
+  return out.slice(0,3);
+}
+function recetaAuditar(r){
+  var problemas=[];
+  // 1) ingredientes en estado preparado sin explicación
+  var vistos={};
+  String(r&&r.ingredients||'').split(',').forEach(function(ing){
+    var p=recetaSujetoDe(ing.trim());
+    if(p&&!vistos[p.sujeto]){
+      vistos[p.sujeto]=1;
+      if(!recetaExplicaPreparacion(r,p.sujeto)){
+        problemas.push({tipo:'preparacion-asumida',texto:p.texto,sujeto:p.sujeto,estado:p.estado});
+      }
+    }
+  });
+  // 2) pasos de cocción sin tiempo ni criterio
+  (r&&r.steps||[]).forEach(function(s,i){
+    if(RECETA_COCCION_VERB.test(s)&&!recetaTiempoPaso(s)&&!RECETA_CRITERIO_RX.test(s)){
+      problemas.push({tipo:'paso-sin-criterio',paso:i+1,texto:String(s).slice(0,80)});
+    }
+  });
+  // 3) TM5 sin parámetros
+  var metodo=String(r&&r.method||'').toLowerCase();
+  if(metodo.indexOf('tm5')>=0||metodo==='thermomix'){
+    var tieneParam=(r&&r.steps||[]).some(function(s){return /vel|°C|100°|120°|90°|velocidad/i.test(s);});
+    if(!tieneParam)problemas.push({tipo:'tm5-sin-parametros'});
+  }
+  // 4) temperatura sin método
+  if(r&&r.temp&&String(r.temp).length>3&&!String(r.method||'').trim()){
+    problemas.push({tipo:'temp-sin-metodo'});
+  }
+  // 5) método de cocción sin tiempo/criterio en NINGÚN paso
+  if(r&&r.method&&String(r.method).trim()&&!/(sin cocinar|crudo|frío|frio|refri)/i.test(String(r.method))){
+    var pasos=r.steps||[];
+    var conCriterio=pasos.some(function(s){return recetaTiempoPaso(s)||RECETA_CRITERIO_RX.test(s);});
+    if(pasos.length&&!conCriterio)problemas.push({tipo:'metodo-sin-criterio'});
+  }
+  var severo=!(r&&r.ingredients&&String(r.ingredients).trim())||!(r&&r.steps&&r.steps.length)
+    ||problemas.some(function(p){return p.tipo==='preparacion-asumida';});
+  var score=severo?'🔴':(problemas.length?'🟡':'🟢');
+  return {score:score,problemas:problemas,severos:problemas.filter(function(p){return p.tipo==='preparacion-asumida';}).length};
+}
+function recetaAvisosPreparacionHTML(r,vista){
+  var a=recetaAuditar(r);
+  var prevs=a.problemas.filter(function(p){return p.tipo==='preparacion-asumida';});
+  if(!prevs.length)return '';
+  var h='';
+  var cadena=((vista.pila||[]).map(function(x){return x.idx;})).concat([vista.idx]);
+  prevs.forEach(function(p){
+    if(vista.avisoVisto&&vista.avisoVisto[p.texto])return;
+    if(vista.componentesListos&&vista.componentesListos[p.texto])return;
+    // GRUPO A: la misma receta ya contiene el proceso → enlazar internamente, sin duplicar.
+    if(recetaExplicaPreparacionProfunda(r,p.sujeto)){
+      h+='<div style="margin-top:10px;background:#eaf9f0;border:1px solid #9dd5b4;border-radius:12px;padding:10px"><div style="font-size:13px;font-weight:800;color:#0d6043">✅ La receta ya incluye cómo preparar '+safeText(p.texto)+'.</div><div class="muted" style="font-size:12px;margin-top:2px">Busca ese paso más arriba; no se repite aquí.</div></div>';
+      return;
+    }
+    // GRUPO B: enlazar SOLO la candidata 🟢 de alta confianza.
+    var mejor=recetaMejorSubreceta(r,p);
+    if(mejor){
+      h+='<div style="margin-top:10px;background:#f7fff9;border:1px solid #9dd5b4;border-radius:12px;padding:12px">'
+        +'<div style="font-size:13px;font-weight:800;color:#0d6043">🍅 Preparación necesaria: '+safeText(p.texto)+'</div>'
+        +'<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'
+        +'<button class="btn primary" style="flex:1;min-width:120px;padding:10px;min-height:44px" onclick="recetaPrepAbrir('+mejor.idx+')">'+(vista.prepAbierta===mejor.idx?'Cerrar':'Ver cómo prepararlos')+'</button>'
+        +'<button class="btn" style="flex:1;min-width:120px;padding:10px;min-height:44px" onclick="recetaComponenteListo(\''+String(p.texto).replace(/'/g,"\\'")+'\')">Ya los tengo '+safeText(p.estado)+'</button></div>'
+        +(vista.prepAbierta===mejor.idx?recetaSubHTML(mejor.idx,p.texto,cadena,true):'')
+        +'</div>';
+      return;
+    }
+    // Sin 🟢: no enlazar. ⚠ + acceso a la lista de revisión.
+    h+='<div style="margin-top:10px;background:#fdecec;border:1px solid #e6b9b9;border-radius:12px;padding:12px"><div style="font-size:13px;font-weight:800;color:#b03030">⚠ Preparación incompleta</div>'
+      +'<div style="font-size:13px;margin-top:4px;line-height:1.4">Esta receta usa '+safeText(p.texto)+', pero no explica cómo prepararlo'+(recetaSubrecetaPreparacion(r,p.sujeto).length?' (hay candidatas en revisión, aún sin validar).':'')+'.</div>'
+      +'<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'
+      +'<button class="btn" style="flex:1;min-width:120px;padding:10px;min-height:44px" onclick="buscarComponenteEnRecetas(\''+safeText(p.sujeto)+'\')">🔎 Buscar preparación</button>'
+      +'<button class="btn" style="flex:1;min-width:120px;padding:10px;min-height:44px" onclick="abrirAuditoriaRecetas()">🩺 Ver revisión</button>'
+      +'<button class="btn" style="flex:1;min-width:120px;padding:10px;min-height:44px" onclick="recetaAvisoVisto(\''+String(p.texto).replace(/'/g,"\\'")+'\')">Continuar de todos modos</button></div></div>';
+  });
+  return h;
+}
+function recetaPrepAbrir(idx){
+  var v=window._recetaVista; if(!v)return;
+  v.prepAbierta=(v.prepAbierta===idx)?null:idx;
+  var ov=document.getElementById('recetaDetalle');
+  if(ov)ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
+}
+function recetaProblemasRevision(){
+  // Problemas de preparación asumida SIN candidata 🟢 (para revisión humana).
+  var lista=[];
+  baseRecipes.forEach(function(r){
+    var a=recetaAuditar(r);
+    a.problemas.forEach(function(p){
+      if(p.tipo!=='preparacion-asumida')return;
+      if(recetaExplicaPreparacionProfunda(r,p.sujeto))return; // grupo A resuelto
+      if(recetaMejorSubreceta(r,p))return; // grupo B con enlace verde
+      var cands=recetaSubrecetaPreparacion(r,p.sujeto).map(function(s){
+        var sc=recetaScoreSubreceta(r,p,s.idx);
+        return sc.sub+' ('+sc.nivel+')';
+      });
+      lista.push({receta:r.name,texto:p.texto,candidatas:cands});
+    });
+  });
+  return lista;
+}
+function recetaAvisoVisto(texto){
+  var v=window._recetaVista;if(!v)return;
+  v.avisoVisto=v.avisoVisto||{};
+  v.avisoVisto[texto]=true;
+  var ov=document.getElementById('recetaDetalle');
+  if(ov)ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
+}
+function cerrarAuditoriaRecetas(){var ov=document.getElementById('recetaAuditoria');if(ov)ov.remove();}
+function abrirAuditoriaRecetas(){
+  var ov=document.getElementById('recetaAuditoria');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='recetaAuditoria';
+    ov.style.cssText='position:fixed;inset:0;background:#f0f4f1;z-index:22900;overflow-y:auto;padding:14px;box-sizing:border-box;-webkit-overflow-scrolling:touch';
+    document.body.appendChild(ov);
+  }
+  var items=[];
+  baseRecipes.forEach(function(r,i){
+    var a=recetaAuditar(r);
+    if(a.problemas.length)items.push({i:i,r:r,a:a});
+  });
+  var html='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="cerrarAuditoriaRecetas()">← Recetas</button>'
+    +'<b style="font-size:17px;color:#12352a;flex:1">🩺 Recetas que necesitan revisión ('+items.length+')</b></div>'
+    +'<div class="muted" style="font-size:12px;margin:0 0 10px">Solo informa: las recetas no se modifican.</div>';
+  items.slice(0,300).forEach(function(x){
+    html+='<div style="background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:12px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:15px">'+x.a.score+' '+safeText(x.r.name)+'</b>'
+      +'<button class="btn" style="padding:8px 12px" onclick="cerrarAuditoriaRecetas();abrirReceta('+x.i+',\'pasoapaso\')">Abrir</button></div>'
+      +x.a.problemas.map(function(p){
+        if(p.tipo==='preparacion-asumida')return '<div style="font-size:13px;color:#b03030;margin-top:6px">⚠ "'+safeText(p.texto)+'" sin preparación</div>';
+        if(p.tipo==='paso-sin-criterio')return '<div style="font-size:13px;color:#b8860b;margin-top:6px">⚠ Paso '+p.paso+' sin tiempo ni criterio: "'+safeText(p.texto)+'"</div>';
+        if(p.tipo==='tm5-sin-parametros')return '<div style="font-size:13px;color:#b8860b;margin-top:6px">⚠ TM5 sin temperatura/velocidad</div>';
+        if(p.tipo==='temp-sin-metodo')return '<div style="font-size:13px;color:#b8860b;margin-top:6px">⚠ Temperatura sin método</div>';
+        if(p.tipo==='metodo-sin-criterio')return '<div style="font-size:13px;color:#b8860b;margin-top:6px">⚠ Método sin tiempo/criterio en los pasos</div>';
+        return '';
+      }).join('')+'</div>';
+  });
+  // Sección de revisión humana: preparaciones asumidas sin candidata 🟢.
+  var revision=recetaProblemasRevision();
+  if(revision.length){
+    html+='<div style="margin-top:16px"><b style="font-size:15px;color:#b8860b">🟡 Subrecetas en revisión ('+revision.length+')</b>'
+      +'<div class="muted" style="font-size:12px;margin:2px 0 8px">Sin enlace automático: candidatas sin alta confianza.</div>';
+    revision.forEach(function(x){
+      html+='<div style="background:#fff;border:1px solid #d9e3db;border-radius:12px;padding:10px;margin-bottom:8px">'
+        +'<b style="font-size:13px">'+safeText(x.receta)+'</b>'
+        +'<div style="font-size:12px;color:#b03030;margin-top:2px">Necesita: '+safeText(x.texto)+'</div>'
+        +'<div class="muted" style="font-size:11px;margin-top:2px">Candidatas: '+(x.candidatas.length?x.candidatas.map(safeText).join(' · '):'ninguna')+'</div>'
+        +'</div>';
+    });
+    html+='</div>';
+  }
+  ov.innerHTML=html+'</div>';
+}
+/* ===== Validación estricta de subrecetas (grupo B) =====
+   🟢 alta confianza (única que se enlazaría) · 🟡 revisar · 🔴 inválida. */
+/* Infinitivo + conjugaciones comunes (los pasos dicen "Hierve", no "hervir"). */
+var RECETA_METODO_ESTADO={'cocid':'cocer|cuece|cuecen|cueza|hervir|hierve|hierven|hierva','hervid':'hervir|hierve|hierven|hierva','asad':'asar|asa|asan|hornear|hornea','dorad':'dorar|dora|doren','sofrit':'sofreír|sofríe|sofría','tostad':'tostar|tuesta|tuéstal','marinad':'marinar|marina','escurrid':'escurrir|escurre','derretid':'derretir|derrite','reposad':'reposar|reposa','precocid':'precocer|hervir|hierve|hierven','blanquead':'blanquear|blanquea','caramelizad':'caramelizar|carameliza','reducid':'reducir|reduce'};
+function recetaVerboDeEstado(estado){
+  var e=String(estado||'').toLowerCase().replace(/[oa]s?$/,'');
+  return RECETA_METODO_ESTADO[e]||null;
+}
+function recetaInconsistenciaTituloPasos(r){
+  // Título "cruda/fresca" o método "sin cocinar" pero los pasos cocinan con tiempo.
+  var nombre=String(r&&r.name||'');
+  var metodo=String(r&&r.method||'');
+  var crudo=/(crud[oa]s?|fresc[oa]s?)/i.test(nombre)||/sin cocinar|crudo/i.test(metodo);
+  if(!crudo)return null;
+  var cocina=(r&&r.steps||[]).some(function(s){return RECETA_COCCION_VERB_PROFUNDO.test(s)&&recetaTiempoPaso(s);});
+  if(!cocina)return null;
+  return 'nombre/método indica crudo pero los pasos cocinan con tiempo';
+}
+function recetaScoreSubreceta(padre,problema,subIdx){
+  var sub=baseRecipes[subIdx];
+  if(!sub)return {nivel:'🔴',score:-10,motivos:['no existe']};
+  var motivos=[];var score=0;
+  var rxS=recetaRxSujeto(problema.sujeto);
+  var nombre=String(sub.name||'').toLowerCase();
+  var ing=String(sub.ingredients||'').toLowerCase();
+  var pasos=String((sub.steps||[]).join(' ')).toLowerCase();
+  var verbo=recetaVerboDeEstado(problema.estado);
+  // POSITIVOS
+  if(rxS.test(nombre)){score+=2;motivos.push('nombre menciona el ingrediente');}
+  if(verbo&&new RegExp(verbo,'i').test(nombre)){score+=1;motivos.push('título indica el método ('+problema.estado+')');}
+  var pasoPrepara=(sub.steps||[]).some(function(s){
+    return RECETA_COCCION_VERB_PROFUNDO.test(s)&&recetaTiempoPaso(s)&&(!verbo||new RegExp(verbo,'i').test(s));
+  });
+  if(pasoPrepara){score+=2;motivos.push('paso con verbo de preparación y tiempo');}
+  if(rxS.test(nombre)||rxS.test(ing.split(',').slice(0,2).join(' '))){score+=1;motivos.push('ingrediente protagonista');}
+  if(verbo&&(sub.steps||[]).some(function(s){return new RegExp(verbo,'i').test(s);})){score+=2;motivos.push('produce el estado solicitado ('+problema.estado+')');}
+  // PENALIZACIONES
+  var nIng=(sub.ingredients||'').split(',').filter(Boolean).length;
+  if(nIng>4){score-=1;motivos.push('muchos ingredientes');}
+  if(!rxS.test(nombre)&&!rxS.test(ing.split(',').slice(0,2).join(' '))&&nIng>4){score-=2;motivos.push('plato completo donde el ingrediente es secundario');}
+  var mSub=String(sub.method||'').toLowerCase();
+  var mPadre=String(padre&&padre.method||'').toLowerCase();
+  var penalTM5=false;
+  if(/tm5|thermomix/.test(mSub)&&!/tm5|thermomix/.test(mPadre)){score-=2;penalTM5=true;motivos.push('TM5 cuando la receta padre usa método normal');}
+  var yaPreparado=new RegExp('\\b'+problema.sujeto+'\\w*\\s+('+RECETA_ESTADOS.join('|')+')\\b','i');
+  if(yaPreparado.test(ing)){score-=2;motivos.push('el ingrediente ya entra preparado en la subreceta');}
+  var inconsistencia=recetaInconsistenciaTituloPasos(sub);
+  if(inconsistencia)motivos.push('⚠ '+inconsistencia);
+  var nivel=score>=4?'🟢':(score>=2?'🟡':'🔴');
+  // Nunca enlazar automáticamente con contradicción ni con método incompatible.
+  if((inconsistencia||penalTM5)&&nivel==='🟢')nivel='🟡';
+  return {nivel:nivel,score:score,motivos:motivos,sub:sub.name};
+}
+function recetaMejorSubreceta(padre,problema){
+  // Solo devuelve subreceta con nivel 🟢 (máxima confianza); si no hay, null.
+  var subs=recetaSubrecetaPreparacion(padre,problema.sujeto);
+  for(var i=0;i<subs.length;i++){
+    var s=recetaScoreSubreceta(padre,problema,subs[i].idx);
+    if(s.nivel==='🟢')return {idx:subs[i].idx,sub:s};
+  }
+  return null;
+}
+/* ===== Clasificación TM5 por receta (no destructiva) =====
+   🟢 completa · 🟡 asistida · ⚪ sin adaptación confiable · 🔴 revisar.
+   Regla de capacidades: TM5 mezcla/licúa/tritura/pica/amasa/calienta/cocina
+   con temperatura/remueve/vapor/emulsiona; NO fríe profundo, gratina,
+   hornea, parrilla, tuesta directo ni sella como sartén. */
+var RECETA_TM5_EXTERNO=/(sart[eé]n|horno|parrilla|fre[ií]dora|\bfre[ií]r\b|\bfr[ií]e\b|\bdorar\b|\bsellar\b|tostador|comal|grill|wok|air fryer|airfryer|asador|microondas|plancha)/i;
+var RECETA_TM5_ACCION=/(lic[uú]a|licuar|vel\b|velocidad|varoma|vaso|tm5|thermomix|mariposa|giro inverso|amas|amasar|pica|picar|tritura|emulsiona|bate|batir)/i;
+var RECETA_TM5_COCCION=/(°C|fuego|hervir|hierve|hierven|cocina|cuece|calienta|sofr[ií]e)/i;
+function recetaPasoTM5(s){
+  var t=String(s||'');
+  // Herramienta externa manda: la temperatura/horno/sartén no son del TM5.
+  if(RECETA_TM5_EXTERNO.test(t))return 'externo';
+  var tm5=RECETA_TM5_ACCION.test(t);
+  // Cocinar con temperatura (con o sin tiempo explícito) es capacidad TM5.
+  if(!tm5&&RECETA_TM5_COCCION.test(t)&&(recetaTiempoPaso(t)||/°C|fuego/i.test(t)))tm5=true;
+  if(tm5)return 'tm5';
+  return 'neutro';
+}
+function recetaPasoTM5Parametros(s){
+  var t=String(s||'');
+  var tiene=!!(recetaTiempoPaso(t)||/vel\b|velocidad|°C|giro inverso|mariposa|varoma/i.test(t));
+  return {tiene:tiene,nota:tiene?'':'La receta no incluye parámetros suficientes para este paso.'};
+}
+function recetaClasificarTM5(r){
+  var pasos=r&&r.steps||[];
+  if(!pasos.length)return {nivel:'⚪',razon:'sin pasos',tm5:0,externo:0,neutro:0,revisar:false};
+  var tm5=0,externo=0,neutro=0,conParam=0;
+  var esMetodoTM5=/(tm5|thermomix)/i.test(String(r.method||''));
+  pasos.forEach(function(s){
+    var c=recetaPasoTM5(s);
+    if(c==='tm5'){tm5++;if(recetaPasoTM5Parametros(s).tiene)conParam++;}
+    else if(c==='externo'||c==='mixto')externo++;
+    else neutro++;
+  });
+  if(esMetodoTM5){
+    if(!conParam)return {nivel:'🔴',razon:'método TM5 sin parámetros (tiempo/temperatura/velocidad)',tm5:tm5,externo:externo,neutro:neutro,revisar:true};
+    if(externo>0)return {nivel:'🟡',razon:'TM5 asistida: '+externo+' paso(s) requieren equipo externo',tm5:tm5,externo:externo,neutro:neutro,revisar:false};
+    return {nivel:'🟢',razon:'TM5 completa',tm5:tm5,externo:externo,neutro:neutro,revisar:false};
+  }
+  if(tm5===0)return {nivel:'⚪',razon:'sin pasos compatibles con TM5',tm5:tm5,externo:externo,neutro:neutro,revisar:false};
+  if(externo>0)return {nivel:'🟡',razon:'TM5 asistida: '+tm5+' paso(s) en TM5, '+externo+' fuera',tm5:tm5,externo:externo,neutro:neutro,revisar:false};
+  return {nivel:'🟢',razon:'TM5 completa',tm5:tm5,externo:externo,neutro:neutro,revisar:false};
+}
+function recetaTM5TextoCorto(c){
+  if(c.nivel==='🟢')return '🤖 TM5 completa — puedes hacer toda esta receta con la Thermomix.';
+  if(c.nivel==='🟡')return '🟡 TM5 asistida — la Thermomix te ayuda con '+(c.tm5||0)+' de '+((c.tm5||0)+(c.externo||0)+(c.neutro||0))+' pasos; el resto va fuera.';
+  if(c.nivel==='🔴')return '🔴 TM5 necesita revisión — '+c.razon+'.';
+  return '⚪ Sin adaptación TM5 — no hay instrucciones TM5 suficientes para esta receta.';
+}
+function recetaTM5ListaHTML(r,c){
+  if(c.nivel==='⚪')return '<div class="muted" style="font-size:13px;margin-top:6px">No se inventa una versión TM5: no hay datos suficientes.</div>';
+  var pasos=r.steps||[];
+  var en='',fuera='',man='';
+  pasos.forEach(function(s,i){
+    var k=recetaPasoTM5(s);
+    var fila='<div style="font-size:13px;margin-top:4px"><b>'+(i+1)+'</b>. '+safeText(s)+'</div>';
+    if(k==='tm5')en+=fila;
+    else if(k==='externo'||k==='mixto')fuera+=fila;
+    else man+=fila;
+  });
+  var h='<div style="margin-top:8px;background:#f7fff9;border:1px solid #9dd5b4;border-radius:12px;padding:12px">';
+  if(en)h+='<div style="font-weight:900;font-size:12px;color:#0d6043">🤖 EN TM5</div>'+en;
+  if(fuera)h+='<div style="font-weight:900;font-size:12px;color:#b8860b;margin-top:8px">🍳 FUERA DE TM5 (equipo externo)</div>'+fuera;
+  if(man)h+='<div style="font-weight:900;font-size:12px;color:#63706a;margin-top:8px">🔧 MANUAL / MONTAJE</div>'+man;
+  h+='</div>';
+  return h;
+}
 function recipeCardFill(el){
   // Render perezoso del cuerpo de la receta: solo se arma la ficha completa al abrir la tarjeta.
   // Evita meter cientos de fichas (211 nodos c/u) al DOM de golpe al abrir una categoria grande.
@@ -25035,10 +25841,17 @@ function renderRecipes(){
   else if(sortBy==='timeAsc') arr=arr.slice().sort((a,b)=>a.time-b.time);
   let totalRecipes=arr.length,totalPages=Math.max(1,Math.ceil(totalRecipes/RECIPE_PAGE_SIZE));
   _recipePage=Math.min(_recipePage,totalPages);
-  var _grouped=(_tab==='todas' && !_chip && !s && (($("#recSort")?.value)||"none")==="none"); if(!_grouped){ arr=arr.slice((_recipePage-1)*RECIPE_PAGE_SIZE,_recipePage*RECIPE_PAGE_SIZE); }
+  // Modo agrupado = catálogo COMPLETO. Cualquier filtro (incluidos los invisibles
+  // _recMethod/_portableFormat) desactiva el agrupado: nunca mostrar un catálogo
+  // filtrado como si fuera el total (bug de las "25 recetas").
+  var _grouped=recetaModoAgrupado(_tab,_chip,s,(($("#recSort")?.value)||'none'),m,pf); if(!_grouped){ arr=arr.slice((_recipePage-1)*RECIPE_PAGE_SIZE,_recipePage*RECIPE_PAGE_SIZE); }
   let label=document.getElementById('recMethodLabel');
   const mLabels={todas:'Todas las recetas',estufa:'🔥 Recetas en estufa',thermomix:'🤖 Todas las recetas adaptadas a Thermomix TM5',horno:'🫕 Recetas al horno',licuadora:'🥤 Licuados para subir peso',cafe:'☕ Cafés mexicanos',salsa:'🌶️ Salsas mexicanas',comida:'🍲 Comidas completas',snack:'🥜 Snacks económicos y calóricos',carne:'🥩 Recetas con carne ya cocida',fruta:'🍓 Frutas con más calorías',agua:'🧊 Aguas frescas económicas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes calóricos',aderezo:'🥗 Aderezos caseros y comprados'};
-  if(label) label.textContent=totalRecipes+' receta'+(totalRecipes===1?'':'s');
+  if(label){
+    // Indicador claro: filtro activo vs total global (nunca confundir uno con otro).
+    var _filtroDesc=recetaFiltroDesc(f,m,pf,s,_tab,_chip);
+    label.textContent=_filtroDesc?(_filtroDesc+' · '+totalRecipes+' recetas'):('Todas las recetas: '+baseRecipes.length);
+  }
   // Estimate carbs and fat from calories
   function getCarb(r){return Math.round((r.k - r.p*4 - (r.k*0.25))/4);}
   function getFat(r){return Math.round(r.k*0.25/9);}
@@ -25076,6 +25889,12 @@ function renderRecipes(){
       let icon=r.type==='licuado'?smoothieIcon(r):r.type==='desayuno'?'🍳':r.type==='cena'?'🌙':r.type==='snack'?'🥜':r.type==='bebida'||r.type==='agua'?'🧊':r.type==='salsa'?'🌶️':r.type==='fruta'?'🍓':r.type==='hotcake'?'🥞':r.type==='avena'?'🥣':r.type==='pan'?'🍞':r.type==='aderezo'?'🥗':r.type==='especia'?'🧂':r.type==='suero'?'💧':r.method.toLowerCase().includes('horno')?'♨️':r.method.toLowerCase().includes('thermomix')?'🤖':'🍲';
       let sauce=getRecipeSaucePair(r), m=window._recMethod||'todas';
       return `
+        <!-- Fase A: modo fácil (Rápido / Paso a paso / Completo) -->
+        <div class="row" style="gap:6px;margin-bottom:12px;flex-wrap:wrap">
+          <button class="btn primary" style="flex:1;min-width:104px;padding:11px 8px;font-size:13px;min-height:44px" onclick="abrirReceta(${baseRecipes.indexOf(r)},'rapido')">🪄 Rápido</button>
+          <button class="btn" style="flex:1;min-width:104px;padding:11px 8px;font-size:13px;min-height:44px" onclick="abrirReceta(${baseRecipes.indexOf(r)},'pasoapaso')">👨‍🍳 Paso a paso</button>
+          <button class="btn" style="flex:1;min-width:104px;padding:11px 8px;font-size:13px;min-height:44px" onclick="abrirReceta(${baseRecipes.indexOf(r)},'completo')">📖 Completo</button>
+        </div>
         <!-- Timing + temp bar -->
         <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
           <span style="background:#e8f5e9;border-radius:8px;padding:5px 10px;font-size:13px;font-weight:800">⏱️ Total: ${r.time} min</span>
@@ -25231,7 +26050,7 @@ function renderRecipes(){
       arr.forEach(function(r){ var g=CAT_GRANDE[r.type]||'g_comida'; (byCat[g]=byCat[g]||[]).push(r); });
       window._recGrouped=byCat;
       var cats=Object.keys(byCat).sort(function(a,b){ var ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
-      return '<p class="muted" style="margin:4px 0 10px">Toca una categoría para abrirla. '+arr.length+' recetas en total.</p>'+cats.map(function(cat){
+      return '<p class="muted" style="margin:4px 0 10px">Todas las recetas: '+arr.length+' · toca una categoría para abrirla.</p>'+cats.map(function(cat){
         var items=byCat[cat];
         return '<details class="cat-group" data-cat="'+cat+'" ontoggle="recipeCatToggle(this)"><summary class="cat-summary">'+(catNames[cat]||cat)+' <span class="cat-count">'+items.length+'</span></summary><div class="recipe-grid" data-filled="0" style="margin-top:8px"></div></details>';
       }).join('');
