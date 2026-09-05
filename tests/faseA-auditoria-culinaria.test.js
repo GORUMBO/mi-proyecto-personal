@@ -58,6 +58,8 @@ function sandbox(base) {
     RECETA_ESTADOS, RECETA_ESTADOS_RX, RECETA_COCCION_VERB, RECETA_CRITERIO_RX,
     RECETA_COCCION_VERB_PROFUNDO: vm.runInNewContext('(' + mVerbP[0].replace(/^var RECETA_COCCION_VERB_PROFUNDO=/, '').replace(/;$/, '') + ')'),
     RECETA_METODO_ESTADO: vm.runInNewContext('(' + mMeto[0].replace(/^var RECETA_METODO_ESTADO=/, '').replace(/;$/, '') + ')'),
+    RECETA_PASO_ESCURRIR: extractVarAssign('RECETA_PASO_ESCURRIR'),
+    RECETA_PASO_TIP: extractVarAssign('RECETA_PASO_TIP'),
     baseRecipes: base || [],
     window: {},
     document: { getElementById() { return null; }, createElement() { return { style: {} }; }, body: { appendChild() {} } }

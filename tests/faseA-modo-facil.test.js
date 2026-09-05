@@ -54,6 +54,8 @@ function sandbox() {
   const mExt = HTML.match(/var RECETA_TM5_EXTERNO=[^;\n]+;/);
   const mAcc = HTML.match(/var RECETA_TM5_ACCION=[^;\n]+;/);
   const mCoc = HTML.match(/var RECETA_TM5_COCCION=[^;\n]+;/);
+  const mEsc = HTML.match(/var RECETA_PASO_ESCURRIR=[^;\n]+;/);
+  const mTip = HTML.match(/var RECETA_PASO_TIP=[^;\n]+;/);
   const ESTADOS = vm.runInNewContext('(' + mEst[0].replace(/^var RECETA_ESTADOS=/, '').replace(/;\s*\n$/, '') + ')');
   const sb = {
     safeText: function (x) { return String(x == null ? '' : x); },
@@ -64,7 +66,9 @@ function sandbox() {
     RECETA_CRITERIO_RX: vm.runInNewContext('(' + mCrit[0].replace(/^var RECETA_CRITERIO_RX=/, '').replace(/;$/, '') + ')'),
     RECETA_TM5_EXTERNO: vm.runInNewContext('(' + mExt[0].replace(/^var RECETA_TM5_EXTERNO=/, '').replace(/;$/, '') + ')'),
     RECETA_TM5_ACCION: vm.runInNewContext('(' + mAcc[0].replace(/^var RECETA_TM5_ACCION=/, '').replace(/;$/, '') + ')'),
-    RECETA_TM5_COCCION: vm.runInNewContext('(' + mCoc[0].replace(/^var RECETA_TM5_COCCION=/, '').replace(/;$/, '') + ')')
+    RECETA_TM5_COCCION: vm.runInNewContext('(' + mCoc[0].replace(/^var RECETA_TM5_COCCION=/, '').replace(/;$/, '') + ')'),
+    RECETA_PASO_ESCURRIR: vm.runInNewContext('(' + mEsc[0].replace(/^var RECETA_PASO_ESCURRIR=/, '').replace(/;$/, '') + ')'),
+    RECETA_PASO_TIP: vm.runInNewContext('(' + mTip[0].replace(/^var RECETA_PASO_TIP=/, '').replace(/;$/, '') + ')')
   };
   NOMBRES.forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
   sb.globalThis = sb;

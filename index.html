@@ -1313,7 +1313,7 @@ const RECETAS_V2 = [
   /* ========== PAPAS ========== */
   {type:'comida', name:'Papas con carne molida y chile', time:30, k:720, p:46, cost:4.10,
    ingredients:'500g carne molida, 4 papas en cubos, 3 chiles guajillo, 2 jitomates, ½ cebolla, ajo, comino',
-   steps:['Dora la carne molida (sin sal). Sácala.',
+   steps:['Dora la carne molida (sin sal) a 200°C. Sácala.',
           'En la misma grasa, fríe las papas en cubos hasta que doren — 12 min.',
           'Remoja los guajillos, licúa con jitomate, ajo y comino.',
           'Vierte la salsa sobre las papas. Regresa la carne.',
@@ -1325,7 +1325,7 @@ const RECETAS_V2 = [
    ingredients:'5 papas grandes, 200g queso, 150g tocino, crema, cebollín, mantequilla',
    steps:['Pica las papas en gajos gruesos. Revuélvelas con aceite y sal.',
           'Horno 220°C, 35 min. Voltéalas a la mitad.',
-          'Aparte, fríe el tocino y pícalo.',
+          'Aparte, fríe el tocino empezando en sartén FRÍO — 6 min, queda crujiente, y pícalo (preparación: Frijoles charros con tocino).',
           'Saca las papas, pon queso y tocino encima. Horno 8 min más.',
           'Crema y cebollín al servir. Calorías que sí llenan.'],
    method:'horno', tags:'horno calorias', temp:'Horno 220°C',
@@ -1486,7 +1486,8 @@ const RECETAS_V2 = [
 
   {type:'comida', name:'Hamburguesa de frijol (barata, sin carne)', time:30, k:520, p:22, cost:1.40,
    ingredients:'2 tazas de frijol cocido, ½ taza de avena, 1 huevo, ½ cebolla, ajo, comino, chile en polvo, pan molido',
-   steps:['Machaca los frijoles (deja algunos enteros para que tenga textura).',
+   steps:['Cuece el frijol como en Frijoles de olla: olla normal 90 min a 2 h (o presión 35-40 min), sal al final.',
+          'Machaca los frijoles (deja algunos enteros para que tenga textura).',
           'Mezcla con avena, huevo, cebolla y ajo picados, comino y chile.',
           'Si está muy aguado, agrega pan molido hasta que se pueda formar.',
           'Refri 30 min. Esto es clave o se deshacen.',
@@ -1497,8 +1498,8 @@ const RECETAS_V2 = [
   {type:'comida', name:'Hamburguesa con huevo estrellado', time:20, k:890, p:56, cost:4.60,
    ingredients:'400g carne molida, 2 huevos, queso, tocino, pan, aguacate',
    steps:['Cocina las carnes normal (hoyito, plancha caliente, 4 min por lado).',
-          'Fríe el tocino. Deja la grasa.',
-          'Estrella los huevos EN LA GRASA DEL TOCINO. La yema debe quedar líquida.',
+          'Fríe el tocino empezando en sartén FRÍO — 6 min, queda crujiente. Deja la grasa (preparación: Frijoles charros con tocino).',
+          'Estrella los huevos a 160°C EN LA GRASA DEL TOCINO. La yema debe quedar líquida.',
           'Arma: carne, queso, tocino, huevo encima.',
           'Cuando muerdes, la yema se revienta y baña todo. 890 kcal.'],
    method:'estufa', tags:'hamburguesa calorias proteina', temp:'Plancha 220°C / Huevo 160°C',
@@ -1612,7 +1613,7 @@ const RECETAS_V3 = [
 
   {type:'comida', name:'Puré de papa ligero (con caldo)', time:25, k:180, p:5, cost:1.00,
    ingredients:'5 papas, ½ taza de caldo de pollo, 1 diente de ajo, sal, pimienta',
-   steps:['Cuece las papas con el ajo.',
+   steps:['Cuece las papas con el ajo en agua a 100°C.',
           'Escúrrelas y déjalas secar 2 min en la olla.',
           'Machaca EN CALIENTE.',
           'Agrega CALDO en vez de mantequilla y leche.',
@@ -1655,7 +1656,7 @@ const RECETAS_V3 = [
   {type:'comida', name:'Sopa de pollo y verduras (ligera)', time:35, k:260, p:32, cost:2.80,
    ingredients:'250g pechuga, zanahoria, calabaza, apio, cebolla, ajo, cilantro, caldo',
    steps:['Cuece la pechuga en agua con ajo y cebolla — 20 min. Deshébrala.',
-          'En ese mismo caldo cuece las verduras.',
+          'En ese mismo caldo (100°C) cuece las verduras.',
           'Regresa el pollo.',
           'Cilantro y limón al final.',
           '32g de proteína en 260 kcal.'],
@@ -1682,7 +1683,7 @@ const RECETAS_V4 = [
    steps:['Seca los filetes y sazónalos con sal y pimienta.',
           'Derrite la mantequilla a fuego BAJO y sofríe el ajo hasta que apenas dore — 3 min. ⚠️ Si lo quemas, amarga.',
           'Sube el fuego. Pon los filetes — 3 min por lado.',
-          'Baña con la mantequilla de ajo mientras se cocinan.',
+          'Baña con la mantequilla de ajo mientras se cocinan — 3 min por lado.',
           'Perejil y limón al final.'],
    method:'estufa', tags:'pescado proteina rapido', temp:'Ajo 140°C / Pescado 63°C',
    conservar:'Refri 2 días.', llevarTrabajo:'Sí'},
@@ -1886,7 +1887,7 @@ const RECETAS_NUEVAS = [
   {type:'comida', name:'Albóndigas en chipotle', time:45, k:690, p:45, cost:4.60,
    ingredients:'500g carne molida, 1 huevo, ¼ taza arroz crudo, 3 jitomates, 2 chipotles, ½ cebolla, 2 dientes ajo, hierbabuena',
    steps:['Mezcla la carne con el huevo, el arroz CRUDO, cebolla picada y sal. Forma bolitas.',
-          'Licúa jitomates, chipotles y ajo. Cuela y hierve en la olla.',
+          'Licúa jitomates, chipotles y ajo. Cuela y hierve en la olla (caldo a 100°C).',
           'Echa las albóndigas CRUDAS al caldo hirviendo.',
           'Tapa y cocina a fuego BAJO 30 min. El arroz se cuece adentro.',
           'La hierbabuena al final.'],
@@ -1906,7 +1907,7 @@ const RECETAS_NUEVAS = [
   {type:'comida', name:'Nopales con huevo', time:15, k:320, p:20, cost:1.80,
    ingredients:'3 nopales en tiras, 4 huevos, ½ cebolla, 1 jitomate, 1 serrano',
    steps:['Cuece los nopales en agua con sal y un pedazo de cebolla — 10 min. Escúrrelos y ENJUÁGALOS (les quita la baba).',
-          'Sofríe cebolla, jitomate y chile.',
+          'Sofríe cebolla, jitomate y chile a fuego medio.',
           'Echa los nopales, 3 min.',
           'Agrega los huevos batidos y revuelve hasta que cuajen.',
           'Truco de la baba: enjuagar con agua fría después de cocer.'],
@@ -1935,7 +1936,8 @@ const RECETAS_NUEVAS = [
 
   {type:'comida', name:'Frijoles puercos', time:30, k:680, p:26, cost:2.20,
    ingredients:'3 tazas frijoles cocidos, 150g chorizo, 100g queso, 2 chiles chipotle, ½ cebolla',
-   steps:['Fríe el chorizo hasta que suelte grasa.',
+   steps:['Cuece los frijoles como en Frijoles de olla: olla normal 90 min a 2 h (o presión 35-40 min), sal al final.',
+          'Fríe el chorizo hasta que suelte grasa.',
           'Agrega la cebolla, 2 min.',
           'Echa los frijoles CON su caldo y machácalos ahí mismo.',
           'Agrega los chipotles picados. Cocina hasta que espesen — 10 min.',
@@ -1945,7 +1947,7 @@ const RECETAS_NUEVAS = [
 
   {type:'comida', name:'Discada norteña', time:40, k:880, p:55, cost:6.20,
    ingredients:'200g tocino, 200g chorizo, 300g bistec en cubos, 200g salchicha, 1 cebolla, 2 pimientos, 3 jitomates, 1 cerveza',
-   steps:['Fríe el tocino primero. Deja la grasa.',
+   steps:['Fríe el tocino empezando en sartén FRÍO — 6 min, queda crujiente. Deja la grasa (preparación: Frijoles charros con tocino).',
           'Agrega el chorizo. Luego la salchicha.',
           'Sube el fuego, echa el bistec y séllalo.',
           'Agrega verduras. Cocina 10 min.',
@@ -1975,7 +1977,7 @@ const RECETAS_NUEVAS = [
 
   {type:'comida', name:'Alambre de res', time:25, k:750, p:48, cost:5.10,
    ingredients:'400g bistec en cubos, 150g tocino, 1 pimiento, 1 cebolla, 150g queso, tortillas',
-   steps:['Fríe el tocino picado. Deja la grasa.',
+   steps:['Fríe el tocino picado empezando en sartén FRÍO — 6 min, queda crujiente. Deja la grasa (preparación: Frijoles charros con tocino).',
           'Sella la carne en cubos a fuego ALTO — 4 min.',
           'Agrega pimiento y cebolla — 5 min.',
           'Baja el fuego, pon el queso encima y tapa 2 min.',
@@ -1995,7 +1997,7 @@ const RECETAS_NUEVAS = [
 
   {type:'comida', name:'Pollo en pipián verde', time:40, k:700, p:48, cost:5.00,
    ingredients:'500g pollo, 1 taza pepitas (semilla de calabaza), 6 tomatillos, 2 serranos, cilantro, ¼ cebolla, 2 dientes ajo',
-   steps:['Cuece el pollo en agua con sal. Guarda el caldo.',
+   steps:['Cuece el pollo en agua con sal — 20 min. Guarda el caldo (preparación: Pollo cocido y deshebrado).',
           'TUESTA las pepitas en sartén SECO hasta que truenen — 4 min. No las quemes.',
           'Licúa pepitas, tomatillos crudos, chiles, cilantro, cebolla y ajo con un poco de caldo.',
           'Cuela y hierve la salsa 10 min. Se espesa sola.',
@@ -2036,8 +2038,8 @@ const RECETAS_NUEVAS = [
 
   {type:'comida', name:'Pozole verde', time:60, k:580, p:44, cost:4.60,
    ingredients:'500g pollo o puerco, 1 lata maíz pozolero, 10 tomatillos, 1 taza pepitas, 3 serranos, cilantro, lechuga, rábano',
-   steps:['Cuece la carne con ajo y cebolla. Guarda el caldo.',
-          'Tuesta las pepitas en sartén seco.',
+   steps:['Cuece la carne con ajo y cebolla en el caldo (100°C). Guarda el caldo.',
+          'Tuesta las pepitas en sartén seco hasta que truenen — 4 min (preparación: Pollo en pipián verde).',
           'Licúa tomatillos, pepitas, chiles y cilantro.',
           'Cuela sobre el caldo. Agrega el maíz y la carne.',
           'Hierve 20 min. Sirve con lechuga, rábano y limón.'],
@@ -2056,10 +2058,10 @@ const RECETAS_NUEVAS = [
 
   {type:'comida', name:'Caldo de queso (Sonora)', time:25, k:480, p:22, cost:2.40,
    ingredients:'4 papas en cubos, 200g queso fresco en cubos, 2 chiles verdes asados, 1 jitomate, ½ cebolla, 2 tazas leche, caldo',
-   steps:['Asa los chiles, pélalos y córtalos en rajas.',
+   steps:['Asa los chiles verdes enteros como en Rajas con crema (técnica): directo a la llama o comal seco 8 min, hasta que la piel quede negra y ampollada; mételos en bolsa 10 min, pélalos y córtalos en rajas.',
           'Sofríe cebolla y jitomate. Agrega las rajas.',
           'Echa las papas y el caldo. Hierve 15 min.',
-          'Baja el fuego. Agrega la leche. ⚠️ NO la dejes hervir o se corta.',
+          'Baja el fuego a 85°C. Agrega la leche. ⚠️ NO la dejes hervir o se corta.',
           'Al final el queso en cubos. Se ablanda pero no se derrite del todo.'],
    method:'estufa', tags:'caldo barato norteña', temp:'Caldo 100°C / Con leche 85°C',
    conservar:'Refri 2 días.', llevarTrabajo:'No'},
@@ -2123,7 +2125,7 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
   ['Calienta tortillas en comal a fuego MEDIO (160°C) — 30 seg.','Escurre lata de atún, mezcla con limón y chile al gusto.','Pica jitomate, cebolla y cilantro.','Arma tacos con atún, verduras y aguacate.','Agrega salsa verde o roja.'],
   'estufa','proteína alta','Comal: 160°C','1 lata atún, 3 tortillas, ½ aguacate, jitomate, cebolla, limón'],
 ['Enfrijoladas rápidas','desayuno',12,500,22,2.0,
-  ['Licua 1 taza frijoles con ½ chile pasilla y ajo.','Calienta salsa en sartén a fuego MEDIO (160°C) — 3 min.','Pasa tortillas por salsa caliente y dobla.','Rellena con queso, sirve en plato.','Agrega crema, cebolla y queso encima.'],
+  ['Licua 1 taza frijoles con ½ chile pasilla y ajo.','Calienta salsa en sartén a fuego MEDIO (160°C) — 3 min.','Pasa tortillas por la salsa caliente a 160°C y dobla.','Rellena con queso, sirve en plato.','Agrega crema, cebolla y queso encima.'],
   'estufa','mexicana clásica','Estufa: 160°C','1 taza frijoles, 3 tortillas, queso, crema, chile pasilla'],
 ['Tacos de papa y huevo','desayuno',15,500,22,1.8,
   ['Hierve papa en cubos 8 min a 100°C, escurre.','Dora papa en aceite a fuego ALTO (190°C) — 3 min.','Baja a MEDIO (160°C), agrega 2 huevos.','Sazona con sal, pimienta, ajo en polvo.','Sirve en 3 tortillas calientes con salsa.'],
@@ -2139,7 +2141,7 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
 // 🍽️ COMIDAS — 20 recetas con temperatura
 [
 ['Bowl arroz frijol pollo','comida',20,720,42,3.2,
-  ['Calienta pollo rostizado o cocido en sartén a fuego MEDIO (160°C) — 3 min.','Calienta 1 taza arroz en misma sartén.','Calienta frijoles en ollita a fuego BAJO-MEDIO (100°C).','Arma bowl: arroz base, pollo encima, frijoles al lado.','Agrega aguacate, salsa, crema.'],
+  ['Calienta pollo rostizado o cocido en sartén a fuego MEDIO (160°C) — 3 min.','Calienta 1 taza de arroz en la misma sartén a fuego MEDIO (160°C).','Calienta frijoles en ollita a fuego BAJO-MEDIO (100°C).','Arma bowl: arroz base, pollo encima, frijoles al lado.','Agrega aguacate, salsa, crema.'],
   'estufa','alto en calorías','Estufa: 100-160°C','150g pollo, 1 taza arroz, ½ taza frijoles, ½ aguacate, crema'],
 ['Tacos de carne molida','comida',20,680,38,3.4,
   ['Dora 200g carne molida en sartén a fuego ALTO (200°C) — 3 min.','Baja a MEDIO (160°C), agrega cebolla y ajo picados.','Incorpora jitomate, chile, comino y sal.','Cocina 8 min hasta que carne esté bien cocida (74°C interno).','Sirve en 4 tortillas con salsa y limón.'],
@@ -2154,7 +2156,7 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
   ['Hierve 2 muslos pollo en 4 tazas agua con sal a 100°C — 25 min.','Retira pollo, deshebra.','Agrega ½ taza arroz al caldo hirviendo, baja a MEDIO (90°C).','Incorpora zanahoria, papa en cubos — 15 min.','Regresa pollo, agrega cilantro y limón.'],
   'estufa','mexicana reconfortante','Estufa: 90-100°C','2 muslos pollo, ½ taza arroz, zanahoria, papa, cilantro, limón'],
 ['Enchiladas económicas','comida',25,640,30,3.0,
-  ['Licua 3 chiles anchos hidratados con jitomate y ajo.','Calienta salsa en sartén a fuego MEDIO (160°C) — 5 min, sazona.','Pasa tortillas por salsa y rellena con queso.','Enrolla y coloca en refractario.','Agrega más salsa encima, calienta 10 min en horno a 180°C.'],
+  ['Licua 3 chiles anchos hidratados con jitomate y ajo.','Calienta salsa en sartén a fuego MEDIO (160°C) — 5 min, sazona.','Pasa tortillas por la salsa a 160°C y rellena con queso.','Enrolla y coloca en refractario.','Agrega más salsa encima, calienta 10 min en horno a 180°C.'],
   'estufa y horno','mexicana clásica','Estufa: 160°C / Horno: 180°C','6 tortillas, 2 chiles anchos, queso, jitomate, crema'],
 ['Pasta mexicana con carne','comida',25,700,36,2.8,
   ['Cuece 200g pasta en agua hirviendo a 100°C — 8 min al dente.','Dora carne molida a fuego ALTO (200°C) — 3 min.','Licua jitomate, cebolla, ajo. Sofríe a fuego MEDIO (160°C).','Mezcla pasta escurrida con salsa y carne.','Cocina 5 min más, agrega queso rallado.'],
@@ -2213,7 +2215,7 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
   ['Licua 2 tazas leche entera con 3 cdas cajeta (dulce de leche).','Agrega ½ taza avena y 1 plátano.','Opcional: 1 cda crema cacahuate extra.','Licua 60 seg hasta cremoso.','Costo muy bajo, alto en calorías.'],
   'licuadora','alto en calorías','Sin temperatura (frío)','2 tazas leche entera, 3 cdas cajeta, ½ taza avena, 1 plátano'],
 ['Licuado arroz con leche espeso','licuado',8,740,18,1.2,
-  ['Licua ½ taza arroz cocido con 1½ taza leche entera.','Agrega canela, 2 cdas azúcar, vainilla.','Opcional: 1 plátano y 1 cda crema cacahuate.','Licua 90 seg hasta muy suave.','Colar si deseas textura más fina.'],
+  ['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Licua ½ taza arroz cocido con 1½ taza leche entera.','Agrega canela, 2 cdas azúcar, vainilla.','Opcional: 1 plátano y 1 cda crema cacahuate.','Licua 90 seg hasta muy suave.','Colar si deseas textura más fina.'],
   'licuadora','económico','Sin temperatura (frío)','½ taza arroz cocido, 1½ taza leche, canela, 2 cdas azúcar, vainilla'],
 ['Licuado cacao plátano potente','licuado',5,820,26,1.6,
   ['Licua 1½ taza leche entera con 2 cdas cocoa.','Agrega 1 plátano grande, ½ taza avena, 2 cdas crema cacahuate.','Incorpora 1 cda miel o azúcar mascabado.','Licua 60 seg. Ajusta consistencia con más leche.','Excelente post-entrenamiento.'],
@@ -2304,7 +2306,7 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
   ['Licua: 2 tazas leche entera + 1 plátano + ½ taza avena + 1 cda crema cacahuate + 1 cda cacao.','Tomar 30-60 min antes de dormir.','La proteína de la leche (caseína) trabaja toda la noche.','Agrega hielo si prefieres frío.'],
   'licuadora','subir de peso','Sin temperatura — frío o tibio','2 tazas leche entera, 1 plátano, ½ taza avena, 1 cda cacahuate, 1 cda cacao en polvo'],
 ['Licuado de arroz con leche','licuado',6,720,22,1.4,
-  ['Mezcla ½ taza arroz cocido frío + 2 tazas leche entera.','Licua 90 seg hasta suave.','Agrega azúcar, canela y vainilla al gusto.','Sirve frío o con hielo picado.'],
+  ['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Mezcla ½ taza arroz cocido frío + 2 tazas leche entera.','Licua 90 seg hasta suave.','Agrega azúcar, canela y vainilla al gusto.','Sirve frío o con hielo picado.'],
   'licuadora','alto en calorías','Sin temperatura — frío','½ taza arroz cocido(93g), 2 tazas leche entera(480ml), 2 cditas azúcar, canela, vainilla'],
 ['Licuado de tamarindo y piloncillo','licuado',5,580,8,0.8,
   ['Disuelve 2 cdas pasta tamarindo en ½ taza agua caliente.','Cuela y enfría 5 min.','Licua con 1 taza leche entera, piloncillo al gusto, pizca sal.','Sirve con hielo.'],
@@ -2411,7 +2413,7 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
   ['Machaca 2 aguacates maduros con tenedor — textura rústica, no licuada.','Agrega ¼ cebolla picada fina, 1 jitomate sin semilla, chile serrano, cilantro.','Exprime 1 limón, sal al gusto.','Cubre con hueso del aguacate para que no oscurezca.','Temperatura ambiente. Consume el mismo día.'],
   'sin cocinar','salsa clásica','Sin temperatura — fresco','2 aguacates maduros, ¼ cebolla, 1 jitomate, 1 chile serrano, cilantro, 1 limón'],
 ['Salsa de aguacate verde','salsa',8,180,2,1.2,
-  ['Licua: 1 aguacate + 4 tomatillos cocidos + 1 chile serrano + ¼ cebolla + cilantro + sal.','Agrega agua poco a poco hasta consistencia cremosa.','Prueba y ajusta sal y limón.','Textura suave, ideal para tacos o enchiladas.','Refrigera máximo 2 días.'],
+  ['Hierve los 4 tomatillos 8 min hasta cambiar color y escúrrelos (preparación: Salsa verde cocida).','Licua: 1 aguacate + 4 tomatillos cocidos + 1 chile serrano + ¼ cebolla + cilantro + sal.','Agrega agua poco a poco hasta consistencia cremosa.','Prueba y ajusta sal y limón.','Textura suave, ideal para tacos o enchiladas.','Refrigera máximo 2 días.'],
   'sin cocinar','salsa cremosa','Tomatillos cocidos: 100°C | Mezcla: temperatura ambiente','1 aguacate, 4 tomatillos cocidos, 1 chile serrano, cilantro, limón'],
 ['Salsa macha de cacahuate','salsa',10,320,8,1.0,
   ['Calienta ¼ taza aceite en sartén a fuego BAJO (120°C).','Fríe 2 cdas cacahuate + 3 ajos + 6 chiles de árbol — 3 min sin quemar.','Retira y licua con sal y 1 cda vinagre.','El aceite va dentro — da cuerpo y picor profundo.','Temperatura: 120°C cocción. Dura 3 semanas refrigerada en aceite.'],
@@ -2639,7 +2641,7 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
  ['Licua 2 tazas de piña con ½ taza de leche de coco y 3 tazas de agua.','Agrega 2 cucharadas de azúcar.','Cuela solamente si deseas.','Sirve con hielo.','Consume fría durante el día.'],
  'licuadora','agua fresca Maui calorias','Mantener a 4°C','2 tazas piña, ½ taza leche de coco, 3 tazas agua, 2 cdas azúcar, hielo'],
 ['Agua de arroz con leche económica','agua',10,445,10,0.90,
- ['Licua ½ taza de arroz cocido con 1 taza de leche y 3 tazas de agua.','Agrega canela, vainilla y 2 cucharadas de azúcar.','Licua 90 segundos.','Cuela si quieres una bebida más fina.','Sirve fría y revuelve antes de tomar.'],
+ ['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Licua ½ taza de arroz cocido con 1 taza de leche y 3 tazas de agua.','Agrega canela, vainilla y 2 cucharadas de azúcar.','Licua 90 segundos.','Cuela si quieres una bebida más fina.','Sirve fría y revuelve antes de tomar.'],
  'licuadora','agua fresca economica subir peso','Mantener a 4°C','½ taza arroz cocido, 1 taza leche entera, 3 tazas agua, 2 cdas azúcar, canela, vainilla'],
 
 // HOTCAKES
@@ -2656,12 +2658,12 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
  ['Mezcla ¾ taza de harina, ½ taza de yogurt griego, 1 huevo y ¼ taza de leche.','Agrega polvo para hornear y vainilla.','Cocina porciones a fuego medio 3 minutos por lado.','Sirve con ¼ taza de granola.','Añade miel para subir calorías.'],
  'estufa','hotcakes proteina','Sartén: 160°C','¾ taza harina, ½ taza yogurt griego, 1 huevo, ¼ taza leche, ¼ taza granola, miel'],
 ['Tortitas de pollo y queso','hotcake',22,690,60,3.25,
- ['Mezcla 1 taza de harina, 1 huevo, ¾ taza de leche y polvo para hornear.','Incorpora 100g de pollo cocido picado y ¼ taza de queso rallado.','Vierte porciones en sartén engrasado a fuego medio.','Cocina 3 minutos por lado hasta que el centro llegue a 74°C.','Sirve con salsa verde cocida.'],
+ ['Prepara la salsa verde cocida (preparación: Salsa verde cocida — hierve los tomatillos con el chile 8 min hasta cambiar color, licua y sofríe 3 min).','Hierve el pollo en agua con sal a 100°C — 20 min y pícalo (preparación: Tinga de pollo, porción grande).','Mezcla 1 taza de harina, 1 huevo, ¾ taza de leche y polvo para hornear.','Incorpora 100g de pollo cocido picado y ¼ taza de queso rallado.','Vierte porciones en sartén engrasado a fuego medio.','Cocina 3 minutos por lado hasta que el centro llegue a 74°C.','Sirve con salsa verde cocida.'],
  'estufa','hotcakes salados carne cocida','Sartén: 160°C · Centro: 74°C','1 taza harina, 1 huevo, ¾ taza leche, 100g pollo cocido, ¼ taza queso, salsa verde cocida'],
 
 // AVENAS
 ['Avena chocolate, cacahuate y plátano','avena',10,690,24,1.70,
- ['Calienta 1½ tazas de leche hasta hervir suavemente.','Agrega ½ taza de avena y cocina 5 minutos a fuego bajo.','Incorpora 1 cucharada de cacao y 2 cucharadas de crema de cacahuate.','Sirve con 1 plátano en rebanadas.','Añade miel si necesitas más calorías.'],
+ ['Calienta 1½ tazas de leche hasta que empiece a hervir suavemente.','Agrega ½ taza de avena y cocina 5 minutos a fuego bajo.','Incorpora 1 cucharada de cacao y 2 cucharadas de crema de cacahuate.','Sirve con 1 plátano en rebanadas.','Añade miel si necesitas más calorías.'],
  'estufa','avena chocolate subir peso','Estufa: 80-100°C','½ taza avena, 1½ tazas leche, 1 cda cacao, 2 cdas crema de cacahuate, 1 plátano'],
 ['Avena de manzana, nuez y miel','avena',12,610,18,1.95,
  ['Corta 1 manzana en cubos pequeños.','Cocina ½ taza de avena con 1½ tazas de leche durante 5 minutos.','Agrega manzana, canela y ¼ taza de nueces.','Cocina 2 minutos más.','Sirve con 1 cucharada de miel.'],
@@ -2670,30 +2672,30 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
  ['Mezcla ½ taza de avena, 1 taza de leche y ½ taza de yogurt.','Agrega 1 taza de fresas picadas y 15g de chocolate.','Endulza con miel.','Refrigera mínimo 4 horas.','Agrega granola justo antes de comer.'],
  'sin cocinar','avena overnight calorias','Refrigerar a 4°C mínimo 4 horas','½ taza avena, 1 taza leche, ½ taza yogurt, 1 taza fresas, 15g chocolate, miel'],
 ['Avena de coco, piña y leche condensada','avena',10,650,17,1.85,
- ['Cocina ½ taza de avena con 1 taza de leche y ½ taza de agua.','Agrega ½ taza de piña en cubos.','Incorpora 2 cucharadas de coco rallado.','Sirve con 1 cucharada de leche condensada.','Añade canela si deseas.'],
+ ['Cocina ½ taza de avena con 1 taza de leche y ½ taza de agua durante 5 minutos (preparación: Avena de manzana, nuez y miel).','Agrega ½ taza de piña en cubos.','Incorpora 2 cucharadas de coco rallado.','Sirve con 1 cucharada de leche condensada.','Añade canela si deseas.'],
  'estufa','avena tropical Maui','Estufa: 80-100°C','½ taza avena, 1 taza leche, ½ taza piña, 2 cdas coco rallado, 1 cda leche condensada'],
 ['Avena salada con huevo, queso y aguacate','avena',14,625,29,2.15,
- ['Cocina ½ taza de avena en 1½ tazas de caldo durante 5 minutos.','Sazona con ajo, sal y pimienta.','Fríe 2 huevos hasta alcanzar la cocción deseada.','Sirve la avena con huevos, ¼ taza de queso y ½ aguacate.','Agrega salsa taquera roja.'],
+ ['Cocina ½ taza de avena en 1½ tazas de caldo durante 5 minutos.','Sazona con ajo, sal y pimienta.','Fríe 2 huevos a 160°C hasta alcanzar la cocción deseada.','Sirve la avena con huevos, ¼ taza de queso y ½ aguacate.','Agrega salsa taquera roja.'],
  'estufa','avena salada proteina','Avena: 90°C · Huevos: 160°C','½ taza avena, 1½ tazas caldo, 2 huevos, ¼ taza queso, ½ aguacate, salsa taquera'],
 
 // PANES Y TOSTADAS CALORICAS
 ['Pan con cacahuate, chocolate y plátano','pan',5,620,18,1.45,
- ['Tuesta 2 rebanadas de pan.','Unta 2 cucharadas de crema de cacahuate.','Agrega 1 plátano en rebanadas.','Derrite 15g de chocolate y rocíalo encima.','Corta por la mitad y come tibio.'],
+ ['Tuesta 2 rebanadas de pan en el tostador 2-3 min, hasta que estén doradas (preparación: Pan tostado).','Unta 2 cucharadas de crema de cacahuate.','Agrega 1 plátano en rebanadas.','Derrite 15g de chocolate y rocíalo encima.','Corta por la mitad y come tibio.'],
  'tostador/microondas','pan calorico rapido','Tostador: 2-3 min','2 rebanadas pan, 2 cdas crema de cacahuate, 1 plátano, 15g chocolate'],
 ['Pan con Nutella, cacahuate y fresas','pan',5,570,14,1.95,
- ['Tuesta 2 rebanadas de pan.','Unta 1 cucharada de Nutella y 1 cucharada de crema de cacahuate.','Agrega fresas rebanadas.','Cierra como sándwich.','Envuelve si lo llevarás y consúmelo el mismo día.'],
- 'sin cocinar','pan dulce portable','Mantener fresco','2 rebanadas pan, 1 cda Nutella, 1 cda crema de cacahuate, ½ taza fresas'],
+ ['Tuesta 2 rebanadas de pan en el tostador 2-3 min, hasta que estén doradas (preparación: Pan tostado).','Unta 1 cucharada de Nutella y 1 cucharada de crema de cacahuate.','Agrega fresas rebanadas.','Cierra como sándwich.','Envuelve si lo llevarás y consúmelo el mismo día.'],
+ 'tostador','pan dulce portable','Mantener fresco','2 rebanadas pan, 1 cda Nutella, 1 cda crema de cacahuate, ½ taza fresas'],
 ['Pan con queso crema, miel y nueces','pan',5,530,14,1.85,
- ['Tuesta 2 rebanadas de pan.','Unta 3 cucharadas de queso crema.','Agrega 1 cucharada de miel.','Espolvorea ¼ taza de nueces picadas.','Sirve tibio.'],
+ ['Tuesta 2 rebanadas de pan en el tostador 2-3 min, hasta que estén doradas (preparación: Pan tostado).','Unta 3 cucharadas de queso crema.','Agrega 1 cucharada de miel.','Espolvorea ¼ taza de nueces picadas.','Sirve tibio.'],
  'tostador','pan calorico','Tostador: 2-3 min','2 rebanadas pan, 3 cdas queso crema, 1 cda miel, ¼ taza nueces'],
 ['Sándwich de manzana y crema de cacahuate','pan',7,555,17,1.75,
- ['Tuesta ligeramente 2 rebanadas de pan.','Unta 2 cucharadas de crema de cacahuate.','Agrega media manzana en rebanadas finas.','Espolvorea canela y agrega 1 cucharadita de miel.','Cierra y corta en dos.'],
+ ['Tuesta ligeramente 2 rebanadas de pan en el tostador 2 min (preparación: Pan tostado).','Unta 2 cucharadas de crema de cacahuate.','Agrega media manzana en rebanadas finas.','Espolvorea canela y agrega 1 cucharadita de miel.','Cierra y corta en dos.'],
  'tostador','pan portable jardinero','Tostador: 2 min','2 rebanadas pan, 2 cdas crema de cacahuate, ½ manzana, miel, canela'],
 ['Pan gratinado con pollo cocido y chipotle','pan',12,650,42,2.80,
- ['Mezcla 120g de pollo cocido con 2 cucharadas de salsa chipotle ahumada.','Coloca sobre 2 mitades de bolillo.','Agrega ¼ taza de queso.','Hornea a 190°C durante 6 minutos hasta gratinar.','Confirma que el relleno llegue a 74°C.'],
+ ['Hierve el pollo en agua con sal a 100°C — 20 min y deshébralo (preparación: Tinga de pollo, porción grande).','Mezcla 120g de pollo cocido con 2 cucharadas de salsa chipotle ahumada.','Coloca sobre 2 mitades de bolillo.','Agrega ¼ taza de queso.','Hornea a 190°C durante 6 minutos hasta gratinar.','Confirma que el relleno llegue a 74°C.'],
  'horno','pan carne cocida salsa completa','Horno: 190°C · Relleno: 74°C','1 bolillo, 120g pollo cocido, 2 cdas salsa chipotle ahumada, ¼ taza queso'],
 ['Tostadas dulces de plátano y cajeta','pan',5,545,12,1.50,
- ['Tuesta 2 rebanadas de pan.','Unta 2 cucharadas de queso crema o crema de cacahuate.','Agrega 1 plátano en rebanadas.','Rocía 1 cucharada de cajeta.','Espolvorea canela.'],
+ ['Tuesta 2 rebanadas de pan en el tostador 2-3 min, hasta que estén doradas (preparación: Pan tostado).','Unta 2 cucharadas de queso crema o crema de cacahuate.','Agrega 1 plátano en rebanadas.','Rocía 1 cucharada de cajeta.','Espolvorea canela.'],
  'tostador','pan dulce economico','Tostador: 2-3 min','2 rebanadas pan, 2 cdas queso crema o cacahuate, 1 plátano, 1 cda cajeta'],
 
 // ADEREZOS CASEROS Y GUIA DE COMPRA
@@ -2721,22 +2723,22 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
  ['Para la salsa: hierve 5 tomatillos y 1 serrano durante 8 minutos.','Licua con ¼ cebolla, 1 ajo, cilantro, sal y ¼ taza de agua.','Sofríe la salsa con 1 cucharadita de aceite durante 5 minutos.','Agrega 180g de pollo ya cocido y calienta hasta 74°C.','Sirve con 1 taza de arroz y 2 tortillas.'],
  'estufa','carne cocida pollo salsa completa','Salsa: 100-160°C · Pollo recalentado: 74°C','180g pollo cocido, 5 tomatillos, 1 serrano, cebolla, ajo, cilantro, 1 taza arroz, 2 tortillas'],
 ['Cerdo cocido en salsa roja con papas','comida',22,760,44,3.20,
- ['Para la salsa: hierve 3 jitomates y 2 chiles guajillo limpios durante 8 minutos.','Licua con ajo, cebolla, comino y sal.','Sofríe la salsa 5 minutos a fuego medio.','Agrega 180g de cerdo cocido y 1 papa cocida en cubos.','Calienta todo hasta 74°C y sirve con tortillas.'],
+ ['Prepara el cerdo cocido (preparación: Cerdo cocido básico — cubre los trozos con agua, sal y hierve suave 40-60 min orientativos, hasta que estén bien cocidos y tiernos).','Hierve la papa en cubos — 10 min a 100°C (preparación: Papas doradas con huevo).','Para la salsa: hierve 3 jitomates y 2 chiles guajillo limpios durante 8 minutos.','Licua con ajo, cebolla, comino y sal.','Sofríe la salsa 5 minutos a fuego medio.','Agrega 180g de cerdo cocido y 1 papa cocida en cubos.','Calienta todo hasta 74°C y sirve con tortillas.'],
  'estufa','carne cocida cerdo salsa completa','Salsa: 100-160°C · Carne recalentada: 74°C','180g cerdo cocido, 3 jitomates, 2 guajillos, 1 papa cocida, ajo, cebolla, comino, tortillas'],
 ['Bistec cocido con salsa ranchera y frijoles','comida',18,735,48,3.75,
- ['Para salsa ranchera: sofríe 2 jitomates, ¼ cebolla y 1 jalapeño picados durante 6 minutos.','Agrega ajo, sal y ¼ taza de agua; cocina 3 minutos.','Corta 170g de bistec cocido en tiras.','Mézclalo con la salsa y recalienta hasta 74°C.','Sirve con ½ taza de frijoles y 3 tortillas.'],
+ ['Corta el bistec en tiras, sazona y cocina en aceite caliente 2 min a fuego alto; cocina 2 min más (preparación: Bistec encebollado, porción chica).','Para salsa ranchera: sofríe 2 jitomates, ¼ cebolla y 1 jalapeño picados durante 6 minutos.','Agrega ajo, sal y ¼ taza de agua; cocina 3 minutos.','Corta 170g de bistec cocido en tiras.','Mézclalo con la salsa y recalienta hasta 74°C.','Sirve con ½ taza de frijoles y 3 tortillas.'],
  'estufa','carne cocida res salsa completa','Salsa: 160°C · Carne recalentada: 74°C','170g bistec cocido, 2 jitomates, ¼ cebolla, 1 jalapeño, ½ taza frijoles, 3 tortillas'],
 ['Tostadas de pollo cocido con aderezo chipotle','comida',12,650,42,3.15,
  ['Prepara el aderezo: mezcla ½ taza de yogurt, 1 chipotle, limón y sal.','Calienta 150g de pollo cocido hasta 74°C y deja entibiar.','Unta frijoles en 3 tostadas.','Agrega pollo, lechuga, aguacate y aderezo.','Sirve inmediatamente para mantener crujientes las tostadas.'],
  'estufa','carne cocida pollo aderezo completo','Pollo recalentado: 74°C','150g pollo cocido, 3 tostadas, ½ taza frijoles, lechuga, ½ aguacate, yogurt, chipotle, limón'],
 ['Arroz frito con cerdo cocido y huevo','comida',15,790,43,3.05,
- ['Calienta 1 cucharada de aceite en sartén grande.','Agrega 1 taza de arroz frío y 150g de cerdo cocido picado.','Mueve durante 4 minutos hasta que la carne llegue a 74°C.','Abre un espacio, agrega 2 huevos y revuelve.','Sazona con salsa de soya y agrega verduras congeladas.'],
+ ['Prepara el cerdo cocido (preparación: Cerdo cocido básico — cubre los trozos con agua, sal y hierve suave 40-60 min orientativos, hasta que estén bien cocidos y tiernos).','Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min; enfríalo.','Calienta 1 cucharada de aceite en sartén grande a 180°C.','Agrega 1 taza de arroz frío y 150g de cerdo cocido picado.','Mueve durante 4 minutos hasta que la carne llegue a 74°C.','Abre un espacio, agrega 2 huevos y revuelve.','Sazona con salsa de soya y agrega verduras congeladas.'],
  'estufa','carne cocida cerdo arroz rapido','Sartén: 180°C · Carne recalentada: 74°C','150g cerdo cocido, 1 taza arroz cocido frío, 2 huevos, 1 taza verduras, 1 cda aceite, salsa soya'],
 ['Pasta cremosa con pollo cocido y espinaca','comida',20,825,50,3.60,
- ['Cuece 1½ tazas de pasta hasta quedar al dente.','Calienta 180g de pollo cocido con 1 cucharadita de aceite.','Agrega ½ taza de leche, ¼ taza de queso y espinaca.','Incorpora la pasta y cocina hasta que el pollo llegue a 74°C.','Sazona con ajo, pimienta y sal.'],
+ ['Cuece 1½ tazas de pasta al dente.','Calienta 180g de pollo cocido con 1 cucharadita de aceite a 74°C.','Agrega ½ taza de leche, ¼ taza de queso y espinaca.','Incorpora la pasta y cocina hasta que el pollo llegue a 74°C.','Sazona con ajo, pimienta y sal.'],
  'estufa','carne cocida pollo pasta calorias','Estufa: 100-160°C · Pollo: 74°C','180g pollo cocido, 1½ tazas pasta, ½ taza leche, ¼ taza queso, espinaca, ajo'],
 ['Quesadillas de res cocida con salsa taquera','comida',15,745,45,3.45,
- ['Calienta 160g de carne de res cocida con 2 cucharadas de agua hasta 74°C.','Calienta 4 tortillas y agrega carne y ½ taza de queso.','Dobla y cocina 2 minutos por lado.','Prepara salsa taquera o abre su receta desde la recomendación.','Sirve con cebolla, cilantro y limón.'],
+ ['Calienta 160g de carne de res cocida con 2 cucharadas de agua hasta 74°C.','Calienta 4 tortillas en el comal a 180°C y agrega carne y ½ taza de queso.','Dobla y cocina 2 minutos por lado.','Prepara salsa taquera o abre su receta desde la recomendación.','Sirve con cebolla, cilantro y limón.'],
  'estufa','carne cocida res salsa taquera','Comal: 180°C · Carne recalentada: 74°C','160g res cocida, 4 tortillas, ½ taza queso, salsa taquera, cebolla, cilantro, limón'],
 ['Bowl de pollo rostizado con aderezo de cacahuate','comida',12,840,49,3.65,
  ['Mezcla crema de cacahuate, salsa de soya, limón, miel y agua caliente para hacer el aderezo.','Calienta 180g de pollo rostizado sin hueso hasta 74°C.','Coloca 1 taza de arroz y verduras en un tazón.','Agrega el pollo y 3 cucharadas de aderezo.','Termina con cacahuates y cilantro.'],
@@ -2766,10 +2768,10 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
  ['Unta crema de cacahuate entre pares de galletas.','Agrega una rebanada fina de plátano si las comerás de inmediato.','Acompaña con leche entera.','No dejes la leche sin refrigeración en el calor de Maui.'],
  'sin cocinar','snack rápido económico leche','Mantener leche a 4°C','8 galletas, 3 cdas crema cacahuate, ½ plátano, 1 taza leche entera'],
 ['Huevos cocidos con crackers y aderezo ranch','snack',7,505,25,1.85,
- ['Pela y corta 3 huevos ya cocidos.','Mezcla yogurt, mayonesa, ajo, eneldo, sal y pimienta para el ranch.','Sirve los huevos con crackers y el aderezo.','Mantén huevos y aderezo a 4°C o menos.'],
+ ['Hierve los huevos 10-11 min, enfríalos en agua con hielo y pélalos (preparación: Meal-prep huevos cocidos (batch)).','Pela y corta 3 huevos ya cocidos.','Mezcla yogurt, mayonesa, ajo, eneldo, sal y pimienta para el ranch.','Sirve los huevos con crackers y el aderezo.','Mantén huevos y aderezo a 4°C o menos.'],
  'sin cocinar','snack huevo cocido aderezo proteína','Mantener a 4°C','3 huevos cocidos, 12 crackers, ¼ taza yogurt, 1 cda mayonesa, ajo, eneldo'],
 ['Ensalada de res cocida con aderezo cilantro','comida',12,680,43,3.80,
- ['Prepara aderezo licuando yogurt, cilantro, limón, aceite, ajo y sal.','Corta 160g de res cocida en tiras; sírvela fría solo si se enfrió y almacenó de forma segura.','Mezcla lechuga, tomate, pepino, maíz y aguacate.','Agrega la carne y 3 cucharadas de aderezo.','Acompaña con pan o tortillas para aumentar calorías.'],
+ ['Cuece 160g de res en agua con sal 40 min (preparación: Caldo de res (cocido)).','Prepara aderezo licuando yogurt, cilantro, limón, aceite, ajo y sal.','Corta 160g de res cocida en tiras; sírvela fría solo si se enfrió y almacenó de forma segura.','Mezcla lechuga, tomate, pepino, maíz y aguacate.','Agrega la carne y 3 cucharadas de aderezo.','Acompaña con pan o tortillas para aumentar calorías.'],
  'sin cocinar','carne cocida res ensalada aderezo','Mantener a 4°C','160g res cocida, lechuga, tomate, pepino, ½ taza maíz, ½ aguacate, yogurt, cilantro, limón, aceite']
 ].forEach(r=>add(r[1],r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9]||'',r[10]||''));
 
@@ -2786,7 +2788,7 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
   ['Mezcla 500ml de agua con ¼ cdita de sal.','Agrega el jugo de ½ limón y ½ naranja.','Opcional: pizca de bicarbonato. Ideal para el calor de Maui trabajando.'],
   'frío','hidratación jardinería','Frío','Agua, sal, limón, naranja'],
 ['Té verde frío sin azúcar','bebida',5,5,0,0.35,
-  ['Hierve 2 tazas de agua, apaga y agrega 1 bolsa de té verde.','Reposa 3 min, retira la bolsa.','Enfría, agrega hielo y unas gotas de limón.'],
+  ['Hierve 2 tazas de agua hasta que burbujee fuerte (~3-5 min), apaga y agrega 1 bolsa de té verde.','Reposa 3 min, retira la bolsa.','Enfría, agrega hielo y unas gotas de limón.'],
   'estufa','antioxidante sin azúcar','Estufa','Té verde, limón, agua'],
 ['Agua mineral con limón','bebida',1,5,0,0.50,
   ['Sirve agua mineral fría en un vaso con hielo.','Exprime ½ limón. Refrescante y con cero azúcar.'],
@@ -2809,10 +2811,10 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
   'licuadora','post-entreno proteína','Frío','Yogurt griego, fresas, avena, leche'],
 // 🍱 MEAL-PREP DOMINGO
 ['Meal-prep pollo, arroz y brócoli','comida',40,650,48,3.50,
-  ['Cocina 4 pechugas sazonadas en el horno a 200°C por 25 min.','Cocina 2 tazas de arroz y 3 tazas de brócoli al vapor.','Divide en 4 tuppers iguales. Dura 4 días en el refri.'],
+  ['Cocina 4 pechugas sazonadas en el horno a 200°C por 25 min.','Cuece 2 tazas de arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min (preparación: Caldo de pollo con arroz); cuece las 3 tazas de brócoli al vapor 5 min (preparación: Verduras cocidas al vapor con limón y chile).','Divide en 4 tuppers iguales. Dura 4 días en el refri.'],
   'horno','meal-prep semana','Horno 200°C','4 pechugas, 2 tazas arroz, brócoli'],
 ['Meal-prep carne molida y frijoles','comida',35,600,40,3.00,
-  ['Dora 500g de carne molida con cebolla y ajo.','Prepara 2 tazas de frijoles y 2 tazas de arroz.','Divide en 4 porciones con tortillas aparte.'],
+  ['Dora 500g de carne molida con cebolla y ajo: sartén BIEN caliente, no la muevas 4 min — deja que dore (preparación: Carne molida con calabaza).','Prepara 2 tazas de frijoles y 2 tazas de arroz.','Divide en 4 porciones con tortillas aparte.'],
   'estufa','meal-prep barato','Estufa','500g carne, frijoles, arroz'],
 ['Meal-prep huevos cocidos (batch)','snack',20,320,13,1.20,
   ['Hierve 12 huevos por 10-11 min.','Enfría en agua con hielo y pela.','Guarda en el refri hasta 5 días. Snack de proteína listo.'],
@@ -2821,7 +2823,7 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
   ['En 4 frascos pon ½ taza de avena y 1 taza de leche cada uno.','Agrega 1 cda de chía y fruta a cada frasco.','Refrigera toda la noche. Listos para 4 mañanas.'],
   'frío','meal-prep desayuno','Frío','Avena, leche, chía, fruta'],
 ['Meal-prep arroz con pollo (batch)','comida',40,700,44,3.20,
-  ['Cocina 3 tazas de arroz con caldo de pollo.','Agrega 4 pechugas en cubos ya cocidas y verduras.','Divide en 5 tuppers. Ideal para la semana de trabajo.'],
+  ['Cocina 3 tazas de arroz con caldo de pollo: agrégalo al caldo hirviendo, baja a fuego medio y cocina 15 min (preparación: Caldo de pollo con arroz).','Agrega 4 pechugas en cubos ya cocidas y verduras.','Divide en 5 tuppers. Ideal para la semana de trabajo.'],
   'estufa','meal-prep semana','Estufa','Arroz, pollo, verduras, caldo'],
 // 💪 SNACKS ALTOS EN PROTEÍNA
 ['Yogurt griego con nuez','snack',2,240,20,1.40,
@@ -2837,7 +2839,7 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
   ['Enrolla 4 rebanadas de jamón de pavo con queso panela.','Opcional: agrega un palillo y aguacate.','Snack rápido de proteína sin cocinar.'],
   'frío','snack proteína rápido','Frío','Jamón de pavo, queso panela'],
 ['Huevos endiablados','snack',15,210,16,1.00,
-  ['Hierve 3 huevos, córtalos a la mitad.','Mezcla las yemas con 1 cdita de mayonesa y mostaza.','Rellena las claras. Snack con buena proteína.'],
+  ['Hierve 3 huevos por 10-11 min, enfríalos en agua con hielo, pélalos y córtalos a la mitad (preparación: Meal-prep huevos cocidos (batch)).','Mezcla las yemas con 1 cdita de mayonesa y mostaza.','Rellena las claras. Snack con buena proteína.'],
   'estufa','snack proteína','Estufa','3 huevos, mayonesa, mostaza']
 ].forEach(r=>add(r[1],r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10]));
 
@@ -2846,16 +2848,16 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
 // 🌙 CENAS (12 nuevas)
 ['Cena: huevos revueltos con verduras','cena',10,320,22,1.50,['Bate 3 huevos con sal.','Sofríe cebolla, jitomate y espinaca 3 min a fuego medio.','Agrega los huevos y revuelve hasta cuajar. Sirve con tortilla.'],'estufa','cena ligera proteína','Estufa 160°C','3 huevos, verduras, tortilla'],
 ['Cena: quesadilla de pollo','cena',10,380,28,2.00,['Calienta pollo deshebrado en el sartén.','Rellena 2 tortillas con pollo y queso.','Dora por ambos lados hasta que el queso derrita.'],'estufa','cena rápida','Estufa 170°C','Pollo, queso, tortillas'],
-['Cena: sopa de verduras con pollo','cena',20,280,25,2.20,['Hierve caldo de pollo con zanahoria, calabaza y apio.','Agrega pollo deshebrado y cocina 10 min.','Sazona al gusto. Ligera para la noche.'],'estufa','cena ligera','Estufa 100°C','Caldo, verduras, pollo'],
+['Cena: sopa de verduras con pollo','cena',20,280,25,2.20,['Hierve caldo de pollo con zanahoria, calabaza y apio; agrega el pollo deshebrado y cocina 10 min.','Sazona al gusto. Ligera para la noche.'],'estufa','cena ligera','Estufa 100°C','Caldo, verduras, pollo'],
 ['Cena: ensalada de atún','cena',8,300,30,1.80,['Escurre 1 lata de atún.','Mezcla con lechuga, jitomate, pepino y aguacate.','Aliña con limón y aceite de oliva.'],'frío','cena ligera proteína','Frío','Atún, verduras, aguacate'],
 ['Cena: tostadas de frijol','cena',10,340,14,1.20,['Unta frijoles refritos en 2 tostadas.','Agrega queso, lechuga, jitomate y aguacate.','Rápida y económica.'],'frío','cena económica','Sin cocción','Tostadas, frijol, verduras'],
-['Cena: caldo de pollo ligero','cena',25,260,26,2.00,['Cocina pechuga con cebolla, ajo y sal.','Agrega verduras al gusto.','Sirve caliente. Reconfortante para la noche.'],'estufa','cena ligera','Estufa 100°C','Pollo, verduras, caldo'],
+['Cena: caldo de pollo ligero','cena',25,260,26,2.00,['Cocina la pechuga con cebolla, ajo y sal a 100°C.','Agrega verduras al gusto.','Sirve caliente. Reconfortante para la noche.'],'estufa','cena ligera','Estufa 100°C','Pollo, verduras, caldo'],
 ['Cena: omelette de champiñones','cena',12,300,20,1.90,['Bate 3 huevos.','Sofríe champiñones y cebolla.','Vierte el huevo, dobla el omelette cuando cuaje.'],'estufa','cena proteína','Estufa 160°C','Huevos, champiñones'],
 ['Cena: wrap de pavo','cena',8,350,26,2.30,['Extiende una tortilla de harina.','Coloca pavo, queso, lechuga y aguacate.','Enrolla firmemente y corta a la mitad.'],'frío','cena rápida','Sin cocción','Tortilla, pavo, verduras'],
-['Cena: bowl de arroz y huevo','cena',12,420,18,1.40,['Calienta 1 taza de arroz cocido.','Fríe 2 huevos y colócalos encima.','Agrega salsa de soya o salsa verde.'],'estufa','cena rápida','Estufa 170°C','Arroz, huevos, salsa'],
+['Cena: bowl de arroz y huevo','cena',12,420,18,1.40,['Calienta 1 taza de arroz cocido.','Fríe 2 huevos a 170°C y colócalos encima.','Agrega salsa de soya o salsa verde.'],'estufa','cena rápida','Estufa 170°C','Arroz, huevos, salsa'],
 ['Cena: pescado al sartén','cena',15,320,34,3.20,['Sazona un filete de pescado.','Cocina 4 min por lado a fuego medio.','Sirve con verduras al vapor.'],'estufa','cena proteína','Estufa 180°C','Pescado, verduras'],
-['Cena: molletes ligeros','cena',10,340,16,1.30,['Tuesta pan integral.','Unta frijoles y queso.','Gratina 3 min. Sirve con pico de gallo.'],'horno','cena económica','Horno 180°C','Pan, frijol, queso'],
-['Cena: sopa de fideo con huevo','cena',15,300,14,1.10,['Dora el fideo, agrega caldo de jitomate.','Cocina hasta suavizar.','Agrega un huevo batido al final.'],'estufa','cena económica','Estufa 100°C','Fideo, jitomate, huevo'],
+['Cena: molletes ligeros','cena',10,340,16,1.30,['Tuesta el pan integral en el horno 200°C — 5 min, hasta que dore (preparación: Molletes caseros).','Unta frijoles y queso.','Gratina 3 min. Sirve con pico de gallo.'],'horno','cena económica','Horno 200°C','Pan, frijol, queso'],
+['Cena: sopa de fideo con huevo','cena',15,300,14,1.10,['Dora el fideo en un poco de aceite hasta que quede dorado (no quemado) y agrega caldo de jitomate (preparación: Sopa de fideo aguada).','Cocina hasta que esté suave.','Agrega un huevo batido al final.'],'estufa','cena económica','Estufa 100°C','Fideo, jitomate, huevo'],
 // 🍓 FRUTAS (10 nuevas)
 ['Plato de papaya con limón','fruta',3,120,2,1.00,['Corta 2 tazas de papaya en cubos.','Exprime limón encima.','Opcional: espolvorea chile en polvo.'],'frío','fruta digestiva','Frío','Papaya, limón'],
 ['Fresas con crema','fruta',5,220,4,1.80,['Lava y corta 1 taza de fresas.','Mezcla con 3 cdas de crema y 1 cdita de azúcar.','Sirve frío.'],'frío','fruta postre','Frío','Fresas, crema'],
@@ -2886,11 +2888,11 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
 ['Agua de piña','agua',5,95,1,1.20,['Licúa 2 tazas de piña con agua.','Cuela y sirve fría.','Tropical y digestiva.'],'licuadora','agua tropical','Frío','Piña, agua'],
 ['Limonada con menta','agua',4,60,0,0.70,['Exprime 3 limones en 1 litro de agua.','Agrega hojas de menta y hielo.','Clásica y refrescante.'],'frío','agua cítrica','Frío','Limón, menta, agua'],
 // 🍞 PANES (5 nuevos)
-['Pan tostado con aguacate y huevo','pan',10,340,16,1.60,['Tuesta 2 rebanadas de pan integral.','Machaca aguacate encima.','Agrega 1 huevo estrellado y sal.'],'estufa','pan desayuno proteína','Estufa','Pan, aguacate, huevo'],
+['Pan tostado con aguacate y huevo','pan',10,340,16,1.60,['Tuesta 2 rebanadas de pan integral en comal o sartén seco a fuego medio 1-2 min por lado, hasta que doren.','Machaca aguacate encima.','Agrega 1 huevo estrellado y sal.'],'estufa','pan desayuno proteína','Estufa','Pan, aguacate, huevo'],
 ['Pan francés (torrejas)','pan',12,380,12,1.40,['Bate huevo con leche y canela.','Remoja el pan y dóralo en el sartén.','Sirve con miel o fruta.'],'estufa','pan dulce','Estufa 160°C','Pan, huevo, leche'],
 ['Sándwich de pollo','pan',8,420,32,2.40,['Rellena 2 panes con pollo deshebrado.','Agrega lechuga, jitomate y mayonesa.','Rápido y con buena proteína.'],'frío','pan proteína','Sin cocción','Pan, pollo, verduras'],
-['Molletes dulces','pan',8,300,8,1.10,['Tuesta pan.','Unta crema de cacahuate y plátano.','Espolvorea canela.'],'frío','pan dulce energía','Sin cocción','Pan, cacahuate, plátano'],
-['Pan con frijol y queso','pan',10,330,15,1.00,['Tuesta pan.','Unta frijoles refritos y queso.','Gratina 3 min.'],'horno','pan económico','Horno 180°C','Pan, frijol, queso']
+['Molletes dulces','pan',8,300,8,1.10,['Tuesta el pan en el tostador 2-3 min, hasta que esté dorado (preparación: Pan tostado).','Unta crema de cacahuate y plátano.','Espolvorea canela.'],'tostador','pan dulce energía','Sin cocción','Pan, cacahuate, plátano'],
+['Pan con frijol y queso','pan',10,330,15,1.00,['Tuesta el pan en el horno 200°C — 5 min, hasta que dore (preparación: Molletes caseros).','Unta frijoles refritos y queso.','Gratina 3 min.'],'horno','pan económico','Horno 200°C','Pan, frijol, queso']
 ].forEach(r=>add(r[1],r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10]));
 
 // ✅ MÁS RECETAS THERMOMIX TM5
@@ -2917,12 +2919,12 @@ function add(type,name,time,k,p,cost,steps,method='estufa',tags='mexicana barata
 ['Wrap de pollo en lata con yogurt griego','comida',8,560,42,3.10,['Escurre el pollo en lata.','Mezcla con yogurt griego, mostaza o salsa, sal y pimienta.','Pon la mezcla en tortilla o wrap.','Agrega espinaca, queso o aguacate.','Envuelve firme y mantén frío en hielera.'],'sin cocinar','americano walmart rapido trabajo portable yogurt pollo lata','Frío: 4°C o menos','pollo en lata, yogurt griego light, tortilla wrap, espinaca, queso'],
 ['Arroz con atún en lata y verduras congeladas','comida',10,610,38,2.45,['Calienta arroz cocido y verduras congeladas.','Abre y escurre el atún.','Mezcla todo con limón, salsa o mayonesa ligera.','Agrega aguacate si necesitas más calorías.','Sirve en bowl o empaca en recipiente.'],'microondas','americano walmart rapido atun enlatado congelados arroz barato','Microondas: 2-4 min','atún en lata, arroz cocido, verduras congeladas, limón, salsa'],
 ['Licuado Fairlife/yogurt alto proteína con fruta congelada','licuado',4,520,45,3.60,['Agrega leche alta proteína al vaso.','Añade yogurt alto en proteína, fruta congelada y avena.','Licúa 45-60 segundos.','Tómalo antes de salir o llévalo frío.','Si necesitas más calorías agrega crema de cacahuate.'],'licuadora','americano proteina yogurt leche alta proteina fruta congelada subir peso rapido','Frío','leche alta proteína, yogurt alto en proteína, fruta congelada, avena, crema cacahuate'],
-['Avena instantánea con leche 2% y yogurt','desayuno',6,590,34,2.70,['Calienta leche 2% o alta proteína.','Agrega avena instantánea y mezcla.','Deja reposar 2 minutos.','Añade yogurt griego y plátano.','Agrega granola si quieres más calorías.'],'microondas','americano desayuno avena yogurt leche cereal rapido subir peso','Microondas: 1-2 min','avena instantánea, leche 2%, yogurt griego, plátano, granola'],
+['Avena instantánea con leche 2% y yogurt','desayuno',6,590,34,2.70,['Calienta la leche en microondas 1-2 min (2% o alta proteína).','Agrega avena instantánea y mezcla.','Deja reposar 2 minutos.','Añade yogurt griego y plátano.','Agrega granola si quieres más calorías.'],'microondas','americano desayuno avena yogurt leche cereal rapido subir peso','Microondas: 1-2 min','avena instantánea, leche 2%, yogurt griego, plátano, granola'],
 ['Cereal alto proteína con leche alta proteína','desayuno',3,430,28,2.35,['Sirve cereal alto en proteína.','Agrega leche alta proteína.','Añade plátano o fruta congelada si quieres más energía.','Come rápido antes del trabajo.'],'sin cocinar','americano desayuno cereal leche alta proteina rapido','Frío','cereal alto en proteína, leche alta proteína, plátano'],
 ['Burrito congelado mejorado con frijoles y yogurt','comida',7,620,29,3.00,['Calienta el burrito congelado según empaque.','Calienta media taza de frijoles enlatados.','Sirve el burrito con frijoles al lado.','Agrega yogurt griego como crema rápida o salsa.','Úsalo cuando no hay tiempo de cocinar.'],'microondas','americano walmart congelado rapido frijoles yogurt emergencia','Microondas: según empaque','burrito congelado, frijoles enlatados, yogurt griego, salsa'],
 ['Caja snack Costco para dos días','snack',8,760,42,4.80,['Separa dos recipientes.','Pon yogurt alto proteína, granola, fruta y nueces.','Agrega queso o turkey slices si tienes.','Guarda una caja para hoy y otra para mañana.','Mantén frío si lleva lácteos.'],'sin cocinar','americano costco snack dos dias meal prep yogurt cereal nueces trabajo','Frío: 4°C o menos','yogurt alto proteína, granola, fruta, nueces, queso'],
-['Pasta rápida con verduras congeladas y pollo','comida',18,780,50,3.75,['Hierve pasta o usa pasta ya cocida.','Calienta verduras congeladas en sartén.','Agrega pollo rostizado o pollo en lata.','Mezcla con salsa de tomate o queso.','Divide en 2 recipientes para dos comidas.'],'estufa','americano costco meal prep pasta pollo congelados dos dias','Estufa: 100-160°C','pasta, verduras congeladas, pollo rostizado, salsa de tomate, queso'],
-['Sopa enlatada reforzada con arroz y pollo','comida',8,560,34,2.90,['Calienta sopa enlatada.','Agrega arroz cocido.','Agrega pollo en lata o pollo rostizado.','Añade verduras congeladas si quieres más volumen.','Sirve caliente o pon en termo.'],'microondas/estufa','americano walmart sopa enlatada pollo arroz termo rapido','Caliente: 60°C o más','sopa enlatada, arroz cocido, pollo en lata, verduras congeladas'],
+['Pasta rápida con verduras congeladas y pollo','comida',18,780,50,3.75,['Hierve la pasta a 100°C o usa pasta ya cocida.','Calienta verduras congeladas en sartén.','Agrega pollo rostizado o pollo en lata.','Mezcla con salsa de tomate o queso.','Divide en 2 recipientes para dos comidas.'],'estufa','americano costco meal prep pasta pollo congelados dos dias','Estufa: 100-160°C','pasta, verduras congeladas, pollo rostizado, salsa de tomate, queso'],
+['Sopa enlatada reforzada con arroz y pollo','comida',8,560,34,2.90,['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Calienta sopa enlatada.','Agrega arroz cocido.','Agrega pollo en lata o pollo rostizado.','Añade verduras congeladas si quieres más volumen.','Sirve caliente o pon en termo.'],'microondas/estufa','americano walmart sopa enlatada pollo arroz termo rapido','Caliente: 60°C o más','sopa enlatada, arroz cocido, pollo en lata, verduras congeladas'],
 ['Smoothie bowl de yogurt, cereal y fruta congelada','desayuno',5,610,36,3.20,['Mezcla yogurt alto proteína con fruta congelada.','Sirve en tazón.','Agrega cereal alto proteína o granola.','Añade miel o crema cacahuate si necesitas subir calorías.'],'sin cocinar','americano yogurt cereal fruta congelada desayuno subir peso','Frío','yogurt alto proteína, fruta congelada, cereal alto proteína, granola, miel'],
 ['Tacos rápidos de atún con frijoles enlatados','comida',8,590,40,2.60,['Calienta tortillas.','Mezcla atún con salsa y limón.','Calienta frijoles enlatados.','Arma tacos con atún, frijoles y verduras.','Empaca separado si lo llevarás al trabajo.'],'estufa/microondas','mexicana americano atun enlatado frijoles walmart rapido trabajo','Comal: 160°C','atún en lata, tortillas, frijoles enlatados, salsa, limón'],
 ['Burrito frío de yogurt pollo y tortilla de harina','comida',7,610,44,3.05,['Mezcla pollo en lata o pollo rostizado con yogurt griego, salsa y limón.','Pon la mezcla en una tortilla de harina grande.','Agrega lechuga, queso o aguacate si tienes.','Enrolla firme y corta en dos mitades.','Guárdalo frío para el trabajo.'],'sin cocinar','americano tortilla harina yogurt pollo trabajo rapido portable walmart costco','Frío: 4°C o menos','tortilla de harina grande, pollo en lata, yogurt griego, salsa, limón'],
@@ -3348,7 +3350,7 @@ addPortableSet('Termo',20,[{label:'1 taza arroz cocido',ing:'1 taza arroz cocido
 /* ---------- 🍩 PAN FRITO (en olla, como debe ser) ---------- */
 ['Churros caseros','postre',30,420,6,1.20,
   ['⚠️ Esto NO sale en air fryer. Necesita aceite de verdad. Te lo digo de frente.',
-   'Hierve 1 taza de agua con 2 cdas de mantequilla, 1 cda de azúcar y una pizca de sal.',
+   'Hierve 1 taza de agua con 2 cdas de mantequilla, 1 cda de azúcar y una pizca de sal hasta que la mantequilla se derrita y burbujee (~2-3 min).',
    'Con el fuego APAGADO, echa 1 taza de harina de golpe y revuelve fuerte.',
    'Se hace una bola que se despega de la olla. Deja enfriar 10 min.',
    'Agrega 1 huevo y revuelve hasta que quede lisa.',
@@ -3458,7 +3460,7 @@ addPortableSet('Termo',20,[{label:'1 taza arroz cocido',ing:'1 taza arroz cocido
   ['Enjuaga 1 taza de lentejas.',
    'Fríe ¼ cebolla y 2 ajos en 1 cda de aceite — 4 min.',
    'Agrega 1 jitomate picado, cocina 4 min hasta que espese.',
-   'Echa las lentejas, 4 tazas de agua, sal y laurel. Hierve y tapa.',
+   'Echa las lentejas, 4 tazas de agua, sal y laurel. Hierve y tapa — 20 min (hasta agregar el plátano).',
    'A los 20 min, agrega 1 plátano macho maduro en rodajas gruesas.',
    'Cocina 8 min más. El plátano queda dulce y suave.',
    'Es el clásico mexicano: lo dulce del plátano con lo terroso de la lenteja.'],
@@ -3556,7 +3558,8 @@ addPortableSet('Termo',20,[{label:'1 taza arroz cocido',ing:'1 taza arroz cocido
   '1 taza lentejas, ¼ cebolla, 2 ajos, 1 jitomate, caldo, laurel'],
 
 ['Frijoles charros con tocino','comida',25,680,36,2.40,
-  ['Usa 3 tazas de frijoles ya cocidos, con su caldo.',
+  ['Cuece los frijoles como en Frijoles de olla: olla normal 90 min a 2 h (o presión 35-40 min), sal al final.',
+   'Usa 3 tazas de frijoles ya cocidos, con su caldo.',
    'Fríe 100g de tocino picado en una olla, empezando en sartén FRÍO — 6 min. Queda crujiente.',
    'En esa grasa, fríe ¼ cebolla — 4 min.',
    'Agrega 1 jitomate, 1 chile serrano y 2 ajos — 4 min.',
@@ -4001,13 +4004,13 @@ function openThermomixGuide(){
 ['Avena de leche 2%, jalea y crema de cacahuate','desayuno',6,610,24,1.85,['Mezcla avena instantánea con leche 2% o alta proteína.','Calienta 1-2 minutos o deja overnight.','Agrega crema de cacahuate y jalea de fresa, mango o frambuesa.','Añade plátano si necesitas más calorías.','Sirve frío o caliente.'],'microondas','walmart costco desayuno subir calorias rapido jalea avena leche','Microondas: 1-2 min','avena instantánea, leche 2%, crema cacahuate, jalea, plátano'],
 ['Caja de yogurt, gelatina y cereal alto proteína','snack',5,520,36,2.60,['Pon yogurt alto proteína en un recipiente.','Agrega cereal alto en proteína o granola.','Corta gelatina en cubos y ponla encima.','Agrega jalea si quieres más sabor.','Mantén frío si lo llevas al trabajo.'],'sin cocinar','sin tiempo yogurt gelatina cereal proteina trabajo walmart times','Frío: 4°C o menos','yogurt alto proteína, gelatina, cereal alto proteína, jalea'],
 ['Tostadas de pollo con yogurt tipo crema','comida',12,590,44,3.10,['Mezcla yogurt griego natural con sal, limón y salsa.','Pon pollo rostizado o pollo en lata sobre tostadas.','Agrega frijoles si necesitas más energía.','Cubre con la crema de yogurt y verduras.','Lleva tostadas separadas para que no se aguaden.'],'sin cocinar','tostadas pollo yogurt costco walmart trabajo rapido','Sin cocción','tostadas, pollo rostizado, yogurt griego, frijoles, salsa'],
-['Totopos con frijol, queso y carne o pollo','comida',10,760,42,3.25,['Calienta frijoles en microondas.','Agrega queso encima y calienta 30-45 segundos.','Pon pollo rostizado, carne molida ya cocida o atún.','Come con totopos separados para que sigan crujientes.','Buena opción para subir calorías rápido.'],'microondas','totopos frijol queso subir calorias sin tiempo walmart','Microondas: 1-2 min','totopos, frijoles, queso, pollo rostizado o carne'],
+['Totopos con frijol, queso y carne o pollo','comida',10,760,42,3.25,['Calienta frijoles en microondas 1-2 min.','Agrega queso encima y calienta 30-45 segundos.','Pon pollo rostizado, carne molida ya cocida o atún.','Come con totopos separados para que sigan crujientes.','Buena opción para subir calorías rápido.'],'microondas','totopos frijol queso subir calorias sin tiempo walmart','Microondas: 1-2 min','totopos, frijoles, queso, pollo rostizado o carne'],
 ['Bowl de arroz, verduras congeladas y atún','comida',8,560,39,2.25,['Calienta arroz cocido y verduras congeladas.','Escurre una lata de atún.','Mezcla todo con salsa, limón o aderezo.','Agrega aguacate o aceite de oliva si ocupas más calorías.','Guarda una segunda porción para mañana.'],'microondas','enlatado congelados arroz atun dos dias trabajo barato','Microondas: 2-3 min','arroz cocido, verduras congeladas, atún lata, salsa, aguacate'],
 ['Smoothie de leche alta proteína, yogurt y fruta congelada','licuado',5,650,52,3.80,['Licua leche alta proteína con yogurt griego.','Agrega fruta congelada y avena.','Añade jalea de mango o fresa para sabor.','Agrega crema de cacahuate para más calorías.','Tómalo antes o después del trabajo.'],'licuadora','licuado costco walmart subir calorias proteína fruta congelada','Frío','leche alta proteína, yogurt griego, fruta congelada, avena, jalea, crema cacahuate'],
 ['Burritos para 2 días de pollo Costco','comida',25,840,55,4.20,['Deshebra pollo rostizado.','Mezcla arroz, frijoles y verduras congeladas calientes.','Rellena tortillas de harina grandes.','Haz 4 burritos: 2 para hoy y 2 para mañana.','Guarda refrigerado y recalienta hasta bien caliente.'],'meal prep','costco tortilla harina pollo dos dias meal prep trabajo subir calorias','Recalentar: 74°C interno','pollo rostizado Costco, tortillas harina, arroz, frijoles, verduras congeladas, queso'],
 ['Desayuno cereal proteína con leche y yogurt','desayuno',4,580,42,2.70,['Sirve cereal alto proteína.','Agrega leche alta proteína o 2%.','Acompaña con yogurt alto en proteína.','Agrega jalea o fruta si quieres sabor dulce.','Ideal cuando sales temprano.'],'sin cocinar','cereal leche yogurt sin tiempo walmart costco desayuno','Sin cocción','cereal alto proteína, leche alta proteína, yogurt alto proteína, jalea'],
 ['Tortilla dulce de crema cacahuate y jalea','snack',3,430,12,1.10,['Unta crema de cacahuate en tortilla de harina.','Agrega jalea de fresa, frambuesa o mango.','Enrolla como wrap.','Corta a la mitad y llévalo para media mañana.','Acompaña con leche si quieres más proteína.'],'sin cocinar','tortilla harina jalea snack subir calorias trabajo barato','Sin cocción','tortilla de harina, crema cacahuate, jalea, leche'],
-['Chicharrón con frijoles, queso y salsa','snack',6,520,28,2.20,['Calienta frijoles en microondas.','Agrega queso para que se derrita.','Sirve chicharrón aparte para que no se aguade.','Pon salsa, limón y aguacate si tienes.','Úsalo como snack fuerte o comida de emergencia, no diario.'],'microondas','chicharron frituras snack sin tiempo subir calorias walmart times','Microondas: 1-2 min','chicharrón, frijoles, queso, salsa, aguacate'],
+['Chicharrón con frijoles, queso y salsa','snack',6,520,28,2.20,['Calienta frijoles en microondas 1-2 min.','Agrega queso para que se derrita.','Sirve chicharrón aparte para que no se aguade.','Pon salsa, limón y aguacate si tienes.','Úsalo como snack fuerte o comida de emergencia, no diario.'],'microondas','chicharron frituras snack sin tiempo subir calorias walmart times','Microondas: 1-2 min','chicharrón, frijoles, queso, salsa, aguacate'],
 ['Tostadas rápidas con chicharrón y yogurt tipo crema','comida',8,610,34,2.80,['Mezcla yogurt griego natural con limón, sal y salsa.','Pon frijoles o pollo sobre tostadas.','Agrega chicharrón triturado encima al final.','Añade la crema de yogurt justo antes de comer.','Buena para variar, pero cuida la sal.'],'sin cocinar','chicharron tostadas yogurt rapido trabajo sin tiempo','Sin cocción','tostadas, chicharrón, yogurt griego, frijoles, pollo, salsa'],
 ['Nachos de frituras con proteína','comida',10,740,38,3.40,['Usa totopos, Fritos o chips de maíz como base.','Agrega frijoles, queso y pollo rostizado o atún.','Calienta solo la proteína/frijoles/queso; deja las frituras aparte.','Sirve con salsa y verduras si tienes.','Opción rápida para subir calorías cuando vienes cansado.'],'microondas','frituras totopos chips chicharron proteina subir calorias rapido','Microondas: 1-2 min','totopos o frituras, frijoles, queso, pollo o atún, salsa'],
 ['Día barato de arroz, frijol, huevo y tortillas','comida',18,760,34,1.85,['Calienta arroz y frijoles.','Haz 2 huevos revueltos o estrellados.','Agrega tortillas y salsa.','Si necesitas más calorías agrega aceite, queso o aguacate si hay.','Ideal cuando el presupuesto es $50.'],'estufa','barato economico 50 semana arroz frijol huevo tortillas subir calorias','Estufa: 10-18 min','arroz, frijoles, huevos, tortillas, salsa'],
@@ -4063,30 +4066,30 @@ function openThermomixGuide(){
   ['Cuece ½ taza de avena con 1 taza de leche, 4 min.','Fuera del fuego agrega 2 cucharadas de crema de cacahuate y 1 cucharada de miel; mezcla hasta cremoso.','Corona con 1 plátano en rodajas.','Sirve caliente.'],
   'estufa','desayuno subir de peso avena cacahuate proteina','Estufa fuego bajo','½ taza avena, 1 taza leche entera, 2 cucharadas crema cacahuate, 1 cucharada miel, 1 plátano'],
 ['Avena con yogurt, granola y jalea de fresa','avena',5,640,28,1.90,
-  ['Cuece ½ taza de avena con 1 taza de leche o déjala overnight en frío.','Encima pon ½ taza de yogurt griego, ¼ taza de granola y 3 cucharadas de jalea de fresa.','Come frío o al tiempo.'],
+  ['Cuece ½ taza de avena con 1 taza de leche durante 5 minutos o déjala overnight en frío (preparación: Avena de manzana, nuez y miel).','Encima pon ½ taza de yogurt griego, ¼ taza de granola y 3 cucharadas de jalea de fresa.','Come frío o al tiempo.'],
   'sin cocinar','desayuno proteina avena yogurt fresa jalea','Frío o al tiempo','½ taza avena, 1 taza leche entera, ½ taza yogurt griego, ¼ taza granola, 3 cucharadas jalea de fresa'],
 // ----- PAN TOSTADO -----
 ['Pan tostado con lechera y canela','pan',5,300,10,0.90,
-  ['Tuesta 2 rebanadas de pan.','Encima pon 3 cucharadas de leche condensada (lechera) y espolvorea canela.','Come de inmediato mientras está calientito.'],
+  ['Tuesta 2 rebanadas de pan en el tostador 2-3 min, hasta que estén doradas (preparación: Pan tostado).','Encima pon 3 cucharadas de leche condensada (lechera) y espolvorea canela.','Come de inmediato mientras está calientito.'],
   'tostador','desayuno snack pan lechera dulce barato','Tostado','2 rebanadas pan, 3 cucharadas leche condensada, canela'],
 ['Pan tostado con plátano y miel','pan',5,330,9,0.85,
-  ['Tuesta 2 rebanadas de pan.','Acomoda 1 plátano en rodajas encima y baña con 1 cucharada de miel.','Opcional: canela o crema de cacahuate para más calorías.'],
+  ['Tuesta 2 rebanadas de pan en el tostador 2-3 min, hasta que estén doradas (preparación: Pan tostado).','Acomoda 1 plátano en rodajas encima y baña con 1 cucharada de miel.','Opcional: canela o crema de cacahuate para más calorías.'],
   'tostador','desayuno snack pan platano miel barato','Tostado','2 rebanadas pan, 1 plátano, 1 cucharada miel'],
 ['Pan tostado con lechera y plátano','pan',5,400,11,1.05,
-  ['Tuesta 2 rebanadas de pan.','Pon 3 cucharadas de leche condensada y 1 plátano en rodajas.','Come de inmediato.'],
+  ['Tuesta 2 rebanadas de pan en el tostador 2-3 min, hasta que estén doradas (preparación: Pan tostado).','Pon 3 cucharadas de leche condensada y 1 plátano en rodajas.','Come de inmediato.'],
   'tostador','desayuno snack pan lechera platano subir de peso dulce','Tostado','2 rebanadas pan, 3 cucharadas leche condensada, 1 plátano'],
 ['Pan tostado con cacahuate y lechera','pan',5,440,18,1.10,
-  ['Tuesta 2 rebanadas de pan.','Unta 2 cucharadas de crema de cacahuate y encima 2 cucharadas de leche condensada.','Come calientito.'],
+  ['Tuesta 2 rebanadas de pan en el tostador 2-3 min, hasta que estén doradas (preparación: Pan tostado).','Unta 2 cucharadas de crema de cacahuate y encima 2 cucharadas de leche condensada.','Come calientito.'],
   'tostador','desayuno snack pan cacahuate lechera proteina subir de peso','Tostado','2 rebanadas pan, 2 cucharadas crema cacahuate, 2 cucharadas leche condensada'],
 ['Pan francés con plátano','pan',12,440,17,1.10,
   ['Bate 1 huevo con ¼ taza de leche y canela.','Remoja 2 rebanadas de pan y dóralas en sartén con poca mantequilla.','Sirve con 1 plátano en rodajas y 1 cucharada de miel.'],
   'sarten','desayuno pan frances huevo platano subir de peso','Sartén fuego medio','2 rebanadas pan, 1 huevo, ¼ taza leche entera, 1 plátano, 1 cucharada miel, canela'],
 ['Pan tostado con frijol, huevo y queso','pan',10,460,29,1.30,
-  ['Tuesta 2 rebanadas de pan.','Unta ½ taza de frijoles refritos calientes.','Encima pon 1 huevo estrellado y queso rallado.','Come caliente; buen desayuno salado.'],
+  ['Tuesta 2 rebanadas de pan en comal o sartén seco a fuego medio 1-2 min por lado, hasta que doren.','Unta ½ taza de frijoles refritos calientes.','Encima pon 1 huevo estrellado y queso rallado.','Come caliente; buen desayuno salado.'],
   'estufa','desayuno salado proteina pan frijol huevo queso','Estufa','2 rebanadas pan, ½ taza frijol, 1 huevo, queso'],
 ['Pan tostado con yogurt, granola y fresa','pan',5,370,22,1.40,
-  ['Tuesta 2 rebanadas de pan.','Unta ½ taza de yogurt griego, agrega ¼ taza de granola y ½ taza de fresas.','Opcional: 1 cucharada de miel.'],
-  'sin cocinar','desayuno snack proteina pan yogurt fresa granola','Sin cocción','2 rebanadas pan, ½ taza yogurt griego, ¼ taza granola, ½ taza fresas'],
+  ['Tuesta 2 rebanadas de pan en el tostador 2-3 min, hasta que estén doradas (preparación: Pan tostado).','Unta ½ taza de yogurt griego, agrega ¼ taza de granola y ½ taza de fresas.','Opcional: 1 cucharada de miel.'],
+  'tostador','desayuno snack proteina pan yogurt fresa granola','Sin cocción','2 rebanadas pan, ½ taza yogurt griego, ¼ taza granola, ½ taza fresas'],
 // ----- COMIDAS AL HORNO -----
 ['Pechugas de pollo al horno con especias','comida',35,370,62,2.20,
   ['Precalienta el horno a 200°C (400°F).','Sazona 200g de pechuga con sal, pimienta, ajo, paprika y un chorrito de aceite.','Hornea 22-28 min hasta que el jugo salga claro.','Ideal meal prep: haz varias y guarda para la semana.'],
@@ -4104,7 +4107,7 @@ function openThermomixGuide(){
   ['Precalienta a 200°C (400°F).','Hornea 1 camote grande 40-45 min hasta suave.','Ábrelo y rellena con ½ taza de frijoles y queso; hornea 5 min más.','Sirve caliente.'],
   'horno','comida al horno camote frijol queso barato subir de peso','Horno 200°C / 400°F','1 camote grande, ½ taza frijol, queso'],
 ['Espagueti al horno con carne y queso','comida',40,760,45,2.60,
-  ['Cuece 100g de pasta y escúrrela.','Mezcla con 100g de carne molida cocida y salsa de tomate.','Pon en molde, cubre con queso y hornea a 190°C (375°F) 15-18 min.','Corta en porciones.'],
+  ['Cuece 100g de pasta en agua hirviendo a 100°C — 8 min al dente y escúrrela (preparación: Pasta mexicana con carne).','Mezcla con 100g de carne molida cocida y salsa de tomate.','Pon en molde, cubre con queso y hornea a 190°C (375°F) 15-18 min.','Corta en porciones.'],
   'horno','comida al horno pasta carne queso meal prep subir de peso','Horno 190°C / 375°F','100g pasta, 100g carne molida, salsa de tomate, queso'],
 ['Papas gratinadas al horno','comida',50,580,23,1.80,
   ['Precalienta a 190°C (375°F).','Rebana 2 papas y acomódalas en capas con leche, sal y queso.','Hornea 40-45 min hasta suaves y doradas.','Sirve caliente.'],
@@ -4113,7 +4116,7 @@ function openThermomixGuide(){
   ['Precalienta a 200°C (400°F).','Sazona 150g de chuleta de cerdo y acomoda con 1 papa en cubos.','Hornea 30-35 min hasta cocido.','Sirve con salsa o limón.'],
   'horno','comida al horno cerdo papa proteina subir de peso','Horno 200°C / 400°F','150g cerdo, 1 papa, aceite, especias'],
 ['Albóndigas al horno en salsa','comida',40,700,45,2.60,
-  ['Mezcla 150g de carne molida con 1 huevo, sal y especias; forma albóndigas.','Acomoda en molde con salsa de tomate.','Hornea a 190°C (375°F) 25-30 min.','Sirve con 1 taza de arroz.'],
+  ['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Mezcla 150g de carne molida con 1 huevo, sal y especias; forma albóndigas.','Acomoda en molde con salsa de tomate.','Hornea a 190°C (375°F) 25-30 min.','Sirve con 1 taza de arroz.'],
   'horno','comida al horno carne albondigas arroz proteina subir de peso','Horno 190°C / 375°F','150g carne molida, 1 huevo, salsa de tomate, 1 taza arroz cocido, especias'],
 ['Brócoli y coliflor gratinados al horno','cena',30,450,28,2.00,
   ['Precalienta a 200°C (400°F).','Pon 2 tazas de brócoli y coliflor con aceite y sal; hornea 18 min.','Baña con un poco de leche y queso; hornea 7 min más hasta gratinar.','Cena ligera con proteína del queso.'],
@@ -4123,63 +4126,63 @@ function openThermomixGuide(){
 // 🍳🌮🔥 TANDA GRANDE: platillos reales mexicanos y americanos (cantidades exactas). Precios se ajustan a Maui abajo.
 [
 // ----- HUEVOS / DESAYUNO -----
-['Huevos rancheros','desayuno',12,400,20,1.20,['Fríe 2 tortillas ligeramente.','Encima pon 2 huevos estrellados y baña con salsa roja caliente.','Acompaña con ½ taza de frijoles.'],'estufa','desayuno proteina huevo salsa mexicana','Estufa fuego medio','2 huevos, 2 tortillas, salsa roja, ½ taza frijol'],
+['Huevos rancheros','desayuno',12,400,20,1.20,['Fríe 2 tortillas ligeramente a fuego medio.','Encima pon 2 huevos estrellados y baña con salsa roja caliente.','Acompaña con ½ taza de frijoles.'],'estufa','desayuno proteina huevo salsa mexicana','Estufa fuego medio','2 huevos, 2 tortillas, salsa roja, ½ taza frijol'],
 ['Huevos con jamón','desayuno',10,420,28,1.40,['Sofríe 60g de jamón picado.','Agrega 3 huevos batidos y revuelve.','Sirve con 2 tortillas o pan.'],'estufa','desayuno proteina huevo jamon','Estufa fuego medio','3 huevos, 60g jamón, 2 tortillas'],
-['Huevos estrellados con frijol y aguacate','desayuno',10,480,22,1.30,['Fríe 2 huevos estrellados.','Sirve sobre ½ taza de frijoles calientes.','Agrega ½ aguacate y 1 tortilla.'],'estufa','desayuno proteina huevo frijol aguacate','Estufa fuego medio','2 huevos, ½ taza frijol, ½ aguacate, 1 tortilla'],
+['Huevos estrellados con frijol y aguacate','desayuno',10,480,22,1.30,['Fríe 2 huevos estrellados a fuego medio.','Sirve sobre ½ taza de frijoles calientes.','Agrega ½ aguacate y 1 tortilla.'],'estufa','desayuno proteina huevo frijol aguacate','Estufa fuego medio','2 huevos, ½ taza frijol, ½ aguacate, 1 tortilla'],
 ['Machaca con huevo','desayuno',12,460,34,1.80,['Sofríe 60g de res deshebrada con tomate y cebolla.','Agrega 3 huevos batidos y revuelve.','Sirve con 2 tortillas de harina.'],'estufa','desayuno proteina huevo res machaca subir de peso','Estufa fuego medio','3 huevos, 60g res cocida, tomate, cebolla, 2 tortillas'],
 ['Omelette de queso y jamón','desayuno',10,500,40,1.70,['Bate 3 huevos y vierte en sartén caliente.','Rellena con queso y 40g de jamón; dobla.','Cocina 2 min y sirve.'],'estufa','desayuno proteina huevo queso jamon','Estufa fuego medio','3 huevos, queso, 40g jamón'],
 ['Huevos en salsa verde','desayuno',10,360,21,1.10,['Calienta salsa verde en el sartén.','Rompe 3 huevos dentro y tapa hasta cuajar.','Sirve con 2 tortillas.'],'estufa','desayuno proteina huevo salsa verde','Estufa fuego medio','3 huevos, salsa verde, 2 tortillas'],
 // ----- GUISADOS / COMIDA -----
 ['Chilaquiles rojos con pollo y huevo','comida',15,640,50,2.20,['Calienta salsa roja y agrega totopos hasta suavizar un poco.','Encima pon 100g de pollo deshebrado, 1 huevo estrellado y queso.','Sirve de inmediato para que no se aguaden.'],'estufa','comida desayuno proteina pollo chilaquiles subir de peso','Estufa fuego medio','totopos, salsa roja, 100g pollo, 1 huevo, queso'],
 ['Chilaquiles verdes con huevo','comida',15,550,25,1.60,['Calienta salsa verde y mezcla los totopos.','Agrega 2 huevos estrellados y queso encima.','Sirve enseguida.'],'estufa','comida desayuno chilaquiles huevo verde','Estufa fuego medio','totopos, salsa verde, 2 huevos, queso'],
-['Milanesa de pollo empanizada','comida',20,680,52,2.40,['Aplana 150g de pechuga, pásala por huevo y pan molido.','Fríe en poco aceite hasta dorar ambos lados.','Sirve con 1 taza de arroz.'],'sarten','comida proteina pollo milanesa meal prep subir de peso','Sartén fuego medio','150g pollo, 1 huevo, pan molido, 1 taza arroz cocido, aceite'],
-['Milanesa de res','comida',20,640,45,2.60,['Empaniza 150g de bistec delgado con huevo y pan molido.','Fríe hasta dorar.','Sirve con arroz o ensalada.'],'sarten','comida proteina res milanesa subir de peso','Sartén fuego medio','150g res, 1 huevo, pan molido, 1 taza arroz cocido, aceite'],
+['Milanesa de pollo empanizada','comida',20,680,52,2.40,['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Aplana 150g de pechuga, pásala por huevo y pan molido.','Fríe en poco aceite a fuego medio; dora de ambos lados.','Sirve con 1 taza de arroz.'],'sarten','comida proteina pollo milanesa meal prep subir de peso','Sartén fuego medio','150g pollo, 1 huevo, pan molido, 1 taza arroz cocido, aceite'],
+['Milanesa de res','comida',20,640,45,2.60,['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Empaniza 150g de bistec delgado con huevo y pan molido.','Fríe a fuego medio; dora por ambos lados.','Sirve con arroz o ensalada.'],'sarten','comida proteina res milanesa subir de peso','Sartén fuego medio','150g res, 1 huevo, pan molido, 1 taza arroz cocido, aceite'],
 ['Albóndigas en caldillo de tomate','comida',35,700,45,2.40,['Mezcla 150g de carne molida con arroz crudo, huevo y sal; forma bolitas.','Cuece en caldillo de tomate 20-25 min.','Sirve caliente con tortillas.'],'estufa','comida proteina carne albondigas subir de peso','Estufa fuego medio','150g carne molida, 1 huevo, tomate, ¼ taza arroz, especias'],
-['Rajas con crema y queso','comida',20,540,20,1.80,['Asa y pela chiles poblanos; córtalos en rajas.','Sofríe con cebolla, agrega crema y queso.','Sirve con tortillas calientes.'],'estufa','comida vegetariano rajas crema queso','Estufa fuego medio','chile poblano, crema, queso, cebolla, tortillas'],
-['Calabacitas con puerco','comida',30,560,44,2.40,['Dora 150g de cerdo en cubos.','Agrega calabacita, tomate y elote; cuece 15 min.','Sirve con arroz o tortillas.'],'estufa','comida proteina cerdo calabacita verduras','Estufa fuego medio','150g cerdo, calabacita, tomate, elote, 1 taza arroz cocido'],
+['Rajas con crema y queso','comida',20,540,20,1.80,['Asa los chiles poblanos enteros como en Rajas con crema (técnica): directo a la llama o comal seco 8 min, hasta que la piel quede negra y ampollada; mételos en bolsa 10 min, pélalos y córtalos en rajas.','Sofríe con cebolla, agrega crema y queso.','Sirve con tortillas calientes.'],'estufa','comida vegetariano rajas crema queso','Estufa fuego medio','chile poblano, crema, queso, cebolla, tortillas'],
+['Calabacitas con puerco','comida',30,560,44,2.40,['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Dora 150g de cerdo en cubos a fuego medio.','Agrega calabacita, tomate y elote; cuece 15 min.','Sirve con arroz o tortillas.'],'estufa','comida proteina cerdo calabacita verduras','Estufa fuego medio','150g cerdo, calabacita, tomate, elote, 1 taza arroz cocido'],
 ['Frijoles charros','comida',30,620,35,1.90,['Sofríe tocino y chorizo picados.','Agrega frijoles cocidos con su caldo, tomate y cebolla.','Hierve 15 min y sirve como plato fuerte.'],'estufa','comida proteina frijol charros subir de peso','Estufa fuego medio','2 tazas frijol, tocino, chorizo, tomate, cebolla'],
-['Chicharrón en salsa verde','comida',15,540,23,1.60,['Hierve salsa verde en el sartén.','Agrega 80g de chicharrón y deja suavizar 5 min.','Sirve con frijoles y tortillas.'],'estufa','comida cerdo chicharron salsa verde','Estufa fuego medio','80g chicharrón, salsa verde, tortillas'],
-['Nopales con huevo','comida',15,380,20,1.20,['Cuece y escurre los nopales.','Sofríe con tomate y agrega 3 huevos batidos.','Sirve con tortillas.'],'estufa','comida vegetariano huevo nopal barato','Estufa fuego medio','nopales, 3 huevos, tomate, 2 tortillas'],
-['Papas con chorizo','comida',20,720,24,1.90,['Cuece 2 papas en cubos.','Dora 80g de chorizo y agrega las papas.','Sirve en tacos con tortillas.'],'estufa','comida cerdo papa chorizo subir de peso','Estufa fuego medio','2 papas, 80g chorizo, 2 tortillas'],
-['Pollo en mole rápido','comida',20,640,52,2.60,['Diluye pasta de mole en caldo caliente.','Agrega 150g de pollo cocido y calienta.','Sirve con 1 taza de arroz.'],'estufa','comida proteina pollo mole subir de peso','Estufa fuego bajo','150g pollo, pasta de mole, 1 taza arroz cocido'],
-['Tinga de res','comida',25,460,42,2.40,['Deshebra 150g de res cocida.','Sofríe con cebolla, tomate y chipotle.','Sirve en tostadas con crema.'],'estufa','comida proteina res tinga chipotle','Estufa fuego medio','150g res cocida, tomate, cebolla, chipotle, tostadas'],
+['Chicharrón en salsa verde','comida',15,540,23,1.60,['Hierve la salsa verde en el sartén y agrega el chicharrón; deja suavizar 5 min.','Sirve con frijoles y tortillas.'],'estufa','comida cerdo chicharron salsa verde','Estufa fuego medio','80g chicharrón, salsa verde, tortillas'],
+['Nopales con huevo','comida',15,380,20,1.20,['Cuece los nopales en agua con sal y cebolla — 10 min y escúrrelos (preparación: Ensalada de nopales con queso).','Sofríe con tomate y agrega 3 huevos batidos.','Sirve con tortillas.'],'estufa','comida vegetariano huevo nopal barato','Estufa fuego medio','nopales, 3 huevos, tomate, 2 tortillas'],
+['Papas con chorizo','comida',20,720,24,1.90,['Cuece 2 papas en cubos — 10 min a 100°C (preparación: Papas doradas con huevo).','Dora 80g de chorizo a fuego medio y agrega las papas.','Sirve en tacos con tortillas.'],'estufa','comida cerdo papa chorizo subir de peso','Estufa fuego medio','2 papas, 80g chorizo, 2 tortillas'],
+['Pollo en mole rápido','comida',20,640,52,2.60,['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Diluye pasta de mole en caldo caliente.','Agrega 150g de pollo cocido y calienta a fuego bajo.','Sirve con 1 taza de arroz.'],'estufa','comida proteina pollo mole subir de peso','Estufa fuego bajo','150g pollo, pasta de mole, 1 taza arroz cocido'],
+['Tinga de res','comida',25,460,42,2.40,['Cuece 150g de res en agua con sal 40 min (preparación: Caldo de res (cocido)).','Deshebra 150g de res cocida.','Sofríe con cebolla, tomate y chipotle.','Sirve en tostadas con crema.'],'estufa','comida proteina res tinga chipotle','Estufa fuego medio','150g res cocida, tomate, cebolla, chipotle, tostadas'],
 ['Fajitas de pollo','comida',20,420,49,2.20,['Corta 150g de pollo en tiras y dóralas.','Agrega pimiento y cebolla en tiras; saltea.','Sirve con tortillas de harina.'],'sarten','comida proteina pollo fajitas meal prep','Sartén fuego alto','150g pollo, pimiento, cebolla, tortillas de harina'],
 ['Fajitas de res','comida',20,440,42,2.50,['Corta 150g de res en tiras y sella.','Saltea con pimiento y cebolla.','Sirve con tortillas.'],'sarten','comida proteina res fajitas','Sartén fuego alto','150g res, pimiento, cebolla, tortillas de harina'],
 ['Flautas de pollo doradas','comida',20,520,40,2.00,['Rellena tortillas con 100g de pollo deshebrado y enrolla.','Fríe en poco aceite hasta dorar.','Sirve con crema, queso y salsa.'],'sarten','comida proteina pollo flautas antojito','Sartén fuego medio','3 tortillas, 100g pollo, crema, queso, aceite'],
 ['Enfrijoladas con pollo','comida',20,580,46,1.90,['Licúa frijoles con un poco de caldo y calienta.','Pasa tortillas por la salsa y rellena con 80g de pollo.','Corona con queso y crema.'],'estufa','comida proteina pollo frijol enfrijoladas','Estufa fuego medio','4 tortillas, 1 taza frijol, 80g pollo, queso, crema'],
 ['Sopes de frijol y pollo','comida',25,660,48,2.20,['Calienta 3 sopes y unta frijoles.','Agrega 80g de pollo deshebrado, lechuga, crema y queso.','Sirve con salsa al gusto.'],'estufa','comida proteina pollo sopes antojito subir de peso','Estufa fuego medio','3 sopes, 1 taza frijol, 80g pollo, queso, crema'],
 // ----- PASTAS Y ARROCES -----
-['Espagueti rojo mexicano','comida',20,660,22,1.70,['Cuece 100g de espagueti.','Licúa tomate y sofríe para la salsa; mezcla con la pasta.','Agrega crema y queso; sirve.'],'estufa','comida pasta rojo mexicano barato','Estufa fuego medio','100g pasta, tomate, crema, queso'],
-['Espagueti blanco con pollo','comida',22,780,53,2.40,['Cuece 100g de espagueti.','Mezcla con crema y 100g de pollo cocido.','Agrega queso y sirve caliente.'],'estufa','comida pasta pollo crema proteina subir de peso','Estufa fuego medio','100g pasta, crema, 100g pollo, queso'],
-['Macarrones con carne molida y queso','comida',25,710,45,2.30,['Cuece 100g de macarrón.','Dora 100g de carne molida con tomate.','Mezcla todo con queso y sirve.'],'estufa','comida pasta carne queso subir de peso','Estufa fuego medio','100g pasta, 100g carne molida, tomate, queso'],
-['Arroz a la mexicana con huevo','comida',20,440,18,1.30,['Sofríe arroz con tomate licuado hasta dorar.','Agrega agua/caldo y cuece tapado.','Sirve con 2 huevos estrellados.'],'estufa','comida arroz huevo mexicana barato','Estufa fuego bajo','1 taza arroz, tomate, 2 huevos, verduras'],
+['Espagueti rojo mexicano','comida',20,660,22,1.70,['Cuece 100g de espagueti en agua hirviendo a 100°C — 8 min al dente (preparación: Pasta mexicana con carne).','Licúa tomate y sofríe para la salsa; mezcla con la pasta.','Agrega crema y queso; sirve.'],'estufa','comida pasta rojo mexicano barato','Estufa fuego medio','100g pasta, tomate, crema, queso'],
+['Espagueti blanco con pollo','comida',22,780,53,2.40,['Cuece 100g de espagueti en agua hirviendo a 100°C — 8 min al dente (preparación: Pasta mexicana con carne).','Mezcla con crema y 100g de pollo cocido.','Agrega queso y sirve caliente.'],'estufa','comida pasta pollo crema proteina subir de peso','Estufa fuego medio','100g pasta, crema, 100g pollo, queso'],
+['Macarrones con carne molida y queso','comida',25,710,45,2.30,['Cuece 100g de macarrón en agua hirviendo a 100°C — 8 min al dente (preparación: Pasta mexicana con carne).','Dora 100g de carne molida con tomate a fuego medio.','Mezcla todo con queso y sirve.'],'estufa','comida pasta carne queso subir de peso','Estufa fuego medio','100g pasta, 100g carne molida, tomate, queso'],
+['Arroz a la mexicana con huevo','comida',20,440,18,1.30,['Sofríe arroz con tomate licuado hasta dorar.','Agrega agua/caldo y cuece tapado a fuego bajo.','Sirve con 2 huevos estrellados.'],'estufa','comida arroz huevo mexicana barato','Estufa fuego bajo','1 taza arroz, tomate, 2 huevos, verduras'],
 ['Arroz frito con pollo y verduras','comida',15,560,42,2.00,['Calienta arroz cocido en sartén con poco aceite.','Agrega 100g de pollo, verduras y 1 huevo.','Saltea con salsa de soya y sirve.'],'sarten','comida arroz pollo verduras meal prep subir de peso','Sartén fuego alto','1 taza arroz cocido, 100g pollo, 1 huevo, verduras congeladas'],
-['Pasta con atún y crema','comida',20,690,44,2.20,['Cuece 100g de pasta.','Mezcla con 1 lata de atún, crema y elote.','Calienta y sirve.'],'estufa','comida pasta atun crema barato subir de peso','Estufa fuego medio','100g pasta, atún lata, crema, elote'],
+['Pasta con atún y crema','comida',20,690,44,2.20,['Cuece 100g de pasta en agua hirviendo a 100°C — 8 min al dente (preparación: Pasta mexicana con carne).','Mezcla con 1 lata de atún, crema y elote.','Calienta y sirve.'],'estufa','comida pasta atun crema barato subir de peso','Estufa fuego medio','100g pasta, atún lata, crema, elote'],
 // ----- SOPAS Y CALDOS -----
 ['Caldo de res (cocido)','comida',60,560,44,2.80,['Cuece 150g de res con agua y sal 40 min.','Agrega papa, zanahoria, elote y calabacita.','Hierve hasta suaves; sirve con limón y tortillas.'],'estufa','comida caldo res verduras reconstituyente','Estufa fuego bajo','150g res, papa, zanahoria, elote, calabacita'],
 ['Sopa de tortilla','comida',25,640,45,2.00,['Prepara caldo de tomate con chile.','Agrega tiras de tortilla frita al servir.','Corona con 80g de pollo, aguacate, crema y queso.'],'estufa','comida sopa pollo tortilla subir de peso','Estufa fuego medio','caldo de tomate, tortillas, 80g pollo, aguacate, queso, crema'],
 ['Sopa de lentejas con chorizo','comida',35,520,30,1.60,['Cuece lentejas con agua 25 min.','Agrega chorizo dorado, tomate y cebolla.','Hierve 10 min más y sirve.'],'estufa','comida sopa lenteja chorizo proteina','Estufa fuego bajo','1 taza lentejas, chorizo, tomate, cebolla'],
-['Crema de brócoli con queso','cena',25,470,24,1.80,['Cuece brócoli y licúalo con leche.','Regresa a la olla con crema y queso.','Calienta sin hervir y sirve.'],'estufa','cena sopa brocoli queso vegetariano','Estufa fuego bajo','2 tazas brócoli, 1 taza leche, crema, queso'],
+['Crema de brócoli con queso','cena',25,470,24,1.80,['Cuece el brócoli al vapor 5 min y licúalo con leche (preparación: Verduras cocidas al vapor con limón y chile).','Regresa a la olla con crema y queso.','Calienta a fuego bajo (sin hervir) y sirve.'],'estufa','cena sopa brocoli queso vegetariano','Estufa fuego bajo','2 tazas brócoli, 1 taza leche, crema, queso'],
 ['Pozole rápido de pollo','comida',30,480,38,2.40,['Calienta hominy de lata con caldo y chile.','Agrega 100g de pollo deshebrado.','Sirve con lechuga, rábano y tostadas.'],'estufa','comida pozole pollo caldo mexicana','Estufa fuego medio','hominy lata, 100g pollo, chile, tostadas'],
 // ----- AMERICANAS ACCESIBLES -----
-['Mac and cheese con pollo','comida',25,780,58,2.40,['Cuece 100g de pasta.','Prepara salsa de queso con leche y funde.','Mezcla con 100g de pollo y sirve.'],'estufa','comida pasta queso pollo americano subir de peso','Estufa fuego medio','100g pasta, queso, 1 taza leche, 100g pollo'],
-['Hamburguesa casera','comida',20,600,46,2.30,['Forma una carne de 120g y ásala a tu término.','Tuesta el pan y arma con queso y verduras.','Sirve con papas si quieres más calorías.'],'sarten','comida proteina carne hamburguesa americano subir de peso','Sartén fuego alto','120g carne molida, pan de hamburguesa, queso, lechuga, tomate'],
-['Sloppy joe','comida',20,520,39,1.90,['Dora 120g de carne molida.','Agrega salsa de tomate dulce y sazona.','Sirve dentro de pan tostado.'],'estufa','comida carne americano sloppy joe barato','Estufa fuego medio','120g carne molida, salsa de tomate, pan de hamburguesa'],
-['Chili con carne','comida',30,560,47,2.20,['Dora 150g de carne molida con cebolla.','Agrega frijoles, tomate y especias.','Hierve 20 min y sirve con totopos.'],'estufa','comida carne frijol chili americano proteina','Estufa fuego bajo','150g carne molida, frijol, tomate, especias'],
-['Pollo BBQ con arroz','comida',25,560,50,2.30,['Dora 150g de pollo en trozos.','Baña con salsa BBQ y glasea 5 min.','Sirve con 1 taza de arroz.'],'sarten','comida proteina pollo bbq arroz meal prep subir de peso','Sartén fuego medio','150g pollo, salsa BBQ, 1 taza arroz cocido'],
+['Mac and cheese con pollo','comida',25,780,58,2.40,['Cuece 100g de pasta en agua hirviendo a 100°C — 8 min al dente (preparación: Pasta mexicana con carne).','Prepara salsa de queso con leche y funde.','Mezcla con 100g de pollo y sirve.'],'estufa','comida pasta queso pollo americano subir de peso','Estufa fuego medio','100g pasta, queso, 1 taza leche, 100g pollo'],
+['Hamburguesa casera','comida',20,600,46,2.30,['Forma una carne de 120g y ásala a tu término.','Tuesta el pan en la misma plancha caliente 1-2 min hasta que dore y arma con queso y verduras.','Sirve con papas si quieres más calorías.'],'sarten','comida proteina carne hamburguesa americano subir de peso','Sartén fuego alto','120g carne molida, pan de hamburguesa, queso, lechuga, tomate'],
+['Sloppy joe','comida',20,520,39,1.90,['Dora 120g de carne molida a fuego medio.','Agrega salsa de tomate dulce y sazona.','Sirve dentro de pan tostado.'],'estufa','comida carne americano sloppy joe barato','Estufa fuego medio','120g carne molida, salsa de tomate, pan de hamburguesa'],
+['Chili con carne','comida',30,560,47,2.20,['Dora 150g de carne molida con cebolla: sartén BIEN caliente, no la muevas 4 min — deja que dore (preparación: Carne molida con calabaza).','Agrega frijoles, tomate y especias.','Hierve 20 min y sirve con totopos.'],'estufa','comida carne frijol chili americano proteina','Estufa fuego bajo','150g carne molida, frijol, tomate, especias'],
+['Pollo BBQ con arroz','comida',25,560,50,2.30,['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Dora 150g de pollo en trozos a fuego medio.','Baña con salsa BBQ y glasea 5 min.','Sirve con 1 taza de arroz.'],'sarten','comida proteina pollo bbq arroz meal prep subir de peso','Sartén fuego medio','150g pollo, salsa BBQ, 1 taza arroz cocido'],
 ['Costillas BBQ al horno','comida',150,740,39,3.20,['Sazona 200g de costillas de cerdo.','Hornea a 150°C (300°F) tapadas 2 h.','Baña con BBQ y hornea 10 min más; sirve con papa.'],'horno','comida al horno cerdo bbq costillas subir de peso','Horno 150°C / 300°F','200g costilla de cerdo, salsa BBQ, 1 papa'],
 ['Chicken tenders al horno con papas','comida',30,560,50,2.20,['Empaniza 150g de pollo en tiras.','Hornea a 200°C (400°F) 20 min volteando.','Sirve con papas al horno y aderezo.'],'horno','comida al horno pollo empanizado meal prep americano','Horno 200°C / 400°F','150g pollo, pan molido, 1 huevo, 1 papa'],
-['Arroz con pollo cremoso al horno','comida',45,680,45,2.40,['Mezcla arroz cocido, 100g de pollo, crema y verduras.','Pon en molde y cubre con queso.','Hornea a 190°C (375°F) 20 min.'],'horno','comida al horno arroz pollo crema casserole subir de peso','Horno 190°C / 375°F','1 taza arroz cocido, 100g pollo, crema, queso, verduras congeladas'],
-['Grilled cheese con jamón','comida',10,470,32,1.50,['Arma un sándwich con queso y 40g de jamón.','Dora en sartén con poca mantequilla por ambos lados.','Sirve caliente y crujiente.'],'sarten','comida americano queso jamon rapido','Sartén fuego medio','2 rebanadas pan, queso, 40g jamón'],
+['Arroz con pollo cremoso al horno','comida',45,680,45,2.40,['Cuece el arroz como en Caldo de pollo con arroz: agrégalo al agua hirviendo, baja a fuego medio y cocina 15 min.','Mezcla arroz cocido, 100g de pollo, crema y verduras.','Pon en molde y cubre con queso.','Hornea a 190°C (375°F) 20 min.'],'horno','comida al horno arroz pollo crema casserole subir de peso','Horno 190°C / 375°F','1 taza arroz cocido, 100g pollo, crema, queso, verduras congeladas'],
+['Grilled cheese con jamón','comida',10,470,32,1.50,['Arma un sándwich con queso y 40g de jamón.','Dora en sartén a fuego medio con poca mantequilla por ambos lados.','Sirve caliente y crujiente.'],'sarten','comida americano queso jamon rapido','Sartén fuego medio','2 rebanadas pan, queso, 40g jamón'],
 ['Quesadilla americana de pollo y queso','comida',12,600,51,2.20,['Rellena una tortilla de harina con 100g de pollo y queso.','Dora en sartén hasta que funda el queso.','Corta y sirve con salsa o crema.'],'sarten','comida proteina pollo queso quesadilla rapido subir de peso','Sartén fuego medio','tortilla de harina, 100g pollo, queso']
 ].forEach(r=>add(r[1],r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10]));
 
 // 🌭🧂🍿💧🥩 MÁS VARIEDAD: hotdogs, sazonadores, palomitas, sueros y guisos de carne molida. Precios se ajustan a Maui abajo.
 [
 // ----- HOTDOGS -----
-['Hotdogs clásicos (2)','comida',12,560,22,2.00,['Hierve o dora 2 salchichas.','Calienta 2 panes para hotdog.','Arma con cebolla, tomate, catsup, mostaza y mayonesa.'],'estufa','comida hotdog americano rapido subir de peso','Estufa fuego medio','2 salchichas, 2 panes para hotdog, cebolla, tomate, catsup, mostaza'],
+['Hotdogs clásicos (2)','comida',12,560,22,2.00,['Dora 2 salchichas en sartén a fuego medio 5-7 min girando (o hiérvelas 5 min), hasta que estén doradas y calientes al centro.','Calienta 2 panes para hotdog.','Arma con cebolla, tomate, catsup, mostaza y mayonesa.'],'estufa','comida hotdog americano rapido subir de peso','Estufa fuego medio','2 salchichas, 2 panes para hotdog, cebolla, tomate, catsup, mostaza'],
 ['Hotdog estilo Sonora','comida',15,540,22,2.20,['Envuelve la salchicha en tocino y dórala.','Calienta el pan y unta frijoles.','Agrega tomate, cebolla, mayonesa, mostaza y salsa.'],'estufa','comida hotdog sonora tocino subir de peso','Estufa fuego medio','1 salchicha, 1 rebanada tocino, 1 pan para hotdog, ½ taza frijol, tomate, cebolla'],
-['Hotdog con chili y queso','comida',15,540,33,2.30,['Dora 1 salchicha y caliéntala en el pan.','Cubre con chili de carne caliente.','Corona con queso rallado.'],'estufa','comida hotdog chili queso americano subir de peso','Estufa fuego medio','1 salchicha, 1 pan para hotdog, chili de carne, queso'],
+['Hotdog con chili y queso','comida',15,540,33,2.30,['Dora 1 salchicha en sartén a fuego medio 5-7 min girando, hasta que esté dorada y caliente al centro, y caliéntala en el pan.','Cubre con chili de carne caliente.','Corona con queso rallado.'],'estufa','comida hotdog chili queso americano subir de peso','Estufa fuego medio','1 salchicha, 1 pan para hotdog, chili de carne, queso'],
 ['Hotdogs al horno para varios','comida',20,560,22,2.00,['Precalienta el horno a 200°C (400°F).','Acomoda salchichas en sus panes con queso.','Hornea 10-12 min hasta dorar; sirve con tus toppings.'],'horno','comida al horno hotdog meal prep americano','Horno 200°C / 400°F','2 salchichas, 2 panes para hotdog, queso'],
 ['Banderillas (corn dogs) caseras','snack',20,420,11,1.50,['Prepara masa de harina de maíz espesa.','Cubre las salchichas en palito y fríe hasta dorar.','Sirve con catsup y mostaza.'],'sarten','snack antojito hotdog banderilla americano','Sartén fuego medio','2 salchichas, harina de maíz, 1 huevo, aceite'],
 // ----- SAZONADORES / ESPECIAS -----
@@ -4204,15 +4207,15 @@ function openThermomixGuide(){
 ['Agua de chía con limón y sal','suero',10,120,2,0.45,['Remoja 1 cucharada de chía en agua 10 min.','Agrega limón, una pizca de sal y azúcar o miel.','Toma frío; hidrata y da energía en el trabajo.'],'sin cocinar','suero hidratacion chia limon trabajo calor','Frío','1 litro agua, 1 cucharada chía, limón, sal, azúcar'],
 ['Suero de naranja y miel','suero',5,130,1,0.55,['Mezcla el jugo de 2 naranjas con 2 tazas de agua.','Agrega 1 cucharada de miel y una pizca de sal.','Toma frío para reponer líquidos y energía.'],'sin cocinar','suero hidratacion naranja miel trabajo calor','Frío','2 naranjas, 2 tazas agua, miel, sal'],
 // ----- GUISOS DE CARNE MOLIDA -----
-['Picadillo con papa y zanahoria','comida',25,620,43,2.20,['Dora 150g de carne molida.','Agrega papa y zanahoria en cubos con tomate licuado.','Cuece 15 min hasta suave; sirve con arroz o tortillas.'],'estufa','comida carne molida guiso papa picadillo subir de peso','Estufa fuego medio','150g carne molida, 1 papa, zanahoria, tomate'],
-['Carne molida con calabacitas','comida',22,480,42,2.10,['Dora 150g de carne molida con cebolla.','Agrega calabacita en cubos, tomate y elote.','Cuece 12 min y sirve.'],'estufa','comida carne molida guiso calabacita verduras','Estufa fuego medio','150g carne molida, calabacita, tomate, elote'],
-['Carne molida con nopales','comida',22,420,41,1.90,['Cuece y escurre los nopales.','Dora 150g de carne molida y agrega salsa verde.','Incorpora los nopales y cuece 8 min.'],'estufa','comida carne molida guiso nopal verde','Estufa fuego medio','150g carne molida, nopales, salsa verde'],
-['Carne molida con chícharos y zanahoria','comida',22,620,32,2.20,['Dora 150g de carne molida.','Agrega chícharos, zanahoria y papa en cubos con tomate.','Cuece 15 min; sirve con arroz.'],'estufa','comida carne molida guiso verduras subir de peso','Estufa fuego medio','150g carne molida, chícharos, zanahoria, 1 papa, tomate'],
-['Carne molida a la mexicana','comida',18,520,42,1.90,['Dora 150g de carne molida.','Agrega tomate, cebolla y chile picados.','Cuece 8 min y sirve en tacos con tortillas.'],'estufa','comida carne molida guiso mexicana tacos','Estufa fuego medio','150g carne molida, tomate, cebolla, chile, 2 tortillas'],
-['Chiles rellenos de picadillo','comida',35,560,48,2.40,['Asa y pela 2 chiles poblanos; rellénalos de picadillo de carne.','Capea con huevo batido y dora en sartén.','Sirve en caldillo de tomate.'],'sarten','comida carne molida chile relleno picadillo mexicano','Sartén fuego medio','2 chiles poblanos, 150g carne molida, 1 huevo, tomate'],
-['Arroz rojo con carne molida','comida',25,620,43,2.10,['Dora 150g de carne molida.','Agrega 1 taza de arroz, tomate licuado y verduras.','Cuece tapado hasta que el arroz esté suave.'],'estufa','comida carne molida arroz guiso subir de peso','Estufa fuego bajo','150g carne molida, 1 taza arroz, tomate, verduras congeladas'],
-['Carne molida encebollada con papas','comida',22,700,31,2.10,['Dora 150g de carne molida con bastante cebolla.','Agrega 2 papas en cubos ya cocidas.','Sazona y sirve en tacos.'],'estufa','comida carne molida guiso papa cebolla subir de peso','Estufa fuego medio','150g carne molida, cebolla, 2 papas, especias'],
-['Carne molida con elote y crema','comida',22,720,45,2.30,['Dora 150g de carne molida.','Agrega elote, crema y un poco de queso.','Cuece 8 min y sirve con tortillas.'],'estufa','comida carne molida guiso elote crema subir de peso','Estufa fuego medio','150g carne molida, elote, crema, queso, 2 tortillas']
+['Picadillo con papa y zanahoria','comida',25,620,43,2.20,['Dora 150g de carne molida a fuego medio.','Agrega papa y zanahoria en cubos con tomate licuado.','Cuece 15 min hasta suave; sirve con arroz o tortillas.'],'estufa','comida carne molida guiso papa picadillo subir de peso','Estufa fuego medio','150g carne molida, 1 papa, zanahoria, tomate'],
+['Carne molida con calabacitas','comida',22,480,42,2.10,['Dora 150g de carne molida con cebolla a fuego medio.','Agrega calabacita en cubos, tomate y elote.','Cuece 12 min y sirve.'],'estufa','comida carne molida guiso calabacita verduras','Estufa fuego medio','150g carne molida, calabacita, tomate, elote'],
+['Carne molida con nopales','comida',22,420,41,1.90,['Cuece los nopales en agua con sal y cebolla — 10 min y escúrrelos (preparación: Ensalada de nopales con queso).','Dora 150g de carne molida a fuego medio y agrega salsa verde.','Incorpora los nopales y cuece 8 min.'],'estufa','comida carne molida guiso nopal verde','Estufa fuego medio','150g carne molida, nopales, salsa verde'],
+['Carne molida con chícharos y zanahoria','comida',22,620,32,2.20,['Dora 150g de carne molida a fuego medio.','Agrega chícharos, zanahoria y papa en cubos con tomate.','Cuece 15 min; sirve con arroz.'],'estufa','comida carne molida guiso verduras subir de peso','Estufa fuego medio','150g carne molida, chícharos, zanahoria, 1 papa, tomate'],
+['Carne molida a la mexicana','comida',18,520,42,1.90,['Dora 150g de carne molida a fuego medio.','Agrega tomate, cebolla y chile picados.','Cuece 8 min y sirve en tacos con tortillas.'],'estufa','comida carne molida guiso mexicana tacos','Estufa fuego medio','150g carne molida, tomate, cebolla, chile, 2 tortillas'],
+['Chiles rellenos de picadillo','comida',35,560,48,2.40,['Asa los 2 chiles poblanos enteros como en Rajas con crema (técnica): directo a la llama o comal seco 8 min, hasta que la piel quede negra y ampollada; mételos en bolsa 10 min, pélalos y rellénalos de picadillo de carne.','Capea con huevo batido y dora en sartén con aceite caliente (180°C) 2-3 min por lado, hasta que el capeado quede dorado y firme.','Sirve en caldillo de tomate.'],'sarten','comida carne molida chile relleno picadillo mexicano','Sartén fuego medio','2 chiles poblanos, 150g carne molida, 1 huevo, tomate'],
+['Arroz rojo con carne molida','comida',25,620,43,2.10,['Dora 150g de carne molida: sartén BIEN caliente, no la muevas 4 min — deja que dore (preparación: Carne molida con calabaza).','Agrega 1 taza de arroz, tomate licuado y verduras.','Cuece tapado hasta que el arroz esté suave.'],'estufa','comida carne molida arroz guiso subir de peso','Estufa fuego bajo','150g carne molida, 1 taza arroz, tomate, verduras congeladas'],
+['Carne molida encebollada con papas','comida',22,700,31,2.10,['Dora a fuego medio 150g de carne molida con bastante cebolla.','Agrega 2 papas en cubos ya cocidas.','Sazona y sirve en tacos.'],'estufa','comida carne molida guiso papa cebolla subir de peso','Estufa fuego medio','150g carne molida, cebolla, 2 papas, especias'],
+['Carne molida con elote y crema','comida',22,720,45,2.30,['Dora 150g de carne molida a fuego medio.','Agrega elote, crema y un poco de queso.','Cuece 8 min y sirve con tortillas.'],'estufa','comida carne molida guiso elote crema subir de peso','Estufa fuego medio','150g carne molida, elote, crema, queso, 2 tortillas']
 ].forEach(r=>add(r[1],r[0],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10]));
 
 // Precios ajustados a Maui/Hawái 2026 (estimado): la comida en Maui cuesta ~30% más que el mainland por el envío a la isla.
@@ -4249,7 +4252,7 @@ function addFull(o){
    methods:[{method:'instantpot',temp:'Instant Pot: presión 3 min',steps:['Usa Saltear para dorar el fideo.','Agrega el molido y el caldo.','Tapa, sella y cocina a presión alta 3 min.','Libera presión rápido con cuidado.']}]},
   {name:'Caldo de pollo con verduras',type:'sopa',time:40,k:260,p:26,carbs:18,grasas:9,cost:2.6,porciones:'4',dificultad:'Fácil',
    tags:'sopa proteina caldo pollo saludable ganar musculo',ingredients:'2 piezas de pollo, 1 zanahoria, 1 chayote, 1 papa, ¼ cebolla, cilantro, arroz opcional',
-   steps:['Hierve el pollo con cebolla y sal en 6 tazas de agua, retira espuma.','A los 20 min agrega las verduras en trozos.','Cocina 15 min más hasta que todo esté suave.','Sirve con cilantro, limón y arroz aparte.'],
+   steps:['Hierve el pollo con cebolla y sal en 6 tazas de agua — 20 min, retira espuma.','A los 20 min agrega las verduras en trozos.','Cocina 15 min más hasta que todo esté suave.','Sirve con cilantro, limón y arroz aparte.'],
    method:'estufa',temp:'Estufa: hervor suave',conservar:'Refrigerador; separa pollo y caldo si puedes.',duracion:'3-4 días.',recalentar:'Estufa hasta hervor o microondas 3 min.',llevarTrabajo:'Sí, en termo.',
    methods:[{method:'instantpot',temp:'Instant Pot: presión alta 15 min',steps:['Pon pollo, cebolla, sal y 6 tazas de agua.','Presión alta 15 min; libera natural 10 min.','Agrega verduras y usa Saltear 8 min, o presión 2 min más.','Sirve con cilantro y limón.']}]},
   // ---------- ARROCES ----------
@@ -4269,7 +4272,7 @@ function addFull(o){
    method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Microondas 2 min con 1 cda de agua o salsa.',llevarTrabajo:'Sí, en tóper.'},
   {name:'Espagueti a la crema con pollo',type:'pasta',time:25,k:470,p:24,carbs:55,grasas:17,cost:2.2,porciones:'4',dificultad:'Media',
    tags:'pasta crema proteina pollo ganar musculo ganar peso',ingredients:'250 g espagueti, 200 g pollo, 1 taza crema, ½ taza leche, queso, elote, mantequilla',
-   steps:['Cuece el espagueti al dente y escurre.','Cocina el pollo en tiras con sal y pimienta.','Mezcla crema, leche y un poco de queso; calienta sin hervir.','Integra el espagueti, el pollo y el elote en la salsa.','Sirve con más queso.'],
+   steps:['Cuece el espagueti al dente y escurre.','Cocina el pollo en tiras con sal y pimienta a fuego medio-alto 5-7 min, hasta que estén blancas y suelten jugo claro (interno 74°C).','Mezcla crema, leche y un poco de queso; calienta a fuego bajo, sin hervir.','Integra el espagueti, el pollo y el elote en la salsa.','Sirve con más queso.'],
    method:'estufa',temp:'Estufa: fuego bajo-medio',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Microondas 2 min con un chorrito de leche.',llevarTrabajo:'Sí, muy saciante.'},
   // ---------- POLLO COCIDO / DESHEBRADO ----------
   {name:'Pollo deshebrado para tacos',type:'pollococido',time:30,k:200,p:30,carbs:3,grasas:7,cost:2.4,porciones:'4',dificultad:'Fácil',
@@ -4310,21 +4313,21 @@ function addFull(o){
    method:'sin cocinar',temp:'Frío',conservar:'Refrigerador tapado.',duracion:'2 días.',recalentar:'No aplica.',llevarTrabajo:'Sí, en frasco con hielo.'},
   {name:'Tinga de pollo',type:'pollococido',time:30,k:230,p:27,carbs:10,grasas:9,cost:2.4,porciones:'4',dificultad:'Fácil',
    tags:'pollo deshebrado tinga proteina mexicana economica meal prep ganar musculo',ingredients:'2 pechugas cocidas y deshebradas, 3 jitomates, ¼ cebolla, 2 chipotles, 1 ajo, laurel',
-   steps:['Licúa jitomate, ajo, cebolla y chipotle.','Sofríe cebolla en rodajas 3 min.','Agrega el molido y el laurel; cocina 5 min.','Incorpora el pollo deshebrado y cocina 8 min.','Sirve en tostadas o tacos.'],
+   steps:['Hierve las pechugas en agua con sal a 100°C — 20 min y deshébralas.','Licúa jitomate, ajo, cebolla y chipotle.','Sofríe cebolla en rodajas 3 min.','Agrega el molido y el laurel; cocina 5 min.','Incorpora el pollo deshebrado y cocina 8 min.','Sirve en tostadas o tacos.'],
    method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'4 días; 3 meses congelada.',recalentar:'Sartén 4 min o microondas 90 s.',llevarTrabajo:'Ideal: tostadas, tortas, ensaladas.',
    methods:[{method:'instantpot',temp:'Instant Pot: presión alta 10 min',steps:['Pon pechugas, molido y laurel en la olla.','Presión alta 10 min; libera natural 5 min.','Deshebra dentro y reduce en Saltear 3 min.','Ajusta sal.']}]},
   {name:'Picadillo de res con papa',type:'comida',time:30,k:340,p:24,carbs:22,grasas:17,cost:2.8,porciones:'4',dificultad:'Fácil',
    tags:'comida mexicana economica res proteina meal prep ganar musculo',ingredients:'400 g carne molida, 1 papa, 1 zanahoria, 2 jitomates, ¼ cebolla, 1 ajo, chícharos',
-   steps:['Dora la carne molida con cebolla y ajo.','Agrega papa y zanahoria en cubos pequeños.','Licúa jitomate y viértelo; sazona.','Tapa y cocina 15 min hasta que la papa esté suave.','Sirve con arroz o en tacos.'],
+   steps:['Dora la carne molida con cebolla y ajo a fuego medio.','Agrega papa y zanahoria en cubos pequeños.','Licúa jitomate y viértelo; sazona.','Tapa y cocina 15 min hasta que la papa esté suave.','Sirve con arroz o en tacos.'],
    method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'4 días; congela bien.',recalentar:'Sartén 4 min o microondas 2 min.',llevarTrabajo:'Sí, muy rendidor con arroz.'},
   {name:'Frijoles charros',type:'sopa',time:35,k:280,p:16,carbs:34,grasas:9,cost:1.6,porciones:'4',dificultad:'Fácil',
    tags:'frijoles charros sopa economica mexicana proteina',ingredients:'2 tazas frijoles cocidos, 100 g tocino, 2 salchichas, 2 jitomates, chile, cilantro',
-   steps:['Dora el tocino y la salchicha en trozos.','Agrega cebolla, jitomate y chile picados; sofríe 5 min.','Incorpora los frijoles con su caldo.','Hierve 15 min y agrega cilantro al final.'],
+   steps:['Cuece los frijoles como en Frijoles de olla: olla normal 90 min a 2 h (o presión 35-40 min), sal al final.','Dora el tocino empezando en sartén FRÍO — 6 min, queda crujiente, y dora también la salchicha en trozos (preparación del tocino: Frijoles charros con tocino).','Agrega cebolla, jitomate y chile picados; sofríe 5 min.','Incorpora los frijoles con su caldo.','Hierve 15 min y agrega cilantro al final.'],
    method:'estufa',temp:'Estufa: hervor suave',conservar:'Refrigerador tapado.',duracion:'4 días.',recalentar:'Estufa o microondas 2-3 min.',llevarTrabajo:'Sí, en termo caliente.',
    methods:[{method:'instantpot',temp:'Instant Pot: presión 8 min',steps:['Dora tocino y salchicha en Saltear.','Agrega verduras y frijoles con caldo.','Presión alta 8 min; libera natural 5 min.','Cilantro al final.']}]},
   {name:'Rajas con crema y elote',type:'comida',time:22,k:260,p:9,carbs:20,grasas:16,cost:1.9,porciones:'4',dificultad:'Fácil',
    tags:'rajas crema comida mexicana vegetariana economica',ingredients:'4 chiles poblanos, 1 taza crema, ½ taza elote, ¼ cebolla, queso, mantequilla',
-   steps:['Asa, suda y pela los chiles; córtalos en rajas.','Acitrona la cebolla en mantequilla.','Agrega rajas y elote; cocina 5 min.','Incorpora la crema y el queso; calienta sin hervir.','Sirve con tortillas.'],
+   steps:['Asa los chiles poblanos enteros como en Rajas con crema (técnica): directo a la llama o comal seco 8 min, hasta que la piel quede negra y ampollada; mételos en bolsa 10 min, pélalos y córtalos en rajas.','Acitrona la cebolla en mantequilla.','Agrega rajas y elote; cocina 5 min.','Incorpora la crema y el queso; calienta a fuego bajo, sin hervir.','Sirve con tortillas.'],
    method:'estufa',temp:'Estufa: fuego bajo-medio',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Sartén o microondas 2 min.',llevarTrabajo:'Sí, con tortillas aparte.'},
   {name:'Atún a la mexicana',type:'comida',time:12,k:220,p:26,carbs:8,grasas:9,cost:2.0,porciones:'2',dificultad:'Fácil',
    tags:'atun proteina rapido economico sin cocinar meal prep ganar musculo',ingredients:'2 latas de atún, 2 jitomates, ¼ cebolla, chile serrano, cilantro, limón, aceite de oliva',
@@ -4332,7 +4335,7 @@ function addFull(o){
    method:'sin cocinar',temp:'Frío',conservar:'Refrigerador tapado.',duracion:'2 días.',recalentar:'No aplica, se come frío.',llevarTrabajo:'Ideal: alto en proteína y portátil.'},
   {name:'Huevos con machaca',type:'desayuno',time:12,k:300,p:42,carbs:6,grasas:20,cost:2.2,porciones:'2',dificultad:'Fácil',
    tags:'desayuno proteina machaca huevo norteño ganar musculo',ingredients:'4 huevos, 60 g machaca (o carne seca), 1 jitomate, ¼ cebolla, chile, aceite',
-   steps:['Hidrata la machaca 5 min en agua caliente si está muy seca.','Sofríe cebolla, jitomate y chile.','Agrega la machaca y cocina 3 min.','Vierte los huevos batidos y revuelve hasta cuajar.','Sirve con tortillas de harina.'],
+   steps:['Hidrata la machaca 5 min en agua caliente si está muy seca.','Sofríe cebolla, jitomate y chile a fuego medio.','Agrega la machaca y cocina 3 min.','Vierte los huevos batidos y revuelve hasta cuajar.','Sirve con tortillas de harina.'],
    method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'2 días.',recalentar:'Sartén 2 min (el microondas reseca el huevo).',llevarTrabajo:'Sí, en taco de harina.'},
   {name:'Bistec encebollado',type:'comida',time:18,k:290,p:30,carbs:6,grasas:16,cost:3.2,porciones:'2',dificultad:'Fácil',
    tags:'bistec res proteina comida mexicana ganar musculo',ingredients:'300 g bistec de res, 1 cebolla, 2 dientes ajo, salsa inglesa, aceite, sal y pimienta',
@@ -4378,11 +4381,11 @@ function addFull(o){
    method:'estufa',temp:'Estufa: fuego bajo-medio',conservar:'Refrigerador tapado.',duracion:'2-3 días.',recalentar:'Sartén suave o microondas 1-2 min.',llevarTrabajo:'Sí, en taper.'},
   {name:'Huevos cocidos estilo búfalo',type:'huevo',time:12,k:250,p:16,carbs:3,grasas:19,cost:1.2,porciones:'1',dificultad:'Fácil',
    tags:'huevo proteina rapido bufalo picante snack ganar musculo trabajo',ingredients:'3 huevos, 3 cdas salsa búfalo (tipo Frank o similar), 1 cda mantequilla, sal, apio opcional',
-   steps:['Cuece los huevos 10 min y pélalos.','Derrite la mantequilla y mézclala con la salsa búfalo.','Baña los huevos partidos con la salsa búfalo caliente.','Sirve como snack alto en proteína, con apio si quieres.'],
+   steps:['Cuece los huevos 10 min y pélalos.','Derrite la mantequilla a fuego bajo y mézclala con la salsa búfalo.','Baña los huevos partidos con la salsa búfalo caliente.','Sirve como snack alto en proteína, con apio si quieres.'],
    method:'estufa',temp:'Estufa: fuego bajo',conservar:'Refrigerador; salsa aparte si puedes.',duracion:'2-3 días.',recalentar:'Microondas 40-60 s.',llevarTrabajo:'Sí, excelente snack de proteína para el trabajo.'},
   {name:'Huevos rancheros',type:'huevo',time:12,k:320,p:16,carbs:22,grasas:18,cost:1.3,porciones:'1',dificultad:'Fácil',
    tags:'huevo proteina desayuno rancheros tortilla mexicana ganar musculo',ingredients:'2 huevos, 2 tortillas, 1 taza salsa roja o verde, aceite, frijoles opcional, queso',
-   steps:['Fríe ligeramente las tortillas en un poco de aceite.','Estrella los huevos en el mismo sartén al gusto.','Calienta la salsa aparte 3 min.','Pon las tortillas, encima los huevos y baña con la salsa.','Sirve con frijoles y queso.'],
+   steps:['Fríe ligeramente las tortillas en un poco de aceite a fuego medio.','Estrella los huevos en el mismo sartén al gusto.','Calienta la salsa aparte 3 min.','Pon las tortillas, encima los huevos y baña con la salsa.','Sirve con frijoles y queso.'],
    method:'estufa',temp:'Estufa: fuego medio',conservar:'Mejor recién hechos.',duracion:'1 día.',recalentar:'Sartén 2 min.',llevarTrabajo:'Regular; mejor recién hecho.'},
   {name:'Huevos duros con sazonador de especias',type:'huevo',time:12,k:180,p:19,carbs:2,grasas:13,cost:0.9,porciones:'1',dificultad:'Fácil',
    tags:'huevo proteina snack rapido especias economico ganar musculo trabajo',ingredients:'3 huevos, sal, pimienta, ajo en polvo, cebolla en polvo, pizca de comino y paprika (o Tajín)',
@@ -4434,11 +4437,11 @@ add('especia','Sal de ajo y hierbas',3,5,0,0.5,['Mezcla la sal con el ajo y las 
    methods:[{method:'thermomix',temp:'TM5: 100°C 25 min, vel cuchara',steps:['Sofríe cebolla, ajo y jitomate 120°C 4 min, vel 1.','Agrega verduras en trozos y 1.2 L de caldo.','100°C, 25 min, giro a la izquierda, vel cuchara.','Sirve con cilantro y limón.']}]},
   {name:'Verduras salteadas con ajo',type:'verdura',time:15,k:160,p:6,carbs:18,grasas:8,cost:1.4,porciones:'2',dificultad:'Fácil',
    tags:'verdura verduras cocidas salteado ajo rapido guarnicion ganar musculo',ingredients:'2 tazas de verduras ya cocidas (brócoli, zanahoria, ejote), 2 dientes de ajo, aceite, salsa de soya, sal',
-   steps:['Calienta aceite y dora el ajo picado 30 seg.','Agrega las verduras ya cocidas.','Saltea 4-5 min a fuego alto.','Termina con un chorrito de salsa de soya.'],
+   steps:['Cuece las verduras al vapor como en Verduras cocidas al vapor con limón y chile: primero las duras 8 min, luego las suaves 5 min más.','Calienta aceite y dora el ajo picado 30 seg.','Agrega las verduras ya cocidas.','Saltea 4-5 min a fuego alto.','Termina con un chorrito de salsa de soya.'],
    method:'estufa',temp:'Estufa: fuego alto',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Sartén 3 min.',llevarTrabajo:'Sí; buena forma de reusar verduras cocidas.'},
   {name:'Arroz con verduras cocidas y pollo',type:'verdura',time:20,k:420,p:30,carbs:48,grasas:12,cost:2.4,porciones:'2',dificultad:'Fácil',
    tags:'verdura verduras cocidas arroz pollo bowl proteina ganar musculo trabajo comida completa',ingredients:'2 tazas arroz cocido, 1 taza verduras cocidas, 1 pechuga cocida en cubos, ajo, salsa de soya, aceite',
-   steps:['Calienta aceite con ajo.','Agrega el arroz y saltea 2 min.','Añade las verduras y el pollo en cubos.','Saltea 5 min, sazona con soya y sirve.'],
+   steps:['Cuece las verduras al vapor como en Verduras cocidas al vapor con limón y chile: primero las duras 8 min, luego las suaves 5 min más.','Hierve la pechuga en agua con sal a 100°C — 20 min y córtala en cubos.','Calienta aceite con ajo a fuego medio-alto.','Agrega el arroz y saltea 2 min.','Añade las verduras y el pollo en cubos.','Saltea 5 min, sazona con soya y sirve.'],
    method:'estufa',temp:'Estufa: fuego medio-alto',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Sartén o microondas 2-3 min.',llevarTrabajo:'Ideal: comida completa para el trabajo.'},
   {name:'Crema de brócoli',type:'verdura',time:25,k:200,p:9,carbs:18,grasas:11,cost:1.6,porciones:'3',dificultad:'Fácil',
    tags:'verdura verduras cocidas crema brocoli sopa saludable',ingredients:'1 brócoli grande, 1 papa, ¼ cebolla, 1 ajo, 1 taza leche, caldo, aceite, sal, pimienta',
@@ -12597,6 +12600,34 @@ const BASES = [
        truco:'💡 De una sola olla sacas pollo Y caldo. El caldo se congela y sirve para arroz, sopas, todo.'}
     ],
     tip:'Haz doble el domingo. Se usa en tacos, tinga, tostadas, ensaladas, wraps. Dura 4 días en el refri y meses congelado.'
+  },
+  {
+    id:'cerdococido', nombre:'Cerdo cocido básico', ic:'🐖', min:60, rinde:'varía', costo:5.00,
+    re:/cerdo cocido|puerco cocido/i,
+    ing:['Cerdo en trozos (pierna o espaldilla)','Agua suficiente para cubrir','Sal'],
+    pasos:[
+      {t:'Corta el cerdo en trozos medianos y ponlos en una olla. Cúbrelos de agua.', min:5},
+      {t:'Agrega sal y hierve a fuego suave (no hirviendo fuerte).', min:5,
+       truco:'💡 Hervor suave: así queda tierno y no seco.'},
+      {t:'Cocina 40-60 min según el tamaño de los trozos. Es tiempo orientativo.', min:50,
+       ojo:'👁️ El criterio principal: que esté COMPLETAMENTE cocido y tierno. Pincha un trozo — si se deshace fácil, ya está.',
+       truco:'🌡️ Referencia de seguridad: 63°C (145°F) de temperatura interna para cortes enteros de cerdo.'},
+      {t:'Sácalo, deja entibiar y úsalo deshebrado o en cubos según tu receta.', min:10,
+       ojo:'👁️ Tibio se deshebra fácil; frío se endurece.'}
+    ],
+    tip:'Base reutilizable SIN salsa: sirve para salsas, arroz frito, tacos y guisos. Congela en porciones y dura semanas.'
+  },
+  {
+    id:'pantostado', nombre:'Pan tostado', ic:'🍞', min:3, rinde:'varía', costo:0.50,
+    re:/pan tostado|rebanadas de pan/i,
+    ing:['Pan en rebanadas'],
+    pasos:[
+      {t:'Pon las rebanadas de pan en el tostador.', min:1},
+      {t:'Tuesta 2-3 min, hasta que estén doradas y crujientes.', min:3,
+       ojo:'👁️ Listo cuando están doradas por fuera y crujientes.',
+       truco:'💡 El tiempo base (2-3 min) NO cambia con más rebanadas: haz tandas en el tostador.'}
+    ],
+    tip:'Solo el tostador está validado (2-3 min). Variantes pendientes: Horno ⏳ y Sartén/comal ⏳ — se agregarán cuando haya tiempos confirmados.'
   },
   {
     id:'arrozrojo', nombre:'Arroz rojo (mexicano)', ic:'🍚', min:28, rinde:'6 tazas', costo:2.00,
@@ -25440,8 +25471,8 @@ function buscarComponenteEnRecetas(label){
    NUNCA completa datos automáticamente: solo marca. */
 var RECETA_ESTADOS=['cocido','cocida','cocidos','cocidas','hervido','hervida','hervidos','hervidas','dorado','dorada','dorados','doradas','asado','asada','asados','asadas','sofrito','sofrita','sofritos','sofritas','reducido','reducida','reducidos','reducidas','caramelizado','caramelizada','caramelizados','caramelizadas','derretido','derretida','derretidos','derretidas','escurrido','escurrida','escurridos','escurridas','precocido','precocida','precocidos','precocidas','tostado','tostada','tostados','tostadas','blanqueado','blanqueada','blanqueados','blanqueadas','reposado','reposada','reposados','reposadas','marinado','marinada','marinados','marinadas'];
 var RECETA_ESTADOS_RX=new RegExp('\\b('+RECETA_ESTADOS.join('|')+')\\b','i');
-var RECETA_COCCION_VERB=/hierve|hiervan|hervir|cuece|cueza|cuecen|cocina|cocinar|cocínal|cocinal|dora|doren|dorar|asa|asá|tuesta|tuéstal|sofríe|sofría|fríe|fría|calienta|hornea|saltea|marina|derrite|escurre|blanquea|reduce|carameliza|reposa/i;
-var RECETA_CRITERIO_RX=/hasta que|hasta estar|cuando (esté|estén|cambie|empiece|empiecen)|que espese|que dore|que esté|que estén|que quede|que queden|suave|suaves|tierno|tiernos|firme|firmes|al dente|transparente|dorad|cremoso|cremosa|espesa|se deshaga|se deshagan|empiece a hervir|empiecen a hervir|burbuje|°C|fuego (medio|alto|bajo|medio-alto|medio-bajo)/i;
+var RECETA_COCCION_VERB=/\b(hierve|hiervan|hervir|cuece|cueza|cuecen|cocina|cocinar|cocínal[oa]s?|cocinal[oa]s?|dora|doren|dorar|asa|asá|tuesta|tuéstal[oa]s?|sofríe|sofría|fríe|calienta|hornea|saltea|marina|derrite|escurre|blanquea|reduce|carameliza|reposa)\b/i;
+var RECETA_CRITERIO_RX=/hasta que|hasta estar|cuando (esté|estén|cambie|empiece|empiecen)|en cuanto se desmenuce|se desmenuce|que espese|que dore|que esté|que estén|que quede|que queden|suave|suaves|tierno|tiernos|firme|firmes|al dente|transparente|dorad|cremoso|cremosa|espesa|se deshaga|se deshagan|empiece a hervir|empiecen a hervir|burbuje|sin hervir|sin que hierva|no dejes hervir|hasta dorar|funda el queso|derrita|hasta que humee|hasta que suelte grasa|llegue a \d+\s*°C|según empaque|según instrucciones|según las instrucciones|°C|fuego (medio|alto|bajo|medio-alto|medio-bajo)/i;
 function recetaSujetoDe(ing){
   // Hasta 2 palabras antes del estado ("salsa verde cocida" → sujeto "salsa verde"),
   // quitando medidas/artículos al inicio ("½ taza arroz cocido" → "arroz").
@@ -25519,6 +25550,8 @@ function recetaAuditar(r){
   });
   // 2) pasos de cocción sin tiempo ni criterio
   (r&&r.steps||[]).forEach(function(s,i){
+    if(RECETA_PASO_TIP.test(s))return;
+    if(RECETA_PASO_ESCURRIR.test(s)&&!RECETA_COCCION_VERB.test(String(s).replace(RECETA_PASO_ESCURRIR,'')))return; // escurrido puro = manejo
     if(RECETA_COCCION_VERB.test(s)&&!recetaTiempoPaso(s)&&!RECETA_CRITERIO_RX.test(s)){
       problemas.push({tipo:'paso-sin-criterio',paso:i+1,texto:String(s).slice(0,80)});
     }
@@ -25672,7 +25705,12 @@ function recetaInconsistenciaTituloPasos(r){
   var metodo=String(r&&r.method||'');
   var crudo=/(crud[oa]s?|fresc[oa]s?)/i.test(nombre)||/sin cocinar|crudo/i.test(metodo);
   if(!crudo)return null;
-  var cocina=(r&&r.steps||[]).some(function(s){return RECETA_COCCION_VERB_PROFUNDO.test(s)&&recetaTiempoPaso(s);});
+  var cocina=(r&&r.steps||[]).some(function(s){
+    // Pasos con atribución explícita de preparación base ("(preparación: …)") NO cuentan como
+    // cocción propia de la receta: son el enlace a otra preparación ya validada.
+    if(/\(preparación:/.test(s))return false;
+    return RECETA_COCCION_VERB_PROFUNDO.test(s)&&recetaTiempoPaso(s);
+  });
   if(!cocina)return null;
   return 'nombre/método indica crudo pero los pasos cocinan con tiempo';
 }
@@ -25689,11 +25727,13 @@ function recetaScoreSubreceta(padre,problema,subIdx){
   if(rxS.test(nombre)){score+=2;motivos.push('nombre menciona el ingrediente');}
   if(verbo&&new RegExp(verbo,'i').test(nombre)){score+=1;motivos.push('título indica el método ('+problema.estado+')');}
   var pasoPrepara=(sub.steps||[]).some(function(s){
-    return RECETA_COCCION_VERB_PROFUNDO.test(s)&&recetaTiempoPaso(s)&&(!verbo||new RegExp(verbo,'i').test(s));
+    // El sujeto del problema debe aparecer en el MISMO paso que cuece:
+    // "Hierve la papa 10 min" NO explica "cerdo cocido".
+    return rxS.test(s)&&RECETA_COCCION_VERB_PROFUNDO.test(s)&&recetaTiempoPaso(s)&&(!verbo||new RegExp(verbo,'i').test(s));
   });
   if(pasoPrepara){score+=2;motivos.push('paso con verbo de preparación y tiempo');}
   if(rxS.test(nombre)||rxS.test(ing.split(',').slice(0,2).join(' '))){score+=1;motivos.push('ingrediente protagonista');}
-  if(verbo&&(sub.steps||[]).some(function(s){return new RegExp(verbo,'i').test(s);})){score+=2;motivos.push('produce el estado solicitado ('+problema.estado+')');}
+  if(verbo&&(sub.steps||[]).some(function(s){return new RegExp(verbo,'i').test(s)&&rxS.test(s);})){score+=2;motivos.push('produce el estado solicitado ('+problema.estado+')');}
   // PENALIZACIONES
   var nIng=(sub.ingredients||'').split(',').filter(Boolean).length;
   if(nIng>4){score-=1;motivos.push('muchos ingredientes');}
@@ -25786,6 +25826,46 @@ function recetaTM5ListaHTML(r,c){
   if(man)h+='<div style="font-weight:900;font-size:12px;color:#63706a;margin-top:8px">🔧 MANUAL / MONTAJE</div>'+man;
   h+='</div>';
   return h;
+}
+/* ===== Auditoría de pasos culinarios (NO destructiva) =====
+   🟢 suficiente · 🟡 usable, falta precisión · 🔴 incompleto/adivinar.
+   Un criterio válido (aunque sin minutos) NO es error. */
+var RECETA_PASO_REPOSO=/\breposa|reposar|deja reposar|dejar reposar|repose\b/i;
+var RECETA_PASO_DORAR=/\bdorar\b|\bdore\b|\bdoren\b/i;
+var RECETA_PASO_ESCURRIR=/\bescurre|escurrir|escúrrelo|escúrrela/i;
+var RECETA_PASO_SAZONAR=/\bsazona|sazonar|sal al gusto|sal y pimienta al gusto|prueba y ajusta/i;
+var RECETA_PASO_HASTA=/\bhasta (que|estar|que esté|que estén)|hasta espesar|hasta suave|hasta cambiar color|hasta que espese|hasta que suave/i;
+var RECETA_PASO_TEMP=/\d+\s*°C|fuego (medio|alto|bajo|medio-alto|medio-bajo)/i;
+/* Descripciones y consejos, NO instrucciones de cocción: negaciones, tips y
+   explicaciones pasivas. No deben activar verbos de cocción. */
+var RECETA_PASO_TIP=/no se dora|no dora\.|no ahuma|no salpica|se hierve en su agua|se cuece rapidísimo|cómo usarlo|para cocer el arroz|el chiste:|la grasa se queda abajo|no tienes tiempo de cocinar|no hay tiempo de cocinar|sin cocinar nada|sin cocinar\.|se derrite dentro|se ablanda pero no se derrite|el calor de la papa|sal solo por fuera|la magra queda seca|no amases|snack rápido de proteína|quedan mejor que recién/i;
+function recetaClasificarPaso(s){
+  var t=String(s||'');
+  // 0) descripciones/consejos (negaciones y tips): no son instrucciones de cocción.
+  if(RECETA_PASO_TIP.test(t))return {nivel:'🟢',tipo:'consejo-descripcion'};
+  var tieneTiempo=!!recetaTiempoPaso(t);
+  var tieneCriterio=RECETA_CRITERIO_RX.test(t);
+  var esCoccion=RECETA_COCCION_VERB.test(t);
+  // 1) sazonar/servir con criterio razonable → 🟢
+  if(!esCoccion)return {nivel:'🟢',tipo:'neutro'};
+  if(RECETA_PASO_SAZONAR.test(t)&&!/hierve|cuece|cocina|fríe|asa|dora/.test(t))return {nivel:'🟢',tipo:'sazonar-ok'};
+  // 2) con tiempo o criterio suficiente → 🟢
+  if(tieneTiempo)return {nivel:'🟢',tipo:'con-tiempo'};
+  if(tieneCriterio&&!/hasta/.test(t))return {nivel:'🟢',tipo:'con-criterio'};
+  // 2a) "hasta que…" con señal objetiva (humee/suelte grasa/llegue a X°C) = criterio suficiente → 🟢.
+  if(/hasta que (humee|suelte grasa)|llegue a \d+\s*°C/i.test(t))return {nivel:'🟢',tipo:'criterio-hasta'};
+  // 2b) dorar con señal explícita ("hasta dorar"/"que dore") = criterio suficiente → 🟢.
+  if(/\b(dora|dorar|dore|doren)\b/i.test(t)&&/(hasta dorar|hasta que dore|hasta dorado|que dore|suene y dore|dorad[oa]|funda el queso|derrita)/i.test(t))return {nivel:'🟢',tipo:'criterio-dorado'};
+  // 3) patrones específicos
+  if(RECETA_PASO_REPOSO.test(t))return {nivel:'🟡',tipo:'reposar-sin-tiempo'};
+  if(RECETA_PASO_DORAR.test(t))return {nivel:'🟡',tipo:'dorar-sin-senal'};
+  // escurrir es manejo, NO cocción: sin otro verbo de cocción en el paso → 🟢;
+  // si hay otro verbo ("cuece y escurre"), ese verbo se evalúa con sus reglas.
+  if(RECETA_PASO_ESCURRIR.test(t)&&!RECETA_COCCION_VERB.test(t.replace(RECETA_PASO_ESCURRIR,'')))return {nivel:'🟢',tipo:'escurrido-manejo'};
+  if(RECETA_PASO_HASTA.test(t))return {nivel:'🟡',tipo:'hasta-criterio-vago'};
+  if(RECETA_PASO_TEMP.test(t))return {nivel:'🟡',tipo:'temperatura-sin-tiempo'};
+  if(/\b(pon a hervir|deja hervir|dejar hervir|pon a cocer|deja cocer|sancocha|sancochar|cocer|hervir|(?<!para )hornear|vapor|escalfa|fr[ií]e|asa|tuesta|dora|cuece|cocina|hierve)\b/i.test(t)&&!/\bmin\b|\bseg\b|\bhora\b/i.test(t))return {nivel:'🔴',tipo:'cocinar-sin-tiempo-ni-criterio'};
+  return {nivel:'🟡',tipo:'sin-criterio-claro'};
 }
 function recipeCardFill(el){
   // Render perezoso del cuerpo de la receta: solo se arma la ficha completa al abrir la tarjeta.
