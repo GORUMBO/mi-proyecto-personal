@@ -4,3 +4,8 @@ dist/
 .DS_Store
 # Sesión de diagnóstico local (JWT del usuario): NUNCA se sube a Git.
 /session-token.txt
+
+# Salidas regenerables de las herramientas de auditoría culinaria (tools/)
+tools/auditoria-report.json
+tools/recetas-dump.json
+tools/*.txt
