@@ -19006,6 +19006,8 @@ ${balanceHoyHTML()}
   <button class="btn" onclick="exportDiary()" style="padding:8px 14px;font-size:13px">📥 CSV</button>
 </div>
 
+${completarCardHTML()}
+
 ${secComidasGuardadas()}
 ${secHistorialCambios()}
 ${mealSection('breakfast')}
@@ -25213,6 +25215,15 @@ function abrirReceta(idx,modo){
   }
   window._recetaPila=pila;
   window._recetaVista={idx:idx,modo:modo||'rapido',personas:null,paso:0,componentesListos:{},subAbierta:null,metodo:'normal',prepAbierta:null};
+  // Recientes para Completar fácil (solo los últimos 10, por nombre de receta).
+  try{
+    state.recetasRecientes=state.recetasRecientes||[];
+    var _rid=(typeof recipeIdOf==='function')?recipeIdOf(idx):idx;
+    state.recetasRecientes=state.recetasRecientes.filter(function(x){return x!==_rid;});
+    state.recetasRecientes.unshift(_rid);
+    if(state.recetasRecientes.length>10)state.recetasRecientes.pop();
+    save();
+  }catch(e){}
   var porc=recetaPorciones(r);
   if(porc)window._recetaVista.personas=porc.n;
   var ov=document.getElementById('recetaDetalle');
@@ -25866,6 +25877,497 @@ function recetaClasificarPaso(s){
   if(RECETA_PASO_TEMP.test(t))return {nivel:'🟡',tipo:'temperatura-sin-tiempo'};
   if(/\b(pon a hervir|deja hervir|dejar hervir|pon a cocer|deja cocer|sancocha|sancochar|cocer|hervir|(?<!para )hornear|vapor|escalfa|fr[ií]e|asa|tuesta|dora|cuece|cocina|hierve)\b/i.test(t)&&!/\bmin\b|\bseg\b|\bhora\b/i.test(t))return {nivel:'🔴',tipo:'cocinar-sin-tiempo-ni-criterio'};
   return {nivel:'🟡',tipo:'sin-criterio-claro'};
+}
+/* ===== Motor "Completar fácil" (FASE 1: motor puro, SIN UI) =====
+   Funciones PURAS: reciben un contexto y devuelven hasta 3 propuestas.
+   No tocan DOM ni state. kcal/macros salen SIEMPRE de los datos del
+   catálogo (recetas y alimentos reales); nada se inventa ni se hardcodea.
+   Pesos y constantes centralizados en COMPLETAR_PESOS / COMPLETAR_LIMITES /
+   COMPLETAR_FRANJAS / COMPLETAR_PARES / COMPLETAR_PLATOS. */
+var COMPLETAR_PESOS={kcal:40,proteina:20,carbos:8,grasas:6,receta:6,densidad:14,saciedad:12,facilidad:10,banda:14,rapidez:6,portable:5,sinCocinar:3,variedad:6,favorito:4,reciente:2,repetido:-7,similar:-5,mostradaExacta:-30,calidadVerde:3,tierA:14,tierB:10,tierC:7,tierD:4};
+var COMPLETAR_LIMITES={minKcal:120,perderCap:450,llenadoRapido:{manana:500,trabajo:500,noche:900,madrugada:300}};
+var COMPLETAR_FRANJAS={
+  manana:{desde:5,hasta:11,frac:0.30,cap:600,banda:[300,600],nota:'ligero y denso'},
+  trabajo:{desde:11,hasta:17,frac:0.25,cap:700,banda:[300,600],nota:'portátil y pequeño'},
+  noche:{desde:17,hasta:23,frac:0.60,cap:1100,banda:[300,1100],nota:'comida completa'},
+  madrugada:{desde:23,hasta:5,frac:0.15,cap:350,banda:[120,350],nota:'tentempié'}
+};
+/* Volumen: etiqueta conservadora desde tipo/tags (UX, no dato nutricional). */
+var COMPLETAR_VOLUMEN_TIPO=[
+  [/licuado|agua|bebida|leche|suero|especia|salsa|aderezo/i,'Poco'],
+  [/sopa|ensalada|verdura|fruta|caldo/i,'Medio'],
+  [/snack|desayuno|huevo|guarnicion|postre|pan/i,'Poco'],
+  [/comida|guiso|pasta|arroz|horno|carne|cerdo|pollo|res|pescado|mole|tinga/i,'Normal']
+];
+var COMPLETAR_VOLUMEN_ALIMENTO={
+  'huevo':'Poco','arroz':'Normal','frijol':'Normal','tortilla':'Poco','pollo':'Normal','carne':'Normal',
+  'atun':'Poco','avena':'Medio','leche':'Poco','yogurt':'Poco','crema cacahuate':'Poco',
+  'aguacate':'Poco','queso':'Poco','papa':'Normal','platano':'Poco'
+};
+var COMPLETAR_PUNTOS_VOL={Poco:0.5,Medio:1,Normal:1.5,Mucho:2};
+/* Complementos por FUNCIÓN culinaria y compatibilidad por tipo de plato.
+   Una bebida jamás rellena un plato salado; solo acompaña desayunos,
+   avenas, frutas, licuados o aparece como propuesta independiente. */
+var COMPLETAR_ALIMENTO={
+  'Leche entera taza':{funcion:'bebida',con:/desayuno|avena|licuado|hotcake|cereal|pan dulce|postre|granola|platano|fruta/i},
+  'Yogurt griego taza':{funcion:'postre',con:/desayuno|avena|granola|fruta|platano|hotcake|cereal|huevo|tortilla|licuado/i},
+  'Plátano':{funcion:'snack',con:/desayuno|avena|licuado|pan|hotcake|yogurt|cereal|fruta|crema/i},
+  'Crema cacahuate cda':{funcion:'topping',con:/pan|avena|licuado|manzana|hotcake|platano|fruta/i},
+  'Aguacate 1/2':{funcion:'acompanamiento',con:/huevo|taco|torta|arroz|ensalada|pollo|tostada|bowl|frijol|carne|res|cerdo|pescado/i},
+  'Queso 28g':{funcion:'topping',con:/huevo|quesadilla|pasta|arroz|frijol|papa|torta|sandwich|sopa|carne|pollo|enchilada|mole|hamburguesa/i},
+  'Tortilla maíz':{funcion:'acompanamiento',con:/huevo|frijol|pollo|carne|chilaquil|taco|mole|tinga|guiso/i},
+  'Huevo':{funcion:'topping',con:/arroz|frijol|papa|tortilla|ramen|sopa|chilaquil/i},
+  'Arroz cocido 1 taza':{funcion:'acompanamiento',con:/pollo|carne|cerdo|res|pescado|mole|tinga|frijol|huevo/i},
+  'Frijol 1 taza':{funcion:'acompanamiento',con:/arroz|pollo|carne|huevo|queso|tortilla|mole|guiso/i},
+  'Pollo 100g':{funcion:'principal',con:/arroz|pasta|tortilla|ensalada|frijol|papa/i},
+  'Carne molida 100g':{funcion:'principal',con:/arroz|pasta|tortilla|papa|frijol/i},
+  'Atún lata':{funcion:'principal',con:/ensalada|tortilla|arroz|pasta/i},
+  'Avena 1/2 taza':{funcion:'principal',con:/leche|platano|yogurt|cacahuate|crema de cacahuate|cereal|licuado/i},
+  'Papa mediana':{funcion:'principal',con:/huevo|carne|pollo|queso/i}
+};
+/* Platos base con alimentos REALES del catálogo foods[] (solo estructuras;
+   las kcal/macros se suman desde foods[], jamás desde aquí). */
+var COMPLETAR_PLATOS=[
+  {base:['Huevo','Tortilla maíz'],extras:['Aguacate 1/2','Queso 28g','Leche entera taza']},
+  {base:['Leche entera taza','Plátano'],extras:['Crema cacahuate cda','Avena 1/2 taza','Yogurt griego taza']},
+  {base:['Arroz cocido 1 taza','Pollo 100g'],extras:['Aguacate 1/2','Frijol 1 taza','Tortilla maíz']},
+  {base:['Frijol 1 taza','Queso 28g'],extras:['Tortilla maíz','Aguacate 1/2','Huevo']},
+  {base:['Papa mediana','Huevo'],extras:['Queso 28g','Leche entera taza']},
+  {base:['Avena 1/2 taza','Leche entera taza'],extras:['Plátano','Crema cacahuate cda']},
+  {base:['Yogurt griego taza'],extras:['Plátano','Avena 1/2 taza','Crema cacahuate cda']},
+  {base:['Atún lata'],extras:['Tortilla maíz','Aguacate 1/2','Queso 28g']}
+];
+function completarNorm(s){return String(s||'').toLowerCase().replace(/[^a-záéíóúñ0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
+function completarSinAcentos(s){return String(s||'').replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n');}
+function completarFranja(hora){
+  var h=+hora;if(!(h>=0&&h<24))h=new Date().getHours();
+  var f=COMPLETAR_FRANJAS;
+  if(h>=f.manana.desde&&h<f.manana.hasta)return 'manana';
+  if(h>=f.trabajo.desde&&h<f.trabajo.hasta)return 'trabajo';
+  if(h>=f.noche.desde&&h<f.noche.hasta)return 'noche';
+  return 'madrugada';
+}
+function completarVolumen(item){
+  if(item&&item.tipo==='alimento'){
+    var n=completarNorm(item.nombre);
+    for(var k in COMPLETAR_VOLUMEN_ALIMENTO){if(n.indexOf(completarNorm(k))>=0)return COMPLETAR_VOLUMEN_ALIMENTO[k];}
+    return 'Poco';
+  }
+  var t=String((item&&item.type)||'')+' '+String((item&&item.tags)||'');
+  for(var i=0;i<COMPLETAR_VOLUMEN_TIPO.length;i++){if(COMPLETAR_VOLUMEN_TIPO[i][0].test(t))return COMPLETAR_VOLUMEN_TIPO[i][1];}
+  return 'Normal';
+}
+function completarDensidad(kcal,vol){return (kcal||0)/(COMPLETAR_PUNTOS_VOL[vol]||1);}
+function completarVolMax(partes){
+  var vol='Poco';
+  (partes||[]).forEach(function(p){if((COMPLETAR_PUNTOS_VOL[p.volumen]||0)>=(COMPLETAR_PUNTOS_VOL[vol]||0))vol=p.volumen;});
+  return vol;
+}
+function completarKcalMomento(ctx){
+  var franja=ctx.franja||completarFranja(ctx.hora);
+  var f=COMPLETAR_FRANJAS[franja];
+  var falta=Math.max(0,(+ctx.kcalObjetivo||0)-(+ctx.kcalConsumidas||0));
+  var objetivo=Math.min(f.cap,Math.max(COMPLETAR_LIMITES.minKcal,falta*f.frac));
+  if(franja==='noche')objetivo=Math.min(f.cap,falta);
+  if(ctx.objetivo==='perder')objetivo=Math.min(objetivo,COMPLETAR_LIMITES.perderCap);
+  if(ctx.llenado==='rapido')objetivo=Math.min(objetivo,COMPLETAR_LIMITES.llenadoRapido[franja]);
+  return Math.max(COMPLETAR_LIMITES.minKcal,objetivo);
+}
+function completarCatalogo(ctx){
+  var out=[];
+  var restricciones=(ctx.restricciones||[]).map(completarNorm).filter(Boolean);
+  (ctx.catalogo&&ctx.catalogo.recetas||[]).forEach(function(r,i){
+    if(r.scoreAudit==='🔴')return;
+    if(r.scoreAudit==='🟡'&&r.problemaBloqueante)return;
+    if(!(+r.kcal>0))return; // sin nutrición suficiente → fuera
+    var texto=completarNorm((r.nombre||'')+' '+(r.tags||'')+' '+(r.ingredients||''));
+    for(var j=0;j<restricciones.length;j++){if(texto.indexOf(restricciones[j])>=0)return;}
+    out.push({tipo:'receta',ref:r.id!=null?r.id:i,nombre:r.nombre,kcal:+r.kcal,p:+r.p||0,c:+r.c||0,g:+r.g||0,tiempo:+r.tiempo||0,metodo:r.method||'',type:r.type||'',tags:r.tags||'',portable:!!r.portable,volumen:completarVolumen(r),scoreAudit:r.scoreAudit||'🟢'});
+  });
+  (ctx.catalogo&&ctx.catalogo.alimentos||[]).forEach(function(f,i){
+    if(!(+f.kcal>0))return;
+    var texto=completarNorm(f.nombre||'');
+    for(var j=0;j<restricciones.length;j++){if(texto.indexOf(restricciones[j])>=0)return;}
+    out.push({tipo:'alimento',ref:f.id!=null?f.id:i,nombre:f.nombre,kcal:+f.kcal,p:+f.p||0,c:+f.c||0,g:+f.g||0,tiempo:0,metodo:'',type:'alimento',tags:'',volumen:completarVolumen({tipo:'alimento',nombre:f.nombre})});
+  });
+  return out;
+}
+function completarSuma(partes){
+  return partes.reduce(function(a,x){a.kcal+=x.kcal;a.p+=x.p;a.c+=x.c;a.g+=x.g;return a;},{kcal:0,p:0,c:0,g:0});
+}
+function completarCandidatos(ctx){
+  var cat=completarCatalogo(ctx);
+  var cands=[];
+  var SALADO=/(comida|sopa|pasta|guiso|carne|cerdo|pollo|res|pescado|cena|horno|mole|tinga|chilaquil|taco|hamburguesa|quesadilla)/i;
+  var DULCE=/(desayuno|avena|pan dulce|postre|fruta|licuado|cereal|granola|hotcake)/i;
+  // A) recetas completas reales (estructuras que ya existen: prioridad)
+  cat.forEach(function(x){if(x.tipo==='receta')cands.push({partes:[x],tier:'A'});});
+  // B) receta + complemento NATURAL (por función culinaria; sin bebidas de relleno)
+  cat.forEach(function(r){ if(r.tipo!=='receta')return;
+    var tt=String(r.type||'')+' '+String(r.tags||'');
+    var salado=SALADO.test(tt)&&!DULCE.test(tt);
+    var texto=completarSinAcentos(completarNorm(r.nombre+' '+r.type+' '+r.tags));
+    cat.forEach(function(a){ if(a.tipo!=='alimento')return;
+      var spec=COMPLETAR_ALIMENTO[a.nombre]; if(!spec)return;
+      if(spec.funcion==='bebida'&&salado)return; // bebida NO rellena platos salados
+      if(spec.funcion==='principal')return;      // un principal NO es complemento de una receta
+      if(!spec.con.test(texto))return;
+      cands.push({partes:[r,a],tier:'B'});
+    });
+  });
+  // C) combos naturales existentes (platos base reales)
+  COMPLETAR_PLATOS.forEach(function(p){
+    var partes=[];
+    p.base.forEach(function(n){
+      for(var i=0;i<cat.length;i++){if(cat[i].nombre===n){partes.push(cat[i]);return;}}
+    });
+    if(partes.length!==p.base.length)return;
+    cands.push({partes:partes,tier:'C'});
+    p.extras.forEach(function(e){
+      var ex=null;cat.forEach(function(x){if(x.nombre===e)ex=x;});
+      if(ex)cands.push({partes:partes.concat([ex]),tier:'C'});
+    });
+  });
+  // D) snack o bebida independiente (alimento individual)
+  cat.forEach(function(x){if(x.tipo==='alimento')cands.push({partes:[x],tier:'D'});});
+  return cands;
+}
+function completarScore(c,ctx){
+  var razones=[];
+  var W=COMPLETAR_PESOS;
+  var tot=completarSuma(c.partes);
+  var vol=completarVolMax(c.partes);
+  var objetivo=completarKcalMomento(ctx);
+  var score=0;
+  // 1) kcal apropiadas para ESTE momento (no el déficit diario completo)
+  var fitKcal=1-Math.min(1,Math.abs(tot.kcal-objetivo)/objetivo);
+  score+=W.kcal*fitKcal; razones.push('kcal-momento '+Math.round(fitKcal*100)+'%');
+  // 2) proteína / carbos / grasas vs lo que falta
+  if(ctx.macrosObjetivo){
+    var remP=Math.max(0,(+ctx.macrosObjetivo.p||0)-((ctx.macrosConsumidos&&+ctx.macrosConsumidos.p)||0));
+    if(remP>0){var fitP=Math.min(1,tot.p/remP);score+=W.proteina*fitP;razones.push('proteina '+Math.round(fitP*100)+'%');}
+    var remC=Math.max(0,(+ctx.macrosObjetivo.c||0)-((ctx.macrosConsumidos&&+ctx.macrosConsumidos.c)||0));
+    if(remC>0){score+=W.carbos*Math.min(1,tot.c/remC);}
+    var remG=Math.max(0,(+ctx.macrosObjetivo.g||0)-((ctx.macrosConsumidos&&+ctx.macrosConsumidos.g)||0));
+    if(remG>0){score+=W.grasas*Math.min(1,tot.g/remG);}
+  }
+  // 3) densidad (llenado rápido) / saciedad (perder) — independientes del objetivo
+  if(ctx.llenado==='rapido'){var dens=completarDensidad(tot.kcal,vol);score+=W.densidad*Math.min(1,dens/600);razones.push('denso '+Math.round(dens)+' kcal/vol');}
+  if(ctx.objetivo==='perder'){score+=W.saciedad*Math.min(1,(((COMPLETAR_PUNTOS_VOL[vol]||1)/Math.max(200,tot.kcal))*700));razones.push('saciedad-vol');}
+  // 4) franja: banda de kcal apropiadas PARA ESTE MOMENTO (no resolver todo el déficit de una vez)
+  var franja=ctx.franja||completarFranja(ctx.hora);
+  var banda=COMPLETAR_FRANJAS[franja].banda;
+  var falta=Math.max(0,(+ctx.kcalObjetivo||0)-(+ctx.kcalConsumidas||0));
+  var bandaBaja=Math.min(banda[0],Math.max(COMPLETAR_LIMITES.minKcal,falta));
+  var bandaAlta=Math.min(banda[1],Math.max(bandaBaja,falta*1.5));
+  var fitBanda=1;
+  if(tot.kcal<bandaBaja)fitBanda=tot.kcal/bandaBaja;
+  else if(tot.kcal>bandaAlta)fitBanda=Math.max(0,1-2*(tot.kcal-bandaAlta)/bandaAlta);
+  score+=W.banda*fitBanda;razones.push('banda-franja '+Math.round(fitBanda*100)+'%');
+  var tiempoTotal=c.partes.reduce(function(a,p){return a+(+p.tiempo||0);},0);
+  var texto=completarNorm(c.partes.map(function(p){return p.nombre+' '+p.type+' '+p.tags;}).join(' '));
+  var metodo=String(c.partes.map(function(p){return p.metodo;}).filter(Boolean)[0]||'').toLowerCase();
+  var portable=c.partes.some(function(p){return p.portable;});
+  // 5) facilidad según franja (premio a rápido/sin cocinar/portable durante el día)
+  if(franja==='manana'&&/licuado|leche|yogurt|avena|huevo|platano|pan|granola|cereal/i.test(texto)){score+=W.facilidad;razones.push('mañana-fácil');}
+  if(franja==='trabajo'){
+    if(/snack|bebida|quesadilla|sandwich|wrap|leche|yogurt|licuado/i.test(texto)||portable||tiempoTotal<=10||/sin cocinar|fr[ií]o/i.test(metodo)){score+=W.facilidad;razones.push('trabajo-portátil');}
+    if(tiempoTotal>0&&tiempoTotal<=10){score+=W.rapidez;razones.push('rápida ≤10 min');}
+    if(portable){score+=W.portable;razones.push('portable');}
+    if(/sin cocinar|fr[ií]o/i.test(metodo)){score+=W.sinCocinar;razones.push('sin cocinar');}
+  }
+  if(franja==='manana'&&(tiempoTotal>0&&tiempoTotal<=10)){score+=W.rapidez;razones.push('rápida ≤10 min');}
+  if(franja==='noche'&&/comida|sopa|pasta|arroz|guiso|carne|pollo|res|cerdo|papa|frijol/i.test(texto)){score+=W.facilidad;razones.push('noche-completa');}
+  // 5) variedad: penalizar repetidos hoy y similares a lo mostrado
+  var consumidos=(ctx.consumidosHoy||[]).map(completarNorm);
+  var mostradas=(ctx.mostradas||[]).map(completarNorm);
+  var titulo=completarNorm(c.partes.map(function(p){return p.nombre;}).join(' + '));
+  if(mostradas.indexOf(titulo)>=0){score+=W.mostradaExacta;razones.push('ya-mostrada');}
+  var rep=0;
+  c.partes.forEach(function(x){
+    var n=completarNorm(x.nombre);
+    consumidos.forEach(function(y){if(n===y||(y.length>4&&n.indexOf(y)>=0))rep++;});
+    mostradas.forEach(function(y){if(n===y||(y.length>4&&n.indexOf(y)>=0)){score+=W.similar;razones.push('similar-mostrada');}});
+  });
+  if(rep>0){score+=W.repetido*rep;razones.push('repetido-hoy ×'+rep);}
+  // 6) favoritos / recientes
+  var favs=ctx.favoritos||[],recs=ctx.recientes||[];
+  c.partes.forEach(function(x){ if(x.tipo==='receta'){
+    if(favs.indexOf(x.ref)>=0){score+=W.favorito;razones.push('favorita');}
+    if(recs.indexOf(x.ref)>=0){score+=W.reciente;razones.push('reciente');}
+  }});
+  // 6b) prioridad de estructura: A receta > B receta+natural > C combo > D independiente
+  if(c.tier==='A')score+=W.tierA;
+  else if(c.tier==='B')score+=W.tierB;
+  else if(c.tier==='C')score+=W.tierC;
+  else if(c.tier==='D')score+=W.tierD;
+  // 7) preferir estructuras existentes y calidad culinaria
+  var hayReceta=c.partes.some(function(x){return x.tipo==='receta';});
+  if(hayReceta){score+=W.receta;razones.push('receta-existente');}
+  c.partes.forEach(function(x){ if(x.tipo==='receta'&&x.scoreAudit==='🟢'){score+=W.calidadVerde;razones.push('calidad-verde');} });
+  if(c.partes.length>1){score+=W.variedad;razones.push('combo-variado');}
+  return {score:score,tot:tot,volumen:vol,razones:razones};
+}
+function completarNombreCorto(n){
+  var s=String(n||'');
+  s=s.replace(/\s*\(.*?\)/g,'');
+  s=s.replace(/(^|\s)(1\/2|½|1\/4|¼|1\/3|⅓)(\s|$)/g,' ');
+  s=s.replace(/(^|\s)\d+(\.\d+)?\s*(g|kg|ml|l)\b/gi,' ');
+  s=s.replace(/(^|\s)(taza|tazas|cda|cdas|cdita|cditas|rebanada|rebanadas|lata|pieza|pza|mediana|mediano|grande|scoop)\b/gi,' ');
+  s=s.replace(/(^|\s)\d+(\.\d+)?(\s|$)/g,' ');
+  s=completarNorm(s);
+  if(!s)return String(n||'');
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+function completarCategoria(partes){
+  if(partes.some(function(x){return x.tipo==='receta';}))return 'receta';
+  var nom=partes.map(function(x){return x.nombre;}).join(' ');
+  if(/leche|yogurt|platano|crema cacahuate|avena/i.test(nom)&&partes.length<=2)return 'ligera';
+  return 'combo';
+}
+function completarTituloUI(partes){
+  var rec=partes.filter(function(x){return x.tipo==='receta';});
+  var alim=partes.filter(function(x){return x.tipo==='alimento';});
+  if(rec.length){
+    var extras=alim.map(function(x){return completarNombreCorto(x.nombre);});
+    return {titulo:rec[0].nombre,sub:extras.length?('Con '+extras.join(' y ')+' extra'):''};
+  }
+  return {titulo:alim.map(function(x){return completarNombreCorto(x.nombre);}).join(' + '),sub:''};
+}
+function completarProponer(ctx){
+  var lista=completarCandidatos(ctx).map(function(c){var s=completarScore(c,ctx);return {s:s,partes:c.partes,tier:c.tier};});
+  lista.sort(function(a,b){return b.s.score-a.s.score;});
+  var vistos={};
+  var unicos=[];
+  lista.forEach(function(x){
+    var clave=x.partes.map(function(p){return p.nombre;}).join(' + ');
+    if(vistos[clave])return;
+    vistos[clave]=1;
+    unicos.push(x);
+  });
+  // Diversidad estructural: una receta, una alternativa ligera/rápida y una estructura distinta.
+  function elegir(catProhibidas){
+    for(var i=0;i<unicos.length;i++){
+      if(catProhibidas.indexOf(completarCategoria(unicos[i].partes))>=0)continue;
+      return unicos[i];
+    }
+    return null;
+  }
+  var elegidos=[];
+  var uno=elegir([]);
+  if(uno)elegidos.push(uno);
+  var dos=uno?elegir([completarCategoria(uno.partes)]):null;
+  if(dos)elegidos.push(dos);
+  var tres=(uno&&dos)?elegir([completarCategoria(uno.partes),completarCategoria(dos.partes)]):null;
+  if(tres)elegidos.push(tres);
+  // relleno si faltan (sin repetir categorías ya elegidas)
+  for(var k=0;k<unicos.length&&elegidos.length<3;k++){
+    if(elegidos.indexOf(unicos[k])<0&&completarCategoria(unicos[k].partes)!==completarCategoria(elegidos[0].partes)){elegidos.push(unicos[k]);}
+  }
+  for(var k2=0;k2<unicos.length&&elegidos.length<3;k2++){if(elegidos.indexOf(unicos[k2])<0)elegidos.push(unicos[k2]);}
+  return elegidos.slice(0,3).map(function(x){
+    var clave=x.partes.map(function(p){return p.nombre;}).join(' + ');
+    var ui=completarTituloUI(x.partes);
+    return {
+      clave:clave,
+      titulo:ui.titulo, sub:ui.sub,
+      kcal:Math.round(x.s.tot.kcal),p:Math.round(x.s.tot.p),c:Math.round(x.s.tot.c),g:Math.round(x.s.tot.g),
+      volumen:x.s.volumen,
+      tiempo:x.partes.reduce(function(a,p){return a+(+p.tiempo||0);},0),
+      metodo:x.partes.map(function(p){return p.metodo;}).filter(Boolean)[0]||'',
+      score:Math.round(x.s.score),
+      razones:x.s.razones,
+      componentes:x.partes.map(function(p){return {tipo:p.tipo,ref:p.ref,nombre:p.nombre,kcal:p.kcal,p:p.p,c:p.c,g:p.g,tiempo:p.tiempo||0,metodo:p.metodo||'',volumen:p.volumen};})
+    };
+  });
+}
+/* ===== Completar mi día — conexión UI (FASE 2) =====
+   Reutiliza getDailyMode/getTodayDiaryTotals (SOLO lectura), state.diary,
+   _guardarComida, abrirReceta, EVITAR_COMUNES y quickSaved. Nada se duplica. */
+function completarTextoTarjeta(){
+  var dm=(typeof getDailyMode==='function')?getDailyMode():{missingKcal:0};
+  var falta=dm.missingKcal||0;
+  var franja=completarFranja();
+  if(franja==='manana'&&(state.profile&&state.profile.llenado==='rapido'))return 'Te conviene algo ligero';
+  if(falta>900)return 'Todavía te faltan bastantes calorías; vamos poco a poco';
+  if(falta<=200)return 'Estás cerca de tu objetivo';
+  return 'Te faltan '+falta+' kcal';
+}
+function completarCardHTML(){
+  return '<div class="card" style="border:2px solid #9dd5b4;background:#f7fff9;margin-top:10px"><div class="row" style="justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'
+    +'<div style="flex:1;min-width:150px"><b style="font-size:16px">🍽 Completar mi día</b><div class="muted" style="font-size:13px;margin-top:2px">'+safeText(completarTextoTarjeta())+'</div></div>'
+    +'<button class="btn primary" style="border-radius:999px;padding:10px 16px;min-height:44px" onclick="completarAbrir()">Completar fácil</button>'
+    +'</div></div>';
+}
+function completarCtxReal(){
+  var dm=(typeof getDailyMode==='function')?getDailyMode():{};
+  var hoy=(typeof getTodayDiaryTotals==='function')?getTodayDiaryTotals():{k:0,p:0,c:0,f:0};
+  var p=state.profile||{};
+  var obj=String(p.objetivo||'');
+  var objetivo=/bajar|perder|grasa/i.test(obj)?'perder':(/mantener/i.test(obj)?'mantener':'ganar');
+  var restricciones=[];
+  (state.evitar||[]).forEach(function(k){ if(EVITAR_COMUNES[k])restricciones=restricciones.concat(EVITAR_COMUNES[k].palabras); else restricciones.push(k); });
+  String(p.restricciones||'').split(/[,;]/).forEach(function(x){x=x.trim();if(x)restricciones.push(x);});
+  var consumidos=[];
+  var hoyISO=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);
+  var d=state.diary&&state.diary[hoyISO];
+  if(d){['breakfast','lunch','dinner','snacks'].forEach(function(m){(d[m]||[]).forEach(function(x){if(x&&x.name)consumidos.push(x.name);});});}
+  var catalogo={
+    recetas:baseRecipes.map(function(r,i){
+      var a=(typeof recetaAuditar==='function')?recetaAuditar(r):{score:'🟢',problemas:[]};
+      return {id:i,nombre:r.name,kcal:r.k,p:r.p||0,c:r.carbs||0,g:r.grasas||0,tiempo:r.time||0,method:r.method||'',type:r.type||'',tags:r.tags||'',ingredients:r.ingredients||'',portable:r.llevarTrabajo==='Sí',
+        scoreAudit:a.score,problemaBloqueante:(a.problemas||[]).some(function(pr){return pr.tipo==='preparacion-asumida'||pr.tipo==='tm5-sin-parametros';})};
+    }),
+    alimentos:(typeof foods!=='undefined'?foods:[]).map(function(f,i){return {id:'f'+i,nombre:f[0],kcal:f[1],p:f[2],g:f[3],c:f[4]};})
+  };
+  return {
+    kcalObjetivo:dm.kcalGoal||0, kcalConsumidas:(dm.food?dm.food.k:0)||hoy.k,
+    macrosObjetivo:{p:(+p.proteina||0),c:(+p.carbos||0),g:(+p.grasa||0)},
+    macrosConsumidos:{p:hoy.p,c:hoy.c,g:hoy.f},
+    objetivo:objetivo, llenado:(p.llenado||'normal'),
+    hora:new Date().getHours(),
+    consumidosHoy:consumidos, mostradas:window._completarMostradas||[],
+    restricciones:restricciones,
+    favoritos:state.recipeFavorites||[], recientes:state.recetasRecientes||[],
+    catalogo:catalogo
+  };
+}
+function completarMealKey(){var f=completarFranja();return f==='manana'?'breakfast':(f==='trabajo'?'lunch':(f==='noche'?'dinner':'snacks'));}
+function completarAbrir(){
+  window._completarMostradas=window._completarMostradas||[];
+  var ov=document.getElementById('completarPanel');
+  if(!ov){ov=document.createElement('div');ov.id='completarPanel';ov.style.cssText='position:fixed;inset:0;background:#f0f4f1;z-index:23000;overflow-y:auto;padding:14px;box-sizing:border-box;-webkit-overflow-scrolling:touch';document.body.appendChild(ov);}
+  completarRenderPanel();
+}
+function completarRenderPanel(){
+  var ov=document.getElementById('completarPanel'); if(!ov)return;
+  var ctx=completarCtxReal();
+  var props=completarProponer(ctx);
+  window._completarPropuestas=props;
+  var h='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="completarCerrar()">← Volver</button>'
+    +'<b style="font-size:17px;color:#12352a;flex:1">🍽 Completar mi día</b></div>'
+    +'<div class="muted" style="font-size:13px;margin-bottom:10px">'+safeText(completarTextoTarjeta())+'</div>';
+  if(!props.length){
+    h+='<div class="card"><b>Sin propuestas seguras ahora.</b><div class="muted" style="font-size:13px;margin-top:4px">Registra lo que comiste y vuelve a intentar.</div></div>';
+  }
+  props.forEach(function(pr,i){
+    var receta=null;pr.componentes.forEach(function(c){if(c.tipo==='receta')receta=c;});
+    h+='<div style="background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:12px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:15px">'+safeText(pr.titulo)+'</b>'
+      +'<span class="muted" style="font-size:12px;font-weight:800">'+pr.kcal+' kcal · P '+pr.p+'g'+(pr.tiempo?' · '+pr.tiempo+' min':'')+'</span></div>'
+      +(pr.sub?'<div class="muted" style="font-size:12px;margin-top:2px">'+safeText(pr.sub)+'</div>':'')
+      +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">Volumen: '+pr.volumen+'</span></div>'
+      +'<div class="row" style="gap:8px;margin-top:10px">'
+      +(receta?'<button class="btn" style="flex:1;padding:10px;min-height:44px" onclick="completarCocinar('+i+')">🍳 Cocinar</button>':'')
+      +'<button class="btn primary" style="flex:1;padding:10px;min-height:44px" onclick="completarAgregar('+i+')">＋ Agregar</button>'
+      +'<button class="btn" style="flex:0 0 auto;padding:10px 12px;min-height:44px" onclick="completarPotenciarAbrir('+i+')" title="Añadir 1-3 extras a esta comida">⚡</button></div></div>';
+  });
+  h+='<button class="btn" style="width:100%;padding:12px;min-height:48px" onclick="completarOtras3()">🔄 Otras 3</button></div>';
+  ov.innerHTML=h;
+  try{ov.scrollTop=0;}catch(e){}
+}
+/* ===== Potenciar una comida elegida (FASE 3) =====
+   Extras reales y compatibles por función culinaria; sin bebidas de relleno
+   en salados, sin principales como extra, densos si Me lleno rápido. */
+function completarPotenciar(ctx, baseNombres, excluidas){
+  var cat=completarCatalogo(ctx);
+  var base=[];
+  (baseNombres||[]).forEach(function(n){
+    for(var i=0;i<cat.length;i++){if(cat[i].nombre===n){base.push(cat[i]);break;}}
+  });
+  var texto=completarSinAcentos(completarNorm((baseNombres||[]).join(' ')+' '+base.map(function(x){return x.type+' '+x.tags;}).join(' ')));
+  var SALADO=/(comida|sopa|pasta|guiso|carne|cerdo|pollo|res|pescado|cena|horno|mole|tinga|chilaquil|taco|hamburguesa|quesadilla)/i;
+  var DULCE=/(desayuno|avena|pan dulce|postre|fruta|licuado|cereal|granola|hotcake)/i;
+  var salado=SALADO.test(texto)&&!DULCE.test(texto);
+  var franja=ctx.franja||completarFranja(ctx.hora);
+  var excl=(excluidas||[]).map(completarNorm);
+  var out=[];
+  cat.forEach(function(a){ if(a.tipo!=='alimento')return;
+    if((baseNombres||[]).indexOf(a.nombre)>=0)return; // ya está en la comida
+    if(excl.indexOf(completarNorm(a.nombre))>=0)return;
+    var spec=COMPLETAR_ALIMENTO[a.nombre]; if(!spec)return;
+    if(spec.funcion==='bebida'&&salado)return;       // bebida NO rellena salados
+    if(spec.funcion==='principal'){
+      var esAvenaParaLicuado=/avena/i.test(a.nombre)&&/leche|licuado|platano|yogurt|crema|cereal/i.test(texto);
+      var esNocheAccomp=(franja==='noche'&&/arroz|frijol|papa/i.test(a.nombre));
+      if(!esAvenaParaLicuado&&!esNocheAccomp)return; // otra comida principal NO es extra
+    }
+    if(!spec.con.test(texto))return;
+    var sc=5; // compatibilidad culinaria verificada
+    if(ctx.llenado==='rapido')sc+=3*Math.min(1,completarDensidad(a.kcal,a.volumen)/500);
+    if(franja==='noche'&&a.kcal>=150)sc+=1;  // noche permite extras algo mayores
+    if(franja!=='noche'&&a.kcal<=200)sc+=2;  // día: extras pequeños y simples
+    out.push({nombre:a.nombre,kcal:a.kcal,p:a.p,c:a.c,g:a.g,volumen:a.volumen,score:sc,razones:['compatible con '+completarNombreCorto((baseNombres||[])[0]||'la comida')]});
+  });
+  out.sort(function(a,b){return b.score-a.score;});
+  return out.slice(0,3).map(function(x){return {nombre:x.nombre,titulo:completarNombreCorto(x.nombre),kcal:x.kcal,p:x.p,c:x.c,g:x.g,volumen:x.volumen,score:x.score,razones:x.razones};});
+}
+function completarCerrar(){var ov=document.getElementById('completarPanel');if(ov)ov.remove();}
+function completarOtras3(){
+  var pr=window._completarPropuestas||[];
+  window._completarMostradas=(window._completarMostradas||[]).concat(pr.map(function(p){return p.clave||p.titulo;}));
+  completarRenderPanel();
+}
+function completarAgregar(i){
+  var pr=(window._completarPropuestas||[])[i]; if(!pr)return;
+  var key=completarMealKey();
+  var n=0;
+  pr.componentes.forEach(function(c){ _guardarComida(c.nombre,c.kcal,c.p,c.c,c.g,key); n++; });
+  try{if(typeof refrescarInicio==='function')refrescarInicio();}catch(e){}
+  try{if(typeof toastReg==='function')toastReg('✅ Agregado a '+mealKeyLabel(key)+': '+n+' componente'+(n!==1?'s':''));}catch(e){}
+  window._completarMostradas=(window._completarMostradas||[]).concat([pr.clave||pr.titulo]);
+  completarRenderPanel();
+}
+function completarCocinar(i){
+  var pr=(window._completarPropuestas||[])[i]; if(!pr)return;
+  var receta=null;pr.componentes.forEach(function(c){if(c.tipo==='receta')receta=c;});
+  if(!receta)return;
+  completarCerrar();
+  if(typeof abrirReceta==='function')abrirReceta(receta.ref,'pasoapaso');
+}
+function completarPotenciarAbrir(i){
+  var pr=(window._completarPropuestas||[])[i]; if(!pr)return;
+  window._completarPotBase=pr;
+  window._completarExtrasVistas=window._completarExtrasVistas||[];
+  var ov=document.getElementById('completarPotPanel');
+  if(!ov){ov=document.createElement('div');ov.id='completarPotPanel';ov.style.cssText='position:fixed;inset:0;background:#f0f4f1;z-index:23100;overflow-y:auto;padding:14px;box-sizing:border-box;-webkit-overflow-scrolling:touch';document.body.appendChild(ov);}
+  completarPotRender();
+}
+function completarPotRender(){
+  var ov=document.getElementById('completarPotPanel'); if(!ov)return;
+  var pr=window._completarPotBase; if(!pr)return;
+  var ctx=completarCtxReal();
+  var extras=completarPotenciar(ctx,pr.componentes.map(function(c){return c.nombre;}),window._completarExtrasVistas||[]);
+  window._completarPotExtras=extras;
+  var h='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="completarPotCerrar()">← Volver</button>'
+    +'<b style="font-size:17px;color:#12352a;flex:1">⚡ Potenciar: '+safeText(pr.titulo)+'</b></div>'
+    +'<div class="muted" style="font-size:13px;margin-bottom:10px">'+pr.kcal+' kcal · P '+pr.p+'g — añade un extra real y compatible:</div>';
+  if(!extras.length)h+='<div class="card"><b>Sin extras compatibles ahora.</b><div class="muted" style="font-size:13px;margin-top:4px">Esta comida ya está completa con lo disponible.</div></div>';
+  extras.forEach(function(x,k){
+    h+='<div style="background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:12px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:15px">'+safeText(x.titulo)+'</b>'
+      +'<span class="muted" style="font-size:12px;font-weight:800">+'+x.kcal+' kcal · P '+x.p+'g · Vol '+x.volumen+'</span></div>'
+      +'<div class="row" style="gap:8px;margin-top:10px"><button class="btn primary" style="flex:1;padding:10px;min-height:44px" onclick="completarPotAgregar('+k+')">＋ Agregar extra</button></div></div>';
+  });
+  if(extras.length)h+='<button class="btn" style="width:100%;padding:12px;min-height:48px" onclick="completarPotOtros()">🔄 Otros extras</button>';
+  h+='</div>';
+  ov.innerHTML=h;
+  try{ov.scrollTop=0;}catch(e){}
+}
+function completarPotCerrar(){var ov=document.getElementById('completarPotPanel');if(ov)ov.remove();window._completarPotBase=null;}
+function completarPotOtros(){
+  window._completarExtrasVistas=(window._completarExtrasVistas||[]).concat((window._completarPotExtras||[]).map(function(x){return x.nombre;}));
+  completarPotRender();
+}
+function completarPotAgregar(k){
+  var x=(window._completarPotExtras||[])[k]; if(!x)return;
+  var key=completarMealKey();
+  _guardarComida(x.nombre,x.kcal,x.p,x.c,x.g,key);
+  try{if(typeof refrescarInicio==='function')refrescarInicio();}catch(e){}
+  try{if(typeof toastReg==='function')toastReg('✅ Extra agregado a '+mealKeyLabel(key)+': '+x.titulo);}catch(e){}
+  completarPotCerrar();
 }
 function recipeCardFill(el){
   // Render perezoso del cuerpo de la receta: solo se arma la ficha completa al abrir la tarjeta.
@@ -29059,6 +29561,7 @@ function f3AlimentacionSectionHTML(){
     +'<div><label>Pasos diarios</label><input id="cfgPasos" type="number" step="500" value="'+(p.pasosDia||22000)+'" inputmode="numeric" onchange="state.profile.pasosDia=+this.value||0;quickSaved()"></div>'
     +'<div><label>Preferencias de comida</label><input id="cfgPreferencias" value="'+safeText(p.preferencias||'')+'" placeholder="Ej: sin cerdo, más pollo" onchange="state.profile.preferencias=this.value;quickSaved()"></div>'
     +'<div><label>Restricciones / alergias</label><input id="cfgRestricciones" value="'+safeText(p.restricciones||'')+'" placeholder="Ej: sin lactosa, sin nuez" onchange="state.profile.restricciones=this.value;quickSaved()"></div>'
+    +'<div><label>Facilidad para comer</label><select id="cfgLlenado" onchange="state.profile.llenado=this.value;quickSaved()"><option value="normal"'+((p.llenado||'normal')==='normal'?' selected':'')+'>Normal</option><option value="rapido"'+((p.llenado||'normal')==='rapido'?' selected':'')+'>Me lleno rápido</option></select></div>'
     +'</div>'
     +'<div class="muted" style="font-size:12px;margin-top:8px">El cálculo de cuánto comer usa tu peso, altura, edad, sexo, objetivo y pasos.</div>'
     +'<div class="card" style="margin-top:10px;border:1.5px solid #d9e3db;padding:12px"><b style="font-size:13px">⚖️ Objetivo del día</b>'
