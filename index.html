@@ -13713,12 +13713,14 @@ function abrirComerRapido(){
   </div>`;
 }
 
-function _guardarComida(name, kcal, prot, carb, fat, momento){
+function _guardarComida(name, kcal, prot, carb, fat, momento, src){
   let h=_hoy();
   if(!state.diary) state.diary={};
   if(!state.diary[h]) state.diary[h]={breakfast:[],lunch:[],dinner:[],snacks:[]};
   if(!state.diary[h][momento]) state.diary[h][momento]=[];
-  state.diary[h][momento].push({name, kcal:+kcal||0, prot:+prot||0, carb:+carb||0, fat:+fat||0, amount:'1 porción', id:ppUUID()});
+  const entrada={name, kcal:+kcal||0, prot:+prot||0, carb:+carb||0, fat:+fat||0, amount:'1 porción', id:ppUUID()};
+  if(src) entrada.src=src; // origen opcional (ej. 'potenciar') — aditivo, no afecta Balance ni sync
+  state.diary[h][momento].push(entrada);
   save();
 }
 
@@ -25884,7 +25886,9 @@ function recetaClasificarPaso(s){
    catálogo (recetas y alimentos reales); nada se inventa ni se hardcodea.
    Pesos y constantes centralizados en COMPLETAR_PESOS / COMPLETAR_LIMITES /
    COMPLETAR_FRANJAS / COMPLETAR_PARES / COMPLETAR_PLATOS. */
-var COMPLETAR_PESOS={kcal:40,proteina:20,carbos:8,grasas:6,receta:6,densidad:14,saciedad:12,facilidad:10,banda:14,rapidez:6,portable:5,sinCocinar:3,variedad:6,favorito:4,reciente:2,repetido:-7,similar:-5,mostradaExacta:-30,calidadVerde:3,tierA:14,tierB:10,tierC:7,tierD:4};
+var COMPLETAR_PESOS={kcal:40,proteina:20,carbos:8,grasas:6,receta:6,densidad:14,saciedad:12,facilidad:10,banda:14,rapidez:6,portable:5,sinCocinar:3,variedad:6,favorito:4,reciente:2,repetido:-7,similar:-5,mostradaExacta:-30,calidadVerde:3,tierA:14,tierB:10,tierC:7,tierD:4,bebida:8,
+  /* Me lleno rápido + mañana/trabajo: lo fácil manda (solo en ese contexto) */
+  rapidoPocoVol:5,rapidoSinCocinar:4,rapidoRapida:4,rapidoPortable:4,rapidoBebida:4,rapidoLarga:-10,rapidoNormalVol:-6,rapidoGrande:-12};
 var COMPLETAR_LIMITES={minKcal:120,perderCap:450,llenadoRapido:{manana:500,trabajo:500,noche:900,madrugada:300}};
 var COMPLETAR_FRANJAS={
   manana:{desde:5,hasta:11,frac:0.30,cap:600,banda:[300,600],nota:'ligero y denso'},
@@ -26009,7 +26013,7 @@ function completarLineaExtra(x){
 var COMPLETAR_ALIMENTO={
   'Leche entera taza':{funcion:'bebida',con:/desayuno|avena|licuado|hotcake|cereal|pan dulce|postre|granola|platano|fruta/i},
   'Yogurt griego taza':{funcion:'postre',con:/desayuno|avena|granola|fruta|platano|hotcake|cereal|huevo|tortilla|licuado/i},
-  'Plátano':{funcion:'snack',con:/desayuno|avena|licuado|pan|hotcake|yogurt|cereal|fruta|crema/i},
+  'Plátano':{funcion:'snack',con:/desayuno|avena|licuado|pan|hotcake|yogurt|cereal|fruta|crema de cacahuate/i},
   'Crema cacahuate cda':{funcion:'topping',con:/pan|avena|licuado|manzana|hotcake|platano|fruta/i},
   'Aguacate 1/2':{funcion:'acompanamiento',con:/huevo|taco|torta|arroz|ensalada|pollo|tostada|bowl|frijol|carne|res|cerdo|pescado/i},
   'Queso 28g':{funcion:'topping',con:/huevo|quesadilla|pasta|arroz|frijol|papa|torta|sandwich|sopa|carne|pollo|enchilada|mole|hamburguesa/i},
@@ -26099,9 +26103,14 @@ function completarCandidatos(ctx){
   var SALADO=/(comida|sopa|pasta|guiso|carne|cerdo|pollo|res|pescado|cena|horno|mole|tinga|chilaquil|taco|hamburguesa|quesadilla)/i;
   var DULCE=/(desayuno|avena|pan dulce|postre|fruta|licuado|cereal|granola|hotcake)/i;
   // A) recetas completas reales (estructuras que ya existen: prioridad)
-  cat.forEach(function(x){if(x.tipo==='receta')cands.push({partes:[x],tier:'A'});});
+  //    los auxiliares (aderezos/sazonadores) NUNCA son comida completa.
+  cat.forEach(function(x){if(x.tipo==='receta'){
+    if(RECETA_AUXILIAR.test(completarNorm(x.nombre)))return;
+    cands.push({partes:[x],tier:'A'});
+  }});
   // B) receta + complemento NATURAL (por función culinaria; sin bebidas de relleno)
   cat.forEach(function(r){ if(r.tipo!=='receta')return;
+    if(RECETA_AUXILIAR.test(completarNorm(r.nombre)))return;
     var tt=String(r.type||'')+' '+String(r.tags||'');
     var salado=SALADO.test(tt)&&!DULCE.test(tt);
     var texto=completarSinAcentos(completarNorm(r.nombre+' '+r.type+' '+r.tags));
@@ -26127,7 +26136,31 @@ function completarCandidatos(ctx){
     });
   });
   // D) snack o bebida independiente (alimento individual)
-  cat.forEach(function(x){if(x.tipo==='alimento')cands.push({partes:[x],tier:'D'});});
+  // REGLA DE FUNCIÓN: solo independiente/snack/bebida. Aceite, quesos,
+  // toppings y acompañamientos nunca aparecen solos (solo en Potenciar).
+  // NOMBRE ESPECÍFICO: si existen "Cereal 1 taza" y "Cereal alto en proteína
+  // 1 taza", la genérica no compite (se prefiere la variante concreta).
+  var gruposD={};
+  cat.forEach(function(x){if(x.tipo==='alimento'){
+    var ff=caloriasFacilesDe(x.nombre);
+    if(ff.funcion==='independiente'||ff.funcion==='snack'||ff.funcion==='bebida'){
+      var baseD=completarNombreCorto(x.nombre).split(' ')[0].toLowerCase();
+      (gruposD[baseD]=gruposD[baseD]||[]).push(x);
+    }
+  }});
+  for(var gd in gruposD){
+    var grupo=gruposD[gd];
+    var especificos=grupo.length>1?grupo.filter(function(x){return completarNombreCorto(x.nombre).split(' ').length>=2;}):grupo;
+    (especificos.length?especificos:grupo).forEach(function(x){cands.push({partes:[x],tier:'D'});});
+  }
+  // E) licuados compuestos del motor de sabores (solo si encajan con lo que falta)
+  var objetivoMomento=completarKcalMomento(ctx);
+  bebidaCombinaciones(ctx).forEach(function(bc){
+    var total=bc.compsBase.reduce(function(a,x){return a+x.kcal;},0);
+    if(total<objetivoMomento*0.4||total>objetivoMomento*1.3)return;
+    var partes=bc.compsBase.map(function(c){return {tipo:'alimento',ref:c.ref,nombre:c.nombre,kcal:c.kcal,p:c.p,c:c.c,g:c.g,tiempo:BEBIDA_LIMITES.tiempo,metodo:'licuadora',type:'licuado',tags:'licuado compuesto',portable:true,volumen:'Poco'};});
+    cands.push({partes:partes,tier:'E',tipoBebida:true,bebida:bc,tituloBebida:bebidaConstruir(bc).titulo});
+  });
   return cands;
 }
 function completarScore(c,ctx){
@@ -26176,6 +26209,23 @@ function completarScore(c,ctx){
   }
   if(franja==='manana'&&(tiempoTotal>0&&tiempoTotal<=10)){score+=W.rapidez;razones.push('rápida ≤10 min');}
   if(franja==='noche'&&/comida|sopa|pasta|arroz|guiso|carne|pollo|res|cerdo|papa|frijol/i.test(texto)){score+=W.facilidad;razones.push('noche-completa');}
+  // Me lleno rápido + mañana/trabajo: prioridad fuerte a lo fácil y ligero.
+  // Premia poco volumen, sin cocinar, ≤10 min, portable y bebida/licuado;
+  // penaliza recetas largas, volumen normal y platos de 600+ kcal.
+  // En noche este bloque NO aplica (ahí la comida completa sí vale).
+  // Si el usuario pulsó "Ver opciones normales", tampoco aplica.
+  var modoFacil=(typeof window==='undefined')||window._completarModoFacil!==false;
+  var rapidoDia=ctx.llenado==='rapido'&&(franja==='manana'||franja==='trabajo'||franja==='madrugada')&&modoFacil;
+  if(rapidoDia){
+    if(vol==='Poco'||vol==='Medio'){score+=W.rapidoPocoVol;razones.push('rapido-poco-volumen');}
+    if(/sin cocinar|fr[ií]o/i.test(metodo)){score+=W.rapidoSinCocinar;razones.push('rapido-sin-cocinar');}
+    if(tiempoTotal>0&&tiempoTotal<=10){score+=W.rapidoRapida;razones.push('rapido-≤10min');}
+    if(portable){score+=W.rapidoPortable;razones.push('rapido-portable');}
+    if(c.tipoBebida){score+=W.rapidoBebida;razones.push('rapido-bebida');}
+    if(tiempoTotal>20){score+=W.rapidoLarga;razones.push('rapido-receta-larga');}
+    if(vol==='Normal'){score+=W.rapidoNormalVol;razones.push('rapido-volumen-normal');}
+    if(tot.kcal>=600){score+=W.rapidoGrande;razones.push('rapido-plato-grande');}
+  }
   // 5) variedad: penalizar repetidos hoy y similares a lo mostrado
   var consumidos=(ctx.consumidosHoy||[]).map(completarNorm);
   var mostradas=(ctx.mostradas||[]).map(completarNorm);
@@ -26204,6 +26254,8 @@ function completarScore(c,ctx){
   if(hayReceta){score+=W.receta;razones.push('receta-existente');}
   c.partes.forEach(function(x){ if(x.tipo==='receta'&&x.scoreAudit==='🟢'){score+=W.calidadVerde;razones.push('calidad-verde');} });
   if(c.partes.length>1){score+=W.variedad;razones.push('combo-variado');}
+  // licuado compuesto: fácil y bebible — premio en mañana/trabajo o llenado rápido
+  if(c.tipoBebida&&(franja==='manana'||franja==='trabajo'||ctx.llenado==='rapido')){score+=W.bebida;razones.push('bebida-facil');}
   return {score:score,tot:tot,volumen:vol,razones:razones};
 }
 function completarNombreCorto(n){
@@ -26211,7 +26263,7 @@ function completarNombreCorto(n){
   s=s.replace(/\s*\(.*?\)/g,'');
   s=s.replace(/(^|\s)(1\/2|½|1\/4|¼|1\/3|⅓)(\s|$)/g,' ');
   s=s.replace(/(^|\s)\d+(\.\d+)?\s*(g|kg|ml|l)\b/gi,' ');
-  s=s.replace(/(^|\s)(taza|tazas|cda|cdas|cdita|cditas|rebanada|rebanadas|lata|pieza|pza|mediana|mediano|grande|scoop)\b/gi,' ');
+  s=s.replace(/(^|\s)(taza|tazas|cda|cdas|cucharada|cucharadas|cdita|cditas|cucharadita|cucharaditas|rebanada|rebanadas|lata|latas|pieza|piezas|pza|mediana|mediano|grande|chica|scoop|scoops|copa|copas|paquete|paquetes|vaso|vasos|oz)\b/gi,' ');
   s=s.replace(/(^|\s)\d+(\.\d+)?(\s|$)/g,' ');
   s=completarNorm(s);
   if(!s)return String(n||'');
@@ -26232,15 +26284,238 @@ function completarTituloUI(partes){
   }
   return {titulo:alim.map(function(x){return completarNombreCorto(x.nombre);}).join(' + '),sub:''};
 }
+/* ===== POOL FÁCIL (Me lleno rápido + mañana/trabajo) =====
+   Política fuerte de selección: el top-3 sale SOLO de candidatos realmente
+   prácticos (bebida, snack, portable, sin cocinar/recalentar, ≤10 min,
+   combos pequeños RECONOCIDOS o micros de poco volumen). Las comidas
+   normales/pesadas siguen existiendo para noche, perfil Normal o como
+   fallback cuando no hay suficientes fáciles. Nada se inventa. */
+var COMPLETAR_COMBOS_FACILES={
+  'Huevo + Tortilla maíz':1,
+  'Huevo + Tortilla maíz + Queso 28g':1,
+  'Huevo + Tortilla maíz + Aguacate 1/2':1,
+  'Atún lata + Aguacate 1/2':1,
+  'Atún lata + Queso 28g':1,
+  'Atún lata + Tortilla maíz':1,
+  'Leche entera taza + Plátano':1,
+  'Leche entera taza + Plátano + Crema cacahuate cda':1,
+  'Avena 1/2 taza + Leche entera taza':1,
+  'Yogurt griego taza + Plátano':1,
+  'Yogurt griego taza + Avena 1/2 taza':1,
+  'Yogurt griego taza + Crema cacahuate cda':1,
+  'Yogurt griego taza + Plátano + Avena 1/2 taza':1,
+  'Yogurt griego taza + Plátano + Crema cacahuate cda':1
+};
+function completarEsFacilParte(p){
+  if(!p)return false;
+  var t=+p.tiempo||0;
+  if(t>0&&t<=10)return true;
+  var m=String(p.metodo||'').toLowerCase();
+  if(/sin cocinar|fr[ií]o|recalent|rec\./i.test(m))return true;
+  if(p.portable)return true;
+  var texto=completarNorm((p.nombre||'')+' '+(p.type||'')+' '+(p.tags||''));
+  if(/snack|licuado|bebida|avena|hotcake|sandwich|quesadilla|wrap|tostada|burrito|frio/i.test(texto))return true;
+  return false;
+}
+function completarEsFacil(x,ctx){
+  if(!x||!x.partes||!x.partes.length)return false;
+  var tot=completarSuma(x.partes);
+  var vol=completarVolMax(x.partes);
+  if(x.tipoBebida)return true;                       // licuado compuesto (ya ≤500)
+  if(x.tier==='E')return false;
+  if(x.tier==='D'){                                  // micro/snack independiente
+    var ffd=caloriasFacilesDe((x.partes[0]||{}).nombre||'');
+    if(ffd.funcion!=='independiente'&&ffd.funcion!=='snack'&&ffd.funcion!=='bebida')return false;
+    return tot.kcal<=240&&vol==='Poco';
+  }
+  if(x.tier==='C'){                                  // solo estructuras reconocidas
+    var nombres=x.partes.map(function(p){return p.nombre;}).join(' + ');
+    if(!COMPLETAR_COMBOS_FACILES[nombres])return false;
+    return tot.kcal<=550&&vol==='Poco';
+  }
+  if(x.tier==='B'){                                  // receta fácil + complemento
+    var recetaB=null;x.partes.forEach(function(p){if(p.tipo==='receta')recetaB=p;});
+    if(!recetaB||!completarEsFacilParte(recetaB))return false;
+    return tot.kcal<=650;
+  }
+  // tier A: receta completa fácil
+  var p=x.partes[0];
+  if(p.tipo==='alimento')return false;
+  if((+p.tiempo||0)>15)return false;                 // recetas >15 min fuera
+  if(tot.kcal>650)return false;                      // meal prep grande fuera
+  if(/llena|meal prep|para la semana|rinde|lote/i.test(completarNorm(p.nombre||'')))return false;
+  return completarEsFacilParte(p);
+}
+/* ESTRUCTURA NATURAL: cada propuesta debe pertenecer a una estructura
+   reconocida o a una receta real. La diversidad NUNCA rescata un combo
+   incoherente (yogurt+sardinas, fritos+leche, bebida+salado). */
+function completarEsEstructuraNatural(x){
+  if(!x||!x.partes||!x.partes.length)return false;
+  if(x.tipoBebida)return true;                       // licuado compuesto real
+  if(x.tier==='E')return false;
+  if(x.tier==='D')return true;                       // micro/snack/bebida independiente
+  if(x.tier==='C'){                                  // solo combos con estructura reconocida
+    var nombres=x.partes.map(function(p){return p.nombre;}).join(' + ');
+    return !!COMPLETAR_COMBOS_FACILES[nombres];
+  }
+  if(x.tier==='B'){                                  // receta + complemento: pares naturales
+    var receta=null,compl=null;
+    x.partes.forEach(function(p){if(p.tipo==='receta')receta=p;else compl=p;});
+    if(!receta||!compl)return false;
+    var rtexto=completarNorm((receta.nombre||'')+' '+(receta.type||'')+' '+(receta.tags||''));
+    var ctexto=completarNorm(compl.nombre||'');
+    // desayuno/avena/pan/fruta + complemento dulce/lácteo coherente
+    if(/desayuno|avena|pan|fruta|hotcake|cereal|licuado/i.test(rtexto)){
+      return /leche|yogurt|platano|plátano|fresa|manzana|miel|crema de cacahuate|granola|fruta|queso|huevo/i.test(ctexto);
+    }
+    // ensalada/verdura + queso/aguacate/frutos secos/atún
+    if(/ensalada|verdura/i.test(rtexto)){
+      return /queso|aguacate|almendra|nuec|nuez|atun|atún/i.test(ctexto);
+    }
+    // plato salado (pasta/comida/carne/pollo/huevo) + queso/aguacate/tortilla
+    if(/pasta|comida|carne|pollo|huevo|guiso|mole|tinga|chorizo/i.test(rtexto)){
+      return /queso|aguacate|tortilla|frijol|arroz/i.test(ctexto);
+    }
+    return false;                                    // el resto no es estructura natural
+  }
+  if(x.tier==='A')return true;                       // receta real existente
+  return false;
+}
+/* PUERTA ÚNICA de la política fácil: top-3 inicial, Otras 3, repuntuación
+   y regeneración tras agregar pasan SIEMPRE por esta función. */
+function completarEsCandidatoFacil(ctx,candidato){
+  return completarEsFacil(candidato,ctx);
+}
+/* ===== Contenido accionable =====
+   - Auxiliares (aderezos/sazonadores/electrolitos): NUNCA propuesta de
+     comida completa (ficha propia + recetas compatibles + Potenciar).
+   - Micro-resumen REAL desde el primer paso de la receta (sin texto ficticio).
+   - Tiempo activo separado del reposo. */
+var RECETA_AUXILIAR=/sazonador|aderezo|electrolit|chile[- ]lim[óo]n|taj[ií]n casero|sal de ajo|sal de hierbas|mezcla de especias|aliño|marinada/i;
+/* Receta real más rápida para preparar un alimento (método visible). */
+function recetaSugeridaPara(nombre){
+  var base=completarNombreCorto(nombre).split(' ')[0].toLowerCase();
+  if(!base)return null;
+  var mejor=null;
+  baseRecipes.forEach(function(r){
+    if((+r.time||0)>15)return;
+    if(!r.name||completarNorm(r.name).indexOf(base)<0)return;
+    if(!r.steps||!r.steps.length)return;
+    if(!mejor||(+r.time||99)<(+mejor.time||99))mejor=r;
+  });
+  return mejor?{nombre:mejor.name,tiempo:mejor.time}:null;
+}
+/* Micro-resumen "cómo se hace": primer paso real con verbo conocido + tiempo.
+   Si el paso no es claro, solo tiempo. Nunca texto ficticio. */
+function recetaResumenCorto(nombre){
+  var r=null;baseRecipes.forEach(function(x){if(x.name===nombre)r=x;});
+  if(!r)return null;
+  var t=+r.time||0;
+  var icono='🍳';
+  if(/licuad|batid|maltead|smoothie/i.test(String(r.method||'')+' '+String(r.type||'')))icono='🥤';
+  else if(/sin cocinar|fr[ií]o/i.test(String(r.method||'')))icono='🥡';
+  else if(/horno|airfryer|air fryer/i.test(String(r.method||'')))icono='🔥';
+  var paso=(r.steps&&r.steps.length)?String(r.steps[0]):'';
+  if(paso){
+    var corto=paso.replace(/^\d+[\.\)]\s*/,'');
+    corto=corto.replace(/\([^)]*preparación[^)]*\)/gi,'');
+    var verbos=['Revuelve','Mezcla','Licúa','Licua','Calienta','Hierve','Pon','Cocina','Bate','Dora','Sirve','Aplana','Corta','Unta','Rellena','Dobla','Voltea','Tritura','Tuesta','Empieza','Pica','Escurre','Lava','Remoja','Refrigera','Agrega'];
+    var tieneVerbo=verbos.some(function(v){return corto.indexOf(v)===0;});
+    if(tieneVerbo){
+      corto=corto.split(/[,;]|\.\s|—/)[0];
+      corto=corto.slice(0,60);
+      if(corto.length>4){
+        var espera=(r.reposo||r.espera)?(' + reposo '+r.reposo):'';
+        return icono+' '+corto+' · '+t+' min'+espera;
+      }
+    }
+  }
+  if(t)return icono+' '+t+' min';
+  return null;
+}
+/* Tipo visible de propuesta (una sola etiqueta por tarjeta). */
+function completarEtiquetaTipo(p){
+  if(!p)return null;
+  if(p.tipoProp==='bebida')return {icono:'🥤',texto:'Bebida'};
+  if(p.tipoProp==='micro'){
+    var n=completarNorm(((p.componentes&&p.componentes[0]&&p.componentes[0].nombre)||''));
+    if(/queso|cottage/.test(n))return {icono:'🧀',texto:'Extra pequeño'};
+    if(/almendra|nuec|nuez|trail|granola|cereal|chicharron|chicharrón|fritos|totopo|papas/.test(n))return {icono:'🥜',texto:'Snack rápido'};
+    return {icono:'⚡',texto:'Suma fácil'};
+  }
+  if(p.tipoProp==='comida')return {icono:'🍽️',texto:'Comida fácil'};
+  return null;
+}
+/* Línea de una tarjeta micro: porción real + kcal con signo + (sin cocinar). */
+function completarLineaMicro(p){
+  var por=(p.componentes&&p.componentes[0]&&p.componentes[0].porcion)?p.componentes[0].porcion:completarPorcion(p.componentes&&p.componentes[0]&&p.componentes[0].nombre);
+  return por.texto+' · +'+Math.round(p.kcal)+' kcal · '+Math.round(p.p)+' g proteína';
+}
+/* Diversidad ESTRICTA del POOL FÁCIL (REGLA TOP-3): si el catálogo lo
+   permite: máx 1 huevo, máx 1 lácteo, máx 1 bebida/licuado, máx 1
+   cereal/avena. Las demás posiciones vienen de familias distintas.
+   La repetición solo se permite cuando ya no quedan familias distintas. */
+function pickDiversoFacil(faciles){
+  var LIMITES={huevo:1,lacteos:1,bebida:1,cereales:1};
+  var contador={};
+  var out=[];
+  function cuentaFam(x){completarFamiliasDe(x).forEach(function(f){contador[f]=(contador[f]||0)+1;});}
+  function cabe(x){
+    var fams=completarFamiliasDe(x);
+    for(var i=0;i<fams.length;i++){
+      if(LIMITES[fams[i]]&&(contador[fams[i]]||0)>=LIMITES[fams[i]])return false;
+    }
+    return true;
+  }
+  function elegirDe(cond){
+    for(var i=0;i<faciles.length;i++){if(cond(faciles[i])&&out.indexOf(faciles[i])<0)return faciles[i];}
+    return null;
+  }
+  var esBeb=function(x){return x.tipoBebida||(x.tier==='D'&&/leche|yogurt|bebida/i.test(completarNorm((x.partes[0]||{}).nombre||'')));};
+  var esSnack=function(x){return x.tier==='D'||x.tier==='C';};
+  var esCompleta=function(x){return x.tier==='A'||x.tier==='B';};
+  var beb=elegirDe(function(x){return esBeb(x)&&cabe(x);});
+  if(beb){out.push(beb);cuentaFam(beb);}
+  // 1 MICRO-EXTRA / snack denso primero (tier D), luego combo rápido
+  var snack=elegirDe(function(x){return x.tier==='D'&&cabe(x);});
+  if(!snack)snack=elegirDe(function(x){return esSnack(x)&&cabe(x);});
+  if(snack){out.push(snack);cuentaFam(snack);}
+  // tercera: otra fácil de familia distinta que respete los topes.
+  // Sin pase "de cualquier cosa": si nada cabe, el lote queda corto y la
+  // UI muestra menos opciones (nunca fabricar combinaciones para llenar 3).
+  var t3=elegirDe(function(x){return !esCompleta(x)&&out.every(function(o){return o.tier!==x.tier;})&&cabe(x);});
+  if(!t3)t3=elegirDe(function(x){return !esCompleta(x)&&cabe(x);});
+  if(!t3)t3=elegirDe(function(x){return cabe(x);});
+  if(t3){out.push(t3);cuentaFam(t3);}
+  // relleno: solo los que respetan los topes; repetición solo al agotar
+  for(var i=0;i<faciles.length&&out.length<3;i++){if(out.indexOf(faciles[i])<0&&cabe(faciles[i])){out.push(faciles[i]);cuentaFam(faciles[i]);}}
+  for(var i2=0;i2<faciles.length&&out.length<3;i2++){if(out.indexOf(faciles[i2])<0){out.push(faciles[i2]);cuentaFam(faciles[i2]);}}
+  return out;
+}
+/* ¿Candidato rápido/portable? (garantía de diversidad de Me lleno rápido). */
+function completarEsRapido(x){
+  var partes=(x&&x.partes)||[];
+  var tiempoTotal=partes.reduce(function(a,p){return a+(+p.tiempo||0);},0);
+  var metodo=String(partes.map(function(p){return p.metodo;}).filter(Boolean)[0]||'').toLowerCase();
+  var portable=partes.some(function(p){return p.portable;});
+  return (tiempoTotal>0&&tiempoTotal<=10)||/sin cocinar|fr[ií]o/i.test(metodo)||portable;
+}
 function completarProponer(ctx){
-  var lista=completarCandidatos(ctx).map(function(c){var s=completarScore(c,ctx);return {s:s,partes:c.partes,tier:c.tier};});
+  var lista=completarCandidatos(ctx).map(function(c){var s=completarScore(c,ctx);return {s:s,partes:c.partes,tier:c.tier,tipoBebida:c.tipoBebida,bebida:c.bebida,tituloBebida:c.tituloBebida};});
   lista.sort(function(a,b){return b.s.score-a.s.score;});
   var vistos={};
   var unicos=[];
   lista.forEach(function(x){
     var clave=x.partes.map(function(p){return p.nombre;}).join(' + ');
-    if(vistos[clave])return;
-    vistos[clave]=1;
+    if(vistos[clave]){
+      // Si ya existe un combo simple y llega su versión LICUADO COMPUESTO
+      // (mismos componentes), gana la versión bebida (trae título y menú).
+      if(!x.tipoBebida||vistos[clave]==='bebida')return;
+      for(var di=0;di<unicos.length;di++){
+        if(unicos[di].partes.map(function(p){return p.nombre;}).join(' + ')===clave){unicos.splice(di,1);break;}
+      }
+    }
+    vistos[clave]=x.tipoBebida?'bebida':1;
     unicos.push(x);
   });
   // Diversidad estructural: una receta, una alternativa ligera/rápida y una estructura distinta.
@@ -26263,9 +26538,52 @@ function completarProponer(ctx){
     if(elegidos.indexOf(unicos[k])<0&&completarCategoria(unicos[k].partes)!==completarCategoria(elegidos[0].partes)){elegidos.push(unicos[k]);}
   }
   for(var k2=0;k2<unicos.length&&elegidos.length<3;k2++){if(elegidos.indexOf(unicos[k2])<0)elegidos.push(unicos[k2]);}
+  // POLÍTICA de POOL FÁCIL (persistente en TODAS las rondas): Me lleno rápido
+  // + mañana/trabajo elige SOLO entre opciones realmente prácticas, rotando
+  // dentro del pool restante. Las comidas normales/pesadas solo aparecen
+  // cuando el usuario pulsa "Ver opciones normales" (modoFacil=false):
+  // el fallback a comida normal es DECISIÓN del usuario, nunca automática.
+  var franjaRapido=ctx.franja||completarFranja(ctx.hora);
+  if(ctx.llenado==='rapido'&&(franjaRapido==='manana'||franjaRapido==='trabajo'||franjaRapido==='madrugada')){
+    var modoFacil=(typeof window==='undefined')||window._completarModoFacil!==false;
+    if(modoFacil){
+      var mostradasR=(ctx.mostradas||[]).slice();
+      var claveDe=function(x){return x.partes.map(function(p){return p.nombre;}).join(' + ');};
+      var faciles=unicos.filter(function(x){return completarEsCandidatoFacil(ctx,x)&&completarEsEstructuraNatural(x)&&mostradasR.indexOf(claveDe(x))<0;});
+      if(faciles.length>0){
+        // MEMORIA DE FAMILIAS (progresiva): la primera vez es normal,
+        // la segunda pierde prioridad, la tercera queda casi excluida.
+        // Solo se repite familia cuando ya no quedan familias distintas.
+        var famVistas=(typeof window!=='undefined'&&window._completarFamiliasVistas)?window._completarFamiliasVistas:[];
+        var vistasCount={};
+        famVistas.forEach(function(f){vistasCount[f]=(vistasCount[f]||0)+1;});
+        var vistoDe=function(x){
+          var fams=completarFamiliasDe(x);var n=99;
+          fams.forEach(function(f){n=Math.min(n,vistasCount[f]||0);});
+          return n;
+        };
+        faciles.sort(function(a,b){
+          var va=vistoDe(a),vb=vistoDe(b);
+          if(va!==vb)return va-vb;      // familias menos vistas primero
+          return b.s.score-a.s.score;
+        });
+        var frescos=faciles.filter(function(x){return vistoDe(x)<3;});
+        // el lote se arma PRIMERO con candidatos frescos (aunque sean comida
+        // completa rápida); solo se repite familia cuando no queda fresco.
+        elegidos=pickDiversoFacil(frescos.length?frescos:faciles);
+        if(elegidos.length<3){
+          var resto=faciles.filter(function(x){return elegidos.indexOf(x)<0;});
+          for(var ri=0;ri<resto.length&&elegidos.length<3;ri++){elegidos.push(resto[ri]);}
+        }
+      }else{
+        elegidos=[]; // pool agotado: la UI muestra el mensaje + "Ver opciones normales"
+      }
+    }
+    // modoFacil=false (decisión explícita del usuario): ranking normal.
+  }
   return elegidos.slice(0,3).map(function(x){
     var clave=x.partes.map(function(p){return p.nombre;}).join(' + ');
-    var ui=completarTituloUI(x.partes);
+    var ui=x.tipoBebida?{titulo:x.tituloBebida,sub:''}:completarTituloUI(x.partes);
     return {
       clave:clave,
       titulo:ui.titulo, sub:ui.sub,
@@ -26275,6 +26593,8 @@ function completarProponer(ctx){
       metodo:x.partes.map(function(p){return p.metodo;}).filter(Boolean)[0]||'',
       score:Math.round(x.s.score),
       razones:x.s.razones,
+      bebida:x.tipoBebida?x.bebida:null,
+      tipoProp:x.tipoBebida?'bebida':(x.tier==='D'?(caloriasFacilesDe(x.partes[0].nombre).funcion==='bebida'?'bebida':'micro'):(x.tier==='A'||x.tier==='B'||x.tier==='C'?'comida':'otro')),
       componentes:x.partes.map(function(p){return {tipo:p.tipo,ref:p.ref,nombre:p.nombre,kcal:p.kcal,p:p.p,c:p.c,g:p.g,tiempo:p.tiempo||0,metodo:p.metodo||'',volumen:p.volumen,porcion:p.porcion||completarPorcion(p.nombre)};})
     };
   });
@@ -26333,40 +26653,556 @@ function completarCtxReal(){
 function completarMealKey(){var f=completarFranja();return f==='manana'?'breakfast':(f==='trabajo'?'lunch':(f==='noche'?'dinner':'snacks'));}
 function completarAbrir(){
   window._completarMostradas=window._completarMostradas||[];
+  window._bebidaSaboresUsados=[];
+  window._completarFamiliasVistas=[];
+  window._completarModoFacil=true; // cada sesión nueva arranca en modo fácil
   var ov=document.getElementById('completarPanel');
   if(!ov){ov=document.createElement('div');ov.id='completarPanel';ov.style.cssText='position:fixed;inset:0;background:#f0f4f1;z-index:23000;overflow-y:auto;padding:14px;box-sizing:border-box;-webkit-overflow-scrolling:touch';document.body.appendChild(ov);}
   completarRenderPanel();
 }
-function completarRenderPanel(){
+function completarRenderPanel(propsPre){
   var ov=document.getElementById('completarPanel'); if(!ov)return;
   var ctx=completarCtxReal();
-  var props=completarProponer(ctx);
+  var props=propsPre||completarProponer(ctx);
   window._completarPropuestas=props;
   var h='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="completarCerrar()">← Volver</button>'
     +'<b style="font-size:17px;color:#12352a;flex:1">🍽 Completar mi día</b></div>'
     +'<div class="muted" style="font-size:13px;margin-bottom:10px">'+safeText(completarTextoTarjeta())+'</div>';
-  if(!props.length){
+  var franjaR=ctx.franja||completarFranja(ctx.hora);
+  var rapidoDiaV=ctx.llenado==='rapido'&&(franjaR==='manana'||franjaR==='trabajo'||franjaR==='madrugada');
+  var modoFacilV=window._completarModoFacil!==false;
+  if(!props.length&&!(modoFacilV&&rapidoDiaV)){
     h+='<div class="card"><b>Sin propuestas seguras ahora.</b><div class="muted" style="font-size:13px;margin-top:4px">Registra lo que comiste y vuelve a intentar.</div></div>';
   }
   props.forEach(function(pr,i){
     var receta=null;pr.componentes.forEach(function(c){if(c.tipo==='receta')receta=c;});
+    var alimsComp=pr.componentes.filter(function(c){return c.tipo==='alimento';});
+    var esComboB=!!receta&&alimsComp.length>0;
+    // micro-resumen REAL del primer paso (nunca texto ficticio)
+    var resumen=(!pr.bebida&&receta)?recetaResumenCorto(receta.nombre):null;
+    var tm5Rec=false;
+    if(receta){var rr=null;baseRecipes.forEach(function(x){if(x.name===receta.nombre)rr=x;});if(rr)tm5Rec=/(tm5|thermomix)/i.test(String(rr.method||'')+' '+String(rr.tags||''));}
+    var sugMicro=null;
+    if(pr.tipoProp==='micro')sugMicro=recetaSugeridaPara((pr.componentes[0]||{}).nombre||'');
     h+='<div style="background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:12px;margin-bottom:10px">'
       +'<b style="font-size:15px">'+safeText(pr.titulo)+'</b>'
-      +'<div style="font-size:13px;font-weight:700;color:#12352a;margin-top:4px">'+safeText(completarLineaPropuesta(pr))+'</div>'
-      +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">'+completarVolBadge(pr.volumen)+'</span></div>'
+      +(esComboB?'<div class="muted" style="font-size:12px;margin-top:2px"><b>Receta:</b> '+safeText(receta.nombre)+'</div><div class="muted" style="font-size:12px"><b>Acompañamiento:</b> '+safeText(alimsComp.map(function(c){return c.nombre;}).join(' + '))+'</div>':'')
+      +'<div style="font-size:13px;font-weight:700;color:#12352a;margin-top:4px">'+safeText(pr.tipoProp==='micro'&&modoFacilV?completarLineaMicro(pr):(esComboB?(Math.round(pr.kcal)+' kcal · '+Math.round(pr.p)+' g proteína'+(pr.tiempo?' · '+pr.tiempo+' min':'')):completarLineaPropuesta(pr)))+'</div>'
+      +(resumen?'<div style="font-size:12px;color:#56725f;margin-top:2px">'+safeText(resumen)+'</div>':'')
+      +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">'
+      +((modoFacilV&&rapidoDiaV&&completarEtiquetaTipo(pr))?'<span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">'+completarEtiquetaTipo(pr).icono+' '+safeText(completarEtiquetaTipo(pr).texto)+'</span>':'<span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">'+completarVolBadge(pr.volumen)+'</span>')
+      +(tm5Rec?'<span style="font-size:11px;font-weight:800;background:#f3e8ff;border-radius:999px;padding:3px 10px">⚙️ TM5 disponible</span>':'')
+      +(pr.tipoProp==='micro'&&modoFacilV?'<span style="font-size:11px;color:#56725f">'+(sugMicro?'🍳 Prepáralo: '+safeText(sugMicro.nombre)+' ('+sugMicro.tiempo+' min)':'🥡 Sin cocinar · Poco volumen')+'</span>':'')
+      +'</div>'
+      +(pr.bebida?bebidaMenuHTML(i,pr,ctx):'')
       +'<div class="row" style="gap:8px;margin-top:10px">'
       +(receta?'<button class="btn" style="flex:1;padding:10px;min-height:44px" onclick="completarCocinar('+i+')">🍳 Cocinar</button>':'')
       +'<button class="btn primary" style="flex:1;padding:10px;min-height:44px" onclick="completarAgregar('+i+')">＋ Agregar</button>'
       +'<button class="btn" style="flex:0 0 auto;padding:10px 12px;min-height:44px" onclick="completarPotenciarAbrir('+i+')" title="Añadir 1-3 extras a esta comida">⚡</button></div></div>';
   });
-  h+='<button class="btn" style="width:100%;padding:12px;min-height:48px" onclick="completarOtras3()">🔄 Otras 3</button></div>';
+  if(props.length===3){
+    h+='<button class="btn" style="width:100%;padding:12px;min-height:48px" onclick="completarOtras3()">🔄 Otras 3</button>';
+  }else if(modoFacilV&&rapidoDiaV){
+    h+='<div class="card" style="text-align:center;padding:14px 12px;margin-top:10px">'
+      +'<b>No hay más opciones fáciles diferentes ahora.</b>'
+      +'<div class="muted" style="font-size:12px;margin-top:4px">Puedes ver las comidas normales si las quieres.</div>'
+      +'<button class="btn" style="width:100%;padding:12px;min-height:48px;margin-top:10px" onclick="completarVerNormales()">Ver opciones normales</button>'
+      +'</div>';
+  }
+  h+='</div>';
   ov.innerHTML=h;
   try{ov.scrollTop=0;}catch(e){}
 }
 /* ===== Potenciar una comida elegida (FASE 3) =====
    Extras reales y compatibles por función culinaria; sin bebidas de relleno
    en salados, sin principales como extra, densos si Me lleno rápido. */
+/* ===== Potenciar inteligente (FASE 4) =====
+   Convierte "3 extras compatibles" en un asistente: cada extra responde a
+   una NECESIDAD real del día (kcal/proteína/carbos del faltante, llenado,
+   momento) con escalado seguro de porción y una razón derivada de datos. */
+var POTENCIAR_PESOS={fitKcal:30,macro:18,volumen:10,momento:8,repeticion:-18,escalado:2,micro:6};
+/* Solo unidades de MEDIDA permiten escalado matemático seguro (multiplicar
+   el dato existente). Nunca pieza/lata/paquete/scoop/copa/tamaño/fracción. */
+var POTENCIAR_UNIDAD_ESCALABLE={g:1,kg:1,ml:1,l:1,oz:1,taza:1,cda:1,cucharada:1,cdita:1,cucharadita:1,rebanada:1,vaso:1};
+/* ===== Micro-extras (⚡ Extra fácil) =====
+   Porciones reales del catálogo, sin cocinar, poco volumen, densas.
+   soloPlato: nunca en contexto dulce (aceite/mantequilla/mayonesa).
+   soloDulce: nunca con plato salado (miel/granola). */
+var POTENCIAR_MICRO={
+  'Crema cacahuate cda':{con:/pan|avena|licuado|manzana|hotcake|platano|fruta/i},
+  'Almendras 28g':{con:/ensalada|avena|yogurt|licuado|fruta|queso/i},
+  'Nueces 28g':{con:/ensalada|avena|yogurt|licuado|fruta/i},
+  'Queso 28g':{con:/huevo|quesadilla|pasta|arroz|frijol|papa|torta|sandwich|sopa|carne|pollo|enchilada|mole|hamburguesa/i},
+  'Aguacate 1/2':{con:/huevo|taco|torta|arroz|ensalada|pollo|tostada|bowl|frijol|carne|res|cerdo|pescado/i},
+  'Aceite oliva 1 cucharada':{con:/ensalada|pasta|verdura|pescado|arroz/i,soloPlato:1},
+  'Mantequilla 1 cucharada':{con:/pan|papa|hotcake|elote/i,soloPlato:1},
+  'Mayonesa 1 cucharada':{con:/sandwich|torta|ensalada|huevo/i,soloPlato:1},
+  'Miel 1 cucharada':{con:/avena|licuado|fruta|pan|hotcake|yogurt|leche|platano/i,soloDulce:1},
+  'Granola 1/2 taza':{con:/yogurt|licuado|leche|fruta|avena|platano/i,soloDulce:1},
+  'Leche entera taza':{con:/desayuno|avena|licuado|hotcake|cereal|pan dulce|postre|granola|platano|fruta/i,funcion:'bebida'},
+  'Yogurt griego taza':{con:/desayuno|avena|granola|fruta|platano|hotcake|cereal|huevo|tortilla|licuado/i},
+  'Tortilla maíz':{con:/huevo|frijol|pollo|carne|chilaquil|taco|mole|tinga|guiso/i},
+  'Pan integral 2 rebanadas':{con:/huevo|sandwich|torta|queso|jalea/i},
+  'Avena 1/2 taza':{con:/leche|platano|yogurt|cacahuate|crema de cacahuate|cereal|licuado/i},
+  // === CALORÍAS FÁCILES ampliadas (familia + función reales del catálogo) ===
+  'Queso cottage 1 taza':{con:/desayuno|fruta|ensalada|huevo|pan|tortilla/i},
+  'Queso cheddar 28g':{con:/huevo|pasta|carne|pollo|tortilla|sandwich|hamburguesa|quesadilla/i},
+  'Queso fresco 28g':{con:/ensalada|frijol|taco|enchilada|tostada|elote/i},
+  'Jamón 100g':{con:/huevo|sandwich|torta|pan|desayuno/i},
+  'Pavo cocido 100g':{con:/sandwich|torta|wrap|pan|ensalada/i},
+  'Yogurt bebible proteína':{con:/desayuno|licuado|fruta|granola|avena|pan/i,funcion:'bebida'},
+  'Yogurt alto en proteína 150g':{con:/desayuno|fruta|granola|licuado|avena/i},
+  'Leche alta proteína 1 taza':{con:/desayuno|avena|licuado|cereal|fruta|platano/i,funcion:'bebida'},
+  'Trail mix 1/2 taza':{con:/yogurt|fruta|avena|ensalada/i,soloDulce:1},
+  'Nutella 2 cucharadas':{con:/pan|avena|licuado|hotcake|fruta|platano/i,soloDulce:1},
+  'Proteína whey 1 scoop':{con:/leche|licuado|yogurt|avena/i,soloDulce:1},
+  'Crema 1 cucharada':{con:/fruta|fresa|platano|gelatina|hotcake|pan|taco|enchilada|quesadilla|sopa/i},
+  'Totopos 1 oz':{con:/comida|frijol|guacamole|ensalada|mole|tinga/i},
+  'Bolillo 1 pieza':{con:/huevo|torta|sandwich|carne|pollo|queso|frijol/i},
+  'Tortilla de harina grande':{con:/huevo|pollo|carne|queso|frijol|taco|guiso/i},
+  'Fruta congelada 1 taza':{con:/licuado|yogurt|avena|leche/i,soloDulce:1},
+  'Gelatina regular 1 copa':{con:/desayuno|fruta|postre/i,soloDulce:1},
+  'Cereal alto en proteína 1 taza':{con:/leche|yogurt|desayuno|fruta/i,soloDulce:1},
+  'Chicharrón de cerdo 1 oz':{con:/frijol|guiso|comida|mole/i},
+  'Jalea de fresa 1 cda':{con:/pan|hotcake|avena|tostada/i,soloDulce:1}
+};
+/* Predicado: micro-extra = alimento real, 0 min, ≤240 kcal, Poco volumen, denso. */
+function potenciarEsMicroExtra(x){
+  return !!x&&x.tipo==='alimento'&&(+x.tiempo||0)===0&&(+x.kcal||0)<=240&&x.volumen==='Poco'&&completarDensidad(+x.kcal||0,x.volumen)>=100;
+}
+/* ===== CALORÍAS FÁCILES: clasificación automática (familia + función) =====
+   Se deriva del NOMBRE real de foods[] (patrones del propio catálogo), no de
+   listas hardcodeadas por alimento. La función culinaria decide dónde puede
+   aparecer:
+   - independiente/snack/bebida → propuesta tier D (micro independiente).
+   - topping/acompañamiento → solo como extra en Potenciar.
+   - soloPlato → solo con plato compatible (nunca independiente ni bebida). */
+var CALORIAS_FACILES_FAMILIA=[
+  [/aceite|mantequilla|mayonesa|manteca/i,{familia:'grasas',funcion:'soloPlato'}],
+  [/crema de cacahuate|nutella|cacahuate|almendra|nuec|nuez|trail|mani/i,{familia:'frutosSecos',funcion:'snack'}],
+  [/granola/i,{familia:'frutosSecos',funcion:'snack'}],
+  [/miel|jalea/i,{familia:'toppings',funcion:'topping'}],
+  [/^crema /i,{familia:'toppings',funcion:'topping'}],
+  [/queso|cottage/i,{familia:'lacteos',funcion:'acompanamiento'}],
+  [/aguacate/i,{familia:'grasas',funcion:'acompanamiento'}],
+  [/leche|yogurt/i,{familia:'lacteos',funcion:'bebida'}],
+  [/tortilla|bolillo|tostada|waffle|totopo|pan /i,{familia:'pan',funcion:'acompanamiento'}],
+  [/avena|cereal/i,{familia:'cereales',funcion:'snack'}],
+  [/platano|plátano|manzana|mango|pina|piña|fresa|fruta|naranja/i,{familia:'fruta',funcion:'snack'}],
+  [/huevo/i,{familia:'huevo',funcion:'independiente'}],
+  [/atun|atún|sardina/i,{familia:'proteina',funcion:'independiente'}],
+  [/jamón|jamon|pavo|salmón|salm|tilapia|camaron|camarón|pollo|carne|cerdo|res|bistec/i,{familia:'proteina',funcion:'acompanamiento'}],
+  [/gelatina/i,{familia:'postres',funcion:'snack'}],
+  [/whey/i,{familia:'toppings',funcion:'topping'}],
+  [/chicharron|chicharrón|fritos|chips|papas fritas/i,{familia:'snacksSalados',funcion:'snack'}],
+  [/lentejas|garbanzo|tofu|frijol|arroz|papa |pasta|elote|camote|sopa|verdura|brócoli|brocoli|espinaca|ejote|maíz|maiz/i,{familia:'plato',funcion:'acompanamiento'}]
+];
+function caloriasFacilesDe(nombre){
+  var n=String(nombre||'');
+  for(var i=0;i<CALORIAS_FACILES_FAMILIA.length;i++){
+    if(CALORIAS_FACILES_FAMILIA[i][0].test(n))return CALORIAS_FACILES_FAMILIA[i][1];
+  }
+  return {familia:'otro',funcion:'acompanamiento'};
+}
+/* Familias (pueden ser varias) de un CANDIDATO: una propuesta puede ser
+   "huevo+lácteos" (tortilla de huevo con yogurt) y cuenta en ambas. */
+function completarFamiliasDe(x){
+  var partes=(x&&x.partes)||[];
+  if(!partes.length)return ['plato'];
+  if(x&&x.tipoBebida)return ['bebida'];
+  var texto=completarNorm(partes.map(function(p){return p.nombre+' '+(p.type||'')+' '+(p.tags||'');}).join(' '));
+  var out=[];
+  if(/licuado|malteada|batido/i.test(texto))return ['bebida'];
+  if(/leche|yogurt/i.test(texto))out.push('lacteos');
+  if(/huevo/.test(texto))out.push('huevo');
+  if(/avena|cereal|granola/i.test(texto))out.push('cereales');
+  if(/almendra|nuec|nuez|cacahuate|trail|mani|nutella/i.test(texto))out.push('frutosSecos');
+  if(/pan |tortilla|bolillo|sandwich|torta|tostada|quesadilla|hotcake|waffle|totopo/i.test(texto))out.push('pan');
+  if(/queso|miel|jalea|crema|aceite|mantequilla|mayonesa/i.test(texto))out.push('toppings');
+  if(/platano|plátano|manzana|mango|pina|piña|fresa|fruta|naranja/i.test(texto))out.push('fruta');
+  var alims=partes.filter(function(p){return p.tipo==='alimento';});
+  if(alims.length===partes.length){
+    var ffs=alims.map(function(p){return caloriasFacilesDe(p.nombre);});
+    if(ffs[0]){
+      if(ffs[0].funcion==='bebida')out.push('bebida');
+      if(ffs[0].familia==='lacteos'&&out.indexOf('lacteos')<0)out.push('lacteos');
+      if(out.length===0)out.push(ffs[0].familia);
+    }
+  }
+  if(!out.length){
+    var fams=alims.map(function(p){var f=caloriasFacilesDe(p.nombre);return f?f.familia:null;});
+    if(fams[0]&&fams.every(function(f){return f===fams[0];})&&alims.length<=2)out=[fams[0]];
+  }
+  if(!out.length)out=['plato'];
+  return out;
+}
+/* Familia dominante de un CANDIDATO (receta, combo o licuado compuesto). */
+function completarFamiliaDe(x){
+  if(x&&x.tipoBebida)return 'bebida';
+  var partes=(x&&x.partes)||[];
+  if(!partes.length)return 'plato';
+  var texto=completarNorm(partes.map(function(p){return p.nombre+' '+(p.type||'')+' '+(p.tags||'');}).join(' '));
+  if(/licuado|bebida|malteada|batido|leche|yogurt/i.test(texto))return 'bebida';
+  if(/huevo/i.test(texto))return 'huevo';
+  if(/avena|cereal|granola/i.test(texto))return 'cereales';
+  if(/almendra|nuez|cacahuate|trail|mani|nutella/i.test(texto))return 'frutosSecos';
+  if(/pan |tortilla|bolillo|sandwich|torta|tostada|quesadilla|hotcake|waffle/i.test(texto))return 'pan';
+  if(/queso|miel|jalea|crema|aceite|mantequilla|mayonesa/i.test(texto))return 'toppings';
+  var alims=partes.filter(function(p){return p.tipo==='alimento';});
+  if(alims.length===partes.length&&alims.length<=2){
+    var fams=alims.map(function(p){var f=caloriasFacilesDe(p.nombre);return f?f.familia:null;});
+    if(fams[0]&&fams.every(function(f){return f===fams[0];}))return fams[0];
+  }
+  return 'plato';
+}
+/* Qué falta HOY según el contexto real (sin duplicar Balance: lee el mismo
+   estado que completarCtxReal ya consolidó). */
+function potenciarFaltante(ctx){
+  var k=Math.max(0,(+ctx.kcalObjetivo||0)-(+ctx.kcalConsumidas||0));
+  var obP=ctx.macrosObjetivo?+ctx.macrosObjetivo.p||0:0;
+  var obC=ctx.macrosObjetivo?+ctx.macrosObjetivo.c||0:0;
+  var obG=ctx.macrosObjetivo?+ctx.macrosObjetivo.g||0:0;
+  var coP=ctx.macrosConsumidos?+ctx.macrosConsumidos.p||0:0;
+  var coC=ctx.macrosConsumidos?+ctx.macrosConsumidos.c||0:0;
+  var coG=ctx.macrosConsumidos?+ctx.macrosConsumidos.g||0:0;
+  var p=Math.max(0,obP-coP),c=Math.max(0,obC-coC),g=Math.max(0,obG-coG);
+  var rp=obP>0?p/obP:0, rc=obC>0?c/obC:0, rg=obG>0?g/obG:0;
+  var atrasado=null;
+  if(Math.max(rp,rc,rg)>0.08)atrasado=(rp>=rc&&rp>=rg)?'p':(rc>=rg?'c':'g');
+  return {k:k,p:p,c:c,g:g,atrasado:atrasado};
+}
+/* Reescribe la cantidad dentro del nombre del catálogo ("Arroz cocido 1 taza"
+   × ½ → "Arroz cocido 1/2 taza"). Devuelve null si NO es escalable. */
+function potenciarEscalarNombre(nombre,factor){
+  var n=String(nombre||'');
+  var uniP='(g|kg|ml|l|oz|tazas?|cdas?|cucharadas?|cditas?|cucharaditas?|rebanadas?|vasos?)';
+  var re1=new RegExp('(\\d+\\/\\d+|½|¼|⅓|¾|\\d+(?:\\.\\d+)?)\\s*'+uniP+'\\s*$','i');
+  var m=n.match(re1),cant,u;
+  if(m){cant=m[1];u=m[2].toLowerCase();}
+  else{
+    var m2=n.match(new RegExp('\\s'+uniP+'\\s*$','i'));
+    if(!m2)return null;
+    cant='1';u=m2[1].toLowerCase();
+  }
+  var baseU=u.replace(/s$/,'');
+  if(!POTENCIAR_UNIDAD_ESCALABLE[baseU])return null;
+  var valor;
+  if(/^\d+(\.\d+)?$/.test(cant))valor=+cant;
+  else if(cant==='1/2'||cant==='½')valor=0.5;
+  else if(cant==='1/4'||cant==='¼')valor=0.25;
+  else return null;
+  var nuevo=Math.round(valor*factor*100)/100;
+  var txt=(nuevo===0.25)?'1/4':(nuevo===0.5)?'1/2':(nuevo===1.5)?'1 1/2':String(nuevo);
+  var ut=COMPLETAR_UNIDAD_TEXTO[baseU];
+  var unidadTxt=Array.isArray(ut)?(nuevo<=1?ut[0]:ut[1]):(ut||u); // fracciones y 1 en singular
+  if(m)return n.replace(re1,txt+' '+unidadTxt);
+  return n.replace(new RegExp('\\s'+uniP+'\\s*$','i'),' '+txt+' '+unidadTxt);
+}
+/* Variante de porción (×1, ×½, ×2) SOLO si: unidad escalable, ≥60 kcal,
+   dentro del techo del momento y mejora la distancia al objetivo ≥30%. */
+function potenciarVariante(x,factor,obj,techo){
+  if(factor===1)return {nombre:x.nombre,kcal:x.kcal,p:x.p,c:x.c,g:x.g,factor:1,volumen:x.volumen,tipo:x.tipo,tiempo:x.tiempo||0,metodo:x.metodo||''};
+  var nombre=potenciarEscalarNombre(x.nombre,factor); if(!nombre)return null;
+  var kcal=x.kcal*factor;
+  if(kcal<60)return null;
+  if(obj&&techo&&kcal>techo)return null;
+  var distBase=Math.abs(x.kcal-obj),distVar=Math.abs(kcal-obj);
+  if(distVar>distBase*0.8)return null; // solo si mejora la distancia ≥20%
+  return {nombre:nombre,kcal:Math.round(kcal),p:Math.round(x.p*factor*10)/10,c:Math.round(x.c*factor*10)/10,g:Math.round(x.g*factor*10)/10,factor:factor,volumen:x.volumen,tipo:x.tipo,tiempo:x.tiempo||0,metodo:x.metodo||''};
+}
+/* Scoring de Potenciar: INDEPENDIENTE del de Completar mi día. */
+function potenciarScore(o,ctx,f,obj,baseCortos){
+  var W=POTENCIAR_PESOS;
+  var score=0,razones=[];
+  var fitKcal=o.kcal<=obj?(1-Math.min(1,(obj-o.kcal)/obj)):Math.max(0,1-2*Math.min(1,(o.kcal-obj)/obj));
+  score+=W.fitKcal*fitKcal;razones.push('fitKcal '+Math.round(fitKcal*100)+'%');
+  if(f.atrasado==='p'&&f.p>0&&o.p>0){var fp=Math.min(1,o.p/f.p);score+=W.macro*fp;razones.push('proteina '+Math.round(fp*100)+'%');}
+  else if(f.atrasado==='c'&&f.c>0&&o.c>0){var fc=Math.min(1,o.c/f.c);score+=W.macro*fc;razones.push('carbos '+Math.round(fc*100)+'%');}
+  else if(f.atrasado==='g'&&f.g>0&&o.g>0){var fg=Math.min(1,o.g/f.g);score+=W.macro*fg;razones.push('grasa '+Math.round(fg*100)+'%');}
+  if(ctx.llenado==='rapido'){var dens=completarDensidad(o.kcal,o.volumen);score+=W.volumen*Math.min(1,dens/500);razones.push('denso '+Math.round(dens));}
+  if(ctx.objetivo==='perder'){score+=W.volumen*Math.min(1,((COMPLETAR_PUNTOS_VOL[o.volumen]||1)/Math.max(200,o.kcal))*700);razones.push('saciedad');}
+  var franja=ctx.franja||completarFranja(ctx.hora);
+  if(franja!=='noche'&&o.kcal<=200){score+=W.momento;razones.push('momento-pequeno');}
+  if(franja==='noche'&&o.kcal>=150)score+=W.momento*0.5;
+  if(o.tiempo===0&&(franja==='trabajo'||franja==='manana'))score+=W.momento*0.5;
+  var corto=completarNombreCorto(o.nombre);
+  if(baseCortos.indexOf(corto)>=0){score+=W.repeticion;razones.push('en-base');}
+  var cons=(ctx.consumidosHoy||[]).map(completarNombreCorto);
+  if(cons.indexOf(corto)>=0){score+=W.repeticion*2;razones.push('repetido-hoy');}
+  if(o.factor&&o.factor!==1){score+=W.escalado;razones.push('escalado x'+o.factor);}
+  if(o.isMicro&&ctx.llenado==='rapido'){score+=W.micro;razones.push('micro-extra');}
+  return {score:score,razones:razones};
+}
+/* Categoría de NECESIDAD que cubre el extra (determinista, desde datos). */
+function potenciarCategoria(o,ctx,f){
+  if(f.atrasado==='p'&&o.p>=Math.min(10,Math.max(5,f.p*0.3)))return 'p';
+  if(f.atrasado==='c'&&o.c>=15)return 'c';
+  if(completarDensidad(o.kcal,o.volumen)>=250)return 'v';
+  return 'kcal';
+}
+/* Razón principal (una sola por tarjeta), derivada de la categoría real. */
+function potenciarRazon(cat,esMejor,o,f){
+  if(o.isMicro)return o.p>=7?{icono:'💪',texto:'Proteína + calorías'}:{icono:'⚡',texto:'Extra fácil · poco volumen'};
+  if(esMejor&&cat==='kcal')return {icono:'⭐',texto:'Mejor ajuste para lo que te falta'};
+  if(cat==='p')return {icono:'💪',texto:'Te falta proteína'};
+  if(cat==='c')return {icono:'🍚',texto:'Te faltan carbohidratos'};
+  if(cat==='v')return {icono:'🥤',texto:'Sube calorías con poco volumen'};
+  return {icono:'⚡',texto:'Rápido de agregar'};
+}
+/* Facilidad (una línea), solo cuando hay dato real (tiempo/método). */
+function potenciarFacilidad(x){
+  if(!x)return null;
+  var m=String(x.metodo||'').toLowerCase();
+  if(/recalent|rec\./i.test(m))return {icono:'🔥',texto:'Recalentar'};
+  var t=+x.tiempo||0;
+  if(t>0&&t<=10)return {icono:'⚡',texto:t+' min'};
+  if(t>10)return {icono:'⏱',texto:t+' min'};
+  if(x.tipo==='alimento')return {icono:'🥡',texto:'Listo para comer'};
+  return null;
+}
+/* Línea del encabezado: datos del faltante real, sin frases fijas. */
+function potenciarTextoFaltante(f){
+  var out=f.k>0?('Te faltan '+Math.round(f.k)+' kcal'):'Kcal del día cubiertas';
+  if(f.p<=5)out+=' · proteína casi cubierta';
+  else if(f.atrasado==='p')out+=' · falta proteína';
+  else if(f.atrasado==='c')out+=' · faltan carbohidratos';
+  return out;
+}
+/* Extras que Potenciar ya agregó a ESTA comida hoy: se leen del diario real
+   (entradas con src='potenciar'), así el resumen sobrevive a re-render y
+   reapertura sin estado en memoria. */
+function potenciarAgregados(diary, iso, key){
+  var d=diary&&diary[iso]||{};
+  return (d[key]||[]).filter(function(e){return e&&e.src==='potenciar';}).map(function(e){return {name:e.name,kcal:+e.kcal||0,prot:+e.prot||0};});
+}
+/* Mini resumen "✅ Agregado a esta comida" con el total real añadido. */
+function potenciarResumenHTML(agregados){
+  if(!agregados.length)return '';
+  var totK=0,totP=0;
+  var filas=agregados.map(function(a){
+    totK+=a.kcal;totP+=a.prot;
+    return '<div class="row" style="justify-content:space-between;gap:8px;margin-top:4px;flex-wrap:wrap"><span style="font-weight:800">✅ '+safeText(a.name)+'</span><span class="muted" style="font-size:12px">+'+Math.round(a.kcal)+' kcal · +'+(Math.round(a.prot*10)/10)+' g proteína</span></div>';
+  }).join('');
+  return '<div style="background:#eafaf0;border:1px solid #9dd5b4;border-radius:12px;padding:10px 12px;margin-bottom:10px">'
+    +'<b style="font-size:13px;color:#0d6043">Agregado a esta comida</b>'+filas
+    +'<div style="font-size:12px;font-weight:800;color:#0d6043;margin-top:6px;border-top:1px solid #cdeeda;padding-top:6px">Total añadido aquí: +'+Math.round(totK)+' kcal · +'+(Math.round(totP*10)/10)+' g proteína</div>'
+    +'</div>';
+}
+/* ===== RECETAS FÁCILES NUEVAS (fase contenido) =====
+   kcal/macros = SUMA de foods[] reales (comps, verificado por tests).
+   time = trabajo activo; reposo separado cuando aplica.
+   tm5:true solo donde la Thermomix es real y segura (el clasificador
+   recetaClasificarTM5 evalúa los pasos). */
+baseRecipes.push(
+  {type:'desayuno',name:'Overnight oats de avena y plátano',time:3,reposo:'6 h',k:474,p:16,cost:1.1,
+   steps:['Mezcla 1/2 taza de avena con 1 taza de leche y 1 cucharada de miel en un frasco (1 min).','Agrega 1 plátano en rodajas y tapa.','Refrigera 6 h o toda la noche.','Listo frío por la mañana.'],
+   method:'frio',tags:'avena desayuno sin cocinar overnight',ingredients:'avena, leche, plátano, miel',llevarTrabajo:'Sí',
+   comps:['Avena 1/2 taza','Leche entera taza','Plátano','Miel 1 cucharada']},
+  {type:'pan',name:'Tostada de crema de cacahuate y plátano',time:5,k:359,p:13,cost:1.0,
+   steps:['Tuesta 2 rebanadas de pan integral (2 min).','Unta 1 cucharada de crema de cacahuate.','Agrega 1 plátano en rodajas encima.'],
+   method:'tostador',tags:'pan crema cacahuate platano snack',ingredients:'pan integral, crema de cacahuate, plátano',
+   comps:['Pan integral 2 rebanadas','Crema cacahuate cda','Plátano']},
+  {type:'desayuno',name:'Huevo cocido con aguacate y sal',time:3,reposo:'10 min cocción',k:232,p:8,cost:1.1,
+   steps:['Pon 1 huevo en agua hirviendo y cocina 10 min.','Enfría, pela y corta en mitades.','Sirve con 1/2 aguacate y una pizca de sal.'],
+   method:'estufa',tags:'huevo aguacate rapida',ingredients:'huevo, aguacate, sal',
+   comps:['Huevo','Aguacate 1/2']},
+  {type:'comida',name:'Quesadilla de frijol y queso',time:8,k:405,p:23.5,cost:1.2,
+   steps:['Calienta 1 tortilla en comal (1 min).','Unta 1 taza de frijoles y espolvorea 28 g de queso.','Dobla y cocina 2 min por lado hasta que el queso derrita.'],
+   method:'comal',tags:'quesadilla frijol queso rapida',ingredients:'tortilla, frijol, queso',
+   comps:['Tortilla maíz','Frijol 1 taza','Queso 28g']},
+  {type:'comida',name:'Arroz ya cocido con huevo revuelto',time:8,k:277,p:10,cost:1.0,
+   steps:['Revuelve 1 huevo en sartén caliente (2 min).','Agrega 1 taza de arroz cocido y saltea 3 min.','Sirve caliente.'],
+   method:'estufa',tags:'arroz huevo rapida',ingredients:'arroz cocido, huevo',
+   comps:['Arroz cocido 1 taza','Huevo']},
+  {type:'snack',name:'Yogurt con granola y miel',time:3,k:434,p:26,cost:1.3,
+   steps:['Sirve 1 taza de yogurt griego en un bowl.','Agrega 1/2 taza de granola y 1 cucharada de miel.','Mezcla y come al momento.'],
+   method:'frio',tags:'yogurt granola snack sin cocinar',ingredients:'yogurt griego, granola, miel',
+   comps:['Yogurt griego taza','Granola 1/2 taza','Miel 1 cucharada']},
+  {type:'licuado',name:'Licuado de yogurt y fresa',time:3,k:328,p:29,cost:1.6,
+   steps:['Licúa 1 taza de yogurt, 1 taza de fresas y 1 taza de leche 30 seg.','Sirve frío.'],
+   method:'licuadora',tags:'licuado fresa yogurt',ingredients:'yogurt, fresas, leche',llevarTrabajo:'Sí',
+   comps:['Yogurt griego taza','Fresas 1 taza','Leche entera taza']},
+  {type:'licuado',name:'Licuado de yogurt y fresa (TM5)',time:3,k:328,p:29,cost:1.6,
+   steps:['Pon yogurt, fresas y leche en el vaso. Licúa 30 seg velocidad 5 a 10 progresivo.','Sirve frío.'],
+   method:'tm5',tags:'licuado fresa yogurt tm5',ingredients:'yogurt, fresas, leche',llevarTrabajo:'Sí',
+   comps:['Yogurt griego taza','Fresas 1 taza','Leche entera taza']},
+  {type:'desayuno',name:'Avena cremosa con plátano (TM5)',time:10,k:474,p:16,cost:1.1,
+   steps:['Pon leche, avena y plátano en el vaso. Cocina 8 min a 90°C velocidad 1.','Agrega miel y mezcla 10 seg velocidad 3.','Sirve caliente.'],
+   method:'tm5',tags:'avena desayuno tm5',ingredients:'avena, leche, plátano, miel',
+   comps:['Avena 1/2 taza','Leche entera taza','Plátano','Miel 1 cucharada']}
+);
+/* ===== Licuados compuestos (motor de sabores, sin recetas nuevas) =====
+   Combina alimentos REALES del catálogo (base líquida + variante coherente).
+   kcal/macros = suma real de foods[]. Cacao/canela NO existen como alimentos:
+   no entran al motor. Escalas mini/normal/denso solo si TODOS los componentes
+   escalan matemáticamente (unidades de medida). */
+var BEBIDA_BASE={
+  'Leche entera taza':{con:/platano|avena|fresa|mango|cacahuate|miel|granola/i},
+  'Yogurt griego taza':{con:/platano|avena|fresa|mango|manzana|cacahuate|miel|granola/i},
+  'Avena 1/2 taza':{con:/platano|cacahuate|fresa|manzana|miel/i}
+};
+var BEBIDA_VARIANTE={
+  'Plátano':{con:/leche|yogurt|avena/i},
+  'Crema cacahuate cda':{con:/leche|yogurt|avena|platano/i},
+  'Fresas 1 taza':{con:/leche|yogurt|avena/i},
+  'Mango 1 taza':{con:/leche|yogurt/i},
+  'Manzana 1 pieza':{con:/avena|yogurt/i},
+  'Miel 1 cucharada':{con:/leche|yogurt|avena|platano/i},
+  'Granola 1/2 taza':{con:/yogurt|leche/i}
+};
+var BEBIDA_LIMITES={miniMin:150,maxComponentes:3,tiempo:3};
+function bebidaCat(ctx){
+  var porNombre={};
+  completarCatalogo(ctx).forEach(function(x){if(x.tipo==='alimento')porNombre[x.nombre]=x;});
+  return porNombre;
+}
+function bebidaCombinaciones(ctx){
+  var porNombre=bebidaCat(ctx);
+  var out=[];
+  for(var b in BEBIDA_BASE){
+    var base=porNombre[b]; if(!base)continue;
+    for(var v in BEBIDA_VARIANTE){
+      if(b===v)continue;
+      var variante=porNombre[v]; if(!variante)continue;
+      if(!BEBIDA_BASE[b].con.test(completarSinAcentos(completarNorm(variante.nombre))))continue;
+      if(!BEBIDA_VARIANTE[v].con.test(completarSinAcentos(completarNorm(base.nombre))))continue;
+      out.push({compsBase:[base,variante],base:0,variante:1,factor:1});
+    }
+  }
+  return out;
+}
+function bebidaTitulo(cortos){
+  var lista=cortos.slice();
+  if(lista.length===1)return 'Licuado de '+lista[0].charAt(0).toUpperCase()+lista[0].slice(1);
+  var ultimo=lista.pop();
+  var txt='Licuado de '+lista.join(', ')+' y '+ultimo;
+  return txt.charAt(0).toUpperCase()+txt.slice(1);
+}
+function bebidaConstruir(combo){
+  if(!combo||!combo.compsBase)return null;
+  var factor=combo.factor;
+  var comps=combo.compsBase.map(function(c){
+    if(!c)return null;
+    if(factor===1)return {nombre:c.nombre,kcal:c.kcal,p:c.p,c:c.c,g:c.g};
+    var nombre=potenciarEscalarNombre(c.nombre,factor);
+    if(!nombre)return null;
+    return {nombre:nombre,kcal:Math.round(c.kcal*factor),p:Math.round(c.p*factor*10)/10,c:Math.round(c.c*factor*10)/10,g:Math.round(c.g*factor*10)/10};
+  });
+  if(comps.some(function(c){return !c;}))return null;
+  var tot=comps.reduce(function(a,x){a.kcal+=x.kcal;a.p+=x.p;a.c+=x.c;a.g+=x.g;return a;},{kcal:0,p:0,c:0,g:0});
+  var cortos=comps.map(function(c){return completarNombreCorto(c.nombre).toLowerCase();}).sort();
+  return {titulo:bebidaTitulo(cortos),clave:cortos.join('+')+' x'+factor,compsBase:combo.compsBase,base:combo.base,variante:combo.variante,factor:factor,componentes:comps,kcal:Math.round(tot.kcal),p:Math.round(tot.p*10)/10,c:Math.round(tot.c*10)/10,g:Math.round(tot.g*10)/10,volumen:'Poco',tiempo:BEBIDA_LIMITES.tiempo};
+}
+function bebidaTecho(ctx){
+  var franja=ctx.franja||completarFranja(ctx.hora);
+  return COMPLETAR_FRANJAS[franja].banda[1];
+}
+/* 🔄 Otro sabor: misma base y propósito (±25% kcal), distinta variante real. */
+function bebidaOtroSabor(combo,ctx,usados){
+  var porNombre=bebidaCat(ctx);
+  var base=combo.compsBase[combo.base];
+  var actual=combo.compsBase[combo.variante];
+  var orden=Object.keys(BEBIDA_VARIANTE);
+  var idx=Math.max(0,orden.indexOf(actual.nombre));
+  function buscar(estricto){
+    for(var k=1;k<=orden.length;k++){
+      var vName=orden[(idx+k)%orden.length];
+      if(vName===base.nombre||vName===actual.nombre)continue;
+      var spec=BEBIDA_VARIANTE[vName]; if(!spec)continue;
+      if(!spec.con.test(completarSinAcentos(completarNorm(base.nombre))))continue;
+      if(!BEBIDA_BASE[base.nombre].con.test(completarSinAcentos(completarNorm(vName))))continue;
+      var vEntry=porNombre[vName]; if(!vEntry)continue;
+      if((usados||[]).indexOf(completarNombreCorto(vName))>=0)continue;
+      if(estricto&&Math.abs(vEntry.kcal-actual.kcal)>actual.kcal*0.25)continue;
+      return bebidaConstruir({compsBase:[base,vEntry],base:0,variante:1,factor:combo.factor});
+    }
+    return null;
+  }
+  return buscar(true)||buscar(false);
+}
+/* ＋ Más calorías: escalera normal→(+1 componente)→(×2 denso), dentro del techo. */
+function bebidaMasCalorias(combo,ctx){
+  if(!combo)return null;
+  if(combo.factor===2)return null; // ya está denso: no ×4
+  var techo=bebidaTecho(ctx);
+  if(combo.factor<1)return bebidaConstruir({compsBase:combo.compsBase,base:combo.base,variante:combo.variante,factor:1});
+  if(combo.compsBase.length<BEBIDA_LIMITES.maxComponentes){
+    var porNombre=bebidaCat(ctx);
+    var mejor=null,mejorEsc=null;
+    function probar(nombre,entry){
+      if(combo.compsBase.some(function(c){return c.nombre===nombre;}))return;
+      var total=combo.compsBase.reduce(function(a,x){return a+x.kcal;},0)+entry.kcal;
+      if(total>techo)return;
+      // preferir adiciones ESCALABLES: dejan abierta la escalera hacia el denso
+      if(potenciarEscalarNombre(entry.nombre,2)&&(!mejorEsc||entry.kcal>mejorEsc.kcal))mejorEsc={nombre:nombre,entry:entry};
+      if(!mejor||entry.kcal>mejor.kcal)mejor={nombre:nombre,entry:entry};
+    }
+    for(var v in BEBIDA_VARIANTE){
+      var spec=BEBIDA_VARIANTE[v]; var e=porNombre[v]; if(!e)continue;
+      if(!spec.con.test(completarSinAcentos(completarNorm(combo.compsBase[combo.base].nombre))))continue;
+      if(!BEBIDA_BASE[combo.compsBase[combo.base].nombre].con.test(completarSinAcentos(completarNorm(v))))continue;
+      probar(v,e);
+    }
+    for(var b in BEBIDA_BASE){
+      var eb=porNombre[b]; if(!eb)continue;
+      if(!BEBIDA_BASE[b].con.test(completarSinAcentos(completarNorm(combo.compsBase[combo.variante].nombre))))continue;
+      probar(b,eb);
+    }
+    if(mejorEsc){
+      return bebidaConstruir({compsBase:combo.compsBase.concat([mejorEsc.entry]),base:combo.base,variante:combo.variante,factor:1});
+    }
+    if(mejor){
+      return bebidaConstruir({compsBase:combo.compsBase.concat([mejor.entry]),base:combo.base,variante:combo.variante,factor:1});
+    }
+  }
+  var denso=bebidaConstruir({compsBase:combo.compsBase,base:combo.base,variante:combo.variante,factor:2});
+  if(denso&&denso.kcal<=techo)return denso;
+  return null;
+}
+/* − Más ligero: escalera ×2→normal→×½, solo si todos los componentes escalan. */
+function bebidaMasLigero(combo,ctx){
+  if(!combo)return null;
+  if(combo.factor===2)return bebidaConstruir({compsBase:combo.compsBase,base:combo.base,variante:combo.variante,factor:1});
+  if(combo.factor===1){
+    var mini=bebidaConstruir({compsBase:combo.compsBase,base:combo.base,variante:combo.variante,factor:0.5});
+    if(mini&&mini.kcal>=BEBIDA_LIMITES.miniMin)return mini;
+    return null;
+  }
+  return null;
+}
+/* Propuesta completa (para window._completarPropuestas) desde un combo construido. */
+function bebidaPropuesta(comboConstruido,ctx){
+  var partes=comboConstruido.componentes.map(function(c){return {tipo:'alimento',ref:null,nombre:c.nombre,kcal:c.kcal,p:c.p,c:c.c,g:c.g,tiempo:BEBIDA_LIMITES.tiempo,metodo:'licuadora',type:'licuado',tags:'licuado compuesto',portable:true,volumen:'Poco'};});
+  var s=completarScore({partes:partes,tier:'E',tipoBebida:true},ctx);
+  return {clave:comboConstruido.clave,titulo:comboConstruido.titulo,sub:'',kcal:comboConstruido.kcal,p:comboConstruido.p,c:comboConstruido.c,g:comboConstruido.g,volumen:'Poco',tiempo:BEBIDA_LIMITES.tiempo,metodo:'licuadora',score:Math.round(s.score),razones:s.razones,tipoProp:'bebida',componentes:partes.map(function(p){return {tipo:'alimento',ref:null,nombre:p.nombre,kcal:p.kcal,p:p.p,c:p.c,g:p.g,tiempo:BEBIDA_LIMITES.tiempo,metodo:'licuadora',volumen:'Poco',porcion:completarPorcion(p.nombre)};}),bebida:comboConstruido};
+}
+/* Menú discreto del licuado (cerrado por defecto): solo acciones posibles. */
+function bebidaMenuHTML(i,pr,ctx){
+  var b=bebidaConstruir(pr.bebida);
+  if(!b)return '';
+  var botones='';
+  botones+='<button class="btn" style="flex:1;padding:7px 8px;font-size:12px;min-height:38px" onclick="bebidaAccion('+i+',\'sabor\')">🔄 Otro sabor</button>';
+  if(bebidaMasCalorias(pr.bebida,ctx))botones+='<button class="btn" style="flex:1;padding:7px 8px;font-size:12px;min-height:38px" onclick="bebidaAccion('+i+',\'mas\')">＋ Más calorías</button>';
+  if(bebidaMasLigero(pr.bebida,ctx))botones+='<button class="btn" style="flex:1;padding:7px 8px;font-size:12px;min-height:38px" onclick="bebidaAccion('+i+',\'ligero\')">− Más ligero</button>';
+  return '<details style="margin-top:6px"><summary class="muted" style="font-size:12px;cursor:pointer">🍹 Ajustar licuado</summary><div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap">'+botones+'</div></details>';
+}
+/* Acción del menú: muta la propuesta y re-renderiza el panel. */
+function bebidaAccion(i,accion){
+  var pr=(window._completarPropuestas||[])[i]; if(!pr||!pr.bebida)return;
+  var ctx=completarCtxReal();
+  var combo=null;
+  if(accion==='sabor')combo=bebidaOtroSabor(pr.bebida,ctx,window._bebidaSaboresUsados);
+  else if(accion==='mas')combo=bebidaMasCalorias(pr.bebida,ctx);
+  else if(accion==='ligero')combo=bebidaMasLigero(pr.bebida,ctx);
+  if(!combo)return;
+  if(accion==='sabor'){
+    window._bebidaSaboresUsados=window._bebidaSaboresUsados||[];
+    window._bebidaSaboresUsados.push(completarNombreCorto(combo.componentes[combo.variante].nombre));
+  }
+  window._completarPropuestas[i]=bebidaPropuesta(combo,ctx);
+  completarRenderPanel(window._completarPropuestas);
+}
 function completarPotenciar(ctx, baseNombres, excluidas){
   var cat=completarCatalogo(ctx);
   var base=[];
@@ -26377,33 +27213,96 @@ function completarPotenciar(ctx, baseNombres, excluidas){
   var SALADO=/(comida|sopa|pasta|guiso|carne|cerdo|pollo|res|pescado|cena|horno|mole|tinga|chilaquil|taco|hamburguesa|quesadilla)/i;
   var DULCE=/(desayuno|avena|pan dulce|postre|fruta|licuado|cereal|granola|hotcake)/i;
   var salado=SALADO.test(texto)&&!DULCE.test(texto);
+  // contexto dulce amplio (para micro-extras): además de las recetas dulces,
+  // bases líquidas/frutales como leche+plátano o avena son contexto dulce.
+  var esDulce=DULCE.test(texto)||/leche|platano|yogurt|avena|granola|miel|cereal|fruta|licuado/i.test(texto);
   var franja=ctx.franja||completarFranja(ctx.hora);
-  var excl=(excluidas||[]).map(completarNorm);
-  var out=[];
+  var f=potenciarFaltante(ctx);
+  var obj=completarKcalMomento(ctx);
+  var banda=COMPLETAR_FRANJAS[franja].banda;
+  var techo=Math.max(banda[1],obj);
+  if(ctx.objetivo==='ganar')techo=Math.max(techo,obj*1.5); // ganar + déficit grande: margen razonable
+  var baseCortos=(baseNombres||[]).map(completarNombreCorto);
+  var exclNorm=(excluidas||[]).map(completarNorm);
+  var exclCorto=(excluidas||[]).map(function(s){return completarNombreCorto(s);});
+  var opciones=[];
   cat.forEach(function(a){ if(a.tipo!=='alimento')return;
     if((baseNombres||[]).indexOf(a.nombre)>=0)return; // ya está en la comida
-    if(excl.indexOf(completarNorm(a.nombre))>=0)return;
-    var spec=COMPLETAR_ALIMENTO[a.nombre]; if(!spec)return;
+    var corto=completarNombreCorto(a.nombre);
+    if(baseCortos.indexOf(corto)>=0)return;
+    if(exclNorm.indexOf(completarNorm(a.nombre))>=0||exclCorto.indexOf(corto)>=0)return;
+    var spec=COMPLETAR_ALIMENTO[a.nombre]||POTENCIAR_MICRO[a.nombre]; if(!spec)return;
     if(spec.funcion==='bebida'&&salado)return;       // bebida NO rellena salados
     if(spec.funcion==='principal'){
       var esAvenaParaLicuado=/avena/i.test(a.nombre)&&/leche|licuado|platano|yogurt|crema|cereal/i.test(texto);
       var esNocheAccomp=(franja==='noche'&&/arroz|frijol|papa/i.test(a.nombre));
       if(!esAvenaParaLicuado&&!esNocheAccomp)return; // otra comida principal NO es extra
     }
+    if(spec.soloPlato&&esDulce)return;              // aceite/mantequilla/mayonesa: solo contexto no dulce
+    if(spec.soloDulce&&!esDulce)return;             // miel/granola: nunca con plato salado
     if(!spec.con.test(texto))return;
-    var sc=5; // compatibilidad culinaria verificada
-    if(ctx.llenado==='rapido')sc+=3*Math.min(1,completarDensidad(a.kcal,a.volumen)/500);
-    if(franja==='noche'&&a.kcal>=150)sc+=1;  // noche permite extras algo mayores
-    if(franja!=='noche'&&a.kcal<=200)sc+=2;  // día: extras pequeños y simples
-    out.push({nombre:a.nombre,kcal:a.kcal,p:a.p,c:a.c,g:a.g,volumen:a.volumen,score:sc,razones:['compatible con '+completarNombreCorto((baseNombres||[])[0]||'la comida')]});
+    var baseX={nombre:a.nombre,kcal:a.kcal,p:a.p,c:a.c,g:a.g,volumen:a.volumen,tipo:a.tipo,tiempo:a.tiempo||0,metodo:a.metodo||''};
+    [1,0.5,2].forEach(function(factor){
+      var v=potenciarVariante(baseX,factor,obj,techo);
+      if(!v)return;
+      var s=potenciarScore(v,ctx,f,obj,baseCortos);
+      opciones.push({nombre:v.nombre,nombreBase:a.nombre,kcal:v.kcal,p:v.p,c:v.c,g:v.g,volumen:v.volumen,tipo:v.tipo,tiempo:v.tiempo,metodo:v.metodo,factor:v.factor,isMicro:potenciarEsMicroExtra(v),categoria:potenciarCategoria(v,ctx,f),score:s.score,razones:s.razones});
+    });
   });
-  out.sort(function(a,b){return b.score-a.score;});
-  return out.slice(0,3).map(function(x){return {nombre:x.nombre,titulo:completarNombreCorto(x.nombre),kcal:x.kcal,p:x.p,c:x.c,g:x.g,volumen:x.volumen,score:x.score,razones:x.razones,porcion:x.porcion||completarPorcion(x.nombre)};});
+  // Un solo lote por alimento: queda la variante que mejor puntúa.
+  var mejorPorBase={};
+  opciones.forEach(function(o){var k=o.nombreBase;if(!mejorPorBase[k]||o.score>mejorPorBase[k].score)mejorPorBase[k]=o;});
+  var unicos=[];
+  for(var k in mejorPorBase)unicos.push(mejorPorBase[k]);
+  unicos.sort(function(a,b){return b.score-a.score;});
+  // Diversidad: categorías de necesidad distintas cuando hay candidatos reales.
+  function elegir(catsProhibidas){
+    for(var i=0;i<unicos.length;i++){if(catsProhibidas.indexOf(unicos[i].categoria)<0)return unicos[i];}
+    return null;
+  }
+  var elegidos=[];
+  var uno=elegir([]);
+  if(uno)elegidos.push(uno);
+  var dos=uno?elegir([uno.categoria]):null;
+  if(dos)elegidos.push(dos);
+  var tres=(uno&&dos)?elegir([uno.categoria,dos.categoria]):null;
+  if(tres)elegidos.push(tres);
+  // Relleno SIN forzar diversidad artificial (solo si el lote quedó corto).
+  if(!tres){for(var i2=0;i2<unicos.length&&elegidos.length<3;i2++){if(elegidos.indexOf(unicos[i2])<0)elegidos.push(unicos[i2]);}}
+  // Regla de garantía: Me lleno rápido + faltan kcal → al menos 1 ⚡ Extra fácil
+  // entre las 3, si existe un candidato compatible real (sin inventar).
+  if(ctx.llenado==='rapido'&&f.k>300){
+    var hayMicro=elegidos.some(function(o){return o.isMicro;});
+    if(!hayMicro){
+      var microCand=null;
+      unicos.forEach(function(o){if(o.isMicro&&elegidos.indexOf(o)<0&&(!microCand||o.score>microCand.score))microCand=o;});
+      if(microCand){
+        if(elegidos.length===3){
+          var peor=0;
+          for(var pi=1;pi<elegidos.length;pi++){if(elegidos[pi].score<elegidos[peor].score)peor=pi;}
+          elegidos[peor]=microCand; // garantía: el micro reemplaza al peor
+        }else{elegidos.push(microCand);}
+      }
+    }
+  }
+  return elegidos.slice(0,3).map(function(o,i){
+    return {nombre:o.nombre,nombreBase:o.nombreBase,titulo:completarNombreCorto(o.nombre),kcal:o.kcal,p:o.p,c:o.c,g:o.g,volumen:o.volumen,score:o.score,razones:o.razones,porcion:completarPorcion(o.nombre),factor:o.factor,categoria:o.categoria,isMicro:!!o.isMicro,etiqueta:potenciarRazon(o.categoria,i===0,o,f),facilidad:potenciarFacilidad(o)};
+  });
 }
 function completarCerrar(){var ov=document.getElementById('completarPanel');if(ov)ov.remove();}
 function completarOtras3(){
   var pr=window._completarPropuestas||[];
   window._completarMostradas=(window._completarMostradas||[]).concat(pr.map(function(p){return p.clave||p.titulo;}));
+  // memoria de FAMILIAS: registra TODAS las familias mostradas (multi-familia).
+  // Ojo: preservar tipo 'alimento' para que los snacks individuales clasifiquen bien.
+  window._completarFamiliasVistas=(window._completarFamiliasVistas||[]).concat(pr.reduce(function(a,p){
+    return a.concat(completarFamiliasDe({partes:(p.componentes||[]).map(function(c){return {nombre:c.nombre,tipo:c.tipo,type:c.tipo==='alimento'?'alimento':(c.tipo==='receta'?(c.type||''):''),tags:''};}),tipoBebida:!!p.bebida}));
+  },[]));
+  completarRenderPanel();
+}
+/* El usuario elige explícitamente ver comidas normales (sale del pool fácil). */
+function completarVerNormales(){
+  window._completarModoFacil=false;
   completarRenderPanel();
 }
 function completarAgregar(i){
@@ -26435,18 +27334,29 @@ function completarPotRender(){
   var ov=document.getElementById('completarPotPanel'); if(!ov)return;
   var pr=window._completarPotBase; if(!pr)return;
   var ctx=completarCtxReal();
-  var extras=completarPotenciar(ctx,pr.componentes.map(function(c){return c.nombre;}),window._completarExtrasVistas||[]);
+  var falta=potenciarFaltante(ctx);
+  // Lo ya agregado sale del DIARIO real (src='potenciar'): el resumen y la
+  // exclusión sobreviven a re-render y reapertura sin estado en memoria.
+  var agregados=potenciarAgregados(state.diary,typeof todayISO==='function'?todayISO():new Date().toISOString().slice(0,10),completarMealKey());
+  var excluidas=(window._completarExtrasVistas||[]).concat(agregados.map(function(e){return e.name;}));
+  var extras=completarPotenciar(ctx,pr.componentes.map(function(c){return c.nombre;}),excluidas);
   window._completarPotExtras=extras;
   var h='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="completarPotCerrar()">← Volver</button>'
-    +'<b style="font-size:17px;color:#12352a;flex:1">⚡ Potenciar: '+safeText(pr.titulo)+'</b></div>'
-    +'<div class="muted" style="font-size:13px;margin-bottom:10px">Base: '+safeText(completarLineaPropuesta(pr))+' — añade un extra real y compatible:</div>';
-  if(!extras.length)h+='<div class="card"><b>Sin extras compatibles ahora.</b><div class="muted" style="font-size:13px;margin-top:4px">Esta comida ya está completa con lo disponible.</div></div>';
+    +'<b style="font-size:17px;color:#12352a;flex:1">⚡ Potenciar esta comida</b></div>'
+    +'<div class="muted" style="font-size:13px;margin-bottom:10px">'+safeText(potenciarTextoFaltante(falta))+'</div>'
+    +potenciarResumenHTML(agregados);
+  if(!extras.length)h+='<div class="card" style="text-align:center;padding:16px 12px">'
+    +'<b>Ya agregaste un extra o no hay más extras compatibles para esta comida.</b>'
+    +'<div class="muted" style="font-size:13px;margin-top:4px">Esta comida ya está completa con lo disponible.</div>'
+    +'<div class="muted" style="font-size:12px;margin-top:4px">Vuelve al contador para seguir con otras opciones.</div>'
+    +'</div>';
   extras.forEach(function(x,k){
     h+='<div style="background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:12px;margin-bottom:10px">'
       +'<b style="font-size:15px">'+safeText(x.titulo)+'</b>'
       +'<div style="font-size:13px;font-weight:700;color:#12352a;margin-top:4px">'+safeText(completarLineaExtra(x))+'</div>'
-      +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">'+completarVolBadge(x.volumen)+'</span></div>'
+      +'<div style="font-size:12.5px;font-weight:700;color:#0d6043;margin-top:4px">'+x.etiqueta.icono+' '+safeText(x.etiqueta.texto)+'</div>'
+      +(x.facilidad?'<div class="muted" style="font-size:11px;margin-top:2px">'+x.facilidad.icono+' '+safeText(x.facilidad.texto)+'</div>':'')
       +'<div class="row" style="gap:8px;margin-top:10px"><button class="btn primary" style="flex:1;padding:10px;min-height:44px" onclick="completarPotAgregar('+k+')">＋ Agregar extra</button></div></div>';
   });
   if(extras.length)h+='<button class="btn" style="width:100%;padding:12px;min-height:48px" onclick="completarPotOtros()">🔄 Otros extras</button>';
@@ -26462,13 +27372,17 @@ function completarPotOtros(){
 function completarPotAgregar(k){
   var x=(window._completarPotExtras||[])[k]; if(!x)return;
   var key=completarMealKey();
-  // Registra EXACTAMENTE la porción mostrada: el nombre completo del catálogo
-  // (que trae la medida) + sus kcal/macros. Nunca se recalcula otra porción.
-  _guardarComida(x.nombre,x.kcal,x.p,x.c,x.g,key);
+  // Registra EXACTAMENTE la porción mostrada: el nombre completo (que trae la
+  // medida, escalada o no) + sus kcal/macros. Nunca se recalcula otra porción.
+  _guardarComida(x.nombre,x.kcal,x.p,x.c,x.g,key,'potenciar');
   try{if(typeof refrescarInicio==='function')refrescarInicio();}catch(e){}
   var por=x.porcion||completarPorcion(x.nombre);
-  try{if(typeof toastReg==='function')toastReg('✅ Extra agregado a '+mealKeyLabel(key)+': '+x.titulo+' ('+por.texto+')');}catch(e){}
-  completarPotCerrar();
+  // Confirmación con los datos REALES recién registrados + faltante nuevo.
+  var faltaDespues=potenciarFaltante(completarCtxReal());
+  try{if(typeof toastReg==='function')toastReg('✅ Se agregó '+x.nombre+' (+'+Math.round(x.kcal)+' kcal · +'+(Math.round(x.p*10)/10)+' g proteína) · Ahora te faltan '+Math.round(faltaDespues.k)+' kcal');}catch(e){}
+  // Se queda en el panel: Balance ya se refrescó, el encabezado recalcula
+  // el faltante, la tarjeta pasa al resumen ✅ y llegan 3 opciones nuevas.
+  completarPotRender();
 }
 function recipeCardFill(el){
   // Render perezoso del cuerpo de la receta: solo se arma la ficha completa al abrir la tarjeta.

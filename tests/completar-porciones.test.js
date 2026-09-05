@@ -78,12 +78,19 @@ function makeSandbox() {
   };
   ['COMPLETAR_PESOS', 'COMPLETAR_LIMITES', 'COMPLETAR_FRANJAS', 'COMPLETAR_ALIMENTO', 'COMPLETAR_PLATOS',
     'COMPLETAR_VOLUMEN_TIPO', 'COMPLETAR_VOLUMEN_ALIMENTO', 'COMPLETAR_PUNTOS_VOL',
-    'COMPLETAR_UNIDAD_TEXTO', 'COMPLETAR_UNIDAD_CONDE', 'COMPLETAR_EQUIV_CASERA', 'COMPLETAR_GENERICOS'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
+    'COMPLETAR_UNIDAD_TEXTO', 'COMPLETAR_UNIDAD_CONDE', 'COMPLETAR_EQUIV_CASERA', 'COMPLETAR_GENERICOS',
+    'POTENCIAR_PESOS', 'POTENCIAR_UNIDAD_ESCALABLE', 'POTENCIAR_MICRO',
+    'BEBIDA_BASE', 'BEBIDA_VARIANTE', 'BEBIDA_LIMITES', 'COMPLETAR_COMBOS_FACILES', 'CALORIAS_FACILES_FAMILIA', 'RECETA_AUXILIAR'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
   ['completarNorm', 'completarSinAcentos', 'completarVolumen', 'completarDensidad', 'completarKcalMomento', 'completarCatalogo',
-    'completarCandidatos', 'completarScore', 'completarVolMax', 'completarSuma', 'completarProponer', 'completarPotenciar',
+    'completarCandidatos', 'completarScore', 'completarVolMax', 'completarSuma', 'completarProponer', 'completarPotenciar', 'completarEsRapido', 'completarEsFacilParte', 'completarEsFacil', 'completarEsCandidatoFacil', 'completarEsEstructuraNatural', 'completarEtiquetaTipo', 'completarLineaMicro', 'recetaSugeridaPara', 'recetaResumenCorto', 'pickDiversoFacil', 'caloriasFacilesDe', 'completarFamiliaDe', 'completarFamiliasDe',
     'completarNombreCorto', 'completarCategoria', 'completarTituloUI',
     'completarFraccion', 'completarPorcion', 'completarVolBadge', 'completarPorcionComponente', 'completarParteTexto',
     'completarLineaPropuesta', 'completarLineaExtra',
+    'potenciarFaltante', 'potenciarEscalarNombre', 'potenciarVariante', 'potenciarScore',
+    'potenciarCategoria', 'potenciarRazon', 'potenciarFacilidad', 'potenciarTextoFaltante',
+    'potenciarAgregados', 'potenciarResumenHTML', 'potenciarEsMicroExtra',
+    'bebidaCat', 'bebidaCombinaciones', 'bebidaTitulo', 'bebidaConstruir', 'bebidaTecho',
+    'bebidaOtroSabor', 'bebidaMasCalorias', 'bebidaMasLigero', 'bebidaPropuesta', 'bebidaMenuHTML',
     'completarCtxReal', 'completarMealKey', 'completarTextoTarjeta', 'completarRenderPanel', 'completarAgregar',
     'completarPotRender', 'completarPotAgregar', 'completarPotCerrar', 'completarPotOtros', 'completarCerrar'].forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
   sb.guardados = guardados;
@@ -179,7 +186,7 @@ console.log('== 7 · Cantidad visual = cantidad registrada ==');
     const visual = sb.completarParteTexto(c);
     const registrada = sb.completarParteTexto({ nombre: g.name, tipo: c.tipo, porcion: null });
     t('la porción visual "' + visual + '" ES la porción registrada', visual === registrada, registrada);
-    t('la tarjeta muestra la porción "' + visual + '"', html.includes(visual));
+    t('la tarjeta muestra la porción "' + visual + '" (o la separación Receta/Acompañamiento)', html.includes(visual) || html.includes('Receta:</b> ' + c.nombre) || html.includes('Acompañamiento:</b> ' + c.nombre));
   });
 })();
 
@@ -254,8 +261,10 @@ console.log('== 10 · Sin textos ambiguos P/Vol en la UI ==');
   sb.completarPotRender();
   const potHtml = sb.panels.completarPotPanel.innerHTML;
   t('Potenciar sin "P 4g" ni "Vol" crudos', !/\bP \d/.test(potHtml) && !/Vol Poco|Vol Normal|Volumen:/.test(potHtml));
-  t('Potenciar usa "g proteína" y badge con emoji', /g proteína/.test(potHtml) && /🥤 Poco volumen|🍽 Volumen normal/.test(potHtml));
-  t('orden de la tarjeta: título → porción·kcal → badge → botón', /<b[^>]*>[^<]*<\/b>[\s\S]*?g proteína[\s\S]*?(🥤 Poco volumen|🍽 Volumen normal)[\s\S]*?＋ Agregar extra/.test(potHtml));
+  t('Potenciar usa "g proteína"', /g proteína/.test(potHtml));
+  t('Potenciar muestra razón principal (⭐/💪/🍚/🥤/⚡)', /⭐ Mejor ajuste para lo que te falta|💪 Te falta proteína|🍚 Te faltan carbohidratos|🥤 Sube calorías con poco volumen|⚡ Rápido de agregar/.test(potHtml));
+  t('Potenciar muestra facilidad real (🥡/🔥/⚡)', /🥡 Listo para comer|🔥 Recalentar|⚡ \d+ min/.test(potHtml));
+  t('orden de la tarjeta: título → porción·kcal → razón → facilidad → botón', /<b[^>]*>[^<]*<\/b>[\s\S]*?g proteína[\s\S]*?(⭐|💪|🍚|🥤|⚡)[\s\S]*?🥡[\s\S]*?＋ Agregar extra/.test(potHtml));
 })();
 
 console.log('\n===== RESULTADO: ' + pasadas + ' PASS / ' + falladas + ' FAIL =====');

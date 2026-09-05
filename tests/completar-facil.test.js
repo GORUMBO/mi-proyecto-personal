@@ -33,17 +33,24 @@ function extractVarAssign(name, ctx) {
   return vm.runInNewContext('(' + m[1] + ')', ctx || {});
 }
 
-const sb = { foods: [] };
+const sb = { foods: [], window: {} };
 // foods[] reales del catálogo (kcal/macros/costo existentes en la app)
 const FOODS_RAW = HTML.match(/const foods=(\[[\s\S]*?\]);/);
 if (FOODS_RAW) sb.foods = vm.runInNewContext(FOODS_RAW[1]);
 const NOMBRES = ['completarNorm', 'completarSinAcentos', 'completarFranja', 'completarVolumen', 'completarDensidad',
   'completarKcalMomento', 'completarCatalogo', 'completarCandidatos', 'completarScore',
-  'completarVolMax', 'completarSuma', 'completarProponer', 'completarPotenciar',
-  'completarFraccion', 'completarPorcion'];
+  'completarVolMax', 'completarSuma', 'completarProponer', 'completarPotenciar', 'completarEsRapido', 'completarEsFacilParte', 'completarEsFacil', 'completarEsCandidatoFacil', 'completarEsEstructuraNatural', 'completarEtiquetaTipo', 'completarLineaMicro', 'recetaSugeridaPara', 'recetaResumenCorto', 'pickDiversoFacil', 'caloriasFacilesDe', 'completarFamiliaDe', 'completarFamiliasDe',
+  'completarFraccion', 'completarPorcion',
+  'potenciarFaltante', 'potenciarEscalarNombre', 'potenciarVariante', 'potenciarScore',
+  'potenciarCategoria', 'potenciarRazon', 'potenciarFacilidad', 'potenciarTextoFaltante',
+  'potenciarEsMicroExtra',
+  'bebidaCat', 'bebidaCombinaciones', 'bebidaTitulo', 'bebidaConstruir', 'bebidaTecho',
+  'bebidaOtroSabor', 'bebidaMasCalorias', 'bebidaMasLigero', 'bebidaPropuesta'];
 ['COMPLETAR_PESOS', 'COMPLETAR_LIMITES', 'COMPLETAR_FRANJAS', 'COMPLETAR_ALIMENTO', 'COMPLETAR_PLATOS',
   'COMPLETAR_VOLUMEN_TIPO', 'COMPLETAR_VOLUMEN_ALIMENTO', 'COMPLETAR_PUNTOS_VOL',
-  'COMPLETAR_UNIDAD_TEXTO', 'COMPLETAR_UNIDAD_CONDE', 'COMPLETAR_EQUIV_CASERA', 'COMPLETAR_GENERICOS'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
+  'COMPLETAR_UNIDAD_TEXTO', 'COMPLETAR_UNIDAD_CONDE', 'COMPLETAR_EQUIV_CASERA', 'COMPLETAR_GENERICOS',
+  'POTENCIAR_PESOS', 'POTENCIAR_UNIDAD_ESCALABLE', 'POTENCIAR_MICRO',
+  'BEBIDA_BASE', 'BEBIDA_VARIANTE', 'BEBIDA_LIMITES', 'COMPLETAR_COMBOS_FACILES', 'CALORIAS_FACILES_FAMILIA', 'RECETA_AUXILIAR'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
 ['completarNombreCorto', 'completarCategoria', 'completarTituloUI'].forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
 NOMBRES.forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
 sb.globalThis = sb;
@@ -220,53 +227,187 @@ console.log('== 9 · Calibración por franja (Me lleno rápido + poco tiempo) ==
   t('noche: puede cubrir la mayor parte del déficit', n.reduce((a, p) => a + p.kcal, 0) >= 500);
 })();
 
-console.log('== 10 · Potenciar (extras reales y compatibles) ==');
+console.log('== 10 · Potenciar inteligente (extras reales, compatibles y por necesidad) ==');
 (function () {
   const dia = ctxBase({ kcalConsumidas: 2000, hora: 13, llenado: 'normal' });
   const noche = ctxBase({ kcalConsumidas: 2000, hora: 20, llenado: 'normal' });
   const nombres = (r) => r.map(x => x.nombre);
-  // 1 huevos/tortilla → aguacate, queso, yogurt
+  const cortosDe = (r) => r.map(x => sb.completarNombreCorto(x.nombre));
+  // 1 huevos/tortilla: aguacate, queso y yogurt disponibles (lote + otros extras)
   const ht = nombres(sb.completarPotenciar(dia, ['Huevo', 'Tortilla maíz']));
-  t('huevos+tortilla: aguacate, queso y yogurt disponibles', ['Aguacate 1/2', 'Queso 28g', 'Yogurt griego taza'].every(x => ht.includes(x)), ht.join(' · '));
-  // 2 arroz/pollo → aguacate, frijoles, tortillas (noche: extras algo mayores); sin leche
+  const ht2 = nombres(sb.completarPotenciar(dia, ['Huevo', 'Tortilla maíz'], ht));
+  const htUnion = cortosDe(ht.concat(ht2).map(n => ({ nombre: n })));
+  t('huevos+tortilla: aguacate, queso y yogurt disponibles (lote + otros extras)', ['Aguacate 1/2', 'Queso 28g', 'Yogurt griego taza'].every(x => htUnion.includes(sb.completarNombreCorto(x))), ht.concat(ht2).join(' · '));
+  // 2 arroz/pollo noche: aguacate, frijol y tortilla en lote+otros; sin leche
   const ap1 = nombres(sb.completarPotenciar(noche, ['Arroz cocido 1 taza', 'Pollo 100g']));
   const ap2 = nombres(sb.completarPotenciar(noche, ['Arroz cocido 1 taza', 'Pollo 100g'], ap1));
-  const apUnion = ap1.concat(ap2);
-  t('arroz+pollo: aguacate, frijol y tortilla disponibles (lote + otros extras)', ['Aguacate 1/2', 'Frijol 1 taza', 'Tortilla maíz'].every(x => apUnion.includes(x)), apUnion.join(' · '));
-  t('arroz+pollo: sin leche de relleno', !ap1.includes('Leche entera taza'));
-  // 3 pasta → queso sí; sin leche ni principal
+  const apUnion = cortosDe(ap1.concat(ap2).map(n => ({ nombre: n })));
+  t('arroz+pollo: aguacate, frijol y tortilla disponibles (lote + otros extras)', ['Aguacate 1/2', 'Frijol 1 taza', 'Tortilla maíz'].every(x => apUnion.includes(sb.completarNombreCorto(x))), apUnion.join(' · '));
+  t('arroz+pollo: sin leche de relleno', !ap1.concat(ap2).some(x => /Leche/.test(x)));
+  // 3 pasta: queso sí; sin leche ni principal
   const pa = nombres(sb.completarPotenciar(dia, ['Espagueti a la crema con pollo']));
-  t('pasta: queso extra disponible', pa.includes('Queso 28g'), pa.join(' · '));
-  t('pasta: sin bebida láctea absurda', !pa.includes('Leche entera taza'));
+  t('pasta: queso extra disponible', pa.some(x => /Queso/.test(x)), pa.join(' · '));
+  t('pasta: sin bebida láctea absurda', !pa.some(x => /Leche/.test(x)));
   t('pasta: sin otra proteína principal como extra', !pa.some(x => /Pollo 100g|Carne molida 100g|Atún lata/.test(x)));
-  // 4 licuado → crema de cacahuate, avena, yogurt
+  // 4 licuado: crema de cacahuate, avena y yogurt
   const li = nombres(sb.completarPotenciar(dia, ['Leche entera taza', 'Plátano']));
-  t('licuado: crema de cacahuate, avena y yogurt disponibles', ['Crema cacahuate cda', 'Avena 1/2 taza', 'Yogurt griego taza'].every(x => li.includes(x)), li.join(' · '));
-  // 5 desayuno → leche/yogurt compatibles
+  const liCortos = cortosDe(li.map(n => ({ nombre: n })));
+  t('licuado: crema de cacahuate, avena y yogurt disponibles', ['Crema cacahuate cda', 'Avena 1/2 taza', 'Yogurt griego taza'].every(x => liCortos.includes(sb.completarNombreCorto(x))), li.join(' · '));
+  // 5 desayuno: leche/yogurt compatibles
   const de = nombres(sb.completarPotenciar(dia, ['Huevos a la mexicana']));
   t('desayuno: leche o yogurt compatibles', de.some(x => /Leche|Yogurt/.test(x)), de.join(' · '));
-  // 6 trabajo: extras pequeños (≤200)
+  // 6 trabajo: extras dentro de la banda del momento (sin gigantes)
   const tr = sb.completarPotenciar(dia, ['Cena: quesadilla de pollo']);
-  t('trabajo: extras ≤200 kcal', tr.every(x => x.kcal <= 200), tr.map(x => x.kcal).join('/'));
+  t('trabajo: extras dentro de la banda (≤600)', tr.every(x => x.kcal <= 600), tr.map(x => x.kcal).join('/'));
   // 7 noche: puede incluir acompañantes mayores (arroz/frijol)
   const no = nombres(sb.completarPotenciar(noche, ['Papas con chorizo']));
   t('noche: permite extras mayores (arroz/frijol)', no.some(x => /Arroz|Frijol/.test(x)), no.join(' · '));
-  // 8 Me lleno rápido: densos primero
-  const dens = sb.completarPotenciar(ctxBase({ kcalConsumidas: 2000, hora: 13, llenado: 'rapido' }), ['Huevo', 'Tortilla maíz']);
-  t('Me lleno rápido: densos entre los primeros', dens.length > 0 && /Crema|Aguacate|Queso|Yogurt|Leche/.test(dens[0].nombre), dens.map(x => x.titulo).join(' · '));
+  // 8 Me lleno rápido: el volumen suma puntos reales en el scoring
+  const rapido = ctxBase({ kcalConsumidas: 2000, hora: 13, llenado: 'rapido' });
+  const normal2 = ctxBase({ kcalConsumidas: 2000, hora: 13, llenado: 'normal' });
+  const crema = { nombre: 'Crema cacahuate cda', kcal: 94, p: 4, c: 3, g: 8, volumen: 'Poco', factor: 1, tiempo: 0 };
+  const scR = sb.potenciarScore(crema, rapido, sb.potenciarFaltante(rapido), 250, []);
+  const scN = sb.potenciarScore(crema, normal2, sb.potenciarFaltante(normal2), 250, []);
+  t('Me lleno rápido: volumen suma puntos reales', scR.score > scN.score && scR.razones.some(r => /denso/.test(r)), scR.score.toFixed(1) + ' vs ' + scN.score.toFixed(1));
   // 9 sin bebida absurda en salado
-  t('salado: ninguna bebida como extra', ['Espagueti a la crema con pollo', 'Papas con chorizo', 'Arroz cocido 1 taza', 'Pollo 100g'].every(b => !nombres(sb.completarPotenciar(dia, [b])).includes('Leche entera taza')));
+  t('salado: ninguna bebida como extra', ['Espagueti a la crema con pollo', 'Papas con chorizo', 'Arroz cocido 1 taza', 'Pollo 100g'].every(b => !nombres(sb.completarPotenciar(dia, [b])).some(x => /Leche/.test(x))));
   // 10 sin principal como extra (noche incluida)
   const noPr = nombres(sb.completarPotenciar(noche, ['Arroz cocido 1 taza']));
   t('nunca otra proteína principal como extra (ni de noche)', !noPr.some(x => /Pollo 100g|Carne molida 100g|Atún lata/.test(x)), noPr.join(' · '));
-  // 11 Otros extras rota
+  // 11 Otros extras rota (por alimento, sin repetir variantes escaladas)
   const e1 = nombres(sb.completarPotenciar(dia, ['Huevo', 'Tortilla maíz']));
   const e2 = nombres(sb.completarPotenciar(dia, ['Huevo', 'Tortilla maíz'], e1));
-  t('Otros extras: rota sin repetir', e2.every(x => !e1.includes(x)), e2.join(' · '));
+  const c1 = cortosDe(e1.map(n => ({ nombre: n }))), c2 = cortosDe(e2.map(n => ({ nombre: n })));
+  t('Otros extras: rota sin repetir', c2.every(x => !c1.includes(x)), e2.join(' · '));
   // 12 catálogo pequeño: 1-2
   const chico = ctxBase({ kcalConsumidas: 2000, hora: 13, catalogo: { recetas: [], alimentos: alimentosDeFoods().slice(0, 2) } });
   const ch = sb.completarPotenciar(chico, ['Huevo']);
   t('catálogo pequeño: 1-2 extras sin inventar', ch.length >= 1 && ch.length <= 2, ch.map(x => x.nombre).join(' · '));
+})();
+
+console.log('== 11 · Me lleno rápido + mañana/trabajo: lo fácil manda ==');
+(function () {
+  const rapidoManana = ctxBase({ kcalConsumidas: 1800, hora: 8, llenado: 'rapido', macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  const rapidoTrabajo = ctxBase({ kcalConsumidas: 1800, hora: 13, llenado: 'rapido', macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  const normalManana = ctxBase({ kcalConsumidas: 1800, hora: 8, llenado: 'normal', macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  const nocheRapida = ctxBase({ kcalConsumidas: 1800, hora: 20, llenado: 'rapido', macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  // 1) scoring: premios y castigos SOLO en rápido + mañana/trabajo
+  const bebCand = sb.completarCandidatos(rapidoManana).find(c => c.tipoBebida);
+  t('mañana rápido: bebida premiada', bebCand && sb.completarScore(bebCand, rapidoManana).razones.some(r => /rapido-bebida|rapido-poco-volumen/.test(r)));
+  const larga = sb.completarCatalogo(rapidoManana).find(r => +r.tiempo > 20);
+  t('mañana rápido: receta larga castigada', larga && sb.completarScore({ partes: [larga], tier: 'A' }, rapidoManana).razones.some(r => /rapido-receta-larga/.test(r)));
+  const grande = sb.completarCatalogo(rapidoManana).find(r => +r.kcal >= 600);
+  t('mañana rápido: plato ≥600 castigado', grande && sb.completarScore({ partes: [grande], tier: 'A' }, rapidoManana).razones.some(r => /rapido-plato-grande/.test(r)));
+  const mismaGrandeNoche = sb.completarScore({ partes: [grande], tier: 'A' }, nocheRapida);
+  t('noche rápido: SIN castigo de plato grande', !mismaGrandeNoche.razones.some(r => /rapido-plato-grande|rapido-receta-larga/.test(r)));
+  t('llenado normal: sin bloque rápido', !sb.completarScore({ partes: [grande], tier: 'A' }, normalManana).razones.some(r => /rapido-plato-grande/.test(r)));
+  // 2) garantía de diversidad: 1 bebida + 1 rápida + máx 1 grande
+  const m = propuestas(rapidoManana);
+  t('mañana rápido: 3 propuestas', m.length === 3);
+  t('mañana rápido: ≥1 bebida/licuado', m.some(p => p.bebida), m.map(p => p.titulo).join(' | '));
+  t('mañana rápido: ≥1 rápida/portable', m.some(p => sb.completarEsRapido({ partes: p.componentes.map(c => ({ tiempo: c.tiempo, metodo: c.metodo, portable: p.bebida ? true : false })) })), m.map(p => p.titulo).join(' | '));
+  t('mañana rápido: máximo 1 comida ≥600 kcal', m.filter(p => p.kcal >= 600).length <= 1, m.map(p => p.kcal).join('/'));
+  const tT = propuestas(rapidoTrabajo);
+  t('trabajo rápido: ≥1 bebida/licuado', tT.some(p => p.bebida), tT.map(p => p.titulo).join(' | '));
+  t('trabajo rápido: máximo 1 comida ≥600 kcal', tT.filter(p => p.kcal >= 600).length <= 1, tT.map(p => p.kcal).join('/'));
+  // 3) no forzar: catálogo pequeño sin bebidas ni rápidas no se rompe
+  const chico = ctxBase({ kcalConsumidas: 1800, hora: 8, llenado: 'rapido', catalogo: { recetas: [{ id: 0, nombre: 'Receta lenta', kcal: 500, p: 20, c: 0, g: 0, tiempo: 40, method: 'estufa', type: 'comida', tags: '', scoreAudit: '🟢' }], alimentos: [{ id: 'f0', nombre: 'Huevo', kcal: 72, p: 6, g: 5, c: 0 }] }, macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  const ch = propuestas(chico);
+  t('catálogo sin fáciles: no inventa ni rompe', ch.length >= 1 && ch.length <= 3, ch.map(p => p.titulo).join(' | '));
+  // 4) determinismo se mantiene
+  const a = propuestas(rapidoManana), b = propuestas(rapidoManana);
+  t('mismo contexto rápido → mismas 3', JSON.stringify(a.map(p => p.titulo)) === JSON.stringify(b.map(p => p.titulo)));
+})();
+
+console.log('== 12 · Pool fácil: regresión del caso real (meal prep / llena / combos) ==');
+(function () {
+  const PESADAS = [
+    { id: 90, nombre: 'Meal prep: pechugas para la semana', kcal: 865, p: 70, c: 0, g: 0, tiempo: 22, method: 'horno', type: 'comida', tags: 'meal prep', scoreAudit: '🟢' },
+    { id: 91, nombre: 'Ensalada de pollo con aguacate (llena)', kcal: 920, p: 45, c: 0, g: 0, tiempo: 20, method: 'sin cocinar', type: 'comida', tags: 'ensalada llena', scoreAudit: '🟢' }
+  ];
+  const ctxReal = ctxBase({ kcalConsumidas: 1800, hora: 8, llenado: 'rapido', catalogo: { recetas: RECETAS.concat(PESADAS), alimentos: alimentosDeFoods() }, macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  const cands = sb.completarCandidatos(ctxReal);
+  const mealPrep = cands.find(c => c.partes.some(p => /Meal prep/.test(p.nombre)));
+  const llena = cands.find(c => c.partes.some(p => /llena/.test(p.nombre)));
+  t('Meal prep 865/22 NO es fácil', mealPrep && !sb.completarEsFacil(mealPrep, ctxReal));
+  t('Ensalada llena 920/20 NO es fácil', llena && !sb.completarEsFacil(llena, ctxReal));
+  // combinaciones: solo estructuras reconocidas en el pool
+  const mkC = nombres => sb.completarEsFacil({ tier: 'C', partes: nombres.map(n => { const a = sb.completarCatalogo(ctxReal).find(x => x.nombre === n); return a; }) }, ctxReal);
+  t('Huevo + Tortilla maíz SÍ es estructura fácil', mkC(['Huevo', 'Tortilla maíz']));
+  t('Leche + Plátano SÍ es estructura fácil', mkC(['Leche entera taza', 'Plátano']));
+  t('Papa + Huevo NO es estructura fácil', !mkC(['Papa mediana', 'Huevo']));
+  t('Papa + Huevo + Leche NO es estructura fácil', !mkC(['Papa mediana', 'Huevo', 'Leche entera taza']));
+  t('Arroz + Pollo NO es estructura fácil', !mkC(['Arroz cocido 1 taza', 'Pollo 100g']));
+  // top-3 real con el estado del usuario
+  const props = propuestas(ctxReal);
+  t('top-3 SIN meal prep', !props.some(p => /Meal prep/i.test(p.titulo)), props.map(p => p.titulo).join(' | '));
+  t('top-3 SIN ensalada llena', !props.some(p => /llena/i.test(p.titulo)));
+  t('top-3 SIN Papa + Huevo + Leche', !props.some(p => /Papa \+ Huevo/i.test(p.titulo)), props.map(p => p.titulo).join(' | '));
+  t('top-3 todo del pool fácil (≤650 kcal, ≤15 min, Poco/Medio)', props.every(p => p.kcal <= 650 && p.tiempo <= 15 && (p.volumen === 'Poco' || p.volumen === 'Medio')), props.map(p => p.titulo + ' ' + p.kcal + 'kcal/' + p.tiempo + 'min/' + p.volumen).join(' · '));
+  t('diversidad: ≥1 bebida/licuado', props.some(p => p.bebida), props.map(p => p.titulo).join(' | '));
+  // fallbacks 3+/2/1/0
+  const soloPesadas = ctxBase({ kcalConsumidas: 1800, hora: 8, llenado: 'rapido', catalogo: { recetas: PESADAS, alimentos: alimentosDeFoods() }, macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  const r0 = propuestas(soloPesadas);
+  t('con fáciles tier D: pool sin pesadas', !r0.some(p => /Meal prep|llena/i.test(p.titulo)), r0.map(p => p.titulo).join(' | '));
+  const sinNadaFacil = ctxBase({ kcalConsumidas: 1800, hora: 8, llenado: 'rapido', catalogo: { recetas: PESADAS, alimentos: [] }, macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  const rNada = propuestas(sinNadaFacil);
+  t('0 fáciles: pool vacío, SIN pesadas automáticas (decisión del usuario)', rNada.length === 0, rNada.map(p => p.titulo).join(' | ') || '(vacío)');
+  const unFacil = ctxBase({ kcalConsumidas: 1800, hora: 8, llenado: 'rapido', catalogo: { recetas: PESADAS, alimentos: [alimentosDeFoods()[0]] }, macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  const r1 = propuestas(unFacil);
+  t('1 fácil: solo ese, sin pesadas automáticas', r1.length === 1 && r1[0].titulo === 'Huevo', r1.map(p => p.titulo).join(' | '));
+  // noche: sin pool (las pesadas pueden salir)
+  const nocheReal = ctxBase({ kcalConsumidas: 1800, hora: 20, llenado: 'rapido', catalogo: { recetas: RECETAS.concat(PESADAS), alimentos: alimentosDeFoods() }, macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  t('noche rápido: sin pool fuerte (meal prep puede aparecer)', sb.completarCandidatos(nocheReal).some(c => c.partes.some(p => /Meal prep/.test(p.nombre))));
+  // determinismo del pool
+  const d1 = propuestas(ctxReal), d2 = propuestas(ctxReal);
+  t('pool determinista', JSON.stringify(d1.map(p => p.titulo)) === JSON.stringify(d2.map(p => p.titulo)));
+})();
+
+console.log('== 13 · Todas las rondas respetan el pool fácil (Otras 3 nunca mete pesadas) ==');
+(function () {
+  const PESADAS2 = [
+    { id: 90, nombre: 'Meal prep: pechugas para la semana', kcal: 865, p: 70, c: 0, g: 0, tiempo: 22, method: 'horno', type: 'comida', tags: 'meal prep', scoreAudit: '🟢' },
+    { id: 91, nombre: 'Ensalada de pollo con aguacate (llena)', kcal: 920, p: 45, c: 0, g: 0, tiempo: 20, method: 'sin cocinar', type: 'comida', tags: 'ensalada llena', scoreAudit: '🟢' },
+    { id: 92, nombre: 'Tortitas de pollo y queso', kcal: 930, p: 50, c: 0, g: 0, tiempo: 22, method: 'estufa', type: 'comida', tags: 'tortitas', scoreAudit: '🟢' }
+  ];
+  const esPesada = t => /Meal prep|llena|Tortitas/i.test(t);
+  // estado real de las capturas del usuario: 1200 consumidas de 3000
+  const base = ctxBase({ kcalConsumidas: 1200, hora: 8, llenado: 'rapido', catalogo: { recetas: RECETAS.concat(PESADAS2), alimentos: alimentosDeFoods() }, macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  var mostradas = [];
+  var rondas = [];
+  for (var i = 0; i < 30; i++) {
+    const r = propuestas(Object.assign({}, base, { mostradas: mostradas.slice() }));
+    rondas.push(r);
+    if (!r.length) break;
+    mostradas = mostradas.concat(r.map(p => p.clave));
+    if (r.length < 3) break;
+  }
+  t('ronda 1: 3 fáciles sin pesadas', rondas[0].length === 3 && rondas[0].every(p => !esPesada(p.titulo)), rondas[0].map(p => p.titulo).join(' | '));
+  t('Otras 3 #1 (ronda 2): sin pesadas', rondas[1] && rondas[1].every(p => !esPesada(p.titulo)), rondas[1] ? rondas[1].map(p => p.titulo).join(' | ') : '—');
+  t('Otras 3 #2 (ronda 3): sin pesadas', rondas[2] && rondas[2].every(p => !esPesada(p.titulo)), rondas[2] ? rondas[2].map(p => p.titulo).join(' | ') : '—');
+  t('ninguna ronda repite claves de rondas anteriores', rondas.every((lote, idx) => {
+    var prev = [];
+    for (var j = 0; j < idx; j++) prev = prev.concat(rondas[j].map(p => p.clave));
+    return lote.every(p => !prev.includes(p.clave));
+  }));
+  const ultima = rondas[rondas.length - 1];
+  t('pool agotado: última ronda <3 y sin pesadas', ultima.length < 3 && ultima.every(p => !esPesada(p.titulo)), ultima.map(p => p.titulo).join(' | ') || '(vacío)');
+  t('NUNCA aparecieron Meal prep 900 ni Tortitas 930 automáticamente', rondas.every(lote => lote.every(p => !esPesada(p.titulo))), rondas.length + ' rondas');
+  // Ver opciones normales (decisión explícita del usuario): pesadas PERMITIDAS.
+  // Con un catálogo de solo pesadas + 1 fácil, el modo normal las muestra;
+  // el modo fácil, con el mismo catálogo, muestra solo el fácil.
+  const catNormal = ctxBase({ kcalConsumidas: 1200, hora: 8, llenado: 'rapido', catalogo: { recetas: PESADAS2, alimentos: [alimentosDeFoods()[0]] }, macrosObjetivo: { p: 180, c: 400, g: 100 }, macrosConsumidos: { p: 60, c: 120, g: 40 } });
+  sb.window._completarModoFacil = false;
+  const normales = propuestas(catNormal);
+  t('Ver opciones normales: las pesadas SÍ pueden aparecer', normales.some(p => esPesada(p.titulo)), normales.map(p => p.titulo).join(' | '));
+  const scorePesada = sb.completarScore({ partes: [{ nombre: 'Meal prep: pechugas para la semana', tipo: 'receta', kcal: 865, p: 70, c: 0, g: 0, tiempo: 22, method: 'horno', type: 'comida', tags: 'meal prep', portable: false, volumen: 'Normal', ref: 90 }], tier: 'A' }, base);
+  t('modo normal: sin castigos rápidos a la pesada', !scorePesada.razones.some(r => /rapido-plato-grande|rapido-receta-larga|rapido-volumen-normal/.test(r)));
+  sb.window._completarModoFacil = undefined;
+  const facilesMismo = propuestas(catNormal);
+  t('mismo catálogo en modo fácil: solo el fácil', facilesMismo.length === 1 && facilesMismo[0].titulo === 'Huevo', facilesMismo.map(p => p.titulo).join(' | '));
+  // de vuelta a modo fácil
+  const devuelta = propuestas(Object.assign({}, base, { mostradas: mostradas.slice() }));
+  t('volver a modo fácil: sin pesadas de nuevo', devuelta.every(p => !esPesada(p.titulo)) || devuelta.length === 0);
 })();
 
 console.log('\n===== ESCENARIOS CON DATOS REALES DEL CATÁLOGO =====');

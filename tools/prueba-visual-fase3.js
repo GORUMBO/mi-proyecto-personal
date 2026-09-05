@@ -87,18 +87,20 @@ function t(label, ok, extra) {
   if (idxRec >= 0) {
     await abrirPot(idxRec);
     const ext3 = await extraTitulos();
-    console.log('  extras: ' + ext3.join(' · '));
-    t('pasta: queso disponible', ext3.includes('Queso 28g'));
-    t('pasta: sin leche', !ext3.includes('Leche entera taza'));
+    const ext3b = await evalJs("(function(){completarPotOtros();return (window._completarPotExtras||[]).map(function(x){return x.nombre;});})()");
+    const pasta = ext3.concat(ext3b);
+    console.log('  extras: ' + pasta.join(' · '));
+    t('pasta: queso disponible (lote + otros extras)', pasta.some(x => /Queso/.test(x)));
+    t('pasta: sin leche', !pasta.some(x => /Leche/.test(x)));
   } else {
     t('(sin receta de pasta en este lote)', true);
   }
 
   // 3. Potenciar sobre licuado: crema/avena/yogurt
   console.log('-- Potenciar sobre base licuado --');
-  const extL = await evalJs("(function(){return completarPotenciar(completarCtxReal(),['Leche entera taza','Plátano'],[]).map(function(x){return x.nombre;});})()");
+  const extL = await evalJs("(function(){return completarPotenciar(completarCtxReal(),['Leche entera taza','Plátano'],[]).map(function(x){return completarNombreCorto(x.nombre);});})()");
   console.log('  extras: ' + extL.join(' · '));
-  t('licuado: crema de cacahuate, avena y yogurt', ['Crema cacahuate cda', 'Avena 1/2 taza', 'Yogurt griego taza'].every(x => extL.includes(x)));
+  t('licuado: crema de cacahuate, avena y yogurt', extL.some(x => /Crema cacahuate/.test(x)) && extL.some(x => /Avena/.test(x)) && extL.some(x => /Yogurt griego/.test(x)));
 
   await evalJs("(function(){completarPotCerrar();completarCerrar();if(window.__origGetHours)Date.prototype.getHours=window.__origGetHours;return true;})()");
   const reales = ws.events.filter(e => e.method === 'Runtime.exceptionThrown');

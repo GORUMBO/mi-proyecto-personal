@@ -1,8 +1,9 @@
-// Prueba visual de la PORCIÓN REAL en "Completar mi día" + Potenciar (CDP, Electron).
+// Prueba visual de "Completar mi día" + "Potenciar inteligente" (CDP, Electron).
 // Uso: node tools/prueba-visual-porciones.js [puerto]  (default 9333)
-// Guarda capturas: tools/visual-porciones-escritorio.png (1280px)
+// Guarda capturas: tools/visual-porciones-escritorio.png (1280px, Completar mi día)
 //                  tools/visual-porciones-iphone.png (390px, Completar mi día)
 //                  tools/visual-porciones-iphone-pot.png (390px, Potenciar)
+//                  tools/visual-porciones-iphone-pot2.png (390px, tras agregar→recalcular)
 const port = Number(process.argv[2] || 9333);
 const fs = require('fs');
 const path = require('path');
@@ -88,26 +89,53 @@ const shot = async (ws, file) => {
   t('sin desbordamiento horizontal en iPhone (panel)', overflow.panel <= overflow.iw + 1, JSON.stringify(overflow));
   await shot(ws, 'visual-porciones-iphone.png');
 
-  console.log('-- Potenciar en iPhone: extra con porción real --');
+  console.log('-- Potenciar inteligente en iPhone --');
   const idxCombo = await evalJs("(function(){return (window._completarPropuestas||[]).findIndex(function(p){return p.componentes.every(function(c){return c.tipo==='alimento';})&&p.componentes.length>=2;});})()");
   t('existe un combo de alimentos para potenciar', idxCombo >= 0, 'idx ' + idxCombo);
   await evalJs("(function(){completarPotenciarAbrir(" + idxCombo + ");return true;})()");
   await new Promise(r => setTimeout(r, 600));
   const potTxt = await evalJs("(function(){return (document.getElementById('completarPotPanel')||{innerText:''}).innerText;})()");
+  t('encabezado: ⚡ Potenciar esta comida', potTxt.includes('⚡ Potenciar esta comida'));
+  t('debajo: faltante real del día', /Te faltan \d+ kcal|Kcal del día cubiertas/.test(potTxt), (potTxt.match(/Te faltan \d+ kcal[^\n]*/) || [potTxt.split('\n')[1]])[0]);
   t('Potenciar: sin "P 4g" ni "Vol"', !/\bP \d/.test(potTxt) && !/Vol Poco|Vol Normal/.test(potTxt));
   t('Potenciar: cada extra muestra "+N kcal" con su porción', /\+\d+ kcal/.test(potTxt), (potTxt.match(/\+\d+ kcal/g) || []).join(' '));
-  t('Potenciar: badge 🥤/🍽 presente', /🥤 Poco volumen|🍽 Volumen normal/.test(potTxt));
-  const extrasTxt = await evalJs("(function(){return (window._completarPotExtras||[]).map(function(x){return x.titulo+': '+x.porcion.texto;}).join(' | ');})()");
-  t('extras con porción del catálogo (no inventada)', /1 taza de|½ aguacate|1 pieza|g ·|cucharada de/.test(extrasTxt), extrasTxt.slice(0, 160));
+  t('Potenciar: razón principal del conjunto aprobado', /⭐ Mejor ajuste para lo que te falta|💪 Te falta proteína|🍚 Te faltan carbohidratos|🥤 Sube calorías con poco volumen|⚡ Rápido de agregar/.test(potTxt), (potTxt.match(/(⭐|💪|🍚|🥤|⚡)[^\n]*/g) || []).slice(0, 3).join(' | '));
+  t('Potenciar: facilidad real 🥡', /🥡 Listo para comer/.test(potTxt));
+  const extrasTxt = await evalJs("(function(){return (window._completarPotExtras||[]).map(function(x){return x.titulo+': '+x.porcion.texto+' (x'+x.factor+')';}).join(' | ');})()");
+  t('extras con porción del catálogo (no inventada)', /1 taza de|2 tazas de|½ aguacate|1 pieza|g ·|cucharada de|cucharadas de/.test(extrasTxt), extrasTxt.slice(0, 160));
   const potOverflow = await evalJs("(function(){var el=document.getElementById('completarPotPanel');return {sw:document.body.scrollWidth,iw:window.innerWidth,panel:el?el.scrollWidth:-1};})()");
   t('Potenciar sin desbordamiento en iPhone', potOverflow.sw <= potOverflow.iw + 1 && potOverflow.panel <= potOverflow.iw + 1, JSON.stringify(potOverflow));
   await shot(ws, 'visual-porciones-iphone-pot.png');
 
-  console.log('-- Agregar extra registra EXACTAMENTE lo mostrado --');
+  console.log('-- Agregar extra → Balance recalcula → 3 nuevas → Otros extras --');
+  const antes = await evalJs("(function(){return potenciarFaltante(completarCtxReal()).k;})()");
+  const extra0 = await evalJs("(function(){var x=(window._completarPotExtras||[])[0];return x?(x.nombre+' = '+Math.round(x.kcal)+' kcal'):'';})()");
+  t('hay un primer extra para agregar', !!extra0, extra0);
   await evalJs("(function(){completarPotAgregar(0);return true;})()");
+  await new Promise(r => setTimeout(r, 700));
+  const despues = await evalJs("(function(){return potenciarFaltante(completarCtxReal()).k;})()");
+  t('agregar → Balance recalculado (faltante bajó)', despues < antes || antes === 0, antes + ' → ' + despues);
+  const toastVivo = await evalJs("(function(){var b=document.body.textContent||'';return {seAgrego:b.includes('Se agregó'),faltan:b.includes('Ahora te faltan '+Math.round(potenciarFaltante(completarCtxReal()).k)+' kcal')};})()");
+  t('toast de confirmación visible con datos reales', toastVivo.seAgrego && toastVivo.faltan, JSON.stringify(toastVivo));
+  const potTxt2 = await evalJs("(function(){return (document.getElementById('completarPotPanel')||{innerText:''}).innerText;})()");
+  t('resumen "Agregado a esta comida" visible', potTxt2.includes('Agregado a esta comida'));
+  t('"Total añadido aquí" con suma real', potTxt2.includes('Total añadido aquí'));
+  t('encabezado recalculado tras agregar', potTxt2.includes('Te faltan ' + despues + ' kcal'), (potTxt2.match(/Te faltan \d+ kcal[^\n]*/) || ['?'])[0]);
+  const panelVivo = await evalJs("(function(){var el=document.getElementById('completarPotPanel');return !!(el&&el.innerHTML.includes('＋ Agregar extra'));})()");
+  t('el panel sigue abierto con nuevo lote', panelVivo);
+  const lote2 = await evalJs("(function(){return (window._completarPotExtras||[]).map(function(x){return x.nombre;});})()");
+  const sinRepetir = await evalJs("(function(){var agg=" + JSON.stringify(extra0.split(' = ')[0]) + ";return (window._completarPotExtras||[]).every(function(x){return completarNombreCorto(x.nombre)!==completarNombreCorto(agg);});})()");
+  t('3 nuevas sin repetir el extra agregado', lote2.length >= 1 && sinRepetir, lote2.join(' · '));
   const reg = await evalJs("(function(){var t=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);var d=state.diary[t]||{};var out=[];['breakfast','lunch','dinner','snacks'].forEach(function(m){(d[m]||[]).forEach(function(x){out.push(x.name+' = '+x.kcal+' kcal');});});return out;} )()");
-  const extra0 = await evalJs("(function(){var x=(window._completarPotExtras||[])[0];return x?x.nombre+' = '+Math.round(x.kcal)+' kcal':'';})()");
-  t('diario tiene el extra con su porción y kcal exactas', reg.some(r => r === extra0), reg.slice(-2).join(' | ') + ' vs ' + extra0);
+  t('diario tiene el extra con porción y kcal EXACTAS', reg.some(r => r === extra0), reg.slice(-2).join(' | ') + ' vs ' + extra0);
+  await shot(ws, 'visual-porciones-iphone-pot2.png');
+  const lot1 = await evalJs("(function(){return (window._completarPotExtras||[]).map(function(x){return x.nombre;}).join('|');})()");
+  await evalJs("(function(){completarPotOtros();return true;})()");
+  await new Promise(r => setTimeout(r, 600));
+  const lot2 = await evalJs("(function(){return (window._completarPotExtras||[]).map(function(x){return x.nombre;}).join('|');})()");
+  t('🔄 Otros extras rota a un lote distinto', lot2.length > 0 && lot2 !== lot1, lot2.split('|').join(' · '));
+  const otrosSinRepetir = await evalJs("(function(){var agg=" + JSON.stringify(extra0.split(' = ')[0]) + ";return (window._completarPotExtras||[]).every(function(x){return completarNombreCorto(x.nombre)!==completarNombreCorto(agg);});})()");
+  t('Otros extras no re-ofrece el agregado', otrosSinRepetir);
 
   await ws.sendJson('Emulation.clearDeviceMetricsOverride', {});
   await evalJs("(function(){if(window.__origGetHours)Date.prototype.getHours=window.__origGetHours;completarPotCerrar();completarCerrar();return true;})()");
