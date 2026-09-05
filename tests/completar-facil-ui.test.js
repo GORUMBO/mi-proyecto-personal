@@ -79,11 +79,14 @@ function makeSandbox(overrides) {
     completarFranja() { return overrides.franja || 'noche'; }
   };
   ['COMPLETAR_PESOS', 'COMPLETAR_LIMITES', 'COMPLETAR_FRANJAS', 'COMPLETAR_ALIMENTO', 'COMPLETAR_PLATOS',
-    'COMPLETAR_VOLUMEN_TIPO', 'COMPLETAR_VOLUMEN_ALIMENTO', 'COMPLETAR_PUNTOS_VOL'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
+    'COMPLETAR_VOLUMEN_TIPO', 'COMPLETAR_VOLUMEN_ALIMENTO', 'COMPLETAR_PUNTOS_VOL',
+    'COMPLETAR_UNIDAD_TEXTO', 'COMPLETAR_UNIDAD_CONDE', 'COMPLETAR_EQUIV_CASERA', 'COMPLETAR_GENERICOS'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
   ['completarNombreCorto', 'completarCategoria', 'completarTituloUI'].forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
   ['completarNorm', 'completarSinAcentos', 'completarVolumen', 'completarDensidad', 'completarKcalMomento', 'completarCatalogo',
     'completarCandidatos', 'completarScore', 'completarVolMax', 'completarSuma', 'completarProponer',
     'completarTextoTarjeta', 'completarCardHTML', 'completarCtxReal', 'completarMealKey',
+    'completarFraccion', 'completarPorcion', 'completarVolBadge', 'completarPorcionComponente', 'completarParteTexto',
+    'completarLineaPropuesta', 'completarLineaExtra',
     'completarAbrir', 'completarRenderPanel', 'completarCerrar', 'completarOtras3', 'completarAgregar', 'completarCocinar'].forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
   sb.guardados = guardados;
   sb.panelEl = panelEl;

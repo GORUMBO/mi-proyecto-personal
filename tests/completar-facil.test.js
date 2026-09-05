@@ -39,9 +39,11 @@ const FOODS_RAW = HTML.match(/const foods=(\[[\s\S]*?\]);/);
 if (FOODS_RAW) sb.foods = vm.runInNewContext(FOODS_RAW[1]);
 const NOMBRES = ['completarNorm', 'completarSinAcentos', 'completarFranja', 'completarVolumen', 'completarDensidad',
   'completarKcalMomento', 'completarCatalogo', 'completarCandidatos', 'completarScore',
-  'completarVolMax', 'completarSuma', 'completarProponer', 'completarPotenciar'];
+  'completarVolMax', 'completarSuma', 'completarProponer', 'completarPotenciar',
+  'completarFraccion', 'completarPorcion'];
 ['COMPLETAR_PESOS', 'COMPLETAR_LIMITES', 'COMPLETAR_FRANJAS', 'COMPLETAR_ALIMENTO', 'COMPLETAR_PLATOS',
-  'COMPLETAR_VOLUMEN_TIPO', 'COMPLETAR_VOLUMEN_ALIMENTO', 'COMPLETAR_PUNTOS_VOL'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
+  'COMPLETAR_VOLUMEN_TIPO', 'COMPLETAR_VOLUMEN_ALIMENTO', 'COMPLETAR_PUNTOS_VOL',
+  'COMPLETAR_UNIDAD_TEXTO', 'COMPLETAR_UNIDAD_CONDE', 'COMPLETAR_EQUIV_CASERA', 'COMPLETAR_GENERICOS'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
 ['completarNombreCorto', 'completarCategoria', 'completarTituloUI'].forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
 NOMBRES.forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
 sb.globalThis = sb;

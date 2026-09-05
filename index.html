@@ -25905,6 +25905,104 @@ var COMPLETAR_VOLUMEN_ALIMENTO={
   'aguacate':'Poco','queso':'Poco','papa':'Normal','platano':'Poco'
 };
 var COMPLETAR_PUNTOS_VOL={Poco:0.5,Medio:1,Normal:1.5,Mucho:2};
+/* ===== Porción REAL de cada alimento (motor + UI) =====
+   La medida ya vive en el nombre del catálogo ("Arroz cocido 1 taza",
+   "Pollo 100g", "Aguacate 1/2", "Crema cacahuate cda"). Aquí solo se
+   LEE y se muestra: no se convierte, no se inventa. */
+var COMPLETAR_UNIDAD_TEXTO={g:'g',kg:'kg',ml:'ml',l:'l',oz:'oz',
+  taza:['taza','tazas'],cda:['cucharada','cucharadas'],cucharada:['cucharada','cucharadas'],
+  cdita:['cucharadita','cucharaditas'],cucharadita:['cucharadita','cucharaditas'],
+  rebanada:['rebanada','rebanadas'],vaso:['vaso','vasos'],lata:['lata','latas'],
+  scoop:['scoop','scoops'],copa:['copa','copas'],paquete:['paquete','paquetes'],pieza:['pieza','piezas']};
+/* Unidades de medida que se leen "1 taza DE leche" (vs. "100 g" o "1 pieza"). */
+var COMPLETAR_UNIDAD_CONDE={taza:1,cda:1,cucharada:1,cdita:1,cucharadita:1,rebanada:1,vaso:1,lata:1,scoop:1,copa:1,paquete:1};
+/* Equivalencias caseras ("150 g · aprox. ¾ taza"): SOLO datos verificados.
+   El catálogo de hoy no trae equivalencias → vacía a propósito. Si un día
+   se verifican, se agregan aquí (o como campo del alimento); NUNCA se
+   calculan sobre la marcha. */
+var COMPLETAR_EQUIV_CASERA={};
+/* Palabras que NO son una ración natural contable ("Comida congelada pollo/arroz"
+   no es "1 comida"): en esos casos la ración es "1 porción". */
+var COMPLETAR_GENERICOS={comida:1,cena:1,desayuno:1,atun:1,'atún':1};
+function completarFraccion(s){
+  var eq={'1/2':'½','1/4':'¼','1/3':'⅓','3/4':'¾'};
+  return eq[s]||s;
+}
+function completarPorcion(nombre,equivalencia){
+  var n=String(nombre||'').trim();
+  var casera=(typeof equivalencia==='string'&&equivalencia)?equivalencia:(COMPLETAR_EQUIV_CASERA[n]||null);
+  if(!n)return {texto:'1 porción',casera:casera};
+  var frac='(?:3/4|1/2|1/4|1/3|½|¼|⅓|¾)';
+  var num='(?:\\d+(?:\\.\\d+)?)';
+  var uni='(g|kg|ml|l|oz|tazas?|cdas?|cucharadas?|cditas?|cucharaditas?|rebanadas?|vasos?|latas?|scoops?|copas?|paquetes?|piezas?)';
+  var m;
+  // 1) cantidad + unidad: "100g", "1 taza", "2 cucharadas", "1/2 taza"
+  m=n.match(new RegExp('('+frac+'|'+num+')\\s*'+uni+'\\s*$','i'));
+  if(m){
+    var cant=completarFraccion(m[1]);
+    var plural=String(m[2]).slice(-1)==='s'&&cant!=='1';
+    var u=String(m[2]).toLowerCase().replace(/s$/,'');
+    var ut=COMPLETAR_UNIDAD_TEXTO[u];
+    var unidadTxt=Array.isArray(ut)?(plural?ut[1]:ut[0]):(ut||u);
+    var base=n.replace(new RegExp('\\s*('+frac+'|'+num+')\\s*'+uni+'\\s*$','i'),'').replace(/\s+/g,' ').trim();
+    if(COMPLETAR_UNIDAD_CONDE[u]&&base)return {texto:cant+' '+unidadTxt+' de '+base.toLowerCase(),casera:casera};
+    return {texto:cant+' '+unidadTxt,casera:casera};
+  }
+  // 2) unidad sola: "taza", "cda", "lata", "paquete" → 1 unidad
+  m=n.match(new RegExp('\\s('+uni+')\\s*$','i'));
+  if(m){
+    var u2=String(m[1]).toLowerCase().replace(/s$/,'');
+    var ut2=COMPLETAR_UNIDAD_TEXTO[u2];
+    var unidad2=Array.isArray(ut2)?ut2[0]:(ut2||u2);
+    var base2=n.replace(new RegExp('\\s'+uni+'\\s*$','i'),'').replace(/\s+/g,' ').trim();
+    if(COMPLETAR_UNIDAD_CONDE[u2]&&base2)return {texto:'1 '+unidad2+' de '+base2.toLowerCase(),casera:casera};
+    return {texto:'1 '+unidad2,casera:casera};
+  }
+  // 3) fracción sola: "Aguacate 1/2" → "½ aguacate"
+  m=n.match(new RegExp('\\s('+frac+')\\s*$'));
+  if(m){
+    var base3=n.replace(new RegExp('\\s'+frac+'\\s*$'),'').replace(/\s+/g,' ').trim();
+    if(base3)return {texto:completarFraccion(m[1])+' '+base3.toLowerCase(),casera:casera};
+  }
+  // 4) tamaño: "Papa mediana", "Tortilla de harina grande"
+  if(/\s(mediana|mediano|grande|chica|chico|pequeña|pequeño|pequena|pequeno|fajita)\s*$/i.test(n))return {texto:'1 '+n.toLowerCase(),casera:casera};
+  // 5) sin medida: 1 unidad natural del alimento (su primera palabra)
+  var primera=String(n.split(/\s+/)[0]||'').toLowerCase().replace(/[^a-záéíóúñ]/g,'');
+  if(primera&&!COMPLETAR_GENERICOS[primera])return {texto:'1 '+primera,casera:casera};
+  return {texto:'1 porción',casera:casera};
+}
+function completarVolBadge(vol){
+  return (vol==='Poco')?'🥤 Poco volumen':'🍽 Volumen normal';
+}
+function completarPorcionComponente(c){
+  if(c&&c.tipo==='receta')return {texto:'1 porción',casera:null};
+  return (c&&c.porcion)||completarPorcion(c&&c.nombre);
+}
+function completarParteTexto(c){
+  var por=completarPorcionComponente(c);
+  var txt=por.texto;
+  if(por.casera)txt+=' · aprox. '+por.casera;
+  return txt;
+}
+/* Línea "porción · kcal · proteína" de una propuesta (componentes reales). */
+function completarLineaPropuesta(pr){
+  var cs=(pr&&pr.componentes)||[];
+  var porcion;
+  if(!cs.length)porcion='';
+  else if(cs.length===1)porcion=completarParteTexto(cs[0]);
+  else porcion=cs.map(function(c){return completarNombreCorto(c.nombre)+': '+completarParteTexto(c);}).join(' · ');
+  var out=(porcion?porcion+' · ':'')+Math.round(pr.kcal)+' kcal · '+Math.round(pr.p)+' g proteína';
+  if(pr.tiempo)out+=' · '+pr.tiempo+' min';
+  return out;
+}
+/* Línea de un extra en Potenciar: "½ aguacate · +160 kcal · 2 g proteína". */
+function completarLineaExtra(x){
+  var por=x.porcion||completarPorcion(x.nombre);
+  var out=por.texto;
+  if(por.casera)out+=' · aprox. '+por.casera;
+  out+=' · +'+Math.round(x.kcal)+' kcal · '+Math.round(x.p)+' g proteína';
+  return out;
+}
 /* Complementos por FUNCIÓN culinaria y compatibilidad por tipo de plato.
    Una bebida jamás rellena un plato salado; solo acompaña desayunos,
    avenas, frutas, licuados o aparece como propuesta independiente. */
@@ -25982,13 +26080,13 @@ function completarCatalogo(ctx){
     if(!(+r.kcal>0))return; // sin nutrición suficiente → fuera
     var texto=completarNorm((r.nombre||'')+' '+(r.tags||'')+' '+(r.ingredients||''));
     for(var j=0;j<restricciones.length;j++){if(texto.indexOf(restricciones[j])>=0)return;}
-    out.push({tipo:'receta',ref:r.id!=null?r.id:i,nombre:r.nombre,kcal:+r.kcal,p:+r.p||0,c:+r.c||0,g:+r.g||0,tiempo:+r.tiempo||0,metodo:r.method||'',type:r.type||'',tags:r.tags||'',portable:!!r.portable,volumen:completarVolumen(r),scoreAudit:r.scoreAudit||'🟢'});
+    out.push({tipo:'receta',ref:r.id!=null?r.id:i,nombre:r.nombre,kcal:+r.kcal,p:+r.p||0,c:+r.c||0,g:+r.g||0,tiempo:+r.tiempo||0,metodo:r.method||'',type:r.type||'',tags:r.tags||'',portable:!!r.portable,volumen:completarVolumen(r),porcion:{texto:'1 porción',casera:null},scoreAudit:r.scoreAudit||'🟢'});
   });
   (ctx.catalogo&&ctx.catalogo.alimentos||[]).forEach(function(f,i){
     if(!(+f.kcal>0))return;
     var texto=completarNorm(f.nombre||'');
     for(var j=0;j<restricciones.length;j++){if(texto.indexOf(restricciones[j])>=0)return;}
-    out.push({tipo:'alimento',ref:f.id!=null?f.id:i,nombre:f.nombre,kcal:+f.kcal,p:+f.p||0,c:+f.c||0,g:+f.g||0,tiempo:0,metodo:'',type:'alimento',tags:'',volumen:completarVolumen({tipo:'alimento',nombre:f.nombre})});
+    out.push({tipo:'alimento',ref:f.id!=null?f.id:i,nombre:f.nombre,kcal:+f.kcal,p:+f.p||0,c:+f.c||0,g:+f.g||0,tiempo:0,metodo:'',type:'alimento',tags:'',volumen:completarVolumen({tipo:'alimento',nombre:f.nombre}),porcion:completarPorcion(f.nombre,f.equivalencia)});
   });
   return out;
 }
@@ -26177,7 +26275,7 @@ function completarProponer(ctx){
       metodo:x.partes.map(function(p){return p.metodo;}).filter(Boolean)[0]||'',
       score:Math.round(x.s.score),
       razones:x.s.razones,
-      componentes:x.partes.map(function(p){return {tipo:p.tipo,ref:p.ref,nombre:p.nombre,kcal:p.kcal,p:p.p,c:p.c,g:p.g,tiempo:p.tiempo||0,metodo:p.metodo||'',volumen:p.volumen};})
+      componentes:x.partes.map(function(p){return {tipo:p.tipo,ref:p.ref,nombre:p.nombre,kcal:p.kcal,p:p.p,c:p.c,g:p.g,tiempo:p.tiempo||0,metodo:p.metodo||'',volumen:p.volumen,porcion:p.porcion||completarPorcion(p.nombre)};})
     };
   });
 }
@@ -26218,7 +26316,7 @@ function completarCtxReal(){
       return {id:i,nombre:r.name,kcal:r.k,p:r.p||0,c:r.carbs||0,g:r.grasas||0,tiempo:r.time||0,method:r.method||'',type:r.type||'',tags:r.tags||'',ingredients:r.ingredients||'',portable:r.llevarTrabajo==='Sí',
         scoreAudit:a.score,problemaBloqueante:(a.problemas||[]).some(function(pr){return pr.tipo==='preparacion-asumida'||pr.tipo==='tm5-sin-parametros';})};
     }),
-    alimentos:(typeof foods!=='undefined'?foods:[]).map(function(f,i){return {id:'f'+i,nombre:f[0],kcal:f[1],p:f[2],g:f[3],c:f[4]};})
+    alimentos:(typeof foods!=='undefined'?foods:[]).map(function(f,i){return {id:'f'+i,nombre:f[0],kcal:f[1],p:f[2],g:f[3],c:f[4],equivalencia:f[6]||''};})
   };
   return {
     kcalObjetivo:dm.kcalGoal||0, kcalConsumidas:(dm.food?dm.food.k:0)||hoy.k,
@@ -26254,10 +26352,9 @@ function completarRenderPanel(){
   props.forEach(function(pr,i){
     var receta=null;pr.componentes.forEach(function(c){if(c.tipo==='receta')receta=c;});
     h+='<div style="background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:12px;margin-bottom:10px">'
-      +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:15px">'+safeText(pr.titulo)+'</b>'
-      +'<span class="muted" style="font-size:12px;font-weight:800">'+pr.kcal+' kcal · P '+pr.p+'g'+(pr.tiempo?' · '+pr.tiempo+' min':'')+'</span></div>'
-      +(pr.sub?'<div class="muted" style="font-size:12px;margin-top:2px">'+safeText(pr.sub)+'</div>':'')
-      +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">Volumen: '+pr.volumen+'</span></div>'
+      +'<b style="font-size:15px">'+safeText(pr.titulo)+'</b>'
+      +'<div style="font-size:13px;font-weight:700;color:#12352a;margin-top:4px">'+safeText(completarLineaPropuesta(pr))+'</div>'
+      +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">'+completarVolBadge(pr.volumen)+'</span></div>'
       +'<div class="row" style="gap:8px;margin-top:10px">'
       +(receta?'<button class="btn" style="flex:1;padding:10px;min-height:44px" onclick="completarCocinar('+i+')">🍳 Cocinar</button>':'')
       +'<button class="btn primary" style="flex:1;padding:10px;min-height:44px" onclick="completarAgregar('+i+')">＋ Agregar</button>'
@@ -26301,7 +26398,7 @@ function completarPotenciar(ctx, baseNombres, excluidas){
     out.push({nombre:a.nombre,kcal:a.kcal,p:a.p,c:a.c,g:a.g,volumen:a.volumen,score:sc,razones:['compatible con '+completarNombreCorto((baseNombres||[])[0]||'la comida')]});
   });
   out.sort(function(a,b){return b.score-a.score;});
-  return out.slice(0,3).map(function(x){return {nombre:x.nombre,titulo:completarNombreCorto(x.nombre),kcal:x.kcal,p:x.p,c:x.c,g:x.g,volumen:x.volumen,score:x.score,razones:x.razones};});
+  return out.slice(0,3).map(function(x){return {nombre:x.nombre,titulo:completarNombreCorto(x.nombre),kcal:x.kcal,p:x.p,c:x.c,g:x.g,volumen:x.volumen,score:x.score,razones:x.razones,porcion:x.porcion||completarPorcion(x.nombre)};});
 }
 function completarCerrar(){var ov=document.getElementById('completarPanel');if(ov)ov.remove();}
 function completarOtras3(){
@@ -26343,12 +26440,13 @@ function completarPotRender(){
   var h='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="completarPotCerrar()">← Volver</button>'
     +'<b style="font-size:17px;color:#12352a;flex:1">⚡ Potenciar: '+safeText(pr.titulo)+'</b></div>'
-    +'<div class="muted" style="font-size:13px;margin-bottom:10px">'+pr.kcal+' kcal · P '+pr.p+'g — añade un extra real y compatible:</div>';
+    +'<div class="muted" style="font-size:13px;margin-bottom:10px">Base: '+safeText(completarLineaPropuesta(pr))+' — añade un extra real y compatible:</div>';
   if(!extras.length)h+='<div class="card"><b>Sin extras compatibles ahora.</b><div class="muted" style="font-size:13px;margin-top:4px">Esta comida ya está completa con lo disponible.</div></div>';
   extras.forEach(function(x,k){
     h+='<div style="background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:12px;margin-bottom:10px">'
-      +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:15px">'+safeText(x.titulo)+'</b>'
-      +'<span class="muted" style="font-size:12px;font-weight:800">+'+x.kcal+' kcal · P '+x.p+'g · Vol '+x.volumen+'</span></div>'
+      +'<b style="font-size:15px">'+safeText(x.titulo)+'</b>'
+      +'<div style="font-size:13px;font-weight:700;color:#12352a;margin-top:4px">'+safeText(completarLineaExtra(x))+'</div>'
+      +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">'+completarVolBadge(x.volumen)+'</span></div>'
       +'<div class="row" style="gap:8px;margin-top:10px"><button class="btn primary" style="flex:1;padding:10px;min-height:44px" onclick="completarPotAgregar('+k+')">＋ Agregar extra</button></div></div>';
   });
   if(extras.length)h+='<button class="btn" style="width:100%;padding:12px;min-height:48px" onclick="completarPotOtros()">🔄 Otros extras</button>';
@@ -26364,9 +26462,12 @@ function completarPotOtros(){
 function completarPotAgregar(k){
   var x=(window._completarPotExtras||[])[k]; if(!x)return;
   var key=completarMealKey();
+  // Registra EXACTAMENTE la porción mostrada: el nombre completo del catálogo
+  // (que trae la medida) + sus kcal/macros. Nunca se recalcula otra porción.
   _guardarComida(x.nombre,x.kcal,x.p,x.c,x.g,key);
   try{if(typeof refrescarInicio==='function')refrescarInicio();}catch(e){}
-  try{if(typeof toastReg==='function')toastReg('✅ Extra agregado a '+mealKeyLabel(key)+': '+x.titulo);}catch(e){}
+  var por=x.porcion||completarPorcion(x.nombre);
+  try{if(typeof toastReg==='function')toastReg('✅ Extra agregado a '+mealKeyLabel(key)+': '+x.titulo+' ('+por.texto+')');}catch(e){}
   completarPotCerrar();
 }
 function recipeCardFill(el){

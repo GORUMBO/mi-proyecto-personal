@@ -9,3 +9,5 @@ dist/
 tools/auditoria-report.json
 tools/recetas-dump.json
 tools/*.txt
+# Capturas regenerables de las pruebas visuales CDP (tools/)
+tools/visual-*.png
