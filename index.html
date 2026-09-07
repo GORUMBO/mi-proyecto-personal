@@ -24123,6 +24123,61 @@ function ppDiagActivar(){
   }catch(e){}
 }
 window.addEventListener('load',function(){try{ppDiagActivar();}catch(e){}});
+// ===== HERRAMIENTA TEMPORAL: limpieza EXACTA de registros DEBUG-PERSISTENCIA =====
+// Activa con ?debugpersistencia=1 (o sessionStorage pp_debugpersistencia=1).
+// SOLO elimina exercise === 'DEBUG-PERSISTENCIA' del workoutLog LOCAL.
+// Persiste ya (save(true)); NO sincroniza si está offline. Restaura si el
+// conteo de workouts reales cambia. TEMPORAL: se retira tras la limpieza.
+function debugPersistenciaCuenta(){
+  var wl=state.workoutLog||[];
+  var d=0,r=0;
+  wl.forEach(function(x){if(x&&x.exercise==='DEBUG-PERSISTENCIA')d++;else r++;});
+  return {debug:d,reales:r,total:wl.length};
+}
+function renderDebugPersistencia(){
+  var n=document.getElementById('debugPersistenciaN');
+  if(n){var c=debugPersistenciaCuenta();n.textContent=c.debug+' DEBUG · '+c.reales+' workouts reales';}
+  var o=document.getElementById('debugPersistenciaStatus');
+  if(o&&window._debugPersistenciaResultado)o.innerHTML=window._debugPersistenciaResultado;
+}
+function debugPersistenciaLimpiar(){
+  var wl=state.workoutLog||[];
+  var antes=debugPersistenciaCuenta();
+  window._debugPersistenciaResultado='';
+  if(antes.debug===0){window._debugPersistenciaResultado='No hay registros DEBUG-PERSISTENCIA.';renderDebugPersistencia();return;}
+  if(!confirm('¿Eliminar SOLO los '+antes.debug+' registros "DEBUG-PERSISTENCIA"? Los '+antes.reales+' workouts reales NO se tocan.'))return;
+  var copia=wl.slice(); // por si el conteo de reales cambia: restaurar
+  state.workoutLog=wl.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';});
+  var despues=debugPersistenciaCuenta();
+  if(despues.reales!==antes.reales||despues.total!==antes.reales){
+    state.workoutLog=copia;
+    save(true);
+    window._debugPersistenciaResultado='⚠ ABORTO: el conteo de reales cambió. Se restauró todo ('+antes.total+' intactos).';
+    renderDebugPersistencia();
+    return;
+  }
+  save(true); // persistir YA en localStorage+IndexedDB; sin sync si está offline
+  window._debugPersistenciaResultado='✔ DEBUG antes/después: '+antes.debug+' → '+despues.debug+' · workouts reales: '+antes.reales+' → '+despues.reales;
+  renderDebugPersistencia();
+}
+function debugPersistenciaActivar(){
+  try{
+    if(!/[?&]debugpersistencia=1/.test(location.search)&&!sessionStorage.getItem('pp_debugpersistencia'))return;
+    sessionStorage.setItem('pp_debugpersistencia','1');
+    window._debugPersistencia=true;
+    var c=debugPersistenciaCuenta();
+    var host=document.createElement('div');
+    host.id='debugPersistenciaHost';
+    host.innerHTML='<div style="position:fixed;right:8px;bottom:40px;z-index:99995;background:#fff7f7;border:1.5px solid #b03030;border-radius:12px;padding:10px 12px;max-width:300px;box-shadow:0 8px 24px #0003">'
+      +'<b style="font-size:13px;color:#b03030">🧹 DEBUG-PERSISTENCIA (temporal)</b>'
+      +'<div class="muted" style="font-size:11px;margin-top:4px" id="debugPersistenciaN">'+c.debug+' DEBUG · '+c.reales+' workouts reales</div>'
+      +'<button class="btn" style="width:100%;margin-top:8px;padding:8px;font-size:12px;background:#b03030;color:#fff;border-radius:8px" onclick="debugPersistenciaLimpiar()">🗑 Eliminar solo registros DEBUG-PERSISTENCIA</button>'
+      +'<div id="debugPersistenciaStatus" style="font-size:11px;margin-top:6px;color:#15704f"></div>'
+      +'</div>';
+    document.body.appendChild(host);
+  }catch(e){}
+}
+window.addEventListener('load',function(){try{debugPersistenciaActivar();}catch(e){}});
 let _autoSyncTimer=null,_syncing=false,_csBusy=false;
 function scheduleAutoSync(){
   state.offlineChanges=(state.offlineChanges||0)+1;
