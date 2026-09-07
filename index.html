@@ -684,20 +684,59 @@ function debugPersistenciaBootLimpiar(){
   try{persistStateIDB(JSON.stringify(state));}catch(e){}
   return {antes:antes,despues:despues,escribio:true};
 }
-window.addEventListener('load',function(){
+window.addEventListener('load',async function(){
   if(!_debugBootActivo)return;
-  var liberar=true;
+  var liberar=false;
+  var bannerTxt='';
   try{
-    var r=debugPersistenciaBootLimpiar();
-    if(r.aborto)liberar=false; // ABORTO: sync se queda BLOQUEADO (seguro)
-    if(r.antes.debug>0||r.aborto){
-      var banner=document.createElement('div');
-      banner.style.cssText='position:fixed;left:8px;bottom:40px;z-index:99999;background:#fff7f7;border:1.5px solid #b03030;border-radius:12px;padding:10px 12px;max-width:320px';
-      banner.innerHTML='<b style="color:#b03030">🧹 Limpieza de arranque</b><div style="font-size:12px;margin-top:4px">'+(r.aborto?'⚠ ABORTO: conteo de reales cambió — no se tocó nada (sync bloqueado).':'DEBUG iPhone: '+r.antes.debug+' → '+r.despues.debug+' · workouts reales: '+r.antes.reales+' → '+r.despues.reales)+'</div>';
-      document.body.appendChild(banner);
+    var r=debugPersistenciaBootLimpiar(); // local primero (exacto, con restauración)
+    var cuentaNube=null;
+    if(!r.aborto&&r.antes.debug>0){
+      // la nube también debe quedar limpia ANTES de liberar el sync:
+      // si no, el merge por unión re-importaría los DEBUG en el primer sync.
+      try{
+        var s=getCloudSession();
+        if(s){
+          var path='personal_backups?user_id=eq.'+encodeURIComponent(s.user.id);
+          var rows=await cloudRest(path+'&select=data');
+          var nube=rows&&rows[0]?rows[0].data:null;
+          var wlNube=(nube&&nube.workoutLog)||[];
+          var realesNube=wlNube.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';}).length;
+          if(realesNube!==r.antes.reales){bannerTxt='⚠ ABORTO: reales en la nube ('+realesNube+') ≠ locales ('+r.antes.reales+'). Sync bloqueado.';}
+          else{
+            nube.workoutLog=wlNube.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';});
+            nube.lastModified=new Date().toISOString();
+            await cloudRest(path,{method:'PATCH',headers:{'Prefer':'return=representation'},body:JSON.stringify({data:nube,updated_at:new Date().toISOString()})});
+            var ver=await cloudRest(path+'&select=data');
+            var wlVer=(ver&&ver[0]&&ver[0].data&&ver[0].data.workoutLog)||[];
+            var dNube=wlVer.filter(function(x){return x.exercise==='DEBUG-PERSISTENCIA';}).length;
+            var rNube=wlVer.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';}).length;
+            if(dNube===0&&rNube===r.antes.reales){
+              liberar=true;
+              bannerTxt='✔ DEBUG iPhone: '+r.antes.debug+' → '+r.despues.debug+' · DEBUG nube: → 0 · workouts reales: '+r.antes.reales+' → '+r.despues.reales;
+            }else{bannerTxt='⚠ La nube no quedó limpia (DEBUG '+dNube+', reales '+rNube+'). Sync bloqueado.';}
+          }
+        }else{bannerTxt='⚠ Sin sesión: limpieza local '+r.antes.debug+' → '+r.despues.debug+' hecha, pero el sync queda bloqueado hasta verificar la nube.';}
+      }catch(e){bannerTxt='⚠ Error al limpiar la nube: '+String(e&&e.message||e).slice(0,80)+' · Sync bloqueado.';}
+    }else if(!r.aborto){
+      liberar=true;
+      bannerTxt='✔ No había DEBUG local ('+r.antes.reales+' workouts reales). Sync liberado.';
+    }else{
+      bannerTxt='⚠ ABORTO: conteo de reales cambió — no se tocó nada (sync bloqueado).';
     }
-  }catch(e){}
-  // liberar el sync SOLO cuando la limpieza local terminó (y no abortó)
+    var banner=document.createElement('div');
+    banner.style.cssText='position:fixed;left:8px;bottom:40px;z-index:99999;background:#fff7f7;border:1.5px solid #b03030;border-radius:12px;padding:10px 12px;max-width:340px';
+    banner.innerHTML='<b style="color:#b03030">🧹 Limpieza de arranque</b><div style="font-size:12px;margin-top:4px">'+bannerTxt+'</div>';
+    document.body.appendChild(banner);
+  }catch(e){
+    try{
+      var b2=document.createElement('div');
+      b2.style.cssText='position:fixed;left:8px;bottom:40px;z-index:99999;background:#fff7f7;border:1.5px solid #b03030;border-radius:12px;padding:10px 12px;max-width:340px';
+      b2.innerHTML='<b style="color:#b03030">🧹 Limpieza de arranque</b><div style="font-size:12px;margin-top:4px">⚠ Error: '+String(e&&e.message||e).slice(0,80)+' · Sync bloqueado.</div>';
+      document.body.appendChild(b2);
+    }catch(e2){}
+  }
+  // liberar el sync SOLO cuando local + nube quedaron VERIFICADOS limpios
   setTimeout(function(){try{if(liberar)window._syncing=false;}catch(e){}},600);
 });
 state.emergency=state.emergency||{name:'Ruben',blood:'',allergies:'',medications:'',contact:'',insurance:''};
