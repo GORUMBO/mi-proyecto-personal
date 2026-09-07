@@ -120,5 +120,24 @@ console.log('== 5 · Oculta por defecto; visible solo con flag ==');
   t('con sessionStorage pp_debugpersistencia=1 → crea panel', !!conSS._appended);
 })();
 
+console.log('== 6 · Gate de arranque: limpia ANTES del sync y preserva reales ==');
+(function () {
+  const sb = { state: { workoutLog: [] }, safeStorage: { get() { return null; }, set() { } }, _escrito: null, _idb: null };
+  sb.persistStateIDB = function (json) { sb._idb = json; };
+  sb.safeStorage.set = function (k, v) { sb._escrito = v; };
+  sb.debugPersistenciaBootLimpiar = vm.runInNewContext('(' + extractFunc('debugPersistenciaBootLimpiar') + ')', sb);
+  const log = [];
+  for (let i = 1; i <= 14; i++) log.push({ id: 'd' + i, exercise: 'DEBUG-PERSISTENCIA' });
+  for (let i = 1; i <= 94; i++) log.push({ id: 'r' + i, exercise: 'Ejercicio real ' + i, weight: 50 + i, reps: '10' });
+  log.push({ id: 'v1', exercise: 'DEBUG-PERSISTENCIA-extra' }); // variante: NO debe borrarse
+  sb.state.workoutLog = log;
+  const r = sb.debugPersistenciaBootLimpiar();
+  t('antes 14 DEBUG · 95 reales → después 0 DEBUG · 95 reales (variante intacta)', r.antes.debug === 14 && r.antes.reales === 95 && r.despues.debug === 0 && r.despues.reales === 95, JSON.stringify(r));
+  t('escribió localStorage y IndexedDB con el estado limpio', !!sb._escrito && JSON.parse(sb._escrito).workoutLog.length === 95 && !!sb._idb && JSON.parse(sb._idb).workoutLog.length === 95);
+  t('lastModified renovado (evita que tryLoadIDB restaure copia vieja)', !!sb.state.lastModified);
+  const r2 = sb.debugPersistenciaBootLimpiar();
+  t('segunda ejecución (0 DEBUG): no escribe nada', r2.escribio === false && r2.despues.debug === 0);
+})();
+
 console.log('\n===== RESULTADO: ' + pasadas + ' PASS / ' + falladas + ' FAIL =====');
 if (falladas) process.exit(1);

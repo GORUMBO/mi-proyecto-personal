@@ -660,6 +660,46 @@ state.workoutLog=state.workoutLog||[];state.savedRoutines=state.savedRoutines||[
 state.fitnessDailyResults=state.fitnessDailyResults||[]; // v1.187: veredictos objetivo vs resultado (complementa workoutLog)
 state.fitnessToday=state.fitnessToday||null;
 state.activeWorkout=state.activeWorkout||null;
+// ===== GATE TEMPORAL: limpieza DEBUG-PERSISTENCIA AL ARRANCAR =====
+// ?limpiadebugboot=1 (o sessionStorage pp_limpiadebugboot=1) → ANTES de
+// cualquier sync, elimina SOLO exercise === 'DEBUG-PERSISTENCIA' del
+// workoutLog local, persiste en localStorage+IndexedDB con lastModified
+// nuevo y SOLO ENTONCES libera el sync. Nunca toca workouts reales
+// (restaura si el conteo de reales cambia). TEMPORAL: se retira después.
+var _debugBootActivo=false;
+try{
+  _debugBootActivo=/[?&]limpiadebugboot=1/.test(location.search)||safeStorage.get('pp_limpiadebugboot')==='1';
+  if(_debugBootActivo){safeStorage.set('pp_limpiadebugboot','1');window._syncing=true;}
+}catch(e){}
+function debugPersistenciaBootLimpiar(){
+  var wl=state.workoutLog||[];
+  var antes={debug:wl.filter(function(x){return x.exercise==='DEBUG-PERSISTENCIA';}).length,reales:wl.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';}).length};
+  if(antes.debug===0)return {antes:antes,despues:{debug:0,reales:antes.reales},escribio:false};
+  var copia=wl.slice();
+  state.workoutLog=wl.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';});
+  var despues={debug:(state.workoutLog||[]).filter(function(x){return x.exercise==='DEBUG-PERSISTENCIA';}).length,reales:state.workoutLog.length};
+  if(despues.reales!==antes.reales){state.workoutLog=copia;return {antes:antes,despues:{debug:antes.debug,reales:antes.reales},escribio:false,aborto:true};}
+  state.lastModified=new Date().toISOString();
+  try{safeStorage.set('pp_full',JSON.stringify(state));}catch(e){}
+  try{persistStateIDB(JSON.stringify(state));}catch(e){}
+  return {antes:antes,despues:despues,escribio:true};
+}
+window.addEventListener('load',function(){
+  if(!_debugBootActivo)return;
+  var liberar=true;
+  try{
+    var r=debugPersistenciaBootLimpiar();
+    if(r.aborto)liberar=false; // ABORTO: sync se queda BLOQUEADO (seguro)
+    if(r.antes.debug>0||r.aborto){
+      var banner=document.createElement('div');
+      banner.style.cssText='position:fixed;left:8px;bottom:40px;z-index:99999;background:#fff7f7;border:1.5px solid #b03030;border-radius:12px;padding:10px 12px;max-width:320px';
+      banner.innerHTML='<b style="color:#b03030">🧹 Limpieza de arranque</b><div style="font-size:12px;margin-top:4px">'+(r.aborto?'⚠ ABORTO: conteo de reales cambió — no se tocó nada (sync bloqueado).':'DEBUG iPhone: '+r.antes.debug+' → '+r.despues.debug+' · workouts reales: '+r.antes.reales+' → '+r.despues.reales)+'</div>';
+      document.body.appendChild(banner);
+    }
+  }catch(e){}
+  // liberar el sync SOLO cuando la limpieza local terminó (y no abortó)
+  setTimeout(function(){try{if(liberar)window._syncing=false;}catch(e){}},600);
+});
 state.emergency=state.emergency||{name:'Ruben',blood:'',allergies:'',medications:'',contact:'',insurance:''};
 state.personalMaintenance=state.personalMaintenance||[];
 state.skin=state.skin||{profile:{},sessions:[],messages:[],draftPhoto:''};
