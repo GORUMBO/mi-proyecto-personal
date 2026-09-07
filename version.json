@@ -1,8 +1,33 @@
 {
-  "latest": "1.191.0",
-  "date": "2026-08-23",
+  "latest": "1.192.0",
+  "date": "2026-09-06",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.192.0",
+      "date": "2026-09-06",
+      "type": "recomendada",
+      "nuevas": [
+        "Fibra real en el catálogo de alimentos (121 foods): valores de composición estándar solo cuando son fiables, con fuente (catálogo/estándar) y sin inventar cifras; las recetas con fibra parcial nunca muestran un total falso y el diario suma solo lo conocido.",
+        "Bebidas para trabajo y calor: agua de coco, jugos, leche con chocolate, bebida deportiva y de electrolitos, horchata, atole, té frío y kéfir, clasificadas por función (hidratación, energía, electrolitos, proteína) sin cifras de sodio inventadas.",
+        "12 sándwiches y 9 ensaladas rápidas portátiles construidos con alimentos reales del catálogo (portátiles, con refrigeración y tiempos honestos).",
+        "Extras de botanas: dips reales (guacamole, salsa, pico de gallo, hummus, queso crema, frijol) con compatibilidad natural; sin bebidas ni proteínas absurdas sobre snacks.",
+        "Potenciar rediseñado: botón \"⚡ Agregar extras\" (oculto sin compatibles), cabecera con la comida base, bloque \"Progreso de hoy\" con barras de kcal/proteína/fibra que se actualizan en vivo.",
+        "Selector de alimentos con estado seleccionado muy visible (✓ en círculo, anillo verde, resumen y botón con cantidad en vivo)."
+      ],
+      "cambios": [
+        "Deduplicación del catálogo y corrección de clasificaciones (espinacas ya no son fruta, chicharrón es snack, leche de almendra es bebida).",
+        "Las salsas, aderezos y sazonadores ya nunca se proponen como comida completa.",
+        "Etiquetas de extras por rol real: snack denso con equivalencia oz→g, proteína sólida, grasas/toppings como extra (nunca \"listo para comer\"), bebidas con su propia etiqueta.",
+        "Registro de extras con fibra escalada a la porción real; \"Otros extras\" rota sin repetir.",
+        "Filtros de practicidad (⚙️ Ajustar ahora): Tengo esto en casa, Solo con lo que tengo, No quiero cocinar, Recalentar, Licuar, tiempo 2/5/10 y estado vacío con relajación explícita."
+      ],
+      "errores": [
+        "Corregido el falso positivo \"esPINAca\" que clasificaba espinacas como fruta.",
+        "Corregido que salsas y aderezos aparecieran como propuestas de comida completa.",
+        "Corregidas etiquetas incorrectas (totopos y pavo como \"poco volumen\", aceite como \"listo para comer\")."
+      ]
+    },
     {
       "version": "1.191.0",
       "date": "2026-08-23",
