@@ -76,6 +76,7 @@ function makeSandbox(inputs) {
   sb.flush = function () { if (sb._timer) { const f = sb._timer; sb._timer = null; f(); } };
   sb.globalThis = sb;
   sb.ppUUID = vm.runInNewContext('(' + extractFunc('ppUUID') + ')', sb);
+  sb.f3BloqueaDebugExercise = vm.runInNewContext('(' + extractFunc('f3BloqueaDebugExercise') + ')', sb);
   sb.logRoutineExercise = vm.runInNewContext('(' + extractFunc('logRoutineExercise') + ')', sb);
   return sb;
 }
@@ -214,6 +215,7 @@ console.log('== 10 · Paso guiado: sessionId estable + localDate + save(true) ==
   sb.todayISO = function () { return '2026-09-07'; };
   sb.todayLocal = function () { return '2026-09-06'; };
   sb.ppUUID = vm.runInNewContext('(' + extractFunc('ppUUID') + ')', sb);
+  sb.f3BloqueaDebugExercise = vm.runInNewContext('(' + extractFunc('f3BloqueaDebugExercise') + ')', sb);
   sb.nextWeightAdviceForExercise = function () { return 'Sigue igual.'; };
   sb.save = function (inmediato) { sb.saves = (sb.saves || 0) + 1; sb.ultimoInmediato = !!inmediato; };
   sb.actualizarResultadosHoy = function () {};
@@ -248,6 +250,7 @@ console.log('== 12 · 1-tap ENTRENÉ/DESCANSÉ: save(true) + anti doble-click ==
 (function () {
   const sb = { state: { workoutLog: [] }, saves: [], toast: null };
   sb.ppUUID = vm.runInNewContext('(' + extractFunc('ppUUID') + ')', sb);
+  sb.f3BloqueaDebugExercise = vm.runInNewContext('(' + extractFunc('f3BloqueaDebugExercise') + ')', sb);
   sb._hoy = function () { return '2026-09-06'; };
   sb.save = function (inmediato) { sb.saves.push(!!inmediato); };
   sb.refrescarInicio = function () {};
@@ -292,6 +295,7 @@ console.log('== 14 · Registro rápido: save(true) ya inmediato + anti doble-cli
   sb.saves = [];
   sb.f3AnclarTarjeta = function () {};
   sb.ppUUID = vm.runInNewContext('(' + extractFunc('ppUUID') + ')', sb);
+  sb.f3BloqueaDebugExercise = vm.runInNewContext('(' + extractFunc('f3BloqueaDebugExercise') + ')', sb);
   sb.todayISO = function () { return '2026-09-07'; };
   sb.todayLocal = function () { return '2026-09-06'; };
   sb.save = function (inmediato) { sb.saves.push(!!inmediato); };
@@ -305,6 +309,43 @@ console.log('== 14 · Registro rápido: save(true) ya inmediato + anti doble-cli
   sb.logRoutineQuick(0); // doble click
   t('doble click del rápido NO duplica (goal ya cubierto)', sb.state.workoutLog.length === 3);
   t('ids únicos por serie', new Set(sb.state.workoutLog.map(r => r.id)).size === 3);
+})();
+
+console.log('== 15 · Protección permanente: el nombre de pruebas nunca se registra ==');
+(function () {
+  const f3BloqueaDebugExercise = vm.runInNewContext('(' + extractFunc('f3BloqueaDebugExercise') + ')');
+  t('bloquea el nombre EXACTO de pruebas', f3BloqueaDebugExercise('DEBUG-PERSISTENCIA') === true && f3BloqueaDebugExercise('  debug-persistencia  ') === true);
+  t('NO bloquea variantes ni ejercicios reales', f3BloqueaDebugExercise('DEBUG-PERSISTENCIA-extra') === false && f3BloqueaDebugExercise('Press banca') === false && f3BloqueaDebugExercise('') === false);
+  // flujo real: guardarEjercicio ignora el nombre reservado
+  const sb = { state: { workoutLog: [] }, saves: 0 };
+  sb.ppUUID = vm.runInNewContext('(' + extractFunc('ppUUID') + ')', sb);
+  sb.f3BloqueaDebugExercise = vm.runInNewContext('(' + extractFunc('f3BloqueaDebugExercise') + ')', sb);
+  sb._hoy = function () { return '2026-09-06'; };
+  sb.save = function (inmediato) { sb.saves++; };
+  sb.refrescarInicio = function () {};
+  sb.toastReg = function () {};
+  sb.guardarEjercicio = vm.runInNewContext('(' + extractFunc('guardarEjercicio') + ')', sb);
+  sb.guardarEjercicio('DEBUG-PERSISTENCIA');
+  t('guardarEjercicio("DEBUG-PERSISTENCIA") no crea registro', sb.state.workoutLog.length === 0 && sb.saves === 0);
+  sb.guardarEjercicio('Entrené');
+  t('los ejercicios reales siguen registrándose', sb.state.workoutLog.length === 1);
+  // flujo real: registro rápido ignora el nombre reservado
+  const sb2 = {};
+  sb2._inputs = { rlogW_0: { value: '50' }, rlogR_0: { value: '10' } };
+  sb2.document = { getElementById: function (id) { return sb2._inputs[id] || null; } };
+  sb2.state = { fitnessToday: { plan: [{ name: 'DEBUG-PERSISTENCIA', sets: 3, muscle: 'pecho' }], sessionId: 777, checked: {} }, workoutLog: [] };
+  sb2.f3AnclarTarjeta = function () {};
+  sb2.ppUUID = vm.runInNewContext('(' + extractFunc('ppUUID') + ')', sb2);
+  sb2.f3BloqueaDebugExercise = vm.runInNewContext('(' + extractFunc('f3BloqueaDebugExercise') + ')', sb2);
+  sb2.todayISO = function () { return '2026-09-07'; };
+  sb2.todayLocal = function () { return '2026-09-06'; };
+  sb2.save = function () {};
+  sb2.actualizarResultadosHoy = function () {};
+  sb2.quickFitnessToday = function () {};
+  sb2.safeText = function (x) { return String(x == null ? '' : x); };
+  sb2.logRoutineQuick = vm.runInNewContext('(' + extractFunc('logRoutineQuick') + ')', sb2);
+  sb2.logRoutineQuick(0);
+  t('logRoutineQuick con nombre reservado no crea series', sb2.state.workoutLog.length === 0);
 })();
 
 console.log('===== RESULTADO: ' + pasadas + ' PASS / ' + falladas + ' FAIL =====');

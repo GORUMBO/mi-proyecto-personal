@@ -93,7 +93,7 @@ vm.createContext(sandbox);
   'hmForceTopScroll', 'scrollActiveTabTop', 'showSavedRoutines', 'loadSavedRoutine', 'render',
   'syncSimpleFitnessInputs', 'quickFitnessToday', 'f3SesionVisibleHoy', 'f3MismaFechaLocal', 'fitPeriodLogs', 'bestByExercise', 'repsTotal',
   'renderSimpleFitnessProgress',
-  'logRoutineQuick', 'swapToFirstAlt', 'replaceFitnessExercise', 'setFitEffort', 'setFitEstado', 'f3RenombrarEnlazada',
+  'logRoutineQuick', 'f3BloqueaDebugExercise', 'swapToFirstAlt', 'replaceFitnessExercise', 'setFitEffort', 'setFitEstado', 'f3RenombrarEnlazada',
   'fitEffortHoy', 'toggleSimpleFitDone',
   'f3DiasRutina', 'f3DiaDePlan', 'f3CfgCopia', 'f3MusculosDia', 'f3PropuestaDia', 'openRoutineConfig', 'renderRoutineConfig',
   'cfgToggleDia', 'cfgCopiarDia', 'cfgDiaEditar', 'cfgSetNombre', 'cfgGuardar', 'cfgCancelar',

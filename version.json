@@ -1,8 +1,25 @@
 {
-  "latest": "1.192.0",
-  "date": "2026-09-06",
+  "latest": "1.192.1",
+  "date": "2026-09-07",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.192.1",
+      "date": "2026-09-07",
+      "type": "recomendada",
+      "nuevas": [
+        "Protección permanente del historial de entrenamiento: el nombre reservado de pruebas (DEBUG-PERSISTENCIA) ya no puede registrarse como ejercicio real en ningún flujo (registro normal, rápido, guiado o de 1 toque).",
+        "Persistencia inmediata al confirmar un entrenamiento: los registros se guardan en localStorage/IndexedDB antes de devolver el control a la interfaz (adiós a la pérdida de series tras un refresco)."
+      ],
+      "cambios": [
+        "Las series del día ya nunca se ocultan aunque la sesión pierda su identificador (recuperación automática de la sesión real de hoy y comparación por fecha local, que corrige el desfase UTC en zonas como Hawaii).",
+        "Retirada de las herramientas temporales de diagnóstico de la limpieza de registros de prueba (panel ?debugpersistencia y gate de arranque): ya no forman parte del código."
+      ],
+      "errores": [
+        "Corregido que las series registradas dejaran de verse tras actualizar la página (regresión de sesión con fecha UTC/local).",
+        "Eliminados definitivamente los registros de prueba DEBUG-PERSISTENCIA de todas las capas (nube, PC e iPhone) sin tocar los 94 workouts reales."
+      ]
+    },
     {
       "version": "1.192.0",
       "date": "2026-09-06",

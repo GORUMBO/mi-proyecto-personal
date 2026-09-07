@@ -448,7 +448,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.192.0';
+  window.HM_APP_VERSION='1.192.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -660,85 +660,6 @@ state.workoutLog=state.workoutLog||[];state.savedRoutines=state.savedRoutines||[
 state.fitnessDailyResults=state.fitnessDailyResults||[]; // v1.187: veredictos objetivo vs resultado (complementa workoutLog)
 state.fitnessToday=state.fitnessToday||null;
 state.activeWorkout=state.activeWorkout||null;
-// ===== GATE TEMPORAL: limpieza DEBUG-PERSISTENCIA AL ARRANCAR =====
-// ?limpiadebugboot=1 (o sessionStorage pp_limpiadebugboot=1) → ANTES de
-// cualquier sync, elimina SOLO exercise === 'DEBUG-PERSISTENCIA' del
-// workoutLog local, persiste en localStorage+IndexedDB con lastModified
-// nuevo y SOLO ENTONCES libera el sync. Nunca toca workouts reales
-// (restaura si el conteo de reales cambia). TEMPORAL: se retira después.
-var _debugBootActivo=false;
-try{
-  _debugBootActivo=/[?&]limpiadebugboot=1/.test(location.search)||safeStorage.get('pp_limpiadebugboot')==='1';
-  if(_debugBootActivo){safeStorage.set('pp_limpiadebugboot','1');window._syncing=true;}
-}catch(e){}
-function debugPersistenciaBootLimpiar(){
-  var wl=state.workoutLog||[];
-  var antes={debug:wl.filter(function(x){return x.exercise==='DEBUG-PERSISTENCIA';}).length,reales:wl.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';}).length};
-  if(antes.debug===0)return {antes:antes,despues:{debug:0,reales:antes.reales},escribio:false};
-  var copia=wl.slice();
-  state.workoutLog=wl.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';});
-  var despues={debug:(state.workoutLog||[]).filter(function(x){return x.exercise==='DEBUG-PERSISTENCIA';}).length,reales:state.workoutLog.length};
-  if(despues.reales!==antes.reales){state.workoutLog=copia;return {antes:antes,despues:{debug:antes.debug,reales:antes.reales},escribio:false,aborto:true};}
-  state.lastModified=new Date().toISOString();
-  try{safeStorage.set('pp_full',JSON.stringify(state));}catch(e){}
-  try{persistStateIDB(JSON.stringify(state));}catch(e){}
-  return {antes:antes,despues:despues,escribio:true};
-}
-window.addEventListener('load',async function(){
-  if(!_debugBootActivo)return;
-  var liberar=false;
-  var bannerTxt='';
-  try{
-    var r=debugPersistenciaBootLimpiar(); // local primero (exacto, con restauración)
-    var cuentaNube=null;
-    if(!r.aborto&&r.antes.debug>0){
-      // la nube también debe quedar limpia ANTES de liberar el sync:
-      // si no, el merge por unión re-importaría los DEBUG en el primer sync.
-      try{
-        var s=getCloudSession();
-        if(s){
-          var path='personal_backups?user_id=eq.'+encodeURIComponent(s.user.id);
-          var rows=await cloudRest(path+'&select=data');
-          var nube=rows&&rows[0]?rows[0].data:null;
-          var wlNube=(nube&&nube.workoutLog)||[];
-          var realesNube=wlNube.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';}).length;
-          if(realesNube!==r.antes.reales){bannerTxt='⚠ ABORTO: reales en la nube ('+realesNube+') ≠ locales ('+r.antes.reales+'). Sync bloqueado.';}
-          else{
-            nube.workoutLog=wlNube.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';});
-            nube.lastModified=new Date().toISOString();
-            await cloudRest(path,{method:'PATCH',headers:{'Prefer':'return=representation'},body:JSON.stringify({data:nube,updated_at:new Date().toISOString()})});
-            var ver=await cloudRest(path+'&select=data');
-            var wlVer=(ver&&ver[0]&&ver[0].data&&ver[0].data.workoutLog)||[];
-            var dNube=wlVer.filter(function(x){return x.exercise==='DEBUG-PERSISTENCIA';}).length;
-            var rNube=wlVer.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';}).length;
-            if(dNube===0&&rNube===r.antes.reales){
-              liberar=true;
-              bannerTxt='✔ DEBUG iPhone: '+r.antes.debug+' → '+r.despues.debug+' · DEBUG nube: → 0 · workouts reales: '+r.antes.reales+' → '+r.despues.reales;
-            }else{bannerTxt='⚠ La nube no quedó limpia (DEBUG '+dNube+', reales '+rNube+'). Sync bloqueado.';}
-          }
-        }else{bannerTxt='⚠ Sin sesión: limpieza local '+r.antes.debug+' → '+r.despues.debug+' hecha, pero el sync queda bloqueado hasta verificar la nube.';}
-      }catch(e){bannerTxt='⚠ Error al limpiar la nube: '+String(e&&e.message||e).slice(0,80)+' · Sync bloqueado.';}
-    }else if(!r.aborto){
-      liberar=true;
-      bannerTxt='✔ No había DEBUG local ('+r.antes.reales+' workouts reales). Sync liberado.';
-    }else{
-      bannerTxt='⚠ ABORTO: conteo de reales cambió — no se tocó nada (sync bloqueado).';
-    }
-    var banner=document.createElement('div');
-    banner.style.cssText='position:fixed;left:8px;bottom:40px;z-index:99999;background:#fff7f7;border:1.5px solid #b03030;border-radius:12px;padding:10px 12px;max-width:340px';
-    banner.innerHTML='<b style="color:#b03030">🧹 Limpieza de arranque</b><div style="font-size:12px;margin-top:4px">'+bannerTxt+'</div>';
-    document.body.appendChild(banner);
-  }catch(e){
-    try{
-      var b2=document.createElement('div');
-      b2.style.cssText='position:fixed;left:8px;bottom:40px;z-index:99999;background:#fff7f7;border:1.5px solid #b03030;border-radius:12px;padding:10px 12px;max-width:340px';
-      b2.innerHTML='<b style="color:#b03030">🧹 Limpieza de arranque</b><div style="font-size:12px;margin-top:4px">⚠ Error: '+String(e&&e.message||e).slice(0,80)+' · Sync bloqueado.</div>';
-      document.body.appendChild(b2);
-    }catch(e2){}
-  }
-  // liberar el sync SOLO cuando local + nube quedaron VERIFICADOS limpios
-  setTimeout(function(){try{if(liberar)window._syncing=false;}catch(e){}},600);
-});
 state.emergency=state.emergency||{name:'Ruben',blood:'',allergies:'',medications:'',contact:'',insurance:''};
 state.personalMaintenance=state.personalMaintenance||[];
 state.skin=state.skin||{profile:{},sessions:[],messages:[],draftPhoto:''};
@@ -13867,7 +13788,14 @@ function abrirPasosRapido(){
 }
 
 /* ---------- ENTRENÉ / DESCANSÉ: 1 tap ---------- */
+/* Protección PERMANENTE: el nombre reservado para pruebas (DEBUG-PERSISTENCIA)
+   jamás se registra como workout real — evita que scripts de prueba vuelvan a
+   contaminar el historial del usuario. Comparación exacta, sin patrones. */
+function f3BloqueaDebugExercise(nombre){
+  return String(nombre||'').trim().toUpperCase()==='DEBUG-PERSISTENCIA';
+}
 function guardarEjercicio(tipo){
+  if(f3BloqueaDebugExercise(tipo))return;
   // Doble click: el mismo tipo en <2 s no registra dos veces.
   var ahora=Date.now();
   if(guardarEjercicio._ult===tipo&&ahora-(guardarEjercicio._t||0)<2000)return;
@@ -24202,61 +24130,7 @@ function ppDiagActivar(){
   }catch(e){}
 }
 window.addEventListener('load',function(){try{ppDiagActivar();}catch(e){}});
-// ===== HERRAMIENTA TEMPORAL: limpieza EXACTA de registros DEBUG-PERSISTENCIA =====
-// Activa con ?debugpersistencia=1 (o sessionStorage pp_debugpersistencia=1).
-// SOLO elimina exercise === 'DEBUG-PERSISTENCIA' del workoutLog LOCAL.
-// Persiste ya (save(true)); NO sincroniza si está offline. Restaura si el
-// conteo de workouts reales cambia. TEMPORAL: se retira tras la limpieza.
-function debugPersistenciaCuenta(){
-  var wl=state.workoutLog||[];
-  var d=0,r=0;
-  wl.forEach(function(x){if(x&&x.exercise==='DEBUG-PERSISTENCIA')d++;else r++;});
-  return {debug:d,reales:r,total:wl.length};
-}
-function renderDebugPersistencia(){
-  var n=document.getElementById('debugPersistenciaN');
-  if(n){var c=debugPersistenciaCuenta();n.textContent=c.debug+' DEBUG · '+c.reales+' workouts reales';}
-  var o=document.getElementById('debugPersistenciaStatus');
-  if(o&&window._debugPersistenciaResultado)o.innerHTML=window._debugPersistenciaResultado;
-}
-function debugPersistenciaLimpiar(){
-  var wl=state.workoutLog||[];
-  var antes=debugPersistenciaCuenta();
-  window._debugPersistenciaResultado='';
-  if(antes.debug===0){window._debugPersistenciaResultado='No hay registros DEBUG-PERSISTENCIA.';renderDebugPersistencia();return;}
-  if(!confirm('¿Eliminar SOLO los '+antes.debug+' registros "DEBUG-PERSISTENCIA"? Los '+antes.reales+' workouts reales NO se tocan.'))return;
-  var copia=wl.slice(); // por si el conteo de reales cambia: restaurar
-  state.workoutLog=wl.filter(function(x){return x.exercise!=='DEBUG-PERSISTENCIA';});
-  var despues=debugPersistenciaCuenta();
-  if(despues.reales!==antes.reales||despues.total!==antes.reales){
-    state.workoutLog=copia;
-    save(true);
-    window._debugPersistenciaResultado='⚠ ABORTO: el conteo de reales cambió. Se restauró todo ('+antes.total+' intactos).';
-    renderDebugPersistencia();
-    return;
-  }
-  save(true); // persistir YA en localStorage+IndexedDB; sin sync si está offline
-  window._debugPersistenciaResultado='✔ DEBUG antes/después: '+antes.debug+' → '+despues.debug+' · workouts reales: '+antes.reales+' → '+despues.reales;
-  renderDebugPersistencia();
-}
-function debugPersistenciaActivar(){
-  try{
-    if(!/[?&]debugpersistencia=1/.test(location.search)&&!sessionStorage.getItem('pp_debugpersistencia'))return;
-    sessionStorage.setItem('pp_debugpersistencia','1');
-    window._debugPersistencia=true;
-    var c=debugPersistenciaCuenta();
-    var host=document.createElement('div');
-    host.id='debugPersistenciaHost';
-    host.innerHTML='<div style="position:fixed;right:8px;bottom:40px;z-index:99995;background:#fff7f7;border:1.5px solid #b03030;border-radius:12px;padding:10px 12px;max-width:300px;box-shadow:0 8px 24px #0003">'
-      +'<b style="font-size:13px;color:#b03030">🧹 DEBUG-PERSISTENCIA (temporal)</b>'
-      +'<div class="muted" style="font-size:11px;margin-top:4px" id="debugPersistenciaN">'+c.debug+' DEBUG · '+c.reales+' workouts reales</div>'
-      +'<button class="btn" style="width:100%;margin-top:8px;padding:8px;font-size:12px;background:#b03030;color:#fff;border-radius:8px" onclick="debugPersistenciaLimpiar()">🗑 Eliminar solo registros DEBUG-PERSISTENCIA</button>'
-      +'<div id="debugPersistenciaStatus" style="font-size:11px;margin-top:6px;color:#15704f"></div>'
-      +'</div>';
-    document.body.appendChild(host);
-  }catch(e){}
-}
-window.addEventListener('load',function(){try{debugPersistenciaActivar();}catch(e){}});
+
 let _autoSyncTimer=null,_syncing=false,_csBusy=false;
 function scheduleAutoSync(){
   state.offlineChanges=(state.offlineChanges||0)+1;
@@ -30089,6 +29963,7 @@ function logRoutineQuick(i){
   let pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan[i])return;
   f3AnclarTarjeta(i);
   let x=pack.plan[i];
+  if(f3BloqueaDebugExercise(x.name))return; // protección permanente (nunca registrar pruebas)
   var ctx=pack.ctx||{};
   var wEl=document.getElementById('rlogW_'+i);
   var weight=+(wEl?.value)||0;
@@ -33232,6 +33107,7 @@ function logRoutineExercise(i, btn){
   let pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan[i]){console.warn('[REG] No hay rutina para i='+i);return;}
   f3AnclarTarjeta(i);
   let x=pack.plan[i];
+  if(f3BloqueaDebugExercise(x.name))return; // protección permanente (nunca registrar pruebas)
   // Leer peso: primero el input del modo detallado (rlogSW_), luego el rápido (rlogW_)
   var wEl2 = document.getElementById('rlogSW_'+i) || document.getElementById('rlogW_'+i);
   let w = +(wEl2?.value) || 0;
@@ -33493,6 +33369,7 @@ function swapCurrentGuidedExercise(){
 function saveGuidedWorkoutStep(){
   let aw=state.activeWorkout;if(!aw)return;
   let stepIndex=aw.step||0,x=aw.plan[stepIndex];if(!x)return;
+  if(f3BloqueaDebugExercise(x.name))return; // protección permanente (nunca registrar pruebas)
   let weight=+document.getElementById('guidedWeight')?.value||0,reps=document.getElementById('guidedReps')?.value||x.reps,feel=document.getElementById('guidedFeel')?.value||'Normal';
   let note=`Paso guiado · ${feel}. ${nextWeightAdviceForExercise(x.name,feel,weight,reps)} ${x.note||''}`;
   // Sesión estable: se reutiliza la de la rutina de hoy (se crea si falta).
