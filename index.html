@@ -8357,6 +8357,1257 @@ const PORCIONES_FIX = {'Agua fresca de piña con coco':'4 vasos','Agua fresca cr
   });
 })();
 
+/* ===== 🥣 ARMA TU CALDO (FASE 1) =====
+   Misma mecánica de bloques que "Arma tu licuado": elegir, +/− cantidades,
+   totales en vivo. Valores nutricionales desde BUILDER_INGREDIENTES: cuando
+   el ingrediente existe en foods[] los macros se DERIVAN de foods (una sola
+   fuente, sin literales duplicados); los que no existen (chayote, chiles
+   secos, apio…) llevan su valor estándar aquí como única fuente. */
+var BUILDER_INGREDIENTES=(function(){
+  // derivar de foods[]: {f:nombre, fac:factor} → k/p/c/g = foods×fac
+  var porNombre={};
+  (typeof foods!=='undefined'?foods:[]).forEach(function(f){porNombre[f[0]]=f;});
+  var der=function(f,nombre,fac){
+    var x=porNombre[f]; if(!x)return null;
+    var porcion=null;
+    if(fac===1){porcion=null;}
+    else if(fac===0.5){porcion='(½ porción)';}
+    else if(fac===0.25){porcion='(¼ porción)';}
+    else{porcion='(×'+fac+')';}
+    return {nombre:nombre||f,porcion:porcion,k:Math.round(x[1]*fac),p:Math.round(x[2]*fac*10)/10,c:Math.round(x[4]*fac),g:Math.round(x[3]*fac*10)/10,fuente:'foods'};
+  };
+  var lit=function(nombre,k,p,c,g,porcion){return {nombre:nombre,porcion:porcion||null,k:k,p:p,c:c,g:g,fuente:'estandar'};};
+  return {
+    // proteínas
+    pechuga:der('Pollo 100g','Pechuga de pollo',1),
+    muslo:der('Muslo de pollo cocido 100g','Pierna/muslo de pollo',1),
+    deshebrado:der('Pollo 100g','Pollo deshebrado',1),
+    res:der('Bistec de res cocido 100g','Carne de res',1),
+    molida:der('Carne molida 100g','Carne molida',1),
+    pescado:lit('Pescado blanco (100 g)',110,22,0,2.5,null),
+    // legumbres
+    garbanzo:der('Garbanzos cocidos 1 taza','Garbanzo',0.5),
+    lenteja:der('Lentejas cocidas 1 taza','Lenteja',0.5),
+    frijol:der('Frijol 1 taza','Frijol',0.5),
+    // carbohidratos
+    papa:der('Papa mediana','Papa',1),
+    arroz:der('Arroz cocido 1 taza','Arroz',0.5),
+    pasta:der('Pasta cocida 1 taza','Pasta',0.5),
+    elote:der('Elote 1 taza','Elote',0.5),
+    // verduras
+    zanahoria:der('Zanahoria 100g','Zanahoria',0.6),
+    calabacita:der('Calabacita 100g','Calabacita',1),
+    chayote:lit('Chayote (1)',38,1,0,8.5,null),
+    jitomate:der('Tomate 100g','Jitomate',1.2),
+    cebolla:der('Cebolla 100g','Cebolla',0.25),
+    apio:lit('Apio (1 tallo)',6,0.3,0,1.3,null),
+    espinaca:der('Espinaca 100g','Espinaca',0.3),
+    repollo:lit('Repollo (1 taza)',22,1.2,0,5,null),
+    // sabor mexicano
+    ajo:lit('Ajo (1 diente)',4,0.2,0,1,null),
+    cilantro:lit('Cilantro (¼ taza)',1,0.1,0,0.2,null),
+    limon:lit('Limón (½)',8,0.3,2.6,0,null),
+    comino:lit('Comino (½ cdita)',4,0.2,0,0.9,null),
+    chipotle:lit('Chipotle (1)',8,0.3,0,1.8,null),
+    guajillo:lit('Chile guajillo (1)',12,0.5,0,2.7,null),
+    ancho:lit('Chile ancho (1)',15,0.6,0,3.5,null),
+    jalapeno:lit('Jalapeño (1)',4,0.2,0,0.9,null),
+    caldojitomate:lit('Caldo de jitomate (2 tazas)',90,3,12,1.5,'(2 tazas)'),
+    // extras
+    aguacate:der('Aguacate 1/2','Aguacate',1),
+    queso:der('Queso 28g','Queso',1),
+    crema:der('Crema 1 cucharada','Crema',1),
+    tortillas:der('Tortilla maíz','Tortillas',2),
+    tostadas:der('Tostadas 2 piezas','Tostadas',1),
+    // ===== aguas de sabor (Arma tu agua) =====
+    fresa:der('Fresas 1 taza','Fresa',1),
+    mango:der('Mango 1 taza','Mango',1),
+    pina:der('Piña 1 taza','Piña',1),
+    naranja:der('Naranja 1 pieza','Naranja',1),
+    pepino:der('Pepino 100g','Pepino',1),
+    miel:der('Miel 1 cucharada','Miel',1),
+    sandia:lit('Sandía (1 taza)',46,0.9,11,0.2,null),
+    melon:lit('Melón (1 taza)',53,1.3,13,0.2,null),
+    papaya:lit('Papaya (1 taza)',55,0.9,14,0.3,null),
+    guayaba:lit('Guayaba (2 piezas)',74,2.2,14,1.3,null),
+    azucar:lit('Azúcar (1 cda)',48,0,12,0,null),
+    stevia:lit('Stevia (1 sobre)',0,0,0,0,null),
+    menta:lit('Menta (4 hojas)',1,0.1,0.2,0,null),
+    jengibre:lit('Jengibre (2 cm)',2,0,0.4,0,null),
+    chia:lit('Chía (1 cda)',58,2,4,4,null),
+    // ===== sueros (Arma tu suero) =====
+    sal:lit('Sal fina',0,0,0,0,null),
+    aguaCoco:lit('Agua de coco (1 taza)',45,0,9,0,null),
+    // ===== cafés (Arma tu café) =====
+    lecheEntera:der('Leche entera taza','Leche entera (1 taza)',1),
+    leche2:der('Leche 2% 1 taza','Leche 2% (1 taza)',1),
+    lecheDescremada:der('Leche descremada 1 taza','Leche descremada (1 taza)',1),
+    lecheAlmendra:der('Leche almendra sin azúcar 1 taza','Leche de almendra (1 taza)',1),
+    proteina:der('Proteína whey 1 scoop','Proteína (1 scoop)',1),
+    cafeMolido:lit('Café molido',2,0,0,0,null),
+    canela:lit('Canela (½ cdita)',3,0.1,0.9,0.1,null),
+    cacao:lit('Cacao (1 cda)',12,0.8,2.4,0.7,null),
+    vainilla:lit('Vainilla (½ cdita)',6,0,0.3,0,null),
+    lecheCondensada:lit('Leche condensada (2 cdas)',130,3,22,3,null)
+  };
+})();
+var CALDO_PARTES=[
+  {id:'prote',t:'1. Proteína',ops:[
+    {ing:'pechuga'},{ing:'muslo'},{ing:'deshebrado'},{ing:'res'},{ing:'molida'},{ing:'pescado'},
+    {nombre:'Sin carne',k:0,p:0,c:0,g:0}
+  ]},
+  {id:'legumbre',t:'2. Legumbre',ops:[
+    {ing:'garbanzo'},{ing:'lenteja'},{ing:'frijol'},
+    {nombre:'Ninguna',k:0,p:0,c:0,g:0}
+  ]},
+  {id:'carbo',t:'3. Para llenar',ops:[
+    {ing:'papa'},{ing:'arroz'},{ing:'pasta'},{ing:'elote'},
+    {nombre:'Tortilla aparte',k:0,p:0,c:0,g:0},
+    {nombre:'Ninguna',k:0,p:0,c:0,g:0}
+  ]},
+  {id:'verdura',multi:true,t:'4. Verdura (elige 1 o más)',ops:[
+    {ing:'zanahoria'},{ing:'calabacita'},{ing:'chayote'},{ing:'jitomate'},{ing:'cebolla'},{ing:'apio'},{ing:'espinaca'},{ing:'repollo'}
+  ]},
+  {id:'sabor',multi:true,incluirCero:true,t:'5. Sabor mexicano (elige 1 o más)',ops:[
+    {ing:'ajo'},{ing:'cebolla'},{ing:'cilantro'},{ing:'limon'},{ing:'comino'},{ing:'chipotle'},{ing:'guajillo'},{ing:'ancho'},{ing:'jalapeno'},{ing:'caldojitomate'}
+  ]},
+  {id:'extra',t:'6. Extras',ops:[
+    {ing:'aguacate'},{ing:'queso'},{ing:'crema'},{ing:'tortillas'},{ing:'tostadas'},{ing:'limon'},
+    {nombre:'Sin extras',k:0,p:0,c:0,g:0}
+  ]}
+];
+// Presets de "⚡ Caldo rápido" (combinaciones reales y coherentes, 10-25 min).
+var CALDO_RAPIDO=[
+  {nombre:'Caldo de garbanzo con pollo',tiempo:15,sel:{prote:{i:0,n:1},legumbre:{i:0,n:1},carbo:{i:0,n:1},verdura:[{i:0,n:1}],sabor:[{i:0,n:1},{i:1,n:1}],extra:[{i:6,n:1}]}},
+  {nombre:'Caldo de pollo con arroz',tiempo:15,sel:{prote:{i:0,n:1},legumbre:{i:3,n:1},carbo:{i:1,n:1},verdura:[{i:0,n:1}],sabor:[{i:0,n:1}],extra:[{i:6,n:1}]}},
+  {nombre:'Caldo de lenteja con papa',tiempo:20,sel:{prote:{i:0,n:1},legumbre:{i:1,n:1},carbo:{i:0,n:1},verdura:[{i:0,n:1},{i:3,n:1}],sabor:[{i:0,n:1},{i:4,n:1}],extra:[{i:6,n:1}]}},
+  {nombre:'Caldo de res con verduras',tiempo:25,sel:{prote:{i:3,n:1},legumbre:{i:3,n:1},carbo:{i:0,n:1},verdura:[{i:0,n:1},{i:1,n:1},{i:3,n:1}],sabor:[{i:0,n:1},{i:1,n:1}],extra:[{i:6,n:1}]}},
+  {nombre:'Caldo de pollo con chipotle',tiempo:15,sel:{prote:{i:2,n:1},legumbre:{i:3,n:1},carbo:{i:3,n:1},verdura:[{i:3,n:1}],sabor:[{i:5,n:1},{i:0,n:1}],extra:[{i:6,n:1}]}},
+  {nombre:'Caldo ligero de lenteja y verduras',tiempo:20,sel:{prote:{i:6,n:1},legumbre:{i:1,n:1},carbo:{i:5,n:1},verdura:[{i:1,n:1},{i:2,n:1},{i:3,n:1}],sabor:[{i:2,n:1},{i:0,n:1}],extra:[{i:6,n:1}]}}
+];
+var CALDO_TOT_CFG={base:10,porParte:{prote:5,legumbre:8,carbo:5},porciones:4};
+function caldoOp(parte,op){ return builderOp(parte,op,BUILDER_INGREDIENTES); }
+function _caldoSel(){ return builderSel('caldoBuilder'); }
+function caldoTotales(){ return builderTotales(BUILDER_INGREDIENTES,CALDO_PARTES,_caldoSel(),CALDO_TOT_CFG); }
+function caldoValida(){
+  var s=_caldoSel();
+  var p=[];
+  var tieneProte=!!s.prote&&!!caldoOp(CALDO_PARTES[0],CALDO_PARTES[0].ops[s.prote.i])&&caldoOp(CALDO_PARTES[0],CALDO_PARTES[0].ops[s.prote.i]).k>0;
+  var tieneLegum=!!s.legumbre&&!!caldoOp(CALDO_PARTES[1],CALDO_PARTES[1].ops[s.legumbre.i])&&caldoOp(CALDO_PARTES[1],CALDO_PARTES[1].ops[s.legumbre.i]).k>0;
+  var tieneVerd=!!s.verdura&&s.verdura.length>0;
+  if(!tieneProte&&!tieneLegum)p.push('Elige una proteína o una legumbre.');
+  if(!tieneVerd)p.push('Agrega al menos una verdura.');
+  return p;
+}
+function caldoElegir(parteId,i){ return builderElegir(BUILDER_INGREDIENTES,CALDO_PARTES,'caldoBuilder',parteId,i,caldoRefresh); }
+function caldoMas(parteId,i){ return builderMas(BUILDER_INGREDIENTES,CALDO_PARTES,'caldoBuilder',parteId,i,caldoRefresh); }
+function caldoMenos(parteId,i){ return builderMenos(BUILDER_INGREDIENTES,CALDO_PARTES,'caldoBuilder',parteId,i,caldoRefresh); }
+/* ===== PREPARACIÓN REUTILIZABLE (Normal / Thermomix) =====
+   Cada ingrediente declara su manejo culinario por método. El generador
+   arma los pasos desde la selección actual: al cambiar ingredientes,
+   los pasos cambian. Mismos ingredientes/macros en ambos métodos;
+   solo cambia la preparación. Este motor se reutilizará en licuados,
+   aguas, cafés y Completar fácil. */
+var CALDO_PREP={
+  pechuga:{pre:'Corta la pechuga en cubos medianos.',
+    normal:{cuando:'proteina',texto:'Agrega la pechuga y séllala 3-4 min hasta que cambie de color.',coccion:'12-15 min',senal:'hasta que esté cocida por dentro'},
+    tm5:{accion:'Añade la pechuga en cubos.\n10 min / 100°C / giro inverso / vel cuchara'}},
+  muslo:{pre:'Corta el muslo en trozos.',
+    normal:{cuando:'proteina',texto:'Agrega el muslo y dóralo 4-5 min.',coccion:'18-20 min',senal:'hasta que se despegue del hueso'},
+    tm5:{accion:'Añade el muslo en trozos.\n18 min / 100°C / giro inverso / vel cuchara'}},
+  deshebrado:{pre:null,
+    normal:{cuando:'final',texto:'Incorpora el pollo deshebrado (ya cocido) al final y calienta 3-4 min.'},
+    tm5:{accion:'Añade el pollo deshebrado (ya cocido).\n4 min / 90°C / giro inverso / vel cuchara'}},
+  res:{pre:'Corta la carne de res en cubos.',
+    normal:{cuando:'proteina',texto:'Agrega la res y dórala por todos lados 5 min.',coccion:'25-30 min',senal:'hasta que la carne esté suave'},
+    tm5:{accion:'Añade la res en cubos.\n25 min / 100°C / giro inverso / vel cuchara'}},
+  molida:{pre:null,
+    normal:{cuando:'proteina',texto:'Agrega la carne molida y desmorónala 4-5 min hasta dorar.'},
+    tm5:{accion:'Añade la carne molida.\n8 min / 120°C / giro inverso / vel cuchara (desmorona con la espátula al terminar)'}},
+  pescado:{pre:'Corta el pescado en trozos.',
+    normal:{cuando:'final',texto:'Agrega el pescado AL FINAL y cocina 6-8 min a fuego bajo (no lo revuelvas mucho).'},
+    tm5:{accion:'Añade el pescado en trozos.\n8 min / 90°C / giro inverso / vel cuchara (con cuidado de no deshacerlo)'}},
+  garbanzo:{pre:null, cocido:true,
+    normal:{cuando:'cocido',texto:'Incorpora el garbanzo COCIDO y cocina 5 min más.'},
+    tm5:{accion:'Añade el garbanzo COCIDO.\n5 min / 90°C / giro inverso / vel cuchara'}},
+  lenteja:{pre:null, cocido:true,
+    normal:{cuando:'cocido',texto:'Incorpora la lenteja COCIDA y cocina 5 min más.'},
+    tm5:{accion:'Añade la lenteja COCIDA.\n5 min / 90°C / giro inverso / vel cuchara'}},
+  frijol:{pre:null, cocido:true,
+    normal:{cuando:'cocido',texto:'Incorpora el frijol COCIDO y cocina 5 min más.'},
+    tm5:{accion:'Añade el frijol COCIDO.\n5 min / 90°C / giro inverso / vel cuchara'}},
+  papa:{pre:'Pela y corta la papa en cubos.',
+    normal:{cuando:'duro',texto:'Agrega la papa y cocina tapado ~15 min, hasta que esté suave.'},
+    tm5:{accion:'Añade la papa en cubos.\n20 min / 100°C / giro inverso / vel cuchara',varoma:'Pon la papa en cubos en el Varoma para cocerla al vapor mientras el caldo se hace.'}},
+  arroz:{pre:'Enjuaga el arroz.',
+    normal:{cuando:'duro',texto:'Agrega el arroz y cocina 15 min tapado, moviendo de vez en cuando.'},
+    tm5:{accion:'Añade el arroz enjuagado.\n15 min / 100°C / giro inverso / vel cuchara'}},
+  pasta:{pre:null,
+    normal:{cuando:'medio',texto:'Agrega la pasta y cocina 8-10 min, hasta que esté al dente.'},
+    tm5:{accion:'Añade la pasta.\n10 min / 100°C / giro inverso / vel cuchara'}},
+  elote:{pre:'Desgrana o corta el elote.',
+    normal:{cuando:'medio',texto:'Agrega el elote y cocina 8-10 min.'},
+    tm5:{accion:'Añade el elote.\n10 min / 100°C / giro inverso / vel cuchara'}},
+  zanahoria:{pre:'Pela y corta la zanahoria en rodajas.',
+    normal:{cuando:'duro',texto:'Agrega la zanahoria junto con los vegetales duros, hasta que esté tierna.'},
+    tm5:{accion:'Añade la zanahoria en rodajas.\n15 min / 100°C / giro inverso / vel cuchara',varoma:'Pon la zanahoria en rodajas en el Varoma junto con la papa.'}},
+  calabacita:{pre:'Corta la calabacita en cubos.',
+    normal:{cuando:'medio',texto:'Agrega la calabacita y cocina 10-12 min.'},
+    tm5:{accion:'Añade la calabacita en cubos.\n12 min / 100°C / giro inverso / vel cuchara'}},
+  chayote:{pre:'Pela y corta el chayote en cubos.',
+    normal:{cuando:'medio',texto:'Agrega el chayote y cocina 12-15 min.'},
+    tm5:{accion:'Añade el chayote en cubos.\n15 min / 100°C / giro inverso / vel cuchara'}},
+  jitomate:{pre:'Corta el jitomate en trozos.',
+    normal:{cuando:'medio',texto:'Agrega el jitomate y deja que se deshaga en el caldo.'},
+    tm5:{accion:'Añade el jitomate en trozos.\n10 min / 100°C / giro inverso / vel cuchara'}},
+  cebolla:{pre:'Pica la cebolla.',
+    normal:{cuando:'sofrito',texto:'Sofríe la cebolla 2-3 min a fuego medio.'},
+    tm5:{accion:null,picar:'Pon la cebolla en el vaso.\n5 seg / vel 5'}},
+  apio:{pre:'Corta el apio en trozos.',
+    normal:{cuando:'medio',texto:'Agrega el apio y cocina 10 min.'},
+    tm5:{accion:'Añade el apio en trozos.\n12 min / 100°C / giro inverso / vel cuchara'}},
+  espinaca:{pre:'Lava la espinaca.',
+    normal:{cuando:'final',texto:'Agrega la espinaca al final y apaga; se marchita con el calor (2 min).'},
+    tm5:{accion:'Añade la espinaca al final.\n2 min / 90°C / giro inverso / vel cuchara'}},
+  repollo:{pre:'Corta el repollo en tiras.',
+    normal:{cuando:'medio',texto:'Agrega el repollo y cocina 10 min.'},
+    tm5:{accion:'Añade el repollo en tiras.\n10 min / 100°C / giro inverso / vel cuchara'}},
+  ajo:{pre:'Pica el ajo finamente.',
+    normal:{cuando:'sofrito',texto:'Sofríe el ajo 30-60 seg (que no se queme).'},
+    tm5:{accion:null,picar:'Pon el ajo en el vaso.\n3 seg / vel 7'}},
+  cilantro:{pre:'Lava y pica el cilantro.',
+    normal:{cuando:'servir',texto:'Espolvorea el cilantro fresco al servir.'},
+    tm5:{accion:null,picar:'Lava el cilantro y pícalo al final: 3 seg / vel 4 (o pícalo a mano y agrégalo al servir)'}},
+  limon:{pre:null,
+    normal:{cuando:'servir',texto:'Sirve con limón al gusto.'},
+    tm5:{accion:null}},
+  comino:{pre:null,
+    normal:{cuando:'sazon',texto:'Sazona con comino al gusto.'},
+    tm5:{accion:null}},
+  chipotle:{pre:null,
+    normal:{cuando:'sazon',texto:'Agrega el chipotle (entero o picado) para el toque ahumado.'},
+    tm5:{accion:'Añade el chipotle con el líquido.\n5 min / 100°C / giro inverso / vel cuchara'}},
+  guajillo:{pre:'Remoja el chile guajillo 10 min en agua caliente y desvénalo.',
+    normal:{cuando:'sazon',texto:'Licúa el guajillo con un poco de caldo y agrégalo colado.'},
+    tm5:{accion:'Añade el guajillo (ya hidratado).\n5 min / 100°C / giro inverso / vel cuchara'}},
+  ancho:{pre:'Remoja el chile ancho 10 min en agua caliente y desvénalo.',
+    normal:{cuando:'sazon',texto:'Licúa el chile ancho con un poco de caldo y agrégalo colado.'},
+    tm5:{accion:'Añade el chile ancho (ya hidratado).\n5 min / 100°C / giro inverso / vel cuchara'}},
+  jalapeno:{pre:'Corta el jalapeño en rodajas.',
+    normal:{cuando:'sazon',texto:'Agrega el jalapeño (con o sin semillas según el picor).'},
+    tm5:{accion:'Añade el jalapeño en rodajas.\n5 min / 100°C / giro inverso / vel cuchara'}},
+  caldojitomate:{pre:null,
+    normal:{cuando:'liquido',texto:'Usa el caldo de jitomate como base (completa con agua si falta).'},
+    tm5:{accion:null}},
+  aguacate:{pre:'Corta el aguacate en cubos.',
+    normal:{cuando:'servir',texto:'Sirve el aguacate encima de cada plato.'},
+    tm5:{accion:null}},
+  queso:{pre:null,
+    normal:{cuando:'servir',texto:'Espolvorea el queso al servir.'},
+    tm5:{accion:null}},
+  crema:{pre:null,
+    normal:{cuando:'servir',texto:'Añade la crema al servir.'},
+    tm5:{accion:null}},
+  tortillas:{pre:null,
+    normal:{cuando:'servir',texto:'Calienta las tortillas aparte y sírvelas con el caldo.'},
+    tm5:{accion:null,notaTM5:'Las tortillas se calientan aparte (no van al vaso).'}},
+  tostadas:{pre:null,
+    normal:{cuando:'servir',texto:'Sirve con tostadas aparte.'},
+    tm5:{accion:null,notaTM5:'Las tostadas van aparte (no al vaso).'}}
+};
+// Selección actual como lista de ingredientes reales {ing, nombre, n}
+function caldoIngSeleccion(){ return builderIngSeleccion(BUILDER_INGREDIENTES,CALDO_PARTES,_caldoSel()); }
+// Pasos generados dinámicamente según la selección. metodo: 'normal' | 'tm5'.
+// Delegado al MOTOR GENÉRICO (builderPasos): mismo motor que Arma tu agua y próximas calculadoras.
+var CALDO_PASOS_TPL={
+  emoji:'🥣',prefijo:'Caldo: ',lblN:'🍳 Normal',lblT:'🤖 Thermomix',porcionesTxt:'porciones',
+  totCfg:CALDO_TOT_CFG,tipo:'caldo',alertaVacio:'Arma primero tu caldo.',guardarToast:'⭐ Caldo guardado en Mis recetas',shareTitle:'Mi caldo',
+  liqN:'Añade 6 tazas de agua (o caldo de verduras).',
+  liqT:'Vierte 1.5 L de agua en el vaso (respeta la marca de máximo).',
+  sofN:'En una olla a fuego medio: ',
+  sofritoT:'Pon la cebolla y el ajo picados en el vaso con 1 cda de aceite.\n5 min / 120°C / vel 1',
+  aceiteT:'Pon 1 cda de aceite en el vaso.\n3 min / 120°C / vel 1',
+  varomaP:'Aprovecha el Varoma: coloca la papa y la zanahoria en el Varoma y cuécelas al vapor mientras el caldo se hace.\n(El caldo va en el vaso con giro inverso.)',
+  remN:'Ajusta la sal y cocina tapado a fuego bajo hasta integrar sabores (5 min).',
+  remT:'Baja los restos con la espátula y comprueba el sazón.\n5 min / 100°C / giro inverso / vel cuchara',
+  usaVaroma:function(sel){return sel.some(function(x){return (x.ing==='papa'||x.ing==='zanahoria')&&sel.some(function(y){return y.ing==='res'||y.ing==='muslo';});});},
+  rapN:function(picos,servir){
+    var r=[];
+    r.push(picos.length?picos.join(' '):'Prepara y corta tus ingredientes.');
+    r.push('Sofríe ajo/cebolla y sella la proteína (si usas).');
+    r.push('Añade agua o caldo y los vegetales; cocina tapado.');
+    r.push('Incorpora legumbres cocidas al final; ajusta sal.');
+    if(servir.length)r.push('Sirve con: '+servir.join(' '));
+    return r;
+  },
+  rapT:['Pica cebolla/ajo en el vaso (5 seg / vel 5) y sofríe 5 min / 120°C / vel 1.','Añade proteína y líquido; cocina con giro inverso / vel cuchara.','Agrega vegetales y deja cocer a 100°C (giro inverso).','Legumbres cocidas al final; corrige sazón y sirve.']
+};
+function caldoPasos(metodo){ return builderPasos(BUILDER_INGREDIENTES,CALDO_PARTES,CALDO_PREP,_caldoSel(),metodo,CALDO_PASOS_TPL); }
+function caldoAplicar(sel){ return builderAplicar(CALDO_PARTES,'caldoBuilder',sel,caldoRefresh); } // presets / Personalizar / Preparar otra vez
+function caldoRapidoSel(i){ return (CALDO_RAPIDO[i]||{}).sel||null; }
+function caldoBodyHTML(){
+  var s=_caldoSel(), t=caldoTotales(), probs=caldoValida();
+  var cols=CALDO_PARTES.map(function(pt){
+    var botones=pt.ops.map(function(op,i){
+      var v=caldoOp(pt,op); if(!v)return '';
+      var lista=Array.isArray(s[pt.id])?s[pt.id]:[s[pt.id]];
+      var on=(pt.id==='verdura'||pt.id==='sabor')?!!(lista.find(function(o){return o&&o.i===i;})):!!(s[pt.id]&&s[pt.id].i===i);
+      var oSel=(pt.id==='verdura'||pt.id==='sabor')?lista.find(function(o){return o&&o.i===i;}):(on?s[pt.id]:null);
+      var ctrl='';
+      if(on&&v.k>0&&oSel){
+        ctrl='<span style="display:inline-flex;align-items:center;gap:6px;margin-left:6px;vertical-align:middle">'
+          +'<button class="btn" style="padding:2px 9px;font-size:16px;line-height:1;min-width:30px" onclick="event.stopPropagation();caldoMenos(&#39;'+pt.id+'&#39;,'+i+')">−</button>'
+          +'<b style="font-size:13px;min-width:16px;text-align:center">'+(oSel.n||1)+'</b>'
+          +'<button class="btn" style="padding:2px 9px;font-size:16px;line-height:1;min-width:30px" onclick="event.stopPropagation();caldoMas(&#39;'+pt.id+'&#39;,'+i+')">+</button>'
+          +'</span>';
+      }
+      return '<div style="display:inline-block;margin:0 4px 5px 0">'
+        +'<button class="btn'+(on?' primary':'')+'" style="padding:7px 9px;font-size:12px" onclick="caldoElegir(&#39;'+pt.id+'&#39;,'+i+')">'
+        +safeText(v.n)+(v.k?' <span style="opacity:.7">'+v.k+'</span>':'')
+        +'</button>'+ctrl+'</div>';
+    }).join('');
+    return '<div style="margin-bottom:9px">'
+      +'<div style="font-weight:800;font-size:12px;color:#0d6043;margin-bottom:4px">'+safeText(pt.t)+'</div>'
+      +'<div>'+botones+'</div></div>';
+  }).join('');
+  var aviso='';
+  if(probs.length)aviso='<div class="mini" style="background:#fff4e0;font-size:12px;margin-top:6px"><b>⚠ '+safeText(probs.join(' '))+'</b></div>';
+  else if(t.k>0)aviso='<div class="mini" style="background:#eafaf0;font-size:12px;margin-top:6px"><b>✅ Caldo coherente.</b> Combina proteína/legumbre, verdura y tu sabor mexicano.</div>';
+  var resumen=t.k
+    ?'<div style="background:#0d6043;color:#fff;border-radius:12px;padding:11px;margin-bottom:10px">'
+      +'<div style="font-size:22px;font-weight:800">'+t.k+' kcal</div>'
+      +'<div style="font-size:13px;opacity:.9">'+t.p+' g de proteína · '+t.c+' g carbohidratos · '+t.g+' g grasa</div>'
+      +'<div style="font-size:11px;opacity:.8;margin-top:4px">⏱ ~'+t.tiempo+' min · '+t.porciones+' porciones</div>'
+      +(t.partes.length?'<div style="font-size:11px;opacity:.8;margin-top:2px">'+safeText(t.partes.join(' + '))+'</div>':'')
+      +'</div>'
+    :'';
+  var rapidos=CALDO_RAPIDO.map(function(p,i){
+    return '<button class="btn" style="padding:6px 10px;font-size:12px;margin:0 4px 5px 0" onclick="caldoAplicar(caldoRapidoSel('+i+'))">⚡ '+safeText(p.nombre)+' ('+p.tiempo+' min)</button>';
+  }).join('');
+  var guardadas=(state.recetasBuilder||[]).filter(function(x){return x.tipo==='caldo';});
+  var guardHTML=guardadas.length
+    ?'<div style="margin-top:10px"><b style="font-size:12px;color:#0d6043">⭐ Mis caldos guardados ('+guardadas.length+')</b>'
+      +guardadas.slice(0,6).map(function(r){
+        return '<div class="row" style="gap:6px;margin-top:4px;align-items:center;flex-wrap:wrap"><button class="btn" style="flex:1;padding:6px 8px;font-size:11px;text-align:left" onclick="caldoRepetir(&#39;'+r.id+'&#39;)">🔁 '+safeText(r.nombre)+' <span class="muted">'+r.k+' kcal</span></button><button class="btn" style="padding:4px 8px;font-size:11px;color:#b03030" onclick="caldoBorrarGuardada(&#39;'+r.id+'&#39;)">✕</button></div>';
+      }).join('')
+      +'</div>'
+    :'';
+  return resumen
+    +'<div class="mini" style="background:#eef4fb;font-size:12px;margin-bottom:8px"><b>⚡ Caldo rápido:</b> toca uno y ajusta lo que quieras.</div>'
+    +'<div>'+rapidos+'</div>'
+    +'<div style="margin-top:8px">'+cols+'</div>'
+    +aviso
+    +(t.k?caldoPrepHtml():'')
+    +guardHTML;
+}
+function caldoVerPrep(){ return builderVerPrep('caldoBuilder',caldoRefresh); }
+function caldoSetMetodo(m){ return builderSetMetodo('caldoBuilder',m,caldoRefresh); }
+function caldoSetNivel(n){ return builderSetNivel('caldoBuilder',n,caldoRefresh); }
+function caldoPrepHtml(){
+  var s=_caldoSel(), metodo=s.metodo||'normal', nivel=s.nivel||'rapido';
+  var P=caldoPasos(metodo);
+  var pasos=(nivel==='detallado')?P.detallados:P.rapidos;
+  var botones='<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'
+    +'<button class="btn'+(metodo==='normal'?' primary':'')+'" style="padding:7px 10px;font-size:12px" onclick="caldoSetMetodo(&#39;normal&#39;)">🍳 Normal</button>'
+    +'<button class="btn'+(metodo==='tm5'?' primary':'')+'" style="padding:7px 10px;font-size:12px" onclick="caldoSetMetodo(&#39;tm5&#39;)">🤖 Thermomix</button>'
+    +'<span style="flex:1"></span>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="caldoSetNivel(&#39;'+(nivel==='rapido'?'detallado':'rapido')+'&#39;)">'+(nivel==='rapido'?'👨‍🍳 Pasos detallados':'⚡ Pasos rápidos')+'</button>'
+    +'</div>';
+  var lista='<ol style="margin:8px 0 0 18px;padding:0">'+pasos.map(function(p){return '<li style="margin-bottom:5px;font-size:13px">'+safeText(p).replace(/\n/g,'<br>')+'</li>';}).join('')+'</ol>';
+  var acciones='<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="caldoCopiar()">📋 Copiar</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="caldoCompartir()">📤 Compartir</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="caldoGuardar()">⭐ Guardar</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="caldoALista()">🛒 Lista de compras</button>'
+    +'</div>';
+  return '<div style="margin-top:10px">'
+    +'<button class="btn" style="width:100%;padding:9px;font-size:13px" onclick="caldoVerPrep()">👨‍🍳 Ver preparación '+(s.verPrep?'▴':'▾')+'</button>'
+    +(s.verPrep?'<div id="caldoPrepCuerpo" style="background:#fbfdfc;border:1px solid #d9e3db;border-radius:12px;padding:10px 12px;margin-top:6px">'+botones+lista+acciones+'</div>':'')
+    +'</div>';
+}
+function caldoTextoPrep(metodo,detalle){ return builderTextoPrep(BUILDER_INGREDIENTES,CALDO_PARTES,CALDO_PREP,_caldoSel(),metodo,detalle,CALDO_PASOS_TPL,CALDO_TOT_CFG); }
+function caldoCopiar(){ return builderCopiar(BUILDER_INGREDIENTES,CALDO_PARTES,CALDO_PREP,_caldoSel(),CALDO_PASOS_TPL); }
+function caldoCompartir(){ return builderCompartir(BUILDER_INGREDIENTES,CALDO_PARTES,CALDO_PREP,_caldoSel(),CALDO_PASOS_TPL); }
+function caldoGuardar(){ return builderGuardar(BUILDER_INGREDIENTES,CALDO_PARTES,'caldoBuilder',CALDO_PASOS_TPL,caldoRefresh); }
+function caldoRepetir(id){ return builderRepetir('caldoBuilder',id,caldoAplicar,caldoRefresh); }
+function caldoBorrarGuardada(id){ return builderBorrarGuardada(id,caldoRefresh); }
+function caldoALista(){ return builderALista(BUILDER_INGREDIENTES,_caldoSel(),CALDO_PARTES); }
+function caldoRefresh(){
+  var b=document.getElementById('caldoBuilderBody');
+  if(b)b.innerHTML=caldoBodyHTML();
+}
+function secArmaCaldo(){
+  return '<details class="card" style="margin-top:8px;background:#f2fbf5;border:2px solid #9dd5b4"><summary style="font-weight:800;font-size:16px">🥣 Arma tu caldo</summary>'
+    +'<div style="padding:8px 0">'
+    +'<div class="mini" style="background:#eef2fb;font-size:12px;margin-bottom:10px">'
+    +'<b>👨‍🍳 Cómo hacerlo:</b> escoge proteína, legumbre, para llenar y verdura; ponle tu sabor mexicano. Miles de caldos reales — el número gris son las kcal de cada bloque.'
+    +'</div>'
+    +'<div id="caldoBuilderBody">'+caldoBodyHTML()+'</div>'
+    +'</div></details>';
+}
+
+/* ===== 🧩 MOTOR GENÉRICO DE ARMADORES =====
+   Caldo y Agua (y próximas calculadoras) comparten este motor:
+   - builderOp/Totales/IngSeleccion/Valida…: datos desde ING + PARTES.
+   - builderPasos: pasos rápidos/detallados por método ('normal'|'tm5')
+     generados desde PREP (preparación declarativa por ingrediente).
+   Cada armador aporta sus datos (ING, PARTES, PREP, RAPIDO) y sus
+   plantillas de texto (TPL); las funciones caldo* y agua* son wrappers. */
+function builderOp(parte,op,ING){
+  if(op.ing){var x=ING[op.ing];return x?{n:op.nombre||x.nombre+(x.porcion?' '+x.porcion:''),k:(op.k!=null?op.k:x.k),p:(op.p!=null?op.p:x.p),c:(op.c!=null?op.c:x.c),g:(op.g!=null?op.g:x.g)}:null;}
+  return {n:op.nombre,k:op.k||0,p:op.p||0,c:op.c||0,g:op.g||0};
+}
+function builderSel(key){ state[key]=state[key]||{}; return state[key]; }
+function builderTotales(ING,PARTES,sel,cfg){
+  var k=0,p=0,c=0,g=0,partes=[],tiempo=cfg.base,porciones=cfg.porciones;
+  PARTES.forEach(function(pt){
+    var selPt=sel[pt.id]; if(!selPt)return;
+    var lista=Array.isArray(selPt)?selPt:[selPt];
+    lista.forEach(function(o){
+      var op=pt.ops[o.i]; if(!op)return;
+      var v=builderOp(pt,op,ING); if(!v)return;
+      var n=o.n||1;
+      k+=v.k*n; p+=v.p*n; c+=v.c*n; g+=v.g*n;
+      partes.push((n>1?(n+'× '):'')+v.n);
+      if(v.k>0&&cfg.porParte[pt.id])tiempo+=cfg.porParte[pt.id];
+    });
+  });
+  k=Math.round(k); p=Math.round(p*10)/10; c=Math.round(c); g=Math.round(g*10)/10;
+  return {k:k,p:p,c:c,g:g,partes:partes,tiempo:tiempo,porciones:porciones};
+}
+function builderIngSeleccion(ING,PARTES,sel){
+  var out=[];
+  PARTES.forEach(function(pt){
+    var lista=Array.isArray(sel[pt.id])?sel[pt.id]:[sel[pt.id]];
+    lista.forEach(function(o){
+      if(!o)return;
+      var op=pt.ops[o.i]; if(!op||!op.ing)return;
+      var v=builderOp(pt,op,ING); if(!v)return;
+      if(v.k<=0&&!pt.incluirCero)return; // "Sin carne", "Sin endulzar"… no cuentan
+      out.push({ing:op.ing,nombre:v.n,n:o.n||1,k:v.k,p:v.p,c:v.c,g:v.g,bloque:pt.id});
+    });
+  });
+  return out;
+}
+function builderElegir(ING,PARTES,key,parteId,i,refresh){
+  var s=builderSel(key), pt=PARTES.find(function(x){return x.id===parteId;});
+  if(!pt)return;
+  if(pt.multi){ // multi-selección
+    s[parteId]=s[parteId]||[];
+    var idx=s[parteId].findIndex(function(o){return o.i===i;});
+    if(idx>=0){s[parteId].splice(idx,1);}else{s[parteId].push({i:i,n:1});}
+  }else{
+    if(s[parteId]&&s[parteId].i===i){s[parteId]=null;}else{s[parteId]={i:i,n:1};}
+  }
+  if(typeof save==='function')save();
+  refresh();
+}
+function builderMas(ING,PARTES,key,parteId,i,refresh){
+  var s=builderSel(key), pt=PARTES.find(function(x){return x.id===parteId;});
+  if(!pt)return;
+  var o=pt.multi?((s[parteId]||[]).find(function(x){return x.i===i;})):s[parteId];
+  if(o){o.n=Math.min(6,(o.n||1)+1);if(typeof save==='function')save();refresh();}
+}
+function builderMenos(ING,PARTES,key,parteId,i,refresh){
+  var s=builderSel(key), pt=PARTES.find(function(x){return x.id===parteId;});
+  if(!pt)return;
+  var o=pt.multi?((s[parteId]||[]).find(function(x){return x.i===i;})):s[parteId];
+  if(o&&o.n>1){o.n--;if(typeof save==='function')save();refresh();}
+}
+function builderAplicar(PARTES,key,sel,refresh){
+  var s=builderSel(key);
+  Object.keys(s).forEach(function(k){delete s[k];});
+  Object.keys(sel).forEach(function(k){
+    var v=sel[k];
+    s[k]=Array.isArray(v)?v.map(function(o){return {i:o.i,n:o.n||1};}):(v?{i:v.i,n:v.n||1}:null);
+  });
+  if(typeof save==='function')save();
+  refresh();
+  try{var sec=document.querySelector('summary');if(sec){};}catch(e){}
+}
+function builderPasos(ING,PARTES,PREP,sel,metodo,tpl){
+  var ingSel=builderIngSeleccion(ING,PARTES,sel);
+  var tm5=metodo==='tm5';
+  var pasos=[], picos=[], sofrito=[], proteina=[], liquidos=[], duros=[], medios=[], jugo=[], cocidos=[], sazon=[], finales=[], servir=[], notas=[], tieneSofrito=false;
+  ingSel.forEach(function(x){
+    var P=PREP[x.ing]; if(!P)return;
+    var picarTm5=tm5&&P.tm5&&P.tm5.picar; // en TM5 el vaso pica: no repetir el corte manual
+    var cubrePre=tm5&&P.tm5&&P.tm5.cubrePre; // el vaso hace TODO el paso: no repetir el pre manual
+    if(P.pre&&!picarTm5&&!cubrePre)picos.push(P.pre+(x.n>1?(' ('+x.n+' '+(tpl.preUnidad||'unidades')+').'):''));
+    if(picarTm5)picos.push(P.tm5.picar);
+    if(!tm5){
+      var cuando=P.normal&&P.normal.cuando;
+      var txt=P.normal?(P.normal.texto||''):'';
+      if(P.normal&&P.normal.coccion)txt+=' Tapa y cocina '+P.normal.coccion+' '+(P.normal.senal||'')+'.';
+      if(cuando==='sofrito')sofrito.push(txt);
+      else if(cuando==='proteina')proteina.push(txt);
+      else if(cuando==='liquido')liquidos.push(txt);
+      else if(cuando==='duro')duros.push(txt);
+      else if(cuando==='medio')medios.push(txt);
+      else if(cuando==='jugo')jugo.push(txt);
+      else if(cuando==='cocido')cocidos.push(txt);
+      else if(cuando==='sazon')sazon.push(txt);
+      else if(cuando==='final')finales.push(txt);
+      else if(cuando==='servir')servir.push(txt);
+    }else{
+      if(P.normal&&P.normal.cuando==='sofrito')tieneSofrito=true;
+      if(P.tm5&&P.tm5.accion){
+        var cuandoN=P.normal&&P.normal.cuando;
+        if(cuandoN==='proteina')proteina.push(P.tm5.accion);
+        else if(cuandoN==='duro')duros.push(P.tm5.accion);
+        else if(cuandoN==='medio')medios.push(P.tm5.accion);
+        else if(cuandoN==='jugo')jugo.push(P.tm5.accion);
+        else if(cuandoN==='cocido')cocidos.push(P.tm5.accion);
+        else if(cuandoN==='final')finales.push(P.tm5.accion);
+        else if(cuandoN==='sazon')sazon.push(P.tm5.accion);
+        else if(cuandoN==='liquido')liquidos.push(P.tm5.accion);
+        else cocidos.push(P.tm5.accion);
+      }
+      if(P.tm5&&P.tm5.notaTM5)notas.push(P.tm5.notaTM5);
+    }
+  });
+  var usaVaroma=!!tpl.usaVaroma&&tpl.usaVaroma(ingSel);
+  if(!tm5){
+    if(picos.length)pasos.push(picos.join(' '));
+    if(sofrito.length)pasos.push((tpl.sofN||'')+sofrito.join(' '));
+    if(proteina.length)pasos.push(proteina.join(' '));
+    pasos.push(liquidos.length?liquidos.join(' '):tpl.liqN);
+    if(duros.length)pasos.push(duros.join(' '));
+    if(medios.length)pasos.push(medios.join(' '));
+    if(jugo.length)pasos.push(jugo.join(' '));
+    if(sazon.length)pasos.push(sazon.join(' '));
+    if(cocidos.length)pasos.push(cocidos.join(' '));
+    if(finales.length)pasos.push(finales.join(' '));
+    pasos.push(tpl.remN);
+  }else{
+    if(picos.length)pasos.push(picos.join('\n'));
+    if(tieneSofrito&&tpl.sofritoT)pasos.push(tpl.sofritoT);
+    else if(tpl.aceiteT)pasos.push(tpl.aceiteT);
+    if(proteina.length)pasos.push(proteina.join('\n\n'));
+    pasos.push(liquidos.length?('Vierte la base líquida en el vaso (máx. 2 L, respeta la marca).\n'+(liquidos.join(' '))):tpl.liqT);
+    if(usaVaroma)pasos.push(tpl.varomaP);
+    if(duros.length)pasos.push(duros.join('\n\n'));
+    if(medios.length)pasos.push(medios.join('\n\n'));
+    if(jugo.length)pasos.push(jugo.join('\n\n'));
+    if(sazon.length)pasos.push(sazon.join('\n\n'));
+    if(cocidos.length)pasos.push(cocidos.join('\n\n'));
+    if(finales.length)pasos.push(finales.join('\n\n'));
+    pasos.push(tpl.remT);
+  }
+  if(servir.length)pasos.push('Para servir: '+servir.join(' '));
+  notas.forEach(function(n){pasos.push('Nota: '+n);});
+  var rapidos=[];
+  if(pasos.length<=6)rapidos=pasos.slice();
+  else{ rapidos=tm5?tpl.rapT.slice():tpl.rapN(picos,servir); }
+  return {detallados:pasos,rapidos:rapidos};
+}
+function builderTextoPrep(ING,PARTES,PREP,sel,metodo,detalle,tpl,totCfg){
+  var t=builderTotales(ING,PARTES,sel,totCfg), ingSel=builderIngSeleccion(ING,PARTES,sel), P=builderPasos(ING,PARTES,PREP,sel,metodo,tpl);
+  var pasos=detalle?P.detallados:P.rapidos;
+  var nombre=tpl.prefijo+ingSel.map(function(x){return (x.n>1?(x.n+'× '):'')+x.nombre;}).slice(0,4).join(' + ');
+  var lineas=[tpl.emoji+' '+nombre,'','Método: '+(metodo==='tm5'?tpl.lblT:tpl.lblN),'','Ingredientes:'];
+  ingSel.forEach(function(x){lineas.push('- '+(x.n>1?(x.n+'× '):'')+x.nombre);});
+  lineas.push('','Información:');
+  lineas.push('- '+t.k+' kcal');
+  lineas.push('- '+t.p+' g proteína');
+  lineas.push('- '+t.c+' g carbohidratos');
+  lineas.push('- '+t.g+' g grasa');
+  lineas.push('- ~'+t.tiempo+' min');
+  lineas.push('- '+t.porciones+' '+tpl.porcionesTxt);
+  lineas.push('','Preparación:');
+  pasos.forEach(function(p,i){lineas.push((i+1)+'. '+p);});
+  if(tpl.aviso){lineas.push('',tpl.aviso);}
+  return lineas.join('\n');
+}
+function builderCopiar(ING,PARTES,PREP,sel,tpl){
+  var metodo=sel.metodo||'normal', nivel=sel.nivel||'rapido';
+  var txt=builderTextoPrep(ING,PARTES,PREP,sel,metodo,nivel==='detallado',tpl,tpl.totCfg);
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt);}
+    else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();}
+    if(typeof toastReg==='function')toastReg('📋 Receta copiada');
+  }catch(e){ if(typeof alert==='function')alert('No se pudo copiar automáticamente.'); }
+}
+function builderCompartir(ING,PARTES,PREP,sel,tpl){
+  var metodo=sel.metodo||'normal', nivel=sel.nivel||'rapido';
+  var txt=builderTextoPrep(ING,PARTES,PREP,sel,metodo,nivel==='detallado',tpl,tpl.totCfg);
+  if(typeof navigator!=='undefined'&&navigator.share){
+    navigator.share({title:tpl.shareTitle,text:txt}).catch(function(e){ if(String(e&&e.name)!=='AbortError')builderCopiar(ING,PARTES,PREP,sel,tpl); });
+  }else{
+    builderCopiar(ING,PARTES,PREP,sel,tpl);
+    if(typeof toastReg==='function')toastReg('📤 Compartir no disponible aquí: se copió al portapapeles.');
+  }
+}
+function builderGuardar(ING,PARTES,key,tpl,refresh){
+  var s=builderSel(key), t=builderTotales(ING,PARTES,s,tpl.totCfg);
+  if(!t.k||!t.partes.length){if(typeof alert==='function')alert(tpl.alertaVacio);return;}
+  var ingSel=builderIngSeleccion(ING,PARTES,s);
+  state.recetasBuilder=state.recetasBuilder||[];
+  var nombre=tpl.prefijo+ingSel.slice(0,3).map(function(x){return x.nombre;}).join(' + ');
+  state.recetasBuilder.unshift({id:ppUUID(),tipo:tpl.tipo,nombre:nombre,sel:JSON.parse(JSON.stringify(s)),k:t.k,p:t.p,c:t.c,g:t.g,tiempo:t.tiempo,porciones:t.porciones,fecha:new Date().toISOString()});
+  state.recetasBuilder=state.recetasBuilder.slice(0,50);
+  if(typeof save==='function')save();
+  if(typeof toastReg==='function')toastReg(tpl.guardarToast);
+  refresh();
+}
+function builderRepetir(key,id,aplicarFn,refresh){
+  var r=(state.recetasBuilder||[]).find(function(x){return x.id===id;}); if(!r)return;
+  aplicarFn(r.sel);
+  var s=builderSel(key); s.metodo=r.sel.metodo||'normal'; s.nivel=r.sel.nivel||'rapido';
+  if(typeof save==='function')save();
+  refresh();
+}
+function builderBorrarGuardada(id,refresh){
+  state.recetasBuilder=(state.recetasBuilder||[]).filter(function(x){return x.id!==id;});
+  if(typeof save==='function')save();
+  refresh();
+}
+function builderALista(ING,sel,PARTES){
+  var ingSel=builderIngSeleccion(ING,PARTES,sel); if(!ingSel.length)return;
+  window._carrito=window._carrito||[];
+  ingSel.forEach(function(x){
+    var nombre=ING[x.ing].nombre;
+    var ya=window._carrito.find(function(c){return c.name===nombre;});
+    if(ya){ ya.cant=(ya.cant||1)+x.n; ya.kcal=(+ya.kcal||0)+x.k*x.n; ya.prot=(+ya.prot||0)+x.p*x.n; ya.carb=(+ya.carb||0)+x.c*x.n; ya.fat=(+ya.fat||0)+x.g*x.n; }
+    else{ window._carrito.push({id:ppUUID(),name:nombre,kcal:x.k*x.n,prot:x.p*x.n,carb:x.c*x.n,fat:x.g*x.n,amount:'1 porción',cant:x.n}); }
+  });
+  if(typeof renderCarrito==='function')renderCarrito();
+  if(typeof toastReg==='function')toastReg('🛒 Agregado a la lista de compras');
+}
+function builderVerPrep(key,refresh){ var s=builderSel(key); s.verPrep=!s.verPrep; if(typeof save==='function')save(); refresh(); }
+function builderSetMetodo(key,m,refresh){ var s=builderSel(key); s.metodo=m; if(typeof save==='function')save(); refresh(); }
+function builderSetNivel(key,n,refresh){ var s=builderSel(key); s.nivel=n; if(typeof save==='function')save(); refresh(); }
+
+/* ===== 🍋 ARMA TU AGUA DE SABOR (FASE 2) =====
+   Mismo motor que Arma tu caldo: bloques (AGUA_PARTES), presets
+   (AGUA_RAPIDO), preparación declarativa (AGUA_PREP) y plantillas
+   (AGUA_PASOS_TPL). "Normal" = jarra/licuadora; "Thermomix" = vaso. */
+var AGUA_TOT_CFG={base:12,porParte:{},porciones:8};
+var AGUA_PARTES=[
+  {id:'fruta',t:'1. Fruta base (elige 1)',ops:[
+    {ing:'fresa'},{ing:'mango'},{ing:'pina'},{ing:'sandia'},{ing:'melon'},{ing:'papaya'},{ing:'guayaba'},{ing:'limon'}
+  ]},
+  {id:'extra',multi:true,t:'2. Fruta extra (elige 1 o más)',ops:[
+    {ing:'fresa'},{ing:'mango'},{ing:'pina'},{ing:'sandia'},{ing:'melon'},{ing:'papaya'},{ing:'guayaba'},{ing:'pepino'}
+  ]},
+  {id:'citrico',t:'3. Cítrico',ops:[
+    {ing:'limon'},{ing:'naranja'},
+    {nombre:'Sin cítrico',k:0,p:0,c:0,g:0}
+  ]},
+  {id:'toque',multi:true,t:'4. Toque (elige 1 o más)',ops:[
+    {ing:'menta'},{ing:'jengibre'},{ing:'chia'}
+  ]},
+  {id:'endulzante',incluirCero:true,t:'5. Endulzante',ops:[
+    {ing:'azucar'},{ing:'miel'},{ing:'stevia'},
+    {nombre:'Sin endulzar',k:0,p:0,c:0,g:0}
+  ]}
+];
+// Presets de "🍋 Aguas rápidas" (jarra de 2 L, ~8 vasos, 12-15 min).
+var AGUA_RAPIDO=[
+  {nombre:'Agua de fresa',tiempo:12,sel:{fruta:{i:0,n:2},extra:[],citrico:{i:2,n:1},toque:[],endulzante:{i:0,n:2}}},
+  {nombre:'Agua de limón',tiempo:12,sel:{fruta:{i:7,n:6},extra:[],citrico:{i:2,n:1},toque:[],endulzante:{i:0,n:2}}},
+  {nombre:'Agua de mango con limón',tiempo:12,sel:{fruta:{i:1,n:2},extra:[],citrico:{i:0,n:2},toque:[],endulzante:{i:1,n:1}}},
+  {nombre:'Agua de piña con menta',tiempo:12,sel:{fruta:{i:2,n:3},extra:[],citrico:{i:2,n:1},toque:[{i:0,n:1}],endulzante:{i:0,n:1}}},
+  {nombre:'Agua de sandía con pepino',tiempo:15,sel:{fruta:{i:3,n:3},extra:[{i:7,n:1}],citrico:{i:0,n:1},toque:[],endulzante:{i:3,n:1}}},
+  {nombre:'Agua de guayaba',tiempo:15,sel:{fruta:{i:6,n:4},extra:[],citrico:{i:2,n:1},toque:[],endulzante:{i:0,n:1}}}
+];
+var AGUA_PREP={
+  fresa:{pre:'Lava y deshoja las fresas.',
+    normal:{cuando:'medio',texto:'Licúa las fresas con 2 tazas del agua y vierte en la jarra con el resto; cuela si quieres.'},
+    tm5:{accion:'Añade las fresas deshojadas.\n10 seg / vel 5 y luego 1 min / vel 10'}},
+  mango:{pre:'Pela el mango y quita el hueso.',
+    normal:{cuando:'medio',texto:'Licúa el mango con 2 tazas del agua; cuela si quieres.'},
+    tm5:{accion:'Añade el mango en trozos.\n10 seg / vel 5 y luego 1 min / vel 10'}},
+  pina:{pre:'Pela la piña y córtala en trozos.',
+    normal:{cuando:'medio',texto:'Licúa la piña con 2 tazas del agua; cuela si quieres.'},
+    tm5:{accion:'Añade la piña en trozos.\n10 seg / vel 5 y luego 1 min / vel 10'}},
+  sandia:{pre:'Quita las semillas y corta la sandía en trozos.',
+    normal:{cuando:'medio',texto:'Licúa la sandía (ella sola suelta su agua); apenas cuela.'},
+    tm5:{accion:'Añade la sandía en trozos sin semillas.\n10 seg / vel 5 y luego 1 min / vel 10'}},
+  melon:{pre:'Pela el melón, quita las semillas y córtalo en trozos.',
+    normal:{cuando:'medio',texto:'Licúa el melón con 2 tazas del agua; cuela si quieres.'},
+    tm5:{accion:'Añade el melón en trozos.\n10 seg / vel 5 y luego 1 min / vel 10'}},
+  papaya:{pre:'Pela la papaya y quita las semillas.',
+    normal:{cuando:'medio',texto:'Licúa la papaya con 2 tazas del agua.'},
+    tm5:{accion:'Añade la papaya en trozos.\n10 seg / vel 5 y luego 1 min / vel 10'}},
+  guayaba:{pre:'Lava la guayaba y córtala en cuartos.',
+    normal:{cuando:'medio',texto:'Licúa la guayaba con 2 tazas del agua y CUELA MUY BIEN (sus semillas son duras).'},
+    tm5:{accion:'Añade la guayaba en cuartos.\n20 seg / vel 10 y cuela muy bien'}},
+  pepino:{pre:'Lava y rebana el pepino (con cáscara si está limpia).',
+    normal:{cuando:'medio',texto:'Licúa el pepino con la fruta o agrégalo en rodajas a la jarra.'},
+    tm5:{accion:'Añade el pepino en rodajas.\n10 seg / vel 5 y luego 1 min / vel 10'}},
+  limon:{pre:'Exprime los limones.',
+    normal:{cuando:'jugo',texto:'Agrega el jugo de limón.'},
+    tm5:{accion:'Agrega el jugo de limón (exprímelo a mano).\n5 seg / vel 3'}},
+  naranja:{pre:'Exprime las naranjas.',
+    normal:{cuando:'jugo',texto:'Agrega el jugo de naranja.'},
+    tm5:{accion:'Agrega el jugo de naranja (exprímelo a mano).\n5 seg / vel 3'}},
+  menta:{pre:'Lava la menta.',
+    normal:{cuando:'servir',texto:'Agrega las hojas de menta a la jarra y deja reposar 15 min.'},
+    tm5:{accion:null,picar:'Lava la menta y pícala: 3 seg / vel 4 (o agrega las hojas enteras al servir)'}},
+  jengibre:{pre:'Pela y rebana el jengibre.',
+    normal:{cuando:'sazon',texto:'Agrega 2-3 rodajas de jengibre y deja reposar 20 min (retíralas si pica mucho).'},
+    tm5:{accion:'Añade el jengibre en rodajas.\n5 seg / vel 7'}},
+  chia:{pre:null,
+    normal:{cuando:'cocido',texto:'Hidrata la chía 15 min en media taza de agua y agrégala; revuelve bien.'},
+    tm5:{accion:'Agrega la chía ya hidratada.\n10 seg / vel 2 / giro inverso'}},
+  azucar:{pre:null,
+    normal:{cuando:'sazon',texto:'Disuelve el azúcar en un chorrito de agua tibia y agrégalo.'},
+    tm5:{accion:'Añade el azúcar.\n10 seg / vel 3'}},
+  miel:{pre:null,
+    normal:{cuando:'sazon',texto:'Disuelve la miel en un chorrito de agua tibia y agrégala.'},
+    tm5:{accion:'Añade la miel.\n10 seg / vel 3'}},
+  stevia:{pre:null,
+    normal:{cuando:'sazon',texto:'Agrega la stevia y prueba (endulza poco a poco).'},
+    tm5:{accion:'Añade la stevia.\n10 seg / vel 3'}}
+};
+var AGUA_PASOS_TPL={
+  emoji:'🍋',prefijo:'Agua: ',lblN:'🥤 Normal',lblT:'🤖 Thermomix',porcionesTxt:'vasos',
+  totCfg:AGUA_TOT_CFG,tipo:'agua',alertaVacio:'Arma primero tu agua.',guardarToast:'⭐ Agua guardada en Mis recetas',shareTitle:'Mi agua de sabor',
+  preUnidad:'tazas',
+  liqN:'Ten lista la jarra con 1.5 L de agua fría.',
+  liqT:'Vierte 1.5 L de agua en el vaso (máx. 2 L).',
+  sofN:null,sofritoT:null,aceiteT:null,varomaP:null,
+  remN:'Prueba y ajusta el dulzor; refrigera 20-30 min y sirve con hielo.',
+  remT:'Sirve en la jarra con hielo y ajusta el dulzor.',
+  usaVaroma:function(){return false;},
+  rapN:function(picos,servir){
+    var r=[];
+    r.push(picos.length?picos.join(' '):'Prepara y corta tu fruta.');
+    r.push('Licúa la fruta con la mitad del agua; cuela si quieres.');
+    r.push('Agrega el cítrico y endulza al gusto; refrigera.');
+    r.push('Sirve bien fría con hielo.');
+    return r;
+  },
+  rapT:['Prepara la fruta y ponla en el vaso con el agua.','Licúa 10 seg / vel 5 y luego 1 min / vel 10.','Ajusta el dulzor y sirve en la jarra con hielo.']
+};
+function _aguaSel(){ return builderSel('aguaBuilder'); }
+function aguaTotales(){ return builderTotales(BUILDER_INGREDIENTES,AGUA_PARTES,_aguaSel(),AGUA_TOT_CFG); }
+function aguaValida(){
+  var s=_aguaSel();
+  var p=[];
+  var op=s.fruta&&AGUA_PARTES[0].ops[s.fruta.i];
+  var v=op&&builderOp(AGUA_PARTES[0],op,BUILDER_INGREDIENTES);
+  if(!v||v.k<=0)p.push('Elige una fruta base.');
+  return p;
+}
+function aguaElegir(parteId,i){ return builderElegir(BUILDER_INGREDIENTES,AGUA_PARTES,'aguaBuilder',parteId,i,aguaRefresh); }
+function aguaMas(parteId,i){ return builderMas(BUILDER_INGREDIENTES,AGUA_PARTES,'aguaBuilder',parteId,i,aguaRefresh); }
+function aguaMenos(parteId,i){ return builderMenos(BUILDER_INGREDIENTES,AGUA_PARTES,'aguaBuilder',parteId,i,aguaRefresh); }
+function aguaIngSeleccion(){ return builderIngSeleccion(BUILDER_INGREDIENTES,AGUA_PARTES,_aguaSel()); }
+function aguaPasos(metodo){ return builderPasos(BUILDER_INGREDIENTES,AGUA_PARTES,AGUA_PREP,_aguaSel(),metodo,AGUA_PASOS_TPL); }
+function aguaAplicar(sel){ return builderAplicar(AGUA_PARTES,'aguaBuilder',sel,aguaRefresh); }
+function aguaRapidoSel(i){ return (AGUA_RAPIDO[i]||{}).sel||null; }
+function aguaVerPrep(){ return builderVerPrep('aguaBuilder',aguaRefresh); }
+function aguaSetMetodo(m){ return builderSetMetodo('aguaBuilder',m,aguaRefresh); }
+function aguaSetNivel(n){ return builderSetNivel('aguaBuilder',n,aguaRefresh); }
+function aguaTextoPrep(metodo,detalle){ return builderTextoPrep(BUILDER_INGREDIENTES,AGUA_PARTES,AGUA_PREP,_aguaSel(),metodo,detalle,AGUA_PASOS_TPL,AGUA_TOT_CFG); }
+function aguaCopiar(){ return builderCopiar(BUILDER_INGREDIENTES,AGUA_PARTES,AGUA_PREP,_aguaSel(),AGUA_PASOS_TPL); }
+function aguaCompartir(){ return builderCompartir(BUILDER_INGREDIENTES,AGUA_PARTES,AGUA_PREP,_aguaSel(),AGUA_PASOS_TPL); }
+function aguaGuardar(){ return builderGuardar(BUILDER_INGREDIENTES,AGUA_PARTES,'aguaBuilder',AGUA_PASOS_TPL,aguaRefresh); }
+function aguaRepetir(id){ return builderRepetir('aguaBuilder',id,aguaAplicar,aguaRefresh); }
+function aguaBorrarGuardada(id){ return builderBorrarGuardada(id,aguaRefresh); }
+function aguaALista(){ return builderALista(BUILDER_INGREDIENTES,_aguaSel(),AGUA_PARTES); }
+function aguaBodyHTML(){
+  var s=_aguaSel(), t=aguaTotales(), probs=aguaValida();
+  var cols=AGUA_PARTES.map(function(pt){
+    var botones=pt.ops.map(function(op,i){
+      var v=builderOp(pt,op,BUILDER_INGREDIENTES); if(!v)return '';
+      var lista=Array.isArray(s[pt.id])?s[pt.id]:[s[pt.id]];
+      var on=pt.multi?!!(lista.find(function(o){return o&&o.i===i;})):!!(s[pt.id]&&s[pt.id].i===i);
+      var oSel=pt.multi?lista.find(function(o){return o&&o.i===i;}):(on?s[pt.id]:null);
+      var ctrl='';
+      if(on&&v.k>0&&oSel){
+        ctrl='<span style="display:inline-flex;align-items:center;gap:6px;margin-left:6px;vertical-align:middle">'
+          +'<button class="btn" style="padding:2px 9px;font-size:16px;line-height:1;min-width:30px" onclick="event.stopPropagation();aguaMenos(&#39;'+pt.id+'&#39;,'+i+')">−</button>'
+          +'<b style="font-size:13px;min-width:16px;text-align:center">'+(oSel.n||1)+'</b>'
+          +'<button class="btn" style="padding:2px 9px;font-size:16px;line-height:1;min-width:30px" onclick="event.stopPropagation();aguaMas(&#39;'+pt.id+'&#39;,'+i+')">+</button>'
+          +'</span>';
+      }
+      return '<div style="display:inline-block;margin:0 4px 5px 0">'
+        +'<button class="btn'+(on?' primary':'')+'" style="padding:7px 9px;font-size:12px" onclick="aguaElegir(&#39;'+pt.id+'&#39;,'+i+')">'
+        +safeText(v.n)+(v.k?' <span style="opacity:.7">'+v.k+'</span>':'')
+        +'</button>'+ctrl+'</div>';
+    }).join('');
+    return '<div style="margin-bottom:9px">'
+      +'<div style="font-weight:800;font-size:12px;color:#0d6043;margin-bottom:4px">'+safeText(pt.t)+'</div>'
+      +'<div>'+botones+'</div></div>';
+  }).join('');
+  var aviso='';
+  if(probs.length)aviso='<div class="mini" style="background:#fff4e0;font-size:12px;margin-top:6px"><b>⚠ '+safeText(probs.join(' '))+'</b></div>';
+  else if(t.k>0)aviso='<div class="mini" style="background:#eafaf0;font-size:12px;margin-top:6px"><b>✅ Agua lista.</b> Fruta + agua + tu toque; endulza solo si hace falta.</div>';
+  var resumen=t.k
+    ?'<div style="background:#0d6043;color:#fff;border-radius:12px;padding:11px;margin-bottom:10px">'
+      +'<div style="font-size:22px;font-weight:800">'+t.k+' kcal</div>'
+      +'<div style="font-size:13px;opacity:.9">'+t.p+' g de proteína · '+t.c+' g carbohidratos · '+t.g+' g grasa</div>'
+      +'<div style="font-size:11px;opacity:.8;margin-top:4px">⏱ ~'+t.tiempo+' min · '+t.porciones+' vasos</div>'
+      +(t.partes.length?'<div style="font-size:11px;opacity:.8;margin-top:2px">'+safeText(t.partes.join(' + '))+'</div>':'')
+      +'</div>'
+    :'';
+  var rapidos=AGUA_RAPIDO.map(function(p,i){
+    return '<button class="btn" style="padding:6px 10px;font-size:12px;margin:0 4px 5px 0" onclick="aguaAplicar(aguaRapidoSel('+i+'))">🍋 '+safeText(p.nombre)+' ('+p.tiempo+' min)</button>';
+  }).join('');
+  var guardadas=(state.recetasBuilder||[]).filter(function(x){return x.tipo==='agua';});
+  var guardHTML=guardadas.length
+    ?'<div style="margin-top:10px"><b style="font-size:12px;color:#0d6043">⭐ Mis aguas guardadas ('+guardadas.length+')</b>'
+      +guardadas.slice(0,6).map(function(r){
+        return '<div class="row" style="gap:6px;margin-top:4px;align-items:center;flex-wrap:wrap"><button class="btn" style="flex:1;padding:6px 8px;font-size:11px;text-align:left" onclick="aguaRepetir(&#39;'+r.id+'&#39;)">🔁 '+safeText(r.nombre)+' <span class="muted">'+r.k+' kcal</span></button><button class="btn" style="padding:4px 8px;font-size:11px;color:#b03030" onclick="aguaBorrarGuardada(&#39;'+r.id+'&#39;)">✕</button></div>';
+      }).join('')
+      +'</div>'
+    :'';
+  return resumen
+    +'<div class="mini" style="background:#eef4fb;font-size:12px;margin-bottom:8px"><b>🍋 Aguas rápidas:</b> toca una y ajusta lo que quieras.</div>'
+    +'<div>'+rapidos+'</div>'
+    +'<div style="margin-top:8px">'+cols+'</div>'
+    +aviso
+    +(t.k?aguaPrepHtml():'')
+    +guardHTML;
+}
+function aguaPrepHtml(){
+  var s=_aguaSel(), metodo=s.metodo||'normal', nivel=s.nivel||'rapido';
+  var P=aguaPasos(metodo);
+  var pasos=(nivel==='detallado')?P.detallados:P.rapidos;
+  var botones='<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'
+    +'<button class="btn'+(metodo==='normal'?' primary':'')+'" style="padding:7px 10px;font-size:12px" onclick="aguaSetMetodo(&#39;normal&#39;)">🥤 Normal</button>'
+    +'<button class="btn'+(metodo==='tm5'?' primary':'')+'" style="padding:7px 10px;font-size:12px" onclick="aguaSetMetodo(&#39;tm5&#39;)">🤖 Thermomix</button>'
+    +'<span style="flex:1"></span>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="aguaSetNivel(&#39;'+(nivel==='rapido'?'detallado':'rapido')+'&#39;)">'+(nivel==='rapido'?'👨‍🍳 Pasos detallados':'⚡ Pasos rápidos')+'</button>'
+    +'</div>';
+  var lista='<ol style="margin:8px 0 0 18px;padding:0">'+pasos.map(function(p){return '<li style="margin-bottom:5px;font-size:13px">'+safeText(p).replace(/\n/g,'<br>')+'</li>';}).join('')+'</ol>';
+  var acciones='<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="aguaCopiar()">📋 Copiar</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="aguaCompartir()">📤 Compartir</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="aguaGuardar()">⭐ Guardar</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="aguaALista()">🛒 Lista de compras</button>'
+    +'</div>';
+  return '<div style="margin-top:10px">'
+    +'<button class="btn" style="width:100%;padding:9px;font-size:13px" onclick="aguaVerPrep()">👨‍🍳 Ver preparación '+(s.verPrep?'▴':'▾')+'</button>'
+    +(s.verPrep?'<div id="aguaPrepCuerpo" style="background:#fbfdfc;border:1px solid #d9e3db;border-radius:12px;padding:10px 12px;margin-top:6px">'+botones+lista+acciones+'</div>':'')
+    +'</div>';
+}
+function aguaRefresh(){
+  var b=document.getElementById('aguaBuilderBody');
+  if(b)b.innerHTML=aguaBodyHTML();
+}
+function secArmaAgua(){
+  return '<details class="card" style="margin-top:8px;background:#f2fbf5;border:2px solid #9dd5b4"><summary style="font-weight:800;font-size:16px">🍋 Arma tu agua de sabor</summary>'
+    +'<div style="padding:8px 0">'
+    +'<div class="mini" style="background:#eef2fb;font-size:12px;margin-bottom:10px">'
+    +'<b>👨‍🍳 Cómo hacerlo:</b> escoge fruta, cítrico, toque y endulzante. Miles de aguas distintas — el número gris son las kcal de cada bloque.'
+    +'</div>'
+    +'<div id="aguaBuilderBody">'+aguaBodyHTML()+'</div>'
+    +'</div></details>';
+}
+
+/* ===== 💧 ARMA TU SUERO NATURAL (FASE 3) =====
+   Hidratación rápida segura, sin afirmaciones médicas. Medidas fijas
+   para 1 litro de agua limpia. La fórmula "importante" sigue la medida
+   estándar de rehidratación oral (OMS): 6 cdtas rasas de azúcar
+   (≈2 cdas, 24 g) + ½ cdita de sal (3 g) por litro.
+   Sin modo Thermomix a propósito: para un suero el vaso no aporta nada.
+   Integración futura con Completar fácil vía tipo:'suero' en recetasBuilder. */
+var SUERO_TOT_CFG={base:5,porParte:{},porciones:4};
+var SUERO_PARTES=[
+  {id:'sal',incluirCero:true,t:'1. Sal (medida fija)',ops:[
+    {ing:'sal',nombre:'Sal (pizca ≈ 1 g)',k:0,p:0,c:0,g:0},
+    {ing:'sal',nombre:'Sal (⅓ cdita ≈ 2 g)',k:0,p:0,c:0,g:0},
+    {ing:'sal',nombre:'Sal (½ cdita = 3 g)',k:0,p:0,c:0,g:0},
+    {nombre:'Sin sal',k:0,p:0,c:0,g:0}
+  ]},
+  {id:'azucar',t:'2. Azúcar (medida fija)',ops:[
+    {ing:'azucar',nombre:'Azúcar 1 cda (12 g)',k:48,p:0,c:12,g:0},
+    {ing:'azucar',nombre:'Azúcar 2 cdas (24 g)',k:96,p:0,c:24,g:0},
+    {ing:'azucar',nombre:'Azúcar 3 cdas (36 g)',k:144,p:0,c:36,g:0},
+    {nombre:'Sin azúcar',k:0,p:0,c:0,g:0}
+  ]},
+  {id:'extra',multi:true,t:'3. Extras (elige 1 o más)',ops:[
+    {ing:'limon'},{ing:'naranja'},{ing:'aguaCoco'},{ing:'menta'}
+  ]},
+  {id:'uso',t:'4. ¿Para qué lo quieres?',ops:[
+    {nombre:'Hidratación cotidiana',k:0,p:0,c:0,g:0},
+    {nombre:'Calor o trabajo físico',k:0,p:0,c:0,g:0},
+    {nombre:'Deshidratación importante',k:0,p:0,c:0,g:0}
+  ]}
+];
+var SUERO_RAPIDO=[
+  {nombre:'Suero ligero (diario)',sel:{sal:{i:0,n:1},azucar:{i:0,n:1},extra:[{i:0,n:1}],uso:{i:0,n:1}}},
+  {nombre:'Suero para calor o trabajo',sel:{sal:{i:1,n:1},azucar:{i:1,n:1},extra:[{i:0,n:1},{i:2,n:1}],uso:{i:1,n:1}}},
+  {nombre:'Suero oral casero (OMS)',sel:{sal:{i:2,n:1},azucar:{i:1,n:1},extra:[],uso:{i:2,n:1}}},
+  {nombre:'Agua con electrolitos (sin azúcar)',sel:{sal:{i:1,n:1},azucar:{i:3,n:1},extra:[{i:0,n:1},{i:2,n:1}],uso:{i:1,n:1}}},
+  {nombre:'Agua de limón con pizca de sal',sel:{sal:{i:0,n:1},azucar:{i:3,n:1},extra:[{i:0,n:1}],uso:{i:0,n:1}}},
+  {nombre:'Suero de naranja',sel:{sal:{i:0,n:1},azucar:{i:0,n:1},extra:[{i:1,n:1}],uso:{i:0,n:1}}}
+];
+var SUERO_PREP={
+  azucar:{pre:'Mide el azúcar con cuchara rasa (no colmada).',
+    normal:{cuando:'sazon',texto:'Disuelve el azúcar por completo: no deben verse cristales.'}},
+  sal:{pre:'Mide la sal con cucharita rasa.',
+    normal:{cuando:'sazon',texto:'Agrega la sal y disuélvela bien.'}},
+  limon:{pre:'Exprime el limón.',
+    normal:{cuando:'jugo',texto:'Agrega el jugo de ½ limón (≈15 ml).'}},
+  naranja:{pre:'Exprime la naranja.',
+    normal:{cuando:'jugo',texto:'Agrega el jugo de 1 naranja (≈60 ml).'}},
+  aguaCoco:{pre:null,
+    normal:{cuando:'medio',texto:'Agrega 1 taza (240 ml) de agua de coco: 760 ml de agua + 240 ml de coco = 1 litro.'}},
+  menta:{pre:null,
+    normal:{cuando:'servir',texto:'Agrega las hojas de menta (opcional).'}}
+};
+var SUERO_PASOS_TPL={
+  emoji:'💧',prefijo:'Suero: ',lblN:'💧 Normal',lblT:'🤖 Thermomix',porcionesTxt:'vasos',
+  totCfg:SUERO_TOT_CFG,tipo:'suero',alertaVacio:'Arma primero tu suero.',guardarToast:'⭐ Suero guardado en Mis recetas',shareTitle:'Mi suero',
+  aviso:'⚠ Este suero no sustituye atención médica. Ante vómito o diarrea intensa, fiebre o signos graves, busca ayuda médica; en menores de 5 años consulta antes de usarlo.',
+  liqN:'Mide 1 litro de agua limpia (hervida o de garrafón).',
+  liqT:'Vierte 1 litro de agua limpia en un recipiente limpio.',
+  sofN:null,sofritoT:null,aceiteT:null,varomaP:null,
+  remN:'Mezcla hasta disolver por completo. Bebe a sorbos durante el día; refrigéralo y consúmelo en 24 h.',
+  remT:'Mezcla hasta disolver por completo. Bebe a sorbos durante el día; refrigéralo y consúmelo en 24 h.',
+  usaVaroma:function(){return false;},
+  rapN:function(picos,servir){
+    var r=[];
+    r.push(picos.length?picos.join(' '):'Mide el azúcar y la sal con medidas rasas.');
+    r.push('Mide 1 litro de agua limpia (hervida o de garrafón).');
+    r.push('Disuelve todo por completo; agrega el cítrico si usas.');
+    r.push('Bebe a sorbos durante el día; refrigera (dura 24 h).');
+    return r;
+  },
+  rapT:['Mide 1 litro de agua limpia en un recipiente limpio.','Disuelve el azúcar y la sal con medidas rasas.','Agrega el cítrico y mezcla hasta disolver.','Bebe a sorbos durante el día; refrigera (dura 24 h).']
+};
+function _sueroSel(){ return builderSel('sueroBuilder'); }
+function sueroTotales(){ return builderTotales(BUILDER_INGREDIENTES,SUERO_PARTES,_sueroSel(),SUERO_TOT_CFG); }
+function sueroValida(){
+  var s=_sueroSel(), p=[];
+  var uso=s.uso&&SUERO_PARTES[3].ops[s.uso.i]?s.uso.i:0;
+  var tieneSal=!!(s.sal&&SUERO_PARTES[0].ops[s.sal.i]&&SUERO_PARTES[0].ops[s.sal.i].ing);
+  var tieneAzucar=!!(s.azucar&&SUERO_PARTES[1].ops[s.azucar.i]&&SUERO_PARTES[1].ops[s.azucar.i].ing);
+  if(uso===2){
+    if(!tieneSal||s.sal.i<2)p.push('Para deshidratación importante usa la sal completa (½ cdita por litro).');
+    if(!tieneAzucar||s.azucar.i<1)p.push('Para deshidratación importante usa el azúcar completo (2 cdas por litro).');
+  }else if(uso===1){
+    if(!tieneSal&&!tieneAzucar)p.push('Para calor/trabajo agrega al menos sal o azúcar.');
+  }
+  return p;
+}
+function sueroGuia(i){
+  if(i===2)return '<div class="mini" style="background:#fff4e0;font-size:12px;margin-bottom:8px"><b>⚠ Deshidratación importante:</b> usa la fórmula estándar de rehidratación oral (OMS): <b>6 cucharaditas rasas de azúcar (≈2 cucharadas, 24 g) y ½ cucharadita de sal (3 g) por litro</b> de agua limpia. <b>No sustituye atención médica:</b> ante vómito o diarrea intensa, fiebre o signos graves, busca ayuda médica; en menores de 5 años consulta antes de usarlo.</div>';
+  if(i===1)return '<div class="mini" style="background:#eef4fb;font-size:12px;margin-bottom:8px"><b>☀️ Para calor o trabajo físico:</b> toma un vaso cada 20-30 minutos de actividad intensa y prepara 1 litro por turno. <b>No es una fórmula de rehidratación médica:</b> si hay vómito, diarrea intensa o fiebre, usa la opción <b>"Deshidratación importante"</b> de abajo y busca atención médica.</div>';
+  return '<div class="mini" style="background:#eafaf0;font-size:12px;margin-bottom:8px"><b>💧 Para el día a día:</b> el agua simple es suficiente la mayor parte del tiempo; este suero ayuda cuando sudaste mucho, comiste poco o hace mucho calor. Para vómito o diarrea intensa elige <b>"Deshidratación importante"</b> de abajo.</div>';
+}
+function sueroElegir(parteId,i){ return builderElegir(BUILDER_INGREDIENTES,SUERO_PARTES,'sueroBuilder',parteId,i,sueroRefresh); }
+function sueroMas(parteId,i){ return builderMas(BUILDER_INGREDIENTES,SUERO_PARTES,'sueroBuilder',parteId,i,sueroRefresh); }
+function sueroMenos(parteId,i){ return builderMenos(BUILDER_INGREDIENTES,SUERO_PARTES,'sueroBuilder',parteId,i,sueroRefresh); }
+function sueroIngSeleccion(){ return builderIngSeleccion(BUILDER_INGREDIENTES,SUERO_PARTES,_sueroSel()); }
+function sueroPasos(metodo){
+  var P=builderPasos(BUILDER_INGREDIENTES,SUERO_PARTES,SUERO_PREP,_sueroSel(),metodo,SUERO_PASOS_TPL);
+  // Cantidades de líquido EXACTAS: el agua de coco sustituye parte del agua.
+  var usaCoco=sueroIngSeleccion().some(function(x){return x.ing==='aguaCoco';});
+  P.detallados=P.detallados.map(function(p){
+    if(p===SUERO_PASOS_TPL.liqN)return usaCoco?'Mide 760 ml de agua limpia (hervida o de garrafón).':'Mide 1 litro (1000 ml) de agua limpia (hervida o de garrafón).';
+    return p;
+  });
+  P.rapidos=P.rapidos.map(function(p){
+    if(p===SUERO_PASOS_TPL.liqN)return usaCoco?'Mide 760 ml de agua limpia (hervida o de garrafón).':'Mide 1 litro (1000 ml) de agua limpia (hervida o de garrafón).';
+    return p;
+  });
+  return P;
+}
+function sueroAplicar(sel){ return builderAplicar(SUERO_PARTES,'sueroBuilder',sel,sueroRefresh); }
+function sueroRapidoSel(i){ return (SUERO_RAPIDO[i]||{}).sel||null; }
+function sueroVerPrep(){ return builderVerPrep('sueroBuilder',sueroRefresh); }
+function sueroSetMetodo(m){ return builderSetMetodo('sueroBuilder',m,sueroRefresh); }
+function sueroSetNivel(n){ return builderSetNivel('sueroBuilder',n,sueroRefresh); }
+function sueroTextoPrep(metodo,detalle){ return builderTextoPrep(BUILDER_INGREDIENTES,SUERO_PARTES,SUERO_PREP,_sueroSel(),metodo,detalle,SUERO_PASOS_TPL,SUERO_TOT_CFG); }
+function sueroCopiar(){ return builderCopiar(BUILDER_INGREDIENTES,SUERO_PARTES,SUERO_PREP,_sueroSel(),SUERO_PASOS_TPL); }
+function sueroCompartir(){ return builderCompartir(BUILDER_INGREDIENTES,SUERO_PARTES,SUERO_PREP,_sueroSel(),SUERO_PASOS_TPL); }
+function sueroGuardar(){ return builderGuardar(BUILDER_INGREDIENTES,SUERO_PARTES,'sueroBuilder',SUERO_PASOS_TPL,sueroRefresh); }
+function sueroRepetir(id){ return builderRepetir('sueroBuilder',id,sueroAplicar,sueroRefresh); }
+function sueroBorrarGuardada(id){ return builderBorrarGuardada(id,sueroRefresh); }
+function sueroALista(){ return builderALista(BUILDER_INGREDIENTES,_sueroSel(),SUERO_PARTES); }
+function sueroBodyHTML(){
+  var s=_sueroSel(), t=sueroTotales(), probs=sueroValida();
+  var uso=s.uso&&SUERO_PARTES[3].ops[s.uso.i]?s.uso.i:0;
+  // Sin controles +/− a propósito: las medidas de sal/azúcar son fijas y seguras.
+  var cols=SUERO_PARTES.map(function(pt){
+    var botones=pt.ops.map(function(op,i){
+      var v=builderOp(pt,op,BUILDER_INGREDIENTES); if(!v)return '';
+      var lista=Array.isArray(s[pt.id])?s[pt.id]:[s[pt.id]];
+      var on=pt.multi?!!(lista.find(function(o){return o&&o.i===i;})):!!(s[pt.id]&&s[pt.id].i===i);
+      return '<div style="display:inline-block;margin:0 4px 5px 0">'
+        +'<button class="btn'+(on?' primary':'')+'" style="padding:7px 9px;font-size:12px" onclick="sueroElegir(&#39;'+pt.id+'&#39;,'+i+')">'
+        +safeText(v.n)+(v.k?' <span style="opacity:.7">'+v.k+'</span>':'')
+        +'</button></div>';
+    }).join('');
+    return '<div style="margin-bottom:9px">'
+      +'<div style="font-weight:800;font-size:12px;color:#0d6043;margin-bottom:4px">'+safeText(pt.t)+'</div>'
+      +'<div>'+botones+'</div></div>';
+  }).join('');
+  var aviso='';
+  if(probs.length)aviso='<div class="mini" style="background:#fff4e0;font-size:12px;margin-top:6px"><b>⚠ '+safeText(probs.join(' '))+'</b></div>';
+  else if(t.k>0)aviso='<div class="mini" style="background:#eafaf0;font-size:12px;margin-top:6px"><b>✅ Suero listo.</b> Las medidas son las justas para 1 litro de agua limpia.</div>';
+  var resumen=t.k
+    ?'<div style="background:#0d6043;color:#fff;border-radius:12px;padding:11px;margin-bottom:10px">'
+      +'<div style="font-size:22px;font-weight:800">'+t.k+' kcal</div>'
+      +'<div style="font-size:13px;opacity:.9">'+t.p+' g de proteína · '+t.c+' g carbohidratos (azúcares) · '+t.g+' g grasa</div>'
+      +'<div style="font-size:11px;opacity:.8;margin-top:4px">⏱ ~'+t.tiempo+' min · ≈ 1 litro (4 vasos de 250 ml)</div>'
+      +'<div style="font-size:11px;opacity:.9;margin-top:2px">🥤 Por vaso (250 ml): ~'+Math.round(t.k/t.porciones)+' kcal · '+Math.round(t.c/t.porciones*10)/10+' g de azúcares</div>'
+      +(t.partes.length?'<div style="font-size:11px;opacity:.8;margin-top:2px">'+safeText(t.partes.join(' + '))+'</div>':'')
+      +'</div>'
+    :'';
+  var rapidos=SUERO_RAPIDO.map(function(p,i){
+    return '<button class="btn" style="padding:6px 10px;font-size:12px;margin:0 4px 5px 0" onclick="sueroAplicar(sueroRapidoSel('+i+'))">💧 '+safeText(p.nombre)+'</button>';
+  }).join('');
+  var guardadas=(state.recetasBuilder||[]).filter(function(x){return x.tipo==='suero';});
+  var guardHTML=guardadas.length
+    ?'<div style="margin-top:10px"><b style="font-size:12px;color:#0d6043">⭐ Mis sueros guardados ('+guardadas.length+')</b>'
+      +guardadas.slice(0,6).map(function(r){
+        return '<div class="row" style="gap:6px;margin-top:4px;align-items:center;flex-wrap:wrap"><button class="btn" style="flex:1;padding:6px 8px;font-size:11px;text-align:left" onclick="sueroRepetir(&#39;'+r.id+'&#39;)">🔁 '+safeText(r.nombre)+' <span class="muted">'+r.k+' kcal</span></button><button class="btn" style="padding:4px 8px;font-size:11px;color:#b03030" onclick="sueroBorrarGuardada(&#39;'+r.id+'&#39;)">✕</button></div>';
+      }).join('')
+      +'</div>'
+    :'';
+  return resumen
+    +sueroGuia(uso)
+    +'<div class="mini" style="background:#eef4fb;font-size:12px;margin-bottom:8px"><b>💧 Sueros rápidos:</b> toca uno y ajusta lo que quieras.</div>'
+    +'<div>'+rapidos+'</div>'
+    +'<div style="margin-top:8px">'+cols+'</div>'
+    +aviso
+    +(t.k?sueroPrepHtml():'')
+    +guardHTML;
+}
+function sueroPrepHtml(){
+  var s=_sueroSel(), nivel=s.nivel||'rapido';
+  var P=sueroPasos('normal'); // sin Thermomix: para un suero el vaso no aporta nada
+  var pasos=(nivel==='detallado')?P.detallados:P.rapidos;
+  var botones='<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="sueroSetNivel(&#39;'+(nivel==='rapido'?'detallado':'rapido')+'&#39;)">'+(nivel==='rapido'?'👨‍🍳 Pasos detallados':'⚡ Pasos rápidos')+'</button>'
+    +'</div>';
+  var lista='<ol style="margin:8px 0 0 18px;padding:0">'+pasos.map(function(p){return '<li style="margin-bottom:5px;font-size:13px">'+safeText(p).replace(/\n/g,'<br>')+'</li>';}).join('')+'</ol>';
+  var acciones='<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="sueroCopiar()">📋 Copiar</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="sueroCompartir()">📤 Compartir</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="sueroGuardar()">⭐ Guardar</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="sueroALista()">🛒 Lista de compras</button>'
+    +'</div>';
+  return '<div style="margin-top:10px">'
+    +'<button class="btn" style="width:100%;padding:9px;font-size:13px" onclick="sueroVerPrep()">👨‍🍳 Ver preparación '+(s.verPrep?'▴':'▾')+'</button>'
+    +(s.verPrep?'<div id="sueroPrepCuerpo" style="background:#fbfdfc;border:1px solid #d9e3db;border-radius:12px;padding:10px 12px;margin-top:6px">'+botones+lista+acciones+'</div>':'')
+    +'</div>';
+}
+function sueroRefresh(){
+  var b=document.getElementById('sueroBuilderBody');
+  if(b)b.innerHTML=sueroBodyHTML();
+}
+function secArmaSuero(){
+  return '<details class="card" style="margin-top:8px;background:#f2fbf5;border:2px solid #9dd5b4"><summary style="font-weight:800;font-size:16px">💧 Suero natural (hidratación rápida)</summary>'
+    +'<div style="padding:8px 0">'
+    +'<div class="mini" style="background:#eef2fb;font-size:12px;margin-bottom:10px">'
+    +'<b>👨‍🍳 Cómo hacerlo:</b> elige sal, azúcar, extras y para qué lo quieres. Todas las medidas son para <b>1 litro de agua limpia</b>; las cantidades son fijas y seguras, sin afirmaciones médicas.'
+    +'</div>'
+    +'<div id="sueroBuilderBody">'+sueroBodyHTML()+'</div>'
+    +'</div></details>';
+}
+
+/* ===== ☕ ARMA TU CAFÉ (FASE 4) =====
+   Mismo motor que caldo/agua/suero. Sin afirmaciones sobre cafeína:
+   solo kcal y preparación. Thermomix SÍ aporta aquí (calentar la leche
+   a 60°C sin que hierva). */
+var CAFE_TOT_CFG={base:5,porParte:{},porciones:1};
+var CAFE_PARTES=[
+  {id:'cafe',t:'1. Café base (elige 1)',ops:[
+    {ing:'cafeMolido',nombre:'Café cargado (240 ml)',k:2,p:0,c:0,g:0},
+    {ing:'cafeMolido',nombre:'Espresso doble (60 ml)',k:5,p:0,c:1,g:0}
+  ]},
+  {id:'leche',t:'2. Leche',ops:[
+    {ing:'lecheEntera'},{ing:'leche2'},{ing:'lecheDescremada'},{ing:'lecheAlmendra'},
+    {nombre:'Café solo (sin leche)',k:0,p:0,c:0,g:0}
+  ]},
+  {id:'dulce',multi:true,t:'3. Dulce (elige 1 o más)',ops:[
+    {ing:'azucar'},{ing:'miel'},{ing:'lecheCondensada'},{ing:'vainilla'},{ing:'canela'},{ing:'cacao'}
+  ]},
+  {id:'extra',multi:true,t:'4. Extra (elige 1 o más)',ops:[
+    {ing:'crema'},{ing:'proteina'}
+  ]}
+];
+var CAFE_RAPIDO=[
+  {nombre:'Café solo (negro)',sel:{cafe:{i:0,n:1},leche:{i:4,n:1},dulce:[],extra:[]}},
+  {nombre:'Café con leche',sel:{cafe:{i:0,n:1},leche:{i:0,n:1},dulce:[{i:0,n:1}],extra:[]}},
+  {nombre:'Latte casero',sel:{cafe:{i:1,n:1},leche:{i:0,n:1},dulce:[],extra:[]}},
+  {nombre:'Mocha',sel:{cafe:{i:0,n:1},leche:{i:0,n:1},dulce:[{i:0,n:1},{i:5,n:1}],extra:[]}},
+  {nombre:'Café con miel y canela',sel:{cafe:{i:0,n:1},leche:{i:4,n:1},dulce:[{i:1,n:1},{i:4,n:1}],extra:[]}},
+  {nombre:'Café con leche y proteína',sel:{cafe:{i:0,n:1},leche:{i:1,n:1},dulce:[{i:0,n:1}],extra:[{i:1,n:1}]}}
+];
+var CAFE_PREP={
+  cafeMolido:{pre:'Prepara el café (cargado de 240 ml o espresso doble).',normal:{},tm5:{}},
+  lecheEntera:{pre:'Calienta la leche sin que hierva.',
+    normal:{cuando:'medio',texto:'Agrega la leche caliente y mezcla.'},
+    tm5:{cubrePre:true,accion:'Calienta la leche en el vaso.\n4 min / 60°C / vel 2'}},
+  leche2:{pre:'Calienta la leche sin que hierva.',
+    normal:{cuando:'medio',texto:'Agrega la leche caliente y mezcla.'},
+    tm5:{cubrePre:true,accion:'Calienta la leche en el vaso.\n4 min / 60°C / vel 2'}},
+  lecheDescremada:{pre:'Calienta la leche sin que hierva.',
+    normal:{cuando:'medio',texto:'Agrega la leche caliente y mezcla.'},
+    tm5:{cubrePre:true,accion:'Calienta la leche en el vaso.\n4 min / 60°C / vel 2'}},
+  lecheAlmendra:{pre:'Calienta la leche de almendra sin que hierva.',
+    normal:{cuando:'medio',texto:'Agrega la leche caliente y mezcla.'},
+    tm5:{cubrePre:true,accion:'Calienta la leche en el vaso.\n4 min / 60°C / vel 2'}},
+  azucar:{pre:null,
+    normal:{cuando:'sazon',texto:'Disuelve el azúcar.'},
+    tm5:{accion:'Añade el azúcar.\n5 seg / vel 2'}},
+  miel:{pre:null,
+    normal:{cuando:'sazon',texto:'Disuelve la miel.'},
+    tm5:{accion:'Añade la miel.\n5 seg / vel 2'}},
+  lecheCondensada:{pre:null,
+    normal:{cuando:'sazon',texto:'Agrega la leche condensada y mezcla.'},
+    tm5:{accion:'Añade la leche condensada.\n10 seg / vel 2'}},
+  vainilla:{pre:null,
+    normal:{cuando:'sazon',texto:'Agrega la vainilla.'},
+    tm5:{accion:'Añade la vainilla.\n5 seg / vel 2'}},
+  canela:{pre:null,
+    normal:{cuando:'servir',texto:'Espolvorea la canela al final.'},
+    tm5:{accion:null,notaTM5:'La canela se espolvorea al final (no va al vaso).'}},
+  cacao:{pre:null,
+    normal:{cuando:'sazon',texto:'Mezcla el cacao con un chorrito de leche fría antes de agregarlo (así no hace grumos).'},
+    tm5:{accion:'Añade el cacao.\n10 seg / vel 3'}},
+  crema:{pre:null,
+    normal:{cuando:'servir',texto:'Agrega la crema al final (o bátela).'},
+    tm5:{accion:null,notaTM5:'La crema se agrega al final (no va al vaso).'}},
+  proteina:{pre:null,
+    normal:{cuando:'sazon',texto:'Mezcla la proteína con un poco de leche fría y agrégala (nunca con líquido hirviendo).'},
+    tm5:{accion:'Añade la proteína.\n10 seg / vel 3'}}
+};
+var CAFE_PASOS_TPL={
+  emoji:'☕',prefijo:'Café: ',lblN:'☕ Normal',lblT:'🤖 Thermomix',porcionesTxt:'taza',
+  totCfg:CAFE_TOT_CFG,tipo:'cafe',alertaVacio:'Arma primero tu café.',guardarToast:'⭐ Café guardado en Mis recetas',shareTitle:'Mi café',
+  liqN:'Ten la taza lista.',
+  liqT:'Ten la taza lista.',
+  sofN:null,sofritoT:null,aceiteT:null,varomaP:null,
+  remN:'Mezcla todo y sirve caliente.',
+  remT:'Vierte el café en la taza con la leche caliente y mezcla bien.',
+  usaVaroma:function(){return false;},
+  rapN:function(picos,servir){
+    var r=[];
+    r.push(picos.length?picos.join(' '):'Prepara tu café.');
+    r.push('Calienta la leche sin que hierva (si usas).');
+    r.push('Mezcla el dulce y los extras en la taza.');
+    if(servir.length)r.push('Termina con: '+servir.join(' '));
+    return r;
+  },
+  rapT:['Prepara tu café y ten la taza lista.','Calienta la leche: 4 min / 60°C / vel 2 (si usas).','Mezcla dulce y extras; vierte el café y sirve.']
+};
+function _cafeSel(){ return builderSel('cafeBuilder'); }
+function cafeTotales(){ return builderTotales(BUILDER_INGREDIENTES,CAFE_PARTES,_cafeSel(),CAFE_TOT_CFG); }
+function cafeValida(){
+  var s=_cafeSel();
+  var p=[];
+  var op=s.cafe&&CAFE_PARTES[0].ops[s.cafe.i];
+  if(!op)p.push('Elige tu café base.');
+  return p;
+}
+function cafeElegir(parteId,i){ return builderElegir(BUILDER_INGREDIENTES,CAFE_PARTES,'cafeBuilder',parteId,i,cafeRefresh); }
+function cafeMas(parteId,i){ return builderMas(BUILDER_INGREDIENTES,CAFE_PARTES,'cafeBuilder',parteId,i,cafeRefresh); }
+function cafeMenos(parteId,i){ return builderMenos(BUILDER_INGREDIENTES,CAFE_PARTES,'cafeBuilder',parteId,i,cafeRefresh); }
+function cafeIngSeleccion(){ return builderIngSeleccion(BUILDER_INGREDIENTES,CAFE_PARTES,_cafeSel()); }
+function cafePasos(metodo){ return builderPasos(BUILDER_INGREDIENTES,CAFE_PARTES,CAFE_PREP,_cafeSel(),metodo,CAFE_PASOS_TPL); }
+function cafeAplicar(sel){ return builderAplicar(CAFE_PARTES,'cafeBuilder',sel,cafeRefresh); }
+function cafeRapidoSel(i){ return (CAFE_RAPIDO[i]||{}).sel||null; }
+function cafeVerPrep(){ return builderVerPrep('cafeBuilder',cafeRefresh); }
+function cafeSetMetodo(m){ return builderSetMetodo('cafeBuilder',m,cafeRefresh); }
+function cafeSetNivel(n){ return builderSetNivel('cafeBuilder',n,cafeRefresh); }
+function cafeTextoPrep(metodo,detalle){ return builderTextoPrep(BUILDER_INGREDIENTES,CAFE_PARTES,CAFE_PREP,_cafeSel(),metodo,detalle,CAFE_PASOS_TPL,CAFE_TOT_CFG); }
+function cafeCopiar(){ return builderCopiar(BUILDER_INGREDIENTES,CAFE_PARTES,CAFE_PREP,_cafeSel(),CAFE_PASOS_TPL); }
+function cafeCompartir(){ return builderCompartir(BUILDER_INGREDIENTES,CAFE_PARTES,CAFE_PREP,_cafeSel(),CAFE_PASOS_TPL); }
+function cafeGuardar(){ return builderGuardar(BUILDER_INGREDIENTES,CAFE_PARTES,'cafeBuilder',CAFE_PASOS_TPL,cafeRefresh); }
+function cafeRepetir(id){ return builderRepetir('cafeBuilder',id,cafeAplicar,cafeRefresh); }
+function cafeBorrarGuardada(id){ return builderBorrarGuardada(id,cafeRefresh); }
+function cafeALista(){ return builderALista(BUILDER_INGREDIENTES,_cafeSel(),CAFE_PARTES); }
+function cafeBodyHTML(){
+  var s=_cafeSel(), t=cafeTotales(), probs=cafeValida();
+  var cols=CAFE_PARTES.map(function(pt){
+    var botones=pt.ops.map(function(op,i){
+      var v=builderOp(pt,op,BUILDER_INGREDIENTES); if(!v)return '';
+      var lista=Array.isArray(s[pt.id])?s[pt.id]:[s[pt.id]];
+      var on=pt.multi?!!(lista.find(function(o){return o&&o.i===i;})):!!(s[pt.id]&&s[pt.id].i===i);
+      var oSel=pt.multi?lista.find(function(o){return o&&o.i===i;}):(on?s[pt.id]:null);
+      var ctrl='';
+      if(on&&v.k>0&&oSel){
+        ctrl='<span style="display:inline-flex;align-items:center;gap:6px;margin-left:6px;vertical-align:middle">'
+          +'<button class="btn" style="padding:2px 9px;font-size:16px;line-height:1;min-width:30px" onclick="event.stopPropagation();cafeMenos(&#39;'+pt.id+'&#39;,'+i+')">−</button>'
+          +'<b style="font-size:13px;min-width:16px;text-align:center">'+(oSel.n||1)+'</b>'
+          +'<button class="btn" style="padding:2px 9px;font-size:16px;line-height:1;min-width:30px" onclick="event.stopPropagation();cafeMas(&#39;'+pt.id+'&#39;,'+i+')">+</button>'
+          +'</span>';
+      }
+      return '<div style="display:inline-block;margin:0 4px 5px 0">'
+        +'<button class="btn'+(on?' primary':'')+'" style="padding:7px 9px;font-size:12px" onclick="cafeElegir(&#39;'+pt.id+'&#39;,'+i+')">'
+        +safeText(v.n)+(v.k?' <span style="opacity:.7">'+v.k+'</span>':'')
+        +'</button>'+ctrl+'</div>';
+    }).join('');
+    return '<div style="margin-bottom:9px">'
+      +'<div style="font-weight:800;font-size:12px;color:#0d6043;margin-bottom:4px">'+safeText(pt.t)+'</div>'
+      +'<div>'+botones+'</div></div>';
+  }).join('');
+  var aviso='';
+  if(probs.length)aviso='<div class="mini" style="background:#fff4e0;font-size:12px;margin-top:6px"><b>⚠ '+safeText(probs.join(' '))+'</b></div>';
+  else if(t.k>0)aviso='<div class="mini" style="background:#eafaf0;font-size:12px;margin-top:6px"><b>✅ Café listo.</b> Combina base, leche y dulce a tu gusto.</div>';
+  var resumen=t.k
+    ?'<div style="background:#0d6043;color:#fff;border-radius:12px;padding:11px;margin-bottom:10px">'
+      +'<div style="font-size:22px;font-weight:800">'+t.k+' kcal</div>'
+      +'<div style="font-size:13px;opacity:.9">'+t.p+' g de proteína · '+t.c+' g carbohidratos · '+t.g+' g grasa</div>'
+      +'<div style="font-size:11px;opacity:.8;margin-top:4px">⏱ ~'+t.tiempo+' min · '+t.porciones+' taza</div>'
+      +(t.partes.length?'<div style="font-size:11px;opacity:.8;margin-top:2px">'+safeText(t.partes.join(' + '))+'</div>':'')
+      +'</div>'
+    :'';
+  var rapidos=CAFE_RAPIDO.map(function(p,i){
+    return '<button class="btn" style="padding:6px 10px;font-size:12px;margin:0 4px 5px 0" onclick="cafeAplicar(cafeRapidoSel('+i+'))">☕ '+safeText(p.nombre)+'</button>';
+  }).join('');
+  var guardadas=(state.recetasBuilder||[]).filter(function(x){return x.tipo==='cafe';});
+  var guardHTML=guardadas.length
+    ?'<div style="margin-top:10px"><b style="font-size:12px;color:#0d6043">⭐ Mis cafés guardados ('+guardadas.length+')</b>'
+      +guardadas.slice(0,6).map(function(r){
+        return '<div class="row" style="gap:6px;margin-top:4px;align-items:center;flex-wrap:wrap"><button class="btn" style="flex:1;padding:6px 8px;font-size:11px;text-align:left" onclick="cafeRepetir(&#39;'+r.id+'&#39;)">🔁 '+safeText(r.nombre)+' <span class="muted">'+r.k+' kcal</span></button><button class="btn" style="padding:4px 8px;font-size:11px;color:#b03030" onclick="cafeBorrarGuardada(&#39;'+r.id+'&#39;)">✕</button></div>';
+      }).join('')
+      +'</div>'
+    :'';
+  return resumen
+    +'<div class="mini" style="background:#eef4fb;font-size:12px;margin-bottom:8px"><b>☕ Cafés rápidos:</b> toca uno y ajusta lo que quieras.</div>'
+    +'<div>'+rapidos+'</div>'
+    +'<div style="margin-top:8px">'+cols+'</div>'
+    +aviso
+    +(t.k?cafePrepHtml():'')
+    +guardHTML;
+}
+function cafePrepHtml(){
+  var s=_cafeSel(), metodo=s.metodo||'normal', nivel=s.nivel||'rapido';
+  var P=cafePasos(metodo);
+  var pasos=(nivel==='detallado')?P.detallados:P.rapidos;
+  var botones='<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'
+    +'<button class="btn'+(metodo==='normal'?' primary':'')+'" style="padding:7px 10px;font-size:12px" onclick="cafeSetMetodo(&#39;normal&#39;)">☕ Normal</button>'
+    +'<button class="btn'+(metodo==='tm5'?' primary':'')+'" style="padding:7px 10px;font-size:12px" onclick="cafeSetMetodo(&#39;tm5&#39;)">🤖 Thermomix</button>'
+    +'<span style="flex:1"></span>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="cafeSetNivel(&#39;'+(nivel==='rapido'?'detallado':'rapido')+'&#39;)">'+(nivel==='rapido'?'👨‍🍳 Pasos detallados':'⚡ Pasos rápidos')+'</button>'
+    +'</div>';
+  var lista='<ol style="margin:8px 0 0 18px;padding:0">'+pasos.map(function(p){return '<li style="margin-bottom:5px;font-size:13px">'+safeText(p).replace(/\n/g,'<br>')+'</li>';}).join('')+'</ol>';
+  var acciones='<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="cafeCopiar()">📋 Copiar</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="cafeCompartir()">📤 Compartir</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="cafeGuardar()">⭐ Guardar</button>'
+    +'<button class="btn" style="padding:7px 10px;font-size:12px" onclick="cafeALista()">🛒 Lista de compras</button>'
+    +'</div>';
+  return '<div style="margin-top:10px">'
+    +'<button class="btn" style="width:100%;padding:9px;font-size:13px" onclick="cafeVerPrep()">👨‍🍳 Ver preparación '+(s.verPrep?'▴':'▾')+'</button>'
+    +(s.verPrep?'<div id="cafePrepCuerpo" style="background:#fbfdfc;border:1px solid #d9e3db;border-radius:12px;padding:10px 12px;margin-top:6px">'+botones+lista+acciones+'</div>':'')
+    +'</div>';
+}
+function cafeRefresh(){
+  var b=document.getElementById('cafeBuilderBody');
+  if(b)b.innerHTML=cafeBodyHTML();
+}
+function secArmaCafe(){
+  return '<details class="card" style="margin-top:8px;background:#f2fbf5;border:2px solid #9dd5b4"><summary style="font-weight:800;font-size:16px">☕ Arma tu café</summary>'
+    +'<div style="padding:8px 0">'
+    +'<div class="mini" style="background:#eef2fb;font-size:12px;margin-bottom:10px">'
+    +'<b>👨‍🍳 Cómo hacerlo:</b> elige base, leche, dulce y extras. Los números grises son las kcal de cada bloque. Sin consejos sobre cafeína: aquí solo cuentas kcal y preparación.'
+    +'</div>'
+    +'<div id="cafeBuilderBody">'+cafeBodyHTML()+'</div>'
+    +'</div></details>';
+}
+
 function secRecetas(){
   let _tab=window._recTab||'todas';
   let _favN=(state.recipeFavorites&&state.recipeFavorites.length)?' ('+state.recipeFavorites.length+')':'';
@@ -8366,6 +9617,10 @@ function secRecetas(){
   <div class="r2-search">
     <div id="miCocinaBox">${cpRenderMiCocina()}</div>
     ${secArmaLicuado()}
+    ${secArmaCaldo()}
+    ${secArmaAgua()}
+    ${secArmaSuero()}
+    ${secArmaCafe()}
     ${secArmaAderezo()}
     <details class="card" style="background:#f2fbf5;border:2px solid #9dd5b4">
       <summary style="font-weight:800;font-size:16px">🍱 Mi meal prep</summary>

@@ -40,6 +40,14 @@ function t(label, ok, extra) {
   if (ok) { pasadas++; console.log('✓ ' + label + (extra ? ' · ' + extra : '')); }
   else { falladas++; console.log('✗ FALLA ' + label + (extra ? ' · ' + extra : '')); }
 }
+// Hora FIJA dentro del sandbox: completarCtxReal() lee new Date().getHours()
+// y los tests deben ser deterministas (20:00 fijo).
+function pinHour(h) {
+  return class extends Date {
+    constructor(...args) { super(...args); }
+    getHours() { return h; }
+  };
+}
 
 const FIBRA_ESTANDAR = extractVarAssign('var FIBRA_ESTANDAR');
 
@@ -63,6 +71,7 @@ function makeSandbox() {
   });
   const sb = {
     state, window: win, document: doc, safeText: x => String(x == null ? '' : x),
+    Date: pinHour(20), // determinista: sin reloj de pared
     foods: foodsConFibra,
     FIBRA_ESTANDAR: FIBRA_ESTANDAR,
     BEBIDA_FUNCION: extractVarAssign('var BEBIDA_FUNCION'),

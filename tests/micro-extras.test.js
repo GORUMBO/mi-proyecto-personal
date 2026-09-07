@@ -38,8 +38,16 @@ function t(label, ok, extra) {
   if (ok) { pasadas++; console.log('✓ ' + label + (extra ? ' · ' + extra : '')); }
   else { falladas++; console.log('✗ FALLA ' + label + (extra ? ' · ' + extra : '')); }
 }
+// Hora FIJA dentro del sandbox: el motor lee new Date().getHours() y los
+// tests deben ser deterministas (normal 20:00 y madrugada 02:00 explícitas).
+function pinHour(h) {
+  return class extends Date {
+    constructor(...args) { super(...args); }
+    getHours() { return h; }
+  };
+}
 
-function makeSandbox() {
+function makeSandbox(hora) {
   const state = {
     profile: { objetivo: 'ganar peso', proteina: 180, carbos: 400, grasa: 100, llenado: 'rapido' },
     diary: {}, recipeFavorites: [], recetasRecientes: [], evitar: []
@@ -55,6 +63,7 @@ function makeSandbox() {
   };
   const sb = {
     state, window: win, document: doc, safeText: x => String(x == null ? '' : x),
+    Date: pinHour(hora == null ? 20 : hora), // determinista: sin reloj de pared
     // catálogo COMPLETO (109 alimentos): micro-extras como granola/miel/aceite
     // viven en los bloques foods.push, no en el arreglo inicial.
     foods: new Function('const foods=' + HTML.match(/const foods=(\[[\s\S]*?\]);/)[1] + ';' + HTML.match(/foods\.push\(([\s\S]*?)\n\);/g).map(s => s.slice(0, -1) + ';').join('') + 'return foods;')(),
@@ -213,7 +222,9 @@ console.log('== 6 · kcal/cantidad mostradas = registradas (micro) ==');
   // el micro se elige del lote RENDERIZADO (lo que el usuario ve y toca)
   const micro = (sb.window._completarPotExtras || []).find(x => x.isMicro);
   t('hay micro en el lote visible', !!micro, micro && micro.nombre);
-  t('la tarjeta muestra la porción real', html.includes(micro.porcion.texto));
+  // la tarjeta muestra la porción CORTA (completarLineaExtra quita "de <alimento>")
+  const porcionCorta = micro.porcion.texto.replace(/\s+de\s+[^·]*$/, '');
+  t('la tarjeta muestra la porción real', html.includes(porcionCorta), porcionCorta);
   t('la tarjeta muestra las kcal reales', html.includes('+' + Math.round(micro.kcal) + ' kcal'));
   const idx = (sb.window._completarPotExtras || []).indexOf(micro);
   sb.completarPotAgregar(idx);
@@ -244,6 +255,22 @@ console.log('== 7 · Encadenado: dos micros seguidos, faltante baja dos veces ==
     t('resumen acumula 2 filas ✅', (sb.panels.completarPotPanel.innerHTML.match(/✅ /g) || []).length >= 2);
     t('sin repetir entre los dos micros', sb.completarNombreCorto(micro2.nombre) !== sb.completarNombreCorto(micro1.nombre));
   }
+})();
+
+console.log('== 8 · Hora fija: horario normal y madrugada (determinista) ==');
+(function () {
+  const combo = { componentes: [{ tipo: 'alimento', nombre: 'Arroz cocido 1 taza' }, { tipo: 'alimento', nombre: 'Pollo 100g' }], titulo: 'Arroz cocido + Pollo' };
+  [['normal (20:00)', 20], ['madrugada (02:00)', 2]].forEach(([nombre, hora]) => {
+    const sb = makeSandbox(hora);
+    sb.window._completarPotBase = combo;
+    sb.completarPotRender();
+    const lote = sb.window._completarPotExtras || [];
+    t(nombre + ': lote válido con 3 opciones y al menos un micro', lote.length === 3 && lote.some(x => x.isMicro), lote.map(x => x.nombre).join(' · '));
+    const micro = lote.find(x => x.isMicro);
+    const html = sb.panels.completarPotPanel.innerHTML;
+    const porcionCorta = micro ? micro.porcion.texto.replace(/\s+de\s+[^·]*$/, '') : '';
+    t(nombre + ': la tarjeta muestra la porción real del micro', !!micro && html.includes(porcionCorta), porcionCorta);
+  });
 })();
 
 console.log('\n===== RESULTADO: ' + pasadas + ' PASS / ' + falladas + ' FAIL =====');
