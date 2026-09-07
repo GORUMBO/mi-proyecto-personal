@@ -154,6 +154,11 @@ body.dark{--t:#edf5f0;--m:#aebbb4;--b:#405149;--g2:#263d32;background:#17221d;co
 .smart-result-box{background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:10px;margin-top:10px}.smart-result-box b{color:#15704f}
 .mode-bridge.minimal{padding:12px 14px}.mode-bridge.minimal .mode-lanes{display:none}.mode-bridge.minimal .mode-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-top:10px}.mode-bridge.minimal .mode-mini-result:empty{display:none}.mode-bridge.minimal .mode-mini-result{margin-top:10px}.mode-bridge.minimal .smart-result-box{border-left:4px solid #15704f;background:#fbfffc}.mode-mini-hint{font-size:13px;color:#63706a;margin-top:6px}.mode-actions .btn.active-mini{background:#15704f;color:#fff;border-color:#15704f}
 @media(max-width:760px){.quick-add-panel{right:8px;left:8px;top:auto;bottom:145px;transform:none;width:auto}.quick-add-grid{grid-template-columns:1fr 1fr}.mode-actions{grid-template-columns:1fr 1fr}.smart-master-row{grid-template-columns:1fr 1fr}}
+/* Botón ⚡ de extras: "⚡ Agregar extras", en pantallas muy estrechas "⚡ Extras" */
+.pot-btn-corto{display:none}
+@media(max-width:520px){.pot-btn-full{display:none}.pot-btn-corto{display:inline}}
+/* Botón desactivado (carrito con 0 alimentos): claramente inactivo */
+.btn:disabled{opacity:.55;cursor:not-allowed}
 
 /* v41.18 Acceso rápido compacto */
 #quickRail{position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:70;display:grid;gap:8px;background:#ffffffee;border:1px solid var(--b);border-radius:22px;padding:8px;box-shadow:0 10px 30px #0002;backdrop-filter:blur(10px);max-width:min(92vw,360px)}
@@ -1233,9 +1238,9 @@ foods.push(
 ['Verduras mixtas congeladas 1 taza',80,4,15,0,0.55],['Brócoli congelado 1 taza',50,4,10,0,0.60],['Espinaca congelada 1 taza',45,5,7,0,0.55],['Ejotes congelados 1 taza',40,2,8,0,0.55],['Fruta congelada 1 taza',80,1,20,0,0.95],
 ['Comida congelada pollo/arroz',420,22,55,12,3.75],['Burrito congelado',320,12,48,9,1.25],['Pizza congelada 1/4',380,16,45,16,2.50],['Waffles congelados 2 piezas',180,4,30,6,0.80],
 ['Frijoles enlatados 1/2 taza',110,7,20,1,0.45],['Atún en lata agua',120,26,0,1,1.35],['Pollo en lata 100g',120,24,0,2,1.75],['Sopa enlatada 1 taza',180,7,28,4,1.15],['Maíz enlatado 1/2 taza',70,2,15,1,0.45],
-['Cereal americano 1 taza',140,3,30,2,0.55],['Cereal alto en proteína 1 taza',200,15,30,4,1.10],['Granola 1/2 taza',240,6,36,9,0.75],['Avena instantánea paquete',160,4,32,2,0.45],
-['Yogurt griego light 170g',90,15,8,0,1.10],['Yogurt alto en proteína 150g',130,20,9,3,1.45],['Yogurt bebible proteína',170,20,18,3,1.85],['Cottage cheese 1 taza',206,28,8,9,1.65],
-['Leche descremada 1 taza',83,8,12,0,0.35],['Leche 1% 1 taza',102,8,12,2,0.38],['Leche 2% 1 taza',122,8,12,5,0.40],['Leche alta proteína 1 taza',120,13,6,4,0.80],['Leche sin lactosa 1 taza',120,8,12,5,0.65],['Leche almendra sin azúcar 1 taza',30,1,1,2.5,0.55],
+['Cereal americano 1 taza',140,3,30,2,0.55],['Cereal alto en proteína 1 taza',200,15,30,4,1.10],['Avena instantánea paquete',160,4,32,2,0.45],
+['Yogurt griego light 170g',90,15,8,0,1.10],['Yogurt alto en proteína 150g',130,20,9,3,1.45],['Yogurt bebible proteína',170,20,18,3,1.85],
+['Leche descremada 1 taza',83,8,12,0,0.35],['Leche 1% 1 taza',102,8,12,2,0.38],['Leche alta proteína 1 taza',120,13,6,4,0.80],['Leche sin lactosa 1 taza',120,8,12,5,0.65],['Leche almendra sin azúcar 1 taza',30,1,1,2.5,0.55],
 ['Yogurt regular saborizado 170g',150,6,26,2,0.95],['Yogurt griego vainilla 170g',130,14,16,0,1.10],['Yogurt kids/tubo 1 pieza',60,2,10,1,0.35],['Gelatina regular 1 copa',90,2,20,0,0.45],['Gelatina sin azúcar 1 copa',10,1,0,0,0.45],
 ['Tortilla de harina grande',140,4,24,3,0.35],['Tortilla de harina fajita',90,3,16,2,0.22],['Totopos 1 oz',140,2,18,7,0.45],['Tostadas 2 piezas',116,3,24,2,0.40],
 ['Chicharrón de cerdo 1 oz',160,17,0,9,0.75],['Chicharrones/chips de harina 1 oz',150,2,18,8,0.45],['Papas fritas chips 1 oz',150,2,15,10,0.55],['Fritos/chips de maíz 1 oz',160,2,16,10,0.55],
@@ -13713,13 +13718,14 @@ function abrirComerRapido(){
   </div>`;
 }
 
-function _guardarComida(name, kcal, prot, carb, fat, momento, src){
+function _guardarComida(name, kcal, prot, carb, fat, momento, src, fibra){
   let h=_hoy();
   if(!state.diary) state.diary={};
   if(!state.diary[h]) state.diary[h]={breakfast:[],lunch:[],dinner:[],snacks:[]};
   if(!state.diary[h][momento]) state.diary[h][momento]=[];
   const entrada={name, kcal:+kcal||0, prot:+prot||0, carb:+carb||0, fat:+fat||0, amount:'1 porción', id:ppUUID()};
   if(src) entrada.src=src; // origen opcional (ej. 'potenciar') — aditivo, no afecta Balance ni sync
+  if(fibra!=null) entrada.fibra=+fibra||0; // fibra opcional (solo con dato real)
   state.diary[h][momento].push(entrada);
   save();
 }
@@ -16535,7 +16541,7 @@ function todayISO(){return new Date().toISOString().slice(0,10)}
 function todayLocal(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getTodayDiaryTotals(){
   let today=todayISO(),d=state.diary&&state.diary[today],items=d?[...(d.breakfast||[]),...(d.lunch||[]),...(d.dinner||[]),...(d.snacks||[])]:[];
-  return items.reduce((a,x)=>(a.k+=+x.kcal||0,a.p+=+x.prot||0,a.c+=+x.carb||0,a.f+=+x.fat||0,a),{k:0,p:0,c:0,f:0,count:items.length});
+  return items.reduce((a,x)=>{a.k+=+x.kcal||0;a.p+=+x.prot||0;a.c+=+x.carb||0;a.f+=+x.fat||0;if(x.fibra!=null){a.fb+=+x.fibra||0;a.fbConocidas++;}return a;},{k:0,p:0,c:0,f:0,fb:0,fbConocidas:0,count:items.length});
 }
 function getDailyMode(){
   let today=todayISO(),weight=state.weight.length?+state.weight[state.weight.length-1].w:+state.profile.peso||150;
@@ -19075,7 +19081,7 @@ ${mealSection('snacks')}
       <span data-chip-slot="2" style="display:none;align-items:center;gap:5px;background:#eaf5ef;border:1px solid #9dd5b4;border-radius:999px;padding:3px 8px 3px 10px;font-size:11px;font-weight:800;color:#15704f;max-width:100%"><span data-chip-name></span> ×<span data-chip-cant></span><button data-chip-x style="padding:0 5px;font-size:12px;color:#b03030;border-radius:999px">✕</button></span>
       <span id="carritoChipsMas" class="muted" style="display:none;font-size:11px;font-weight:800"></span>
     </div>
-    <div id="carritoResumen" style="font-size:12px;font-weight:800;color:#63706a;margin-bottom:8px"><span data-r-n>0</span> alimentos · <b data-r-kcal style="color:#15704f">0</b> kcal · <span data-r-p>0</span>g P · <span data-r-c>0</span>g C · <span data-r-g>0</span>g G</div>
+    <div id="carritoResumen" style="font-size:12px;font-weight:800;color:#63706a;margin-bottom:8px"><span data-r-n>0 alimentos seleccionados</span> · <b data-r-kcal style="color:#15704f">0</b> kcal · <span data-r-p>0</span> g P · <span data-r-c>0</span> g C · <span data-r-g>0</span> g G</div>
     <button id="carritoCTA" class="btn primary" disabled style="width:100%;padding:13px;font-size:15px;border-radius:999px" onclick="guardarCarrito()">Agregar 0 alimentos</button>
   </div>
 </div>
@@ -25900,7 +25906,7 @@ var COMPLETAR_FRANJAS={
 var COMPLETAR_VOLUMEN_TIPO=[
   [/licuado|agua|bebida|leche|suero|especia|salsa|aderezo/i,'Poco'],
   [/sopa|ensalada|verdura|fruta|caldo/i,'Medio'],
-  [/snack|desayuno|huevo|guarnicion|postre|pan/i,'Poco'],
+  [/snack|desayuno|huevo|guarnicion|postre|pan|sandwich|sándwich|torta|wrap/i,'Poco'],
   [/comida|guiso|pasta|arroz|horno|carne|cerdo|pollo|res|pescado|mole|tinga/i,'Normal']
 ];
 var COMPLETAR_VOLUMEN_ALIMENTO={
@@ -25999,12 +26005,16 @@ function completarLineaPropuesta(pr){
   if(pr.tiempo)out+=' · '+pr.tiempo+' min';
   return out;
 }
-/* Línea de un extra en Potenciar: "½ aguacate · +160 kcal · 2 g proteína". */
+/* Línea de un extra en Potenciar: "2 cucharadas · +50 kcal · +0.5 g proteína
+   · +1.5 g fibra" — porción, kcal, proteína y fibra SOLO si aporta y es fiable. */
 function completarLineaExtra(x){
   var por=x.porcion||completarPorcion(x.nombre);
-  var out=por.texto;
+  var out=por.texto.replace(/\s+de\s+[^·]*$/,''); // "2 cucharadas de guacamole" → "2 cucharadas"
   if(por.casera)out+=' · aprox. '+por.casera;
-  out+=' · +'+Math.round(x.kcal)+' kcal · '+Math.round(x.p)+' g proteína';
+  out+=' · +'+Math.round(x.kcal)+' kcal';
+  if(+x.p>0)out+=' · +'+(Math.round(x.p*10)/10)+' g proteína';
+  var fbX=completarFibraFood(x.nombreBase);
+  if(fbX&&fbX.g>0){var fg=Math.round(fbX.g*(x.factor||1)*10)/10;out+=' · +'+fg+' g fibra';}
   return out;
 }
 /* Complementos por FUNCIÓN culinaria y compatibilidad por tipo de plato.
@@ -26015,12 +26025,12 @@ var COMPLETAR_ALIMENTO={
   'Yogurt griego taza':{funcion:'postre',con:/desayuno|avena|granola|fruta|platano|hotcake|cereal|huevo|tortilla|licuado/i},
   'Plátano':{funcion:'snack',con:/desayuno|avena|licuado|pan|hotcake|yogurt|cereal|fruta|crema de cacahuate/i},
   'Crema cacahuate cda':{funcion:'topping',con:/pan|avena|licuado|manzana|hotcake|platano|fruta/i},
-  'Aguacate 1/2':{funcion:'acompanamiento',con:/huevo|taco|torta|arroz|ensalada|pollo|tostada|bowl|frijol|carne|res|cerdo|pescado/i},
-  'Queso 28g':{funcion:'topping',con:/huevo|quesadilla|pasta|arroz|frijol|papa|torta|sandwich|sopa|carne|pollo|enchilada|mole|hamburguesa/i},
+  'Aguacate 1/2':{funcion:'acompanamiento',con:/huevo|taco|torta|arroz|ensalada|pollo|tostada|bowl|frijol|carne|res|cerdo|pescado|totopo|chips|fritos|chicharr|cracker/i},
+  'Queso 28g':{funcion:'topping',con:/huevo|quesadilla|pasta|arroz|frijol|papa|torta|sandwich|sopa|carne|pollo|enchilada|mole|hamburguesa|totopo|fritos|chips|chicharr/i},
   'Tortilla maíz':{funcion:'acompanamiento',con:/huevo|frijol|pollo|carne|chilaquil|taco|mole|tinga|guiso/i},
   'Huevo':{funcion:'topping',con:/arroz|frijol|papa|tortilla|ramen|sopa|chilaquil/i},
   'Arroz cocido 1 taza':{funcion:'acompanamiento',con:/pollo|carne|cerdo|res|pescado|mole|tinga|frijol|huevo/i},
-  'Frijol 1 taza':{funcion:'acompanamiento',con:/arroz|pollo|carne|huevo|queso|tortilla|mole|guiso/i},
+  'Frijol 1 taza':{funcion:'acompanamiento',con:/arroz|pollo|carne|huevo|queso|tortilla|mole|guiso|totopo|chips|fritos/i},
   'Pollo 100g':{funcion:'principal',con:/arroz|pasta|tortilla|ensalada|frijol|papa/i},
   'Carne molida 100g':{funcion:'principal',con:/arroz|pasta|tortilla|papa|frijol/i},
   'Atún lata':{funcion:'principal',con:/ensalada|tortilla|arroz|pasta/i},
@@ -26103,14 +26113,16 @@ function completarCandidatos(ctx){
   var SALADO=/(comida|sopa|pasta|guiso|carne|cerdo|pollo|res|pescado|cena|horno|mole|tinga|chilaquil|taco|hamburguesa|quesadilla)/i;
   var DULCE=/(desayuno|avena|pan dulce|postre|fruta|licuado|cereal|granola|hotcake)/i;
   // A) recetas completas reales (estructuras que ya existen: prioridad)
-  //    los auxiliares (aderezos/sazonadores) NUNCA son comida completa.
+  //    los auxiliares (salsas/aderezos/sazonadores) NUNCA son comida completa.
   cat.forEach(function(x){if(x.tipo==='receta'){
     if(RECETA_AUXILIAR.test(completarNorm(x.nombre)))return;
+    if(RECETA_AUXILIAR_TIPO.test(x.type))return;
     cands.push({partes:[x],tier:'A'});
   }});
   // B) receta + complemento NATURAL (por función culinaria; sin bebidas de relleno)
   cat.forEach(function(r){ if(r.tipo!=='receta')return;
     if(RECETA_AUXILIAR.test(completarNorm(r.nombre)))return;
+    if(RECETA_AUXILIAR_TIPO.test(r.type))return;
     var tt=String(r.type||'')+' '+String(r.tags||'');
     var salado=SALADO.test(tt)&&!DULCE.test(tt);
     var texto=completarSinAcentos(completarNorm(r.nombre+' '+r.type+' '+r.tags));
@@ -26199,10 +26211,12 @@ function completarScore(c,ctx){
   var texto=completarNorm(c.partes.map(function(p){return p.nombre+' '+p.type+' '+p.tags;}).join(' '));
   var metodo=String(c.partes.map(function(p){return p.metodo;}).filter(Boolean)[0]||'').toLowerCase();
   var portable=c.partes.some(function(p){return p.portable;});
+  // alimento-bebida real (leche, yogurt bebible, agua de coco, jugos…)
+  var esBebidaAlimento=c.partes.some(function(p){return p.tipo==='alimento'&&caloriasFacilesDe(p.nombre).funcion==='bebida';});
   // 5) facilidad según franja (premio a rápido/sin cocinar/portable durante el día)
   if(franja==='manana'&&/licuado|leche|yogurt|avena|huevo|platano|pan|granola|cereal/i.test(texto)){score+=W.facilidad;razones.push('mañana-fácil');}
   if(franja==='trabajo'){
-    if(/snack|bebida|quesadilla|sandwich|wrap|leche|yogurt|licuado/i.test(texto)||portable||tiempoTotal<=10||/sin cocinar|fr[ií]o/i.test(metodo)){score+=W.facilidad;razones.push('trabajo-portátil');}
+    if(/snack|bebida|quesadilla|sandwich|wrap|leche|yogurt|licuado/i.test(texto)||portable||esBebidaAlimento||tiempoTotal<=10||/sin cocinar|fr[ií]o/i.test(metodo)){score+=W.facilidad;razones.push('trabajo-portátil');}
     if(tiempoTotal>0&&tiempoTotal<=10){score+=W.rapidez;razones.push('rápida ≤10 min');}
     if(portable){score+=W.portable;razones.push('portable');}
     if(/sin cocinar|fr[ií]o/i.test(metodo)){score+=W.sinCocinar;razones.push('sin cocinar');}
@@ -26221,7 +26235,7 @@ function completarScore(c,ctx){
     if(/sin cocinar|fr[ií]o/i.test(metodo)){score+=W.rapidoSinCocinar;razones.push('rapido-sin-cocinar');}
     if(tiempoTotal>0&&tiempoTotal<=10){score+=W.rapidoRapida;razones.push('rapido-≤10min');}
     if(portable){score+=W.rapidoPortable;razones.push('rapido-portable');}
-    if(c.tipoBebida){score+=W.rapidoBebida;razones.push('rapido-bebida');}
+    if(c.tipoBebida||esBebidaAlimento){score+=W.rapidoBebida;razones.push('rapido-bebida');}
     if(tiempoTotal>20){score+=W.rapidoLarga;razones.push('rapido-receta-larga');}
     if(vol==='Normal'){score+=W.rapidoNormalVol;razones.push('rapido-volumen-normal');}
     if(tot.kcal>=600){score+=W.rapidoGrande;razones.push('rapido-plato-grande');}
@@ -26255,7 +26269,23 @@ function completarScore(c,ctx){
   c.partes.forEach(function(x){ if(x.tipo==='receta'&&x.scoreAudit==='🟢'){score+=W.calidadVerde;razones.push('calidad-verde');} });
   if(c.partes.length>1){score+=W.variedad;razones.push('combo-variado');}
   // licuado compuesto: fácil y bebible — premio en mañana/trabajo o llenado rápido
-  if(c.tipoBebida&&(franja==='manana'||franja==='trabajo'||ctx.llenado==='rapido')){score+=W.bebida;razones.push('bebida-facil');}
+  if((c.tipoBebida||esBebidaAlimento)&&(franja==='manana'||franja==='trabajo'||ctx.llenado==='rapido')){score+=W.bebida;razones.push('bebida-facil');}
+  // Bebidas por FUNCIÓN (sin UI nueva): hidratación ligera ≠ energía/calorías.
+  // En franja de trabajo una bebida solo-hidratante recibe una señal menor
+  // (nunca se vende como forma de completar calorías).
+  if(esBebidaAlimento&&franja==='trabajo'&&c.partes.length===1){
+    var fnsBebida=bebidaFuncionesDe(c.partes[0].nombre);
+    if(fnsBebida.indexOf('hidratacion')>=0&&fnsBebida.indexOf('energia_calorias')<0){score+=3;razones.push('hidratacion-ligera');}
+  }
+  // Filtros: bonus LEVE por cobertura de "Tengo esto en casa" (sin ranking profundo)
+  var fCov=completarFiltrosActivos();
+  if(fCov&&fCov.tengo&&fCov.tengo.length&&!fCov.soloTengo&&!fCov.modoFaltante){
+    var cov=recetaCobertura(completarFiltroRecetaDe(c),fCov.tengo);
+    if(cov>0){score+=4*cov;razones.push('tengo '+Math.round(cov*100)+'%');}
+  }
+  // Fibra: señal SECUNDARIA (solo dato completo; nunca promueve platos grandes)
+  var fbInfo=completarFibraCandidato(c);
+  if(fbInfo&&fbInfo.estado==='completa'&&fbInfo.g>0){score+=3*Math.min(1,fbInfo.g/6);razones.push('fibra '+fbInfo.g+'g');}
   return {score:score,tot:tot,volumen:vol,razones:razones};
 }
 function completarNombreCorto(n){
@@ -26386,12 +26416,377 @@ function completarEsEstructuraNatural(x){
 function completarEsCandidatoFacil(ctx,candidato){
   return completarEsFacil(candidato,ctx);
 }
+/* ===== Filtros de practicidad (⚙️ Ajustar ahora) =====
+   Preferencias de SESIÓN (window, no state → no sync). Con todos los
+   filtros apagados el motor queda byte-por-byte idéntico. */
+var RECETA_COCCION=/estufa|horno|olla|comal|parrilla|tm5|thermomix|tostador|airfryer|air fryer|plancha|sart[eé]n|vapor|fre[ií]dora|freidora|asador|wok|grill/i;
+var RECETA_RECALENTABLE=/recalent|sobras|sobrante|meal prep|noche antes|congelad/i;
+function completarFoodsBase(){
+  var cache=completarFoodsBase._cache;
+  if(!cache){
+    cache={};
+    var src=(typeof foods!=='undefined')?foods:(this&&this.foods)?this.foods:[];
+    src.forEach(function(f){
+      var base=completarNombreCorto(f[0]).split(' ')[0].toLowerCase();
+      if(base&&!cache[base])cache[base]=f[0];
+    });
+    completarFoodsBase._cache=cache;
+  }
+  return cache;
+}
+/* Matcher CONSERVADOR: palabra del texto ↔ alimento real del catálogo
+   (con plural simple: huevos→huevo, fresa→fresas). Nada se inventa. */
+function completarBaseDe(palabra){
+  var bases=completarFoodsBase();
+  if(bases[palabra])return palabra;
+  if(palabra.slice(-1)==='s'&&bases[palabra.slice(0,-1)])return palabra.slice(0,-1);
+  if(bases[palabra+'s'])return palabra+'s';
+  // subcadena conservadora (base ≥5 letras): "enfrijoladas" contiene "frijol"
+  if(palabra.length>=6){
+    for(var b in bases){
+      if(b.length>=5&&palabra.indexOf(b)>=0)return b;
+    }
+  }
+  return null;
+}
+function completarFoodNombreDe(base){
+  var bases=completarFoodsBase();
+  return bases[base]||base;
+}
+function completarPalabrasAlimento(texto){
+  var palabras=completarNorm(texto||'').split(' ');
+  var out={};
+  palabras.forEach(function(p){ var b=completarBaseDe(p); if(b)out[b]=1; });
+  return out; // {palabraBase:1}
+}
+function recetaFaltantes(r,tengo){
+  var texto=(r.nombre||'')+' '+(r.tags||'')+' '+(r.ingredients||'');
+  var palabras=completarPalabrasAlimento(texto);
+  var tengoBase={};
+  (tengo||[]).forEach(function(n){var b=completarNombreCorto(n).split(' ')[0].toLowerCase();if(b)tengoBase[b]=1;});
+  var faltantes=[];
+  for(var p in palabras){ if(!tengoBase[p])faltantes.push(completarFoodNombreDe(p)); }
+  return faltantes;
+}
+function recetaCobertura(r,tengo){
+  var texto=(r.nombre||'')+' '+(r.tags||'')+' '+(r.ingredients||'');
+  var palabras=completarPalabrasAlimento(texto);
+  var total=0,cuenta=0;
+  var tengoBase={};
+  (tengo||[]).forEach(function(n){var b=completarNombreCorto(n).split(' ')[0].toLowerCase();if(b)tengoBase[b]=1;});
+  for(var p in palabras){total++;if(tengoBase[p])cuenta++;}
+  return total?cuenta/total:0;
+}
+function completarFiltrosActivos(){
+  var f=window._completarFiltros;
+  if(!f)return null;
+  var activos=(f.tengo&&f.tengo.length)||f.soloTengo||f.noCocinar||(f.tiempo!=null)||f.modoFaltante;
+  return activos?f:null;
+}
+function completarFiltrosReset(){
+  window._completarFiltros={tengo:[],soloTengo:false,noCocinar:false,recalentar:false,licuar:true,tiempo:null,modoFaltante:false};
+}
+/* Receta virtual desde un CANDIDATO (para filtrar combos y bebidas). */
+function completarFiltroRecetaDe(x){
+  var receta=null;
+  (x.partes||[]).forEach(function(p){if(p.tipo==='receta')receta=p;});
+  if(receta)return {nombre:receta.nombre,tags:receta.tags||'',ingredients:receta.ingredients||'',method:receta.method||'',tiempo:+receta.tiempo||0};
+  var partes=(x.partes||[]);
+  return {nombre:partes.map(function(p){return p.nombre;}).join(' '),tags:partes.map(function(p){return p.type||'';}).join(' ')+' '+partes.map(function(p){return p.tags||'';}).join(' '),ingredients:'',method:partes.map(function(p){return p.metodo||'';}).join(' '),tiempo:partes.reduce(function(a,p){return a+(+p.tiempo||0);},0)};
+}
+function recetaPasaFiltros(r,f){
+  if(!r||!f)return true;
+  if(f.tiempo!=null&&(+r.tiempo||0)>f.tiempo)return false; // tiempo ACTIVO real
+  if(f.noCocinar){
+    var texto=String(r.method||'')+' '+String(r.tags||'')+' '+String(r.nombre||'');
+    var cocina=RECETA_COCCION.test(texto);
+    var licuado=/licuad|batid|maltead|smoothie|licuadora/i.test(texto);
+    if(cocina&&!RECETA_RECALENTABLE.test(texto))return false;      // cocción real fuera
+    if(cocina&&RECETA_RECALENTABLE.test(texto)&&!f.recalentar)return false; // sobras solo con Recalentar sí
+    if(licuado&&!f.licuar)return false;                            // licuar solo si acepta
+  }
+  if(f.soloTengo&&f.tengo&&f.tengo.length){
+    var texto0=(r.nombre||'')+' '+(r.tags||'')+' '+(r.ingredients||'');
+    var palabras0=completarPalabrasAlimento(texto0);
+    // sin información detectable sobre ingredientes: no pasa el modo estricto
+    // (nunca se sustituye ni se inventa: mejor excluir que adivinar)
+    if(Object.keys(palabras0).length===0)return false;
+    if(recetaFaltantes(r,f.tengo).length>0)return false;
+  }
+  return true;
+}
+
+/* ===== Bebidas para trabajo/calor (fase J) =====
+   foods reales con porción clara. FIBRA honesta: null donde varía por
+   marca (leche con chocolate, horchata, atole, agua de coco). La bebida
+   de 0 kcal no existe como food: no puede completar calorías y por eso
+   ni siquiera compite como comida. Electrolitos: solo la FUNCIÓN, jamás
+   cifras de sodio/potasio inventadas. */
+foods.push(
+  ['Agua de coco 1 vaso',46,0.5,0,9,0.40],
+  ['Jugo de naranja 1 vaso',112,1.7,0.5,26,0.35],
+  ['Jugo de manzana 1 vaso',114,0.3,0.3,28,0.35],
+  ['Leche con chocolate 1 vaso',208,8,8.5,26,0.45],
+  ['Bebida deportiva 1 botella',150,0,0,36,0.50],
+  ['Bebida de electrolitos sin azúcar 1 vaso',25,0,0,6,0.45],
+  ['Horchata 1 vaso',160,1,4,30,0.30],
+  ['Atole de vainilla 1 taza',180,4,4,32,0.25],
+  ['Té frío sin azúcar 1 vaso',5,0,0,1,0.10],
+  ['Kéfir natural 1 taza',110,11,2,12,0.55]
+);
+/* Funciones de cada bebida (una bebida puede tener varias).
+   hidratacion / energia_calorias / electrolitos / proteina / licuado.
+   Reglas: 0 kcal nunca es solución de calorías; no llamamos "hidratante"
+   a cualquier bebida azucarada; electrolitos solo cuando de verdad los
+   tiene (sin inventar cifras). Licuados compuestos los cubre el motor. */
+var BEBIDA_FUNCION={
+  'Agua de coco 1 vaso':['hidratacion','electrolitos'],
+  'Jugo de naranja 1 vaso':['hidratacion','energia_calorias'],
+  'Jugo de manzana 1 vaso':['hidratacion','energia_calorias'],
+  'Leche con chocolate 1 vaso':['energia_calorias','proteina'],
+  'Bebida deportiva 1 botella':['hidratacion','energia_calorias','electrolitos'],
+  'Bebida de electrolitos sin azúcar 1 vaso':['hidratacion','electrolitos'],
+  'Horchata 1 vaso':['energia_calorias'],
+  'Atole de vainilla 1 taza':['energia_calorias'],
+  'Té frío sin azúcar 1 vaso':['hidratacion'],
+  'Kéfir natural 1 taza':['proteina','hidratacion'],
+  'Leche entera taza':['energia_calorias','proteina','hidratacion'],
+  'Leche 2% 1 taza':['energia_calorias','proteina','hidratacion'],
+  'Leche alta proteína 1 taza':['energia_calorias','proteina','hidratacion'],
+  'Leche almendra sin azúcar 1 taza':['hidratacion'],
+  'Yogurt bebible proteína':['energia_calorias','proteina'],
+  'Yogurt griego light 170g':['proteina','hidratacion']
+};
+function bebidaFuncionesDe(nombre){
+  var f=(typeof BEBIDA_FUNCION!=='undefined'&&BEBIDA_FUNCION)?BEBIDA_FUNCION[nombre]:null;
+  return f?f.slice():[];
+}
+
+/* ===== Sándwiches y comidas portátiles (fase K) =====
+   Combinaciones reales construidas con foods[] del catálogo (kcal/proteína
+   sumadas de esas porciones). llevarTrabajo:'Sí' → portable en el motor.
+   Sin comps: la fibra queda parcial y NUNCA se muestra un total falso. */
+baseRecipes.push(
+  {type:'comida',name:'Sándwich de pavo y queso',time:5,k:460,p:32,cost:3.5,
+   steps:['El pavo cocido puede ser de paquete o de tu meal prep; si no, cocínalo 15 min en agua con sal.','Lava lechuga y rebana jitomate (2 min).','Unta 1 cda de mayonesa en las 2 rebanadas de pan integral.','Acomoda 60g de pavo cocido y 28g de queso.','Agrega lechuga y jitomate, tapa y corta en diagonal.'],
+   method:'sin cocinar',tags:'sandwich portable trabajo frio rapido',temp:'Frío: 4°C o menos',
+   ingredients:'2 rebanadas pan integral, 60g pavo cocido, 28g queso, 1 cda mayonesa, lechuga, jitomate',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Sándwich de jamón y queso',time:5,k:450,p:28,cost:3.2,
+   steps:['Unta 1 cda de mayonesa en las 2 rebanadas de pan integral.','Acomoda 60g de jamón y 28g de queso.','Agrega lechuga y jitomate si tienes.','Tapa, envuelve en papel o guarda en recipiente.'],
+   method:'sin cocinar',tags:'sandwich portable trabajo frio rapido',temp:'Frío: 4°C o menos',
+   ingredients:'2 rebanadas pan integral, 60g jamón, 28g queso, 1 cda mayonesa, lechuga, jitomate',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Sándwich de pollo y aguacate',time:5,k:485,p:41,cost:4.2,
+   steps:['Usa pollo cocido de tu meal prep; si no, cocínalo 15 min en agua con sal y deshébralo.','Machaca ½ aguacate y úntalo en el pan (1 min).','Acomoda 100g de pollo cocido deshebrado.','Agrega lechuga, jitomate y un poco de sal y limón.','Tapa y guarda frío si lo llevas al trabajo.'],
+   method:'sin cocinar',tags:'sandwich portable trabajo frio rapido',temp:'Frío: 4°C o menos',
+   ingredients:'2 rebanadas pan integral, 100g pollo cocido, ½ aguacate, lechuga, jitomate, limón',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Sándwich de atún',time:5,k:380,p:37,cost:3.0,
+   steps:['Escurre 1 lata de atún y mézclala con 1 cda de mayonesa (2 min).','Unta la mezcla en el pan.','Agrega lechuga y jitomate.','Tapa y guarda frío si lo llevas al trabajo.'],
+   method:'sin cocinar',tags:'sandwich portable trabajo frio rapido',temp:'Frío: 4°C o menos',
+   ingredients:'1 lata atún, 1 cda mayonesa, 2 rebanadas pan integral, lechuga, jitomate',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Sándwich de huevo cocido',time:8,k:400,p:20,cost:2.5,
+   steps:['Hierve los huevos 10 min, enfríalos en agua fría y pélalos.','Pica los 2 huevos cocidos y mézclalos con 1 cda de mayonesa (3 min).','Unta la mezcla en el pan.','Agrega lechuga y un toque de sal.','Tapa y guarda frío si lo llevas al trabajo.'],
+   method:'sin cocinar',tags:'sandwich portable trabajo frio rapido',temp:'Frío: 4°C o menos',
+   ingredients:'2 huevos cocidos, 1 cda mayonesa, 2 rebanadas pan integral, lechuga',llevarTrabajo:'Sí'},
+  {type:'snack',name:'Sándwich de crema de cacahuate y plátano',time:3,k:450,p:17,cost:2.0,
+   steps:['Unta 2 cdas de crema de cacahuate en las 2 rebanadas de pan.','Rebana 1 plátano y acomódalo encima.','Tapa, corta en diagonal y envuelve para llevar.'],
+   method:'sin cocinar',tags:'sandwich dulce portable trabajo frio rapido',temp:'Sin refrigerar (si lo comes el mismo día)',
+   ingredients:'2 rebanadas pan integral, 2 cdas crema de cacahuate, 1 plátano',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Sándwich de pollo y queso',time:5,k:435,p:46,cost:3.8,
+   steps:['Usa pollo cocido de tu meal prep; si no, cocínalo 15 min en agua con sal.','Acomoda 100g de pollo cocido y 28g de queso en el pan.','Agrega mostaza o salsa si te gusta.','Agrega lechuga y jitomate.','Tapa y guarda frío si lo llevas al trabajo.'],
+   method:'sin cocinar',tags:'sandwich portable trabajo frio rapido',temp:'Frío: 4°C o menos',
+   ingredients:'2 rebanadas pan integral, 100g pollo cocido, 28g queso, lechuga, jitomate, mostaza',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Sándwich de pavo y aguacate',time:5,k:400,p:27,cost:4.0,
+   steps:['El pavo cocido puede ser de paquete o de tu meal prep; si no, cocínalo 15 min en agua con sal.','Machaca ½ aguacate y úntalo en el pan (1 min).','Acomoda 60g de pavo cocido.','Agrega lechuga y jitomate.','Tapa y guarda frío si lo llevas al trabajo.'],
+   method:'sin cocinar',tags:'sandwich portable trabajo frio rapido',temp:'Frío: 4°C o menos',
+   ingredients:'2 rebanadas pan integral, 60g pavo cocido, ½ aguacate, lechuga, jitomate',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Sándwich de atún con aguacate',time:5,k:450,p:39,cost:4.0,
+   steps:['Escurre 1 lata de atún (1 min).','Machaca ½ aguacate y mézclalo con el atún.','Unta la mezcla en el pan con un toque de limón y sal.','Tapa y guarda frío si lo llevas al trabajo.'],
+   method:'sin cocinar',tags:'sandwich portable trabajo frio rapido',temp:'Frío: 4°C o menos',
+   ingredients:'1 lata atún, ½ aguacate, 2 rebanadas pan integral, limón',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Grilled cheese',time:10,k:480,p:22,cost:2.5,
+   steps:['Calienta sartén a fuego MEDIO (160°C) con 1 cda de mantequilla.','Arma el sándwich con 56g de queso entre 2 rebanadas de pan.','Dora 2-3 min por lado hasta que el queso derrita.','Envuelve en papel para llevarlo caliente.'],
+   method:'sarten',tags:'sandwich portable trabajo queso',temp:'Sartén: 160°C',
+   ingredients:'2 rebanadas pan integral, 56g queso, 1 cda mantequilla',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Torta de jamón',time:5,k:420,p:30,cost:3.0,
+   steps:['Parte el bolillo por la mitad y unta mayonesa.','Acomoda 80g de jamón y 28g de queso.','Agrega jitomate, cebolla y aguacate si tienes.','Tapa, envuelve y guarda frío si la llevas al trabajo.'],
+   method:'sin cocinar',tags:'torta portable trabajo frio rapido',temp:'Frío: 4°C o menos',
+   ingredients:'1 bolillo, 80g jamón, 28g queso, jitomate, cebolla, mayonesa',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Torta de huevo',time:8,k:450,p:25,cost:2.5,
+   steps:['Revuelve 2 huevos en sartén a fuego MEDIO (160°C) — 3 min.','Calienta ½ taza de frijoles en ollita a fuego BAJO (120°C) — 2 min.','Parte el bolillo, unta los frijoles y agrega el huevo.','Tapa, envuelve y lleva caliente o fría.'],
+   method:'estufa',tags:'torta portable trabajo rapido',temp:'Estufa: 160°C',
+   ingredients:'1 bolillo, 2 huevos, ½ taza frijoles',llevarTrabajo:'Sí'}
+);
+
+/* ===== Ensaladas rápidas (fase L) =====
+   Base de verduras + proteína + complemento denso (para subir de peso).
+   El aderezo SIEMPRE va aparte y nunca es la comida principal.
+   Ingredientes preparados (pollo/pasta/arroz/huevos/garbanzos) con su
+   preparación explicada en los pasos → auditoría 🟢 honesta. */
+baseRecipes.push(
+  {type:'comida',name:'Ensalada de pollo con aguacate',time:6,k:430,p:34,cost:4.5,
+   steps:['Usa pollo cocido de tu meal prep; si no, cocínalo 15 min en agua con sal y deshébralo.','Lava y trocea 2 tazas de lechuga (2 min).','Acomoda 100g de pollo deshebrado y ½ aguacate en cubos.','Agrega jitomate en gajos.','Sirve el aderezo APARTE (vinagreta o el que tengas) al momento de comer.'],
+   method:'sin cocinar',tags:'ensalada fria portable trabajo rapido',temp:'Frío: 4°C o menos · aderezo aparte',
+   ingredients:'2 tazas lechuga, 100g pollo cocido, ½ aguacate, jitomate, aderezo aparte',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Ensalada de atún con garbanzo',time:5,k:370,p:33,cost:3.2,
+   steps:['Los garbanzos cocidos pueden ser de lata; si no, cocínalos 40 min en agua con sal.','Escurre 1 lata de atún (1 min).','Mezcla atún con ½ taza de garbanzos sobre 2 tazas de lechuga.','Agrega jitomate y cebolla morada si tienes.','Sirve el aderezo APARTE al momento de comer.'],
+   method:'sin cocinar',tags:'ensalada fria portable trabajo rapido',temp:'Frío: 4°C o menos · aderezo aparte',
+   ingredients:'2 tazas lechuga, 1 lata atún, ½ taza garbanzos cocidos, jitomate, cebolla, aderezo aparte',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Ensalada de huevo cocido',time:8,reposo:'10 min cocción de huevos',k:250,p:14,cost:2.0,
+   steps:['Hierve 2 huevos 10 min, enfríalos en agua fría y pélalos.','Córtalos en cuartos sobre 2 tazas de lechuga.','Agrega 1 cda de mayonesa encima o aparte.','Agrega jitomate y un toque de sal.','Sirve el aderezo APARTE al momento de comer.'],
+   method:'estufa',tags:'ensalada fria portable trabajo rapido',temp:'Frío: 4°C o menos · aderezo aparte',
+   ingredients:'2 huevos cocidos, 2 tazas lechuga, 1 cda mayonesa, jitomate',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Ensalada de jamón y queso',time:5,k:300,p:23,cost:3.5,
+   steps:['Lava y trocea 2 tazas de lechuga (2 min).','Corta 60g de jamón en tiras y 28g de queso en cubos.','Mezcla con jitomate y pepino si tienes.','Sirve el aderezo APARTE al momento de comer.'],
+   method:'sin cocinar',tags:'ensalada fria portable trabajo rapido',temp:'Frío: 4°C o menos · aderezo aparte',
+   ingredients:'2 tazas lechuga, 60g jamón, 28g queso, jitomate, pepino, aderezo aparte',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Ensalada de frijol y elote',time:5,k:370,p:12,cost:2.8,
+   steps:['Usa frijoles de la olla o de lata; si no, cocínalos hasta que estén suaves.','Mezcla ½ taza de frijoles con ½ taza de elote (de lata o cocido) sobre lechuga.','Agrega ½ aguacate en cubos y jitomate.','Sirve el aderezo APARTE al momento de comer.'],
+   method:'sin cocinar',tags:'ensalada fria portable trabajo rapido',temp:'Frío: 4°C o menos · aderezo aparte',
+   ingredients:'½ taza frijoles cocidos, ½ taza elote, ½ aguacate, 2 tazas lechuga, jitomate, aderezo aparte',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Ensalada de pasta fría',time:8,k:460,p:28,cost:3.0,
+   steps:['Cuece la pasta 8 min en agua hirviendo si no está cocida; enfríala con agua.','Mezcla 1 taza de pasta cocida con 1 lata de atún escurrido.','Agrega jitomate, pepino y cebolla picados.','Sirve el aderezo APARTE al momento de comer.'],
+   method:'sin cocinar',tags:'ensalada fria portable trabajo rapido',temp:'Frío: 4°C o menos · aderezo aparte',
+   ingredients:'1 taza pasta cocida, 1 lata atún, jitomate, pepino, cebolla, aderezo aparte',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Ensalada de arroz frío',time:8,k:480,p:35,cost:3.5,
+   steps:['Cuece el arroz 15 min si no lo tienes cocido; enfríalo.','Usa pollo cocido de tu meal prep; si no, cocínalo 15 min en agua con sal.','Mezcla 1 taza de arroz cocido con 100g de pollo cocido deshebrado.','Agrega jitomate, pepino y cebolla picados.','Sirve el aderezo APARTE al momento de comer.'],
+   method:'sin cocinar',tags:'ensalada fria portable trabajo rapido',temp:'Frío: 4°C o menos · aderezo aparte',
+   ingredients:'1 taza arroz cocido, 100g pollo cocido, jitomate, pepino, cebolla, aderezo aparte',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Ensalada César rápida con pollo',time:6,k:440,p:39,cost:4.2,
+   steps:['Usa pollo cocido de tu meal prep; si no, cocínalo 15 min en agua con sal.','Lava y trocea 2 tazas de lechuga romana (2 min).','Acomoda 100g de pollo en tiras y 28g de queso rallado.','Agrega el aderezo césar APARTE al momento de comer.'],
+   method:'sin cocinar',tags:'ensalada fria portable trabajo rapido',temp:'Frío: 4°C o menos · aderezo aparte',
+   ingredients:'2 tazas lechuga, 100g pollo cocido, 28g queso, aderezo césar aparte',llevarTrabajo:'Sí'},
+  {type:'comida',name:'Ensalada de manzana, nuez y queso',time:5,k:400,p:13,cost:3.8,
+   steps:['Lava y trocea 2 tazas de lechuga (2 min).','Corta 1 manzana en cubos y 28g de queso en cubos.','Agrega 28g de nueces picadas.','Sirve el aderezo APARTE al momento de comer.'],
+   method:'sin cocinar',tags:'ensalada fria portable trabajo rapido',temp:'Frío: 4°C o menos · aderezo aparte',
+   ingredients:'2 tazas lechuga, 1 manzana, 28g queso, 28g nueces, aderezo aparte',llevarTrabajo:'Sí'}
+);
+
+/* ===== Snacks/dips reales (Potenciar de botanas: chips/totopos/crackers) =====
+   Porciones reales del envase/receta estándar. Los dips son TOPPING:
+   nunca comida independiente (solo aparecen como extra compatible). */
+foods.push(
+  ['Crackers saladas 6 piezas',120,2,4,19,0.30],
+  ['Guacamole 2 cucharadas',50,0.5,4,2.5,0.40],
+  ['Queso crema 2 cucharadas',100,2,10,1,0.45],
+  ['Pico de gallo 1/4 taza',20,0.5,0,4,0.20],
+  ['Hummus 2 cucharadas',70,2,5,4,0.45]
+);
+
+/* ===== Fibra (infraestructura honesta) =====
+   foods[] admite 7ª columna (f[6] = fibra g) y 8ª (f[7] = fibraFuente):
+     'catalogo' → el dato ya existía en el catálogo (hoy: ninguno);
+     'estandar' → añadido desde composición nutricional estándar (esta tabla).
+   REGLAS del dato (FIBRA_ESTANDAR):
+     - solo alimentos inequívocos con valor estándar confiable y porción/unidad
+       compatible con la entrada real del catálogo;
+     - si varía mucho por marca/preparación → NO aparece aquí (queda null):
+       granola, cereales genéricos, trail mix, fruta/verdura congelada mixta,
+       comida congelada, burrito/pizza/waffles congelados, sopa enlatada;
+     - 0 SOLO cuando es fiable (origen animal sin fibra, aceites, miel, jalea,
+       gelatina, proteína whey);
+     - null ≠ 0: null es "desconocida" y nunca suma, decide ni se muestra.
+   Sin objetivo fijo de fibra: state.profile.fibra no existe y no se inventa. */
+var FIBRA_ESTANDAR={
+  // — 0 fiable: origen animal / productos refinados sin fibra —
+  'Huevo':0,'Claras de huevo 100g':0,'Pollo 100g':0,'Muslo de pollo cocido 100g':0,'Pollo rostizado 100g':0,'Pollo en lata 100g':0,'Pavo cocido 100g':0,'Carne molida 100g':0,'Bistec de res cocido 100g':0,'Carne de cerdo cocida 100g':0,'Jamón 100g':0,'Chicharrón de cerdo 1 oz':0,'Atún lata':0,'Atún en lata agua':0,'Sardinas 1 lata':0,'Salmón cocido 100g':0,'Tilapia cocida 100g':0,'Camarón cocido 100g':0,
+  'Leche entera taza':0,'Leche 2% 1 taza':0,'Leche 1% 1 taza':0,'Leche descremada 1 taza':0,'Leche alta proteína 1 taza':0,'Leche sin lactosa 1 taza':0,'Yogurt griego taza':0,'Yogurt griego light 170g':0,'Yogurt griego vainilla 170g':0,'Yogurt alto en proteína 150g':0,'Yogurt bebible proteína':0,'Yogurt regular saborizado 170g':0,'Yogurt kids/tubo 1 pieza':0,'Queso 28g':0,'Queso fresco 28g':0,'Queso cheddar 28g':0,'Queso cottage 1 taza':0,'Crema 1 cucharada':0,'Mantequilla 1 cucharada':0,'Aceite oliva 1 cucharada':0,'Mayonesa 1 cucharada':0,'Miel 1 cucharada':0,'Gelatina regular 1 copa':0,'Gelatina sin azúcar 1 copa':0,'Proteína whey 1 scoop':0,'Jalea de fresa 1 cda':0,'Jalea de frambuesa 1 cda':0,'Jalea de mango 1 cda':0,
+  // — leguminosas (porción cocida estándar) —
+  'Frijol 1 taza':15,'Lentejas cocidas 1 taza':16,'Garbanzos cocidos 1 taza':12,'Frijoles enlatados 1/2 taza':7.5,'Tofu firme 100g':1,
+  // — cereales, panes y botanas (unidad = porción del nombre) —
+  'Arroz cocido 1 taza':0.6,'Arroz integral cocido 1 taza':3.5,'Pasta cocida 1 taza':2.5,'Avena 1/2 taza':4,'Avena instantánea paquete':3,'Pan integral 2 rebanadas':4,'Bolillo 1 pieza':1.5,'Tortilla maíz':1.5,'Tostada de maíz 1 pieza':1.5,'Tostadas 2 piezas':3,'Tortilla de harina grande':2,'Tortilla de harina fajita':1,'Totopos 1 oz':1.5,'Chicharrones/chips de harina 1 oz':1,'Papas fritas chips 1 oz':1,'Fritos/chips de maíz 1 oz':1.2,
+  // — tubérculos y verduras —
+  'Papa mediana':4,'Camote cocido 100g':2.5,'Elote 1 taza':4,'Maíz enlatado 1/2 taza':2,'Espinaca 100g':2.2,'Brócoli 100g':2.4,'Tomate 100g':1.2,'Cebolla 100g':1.7,'Zanahoria 100g':2.8,'Calabacita 100g':1,'Pepino 100g':0.5,'Salsa 1/2 taza':2,'Brócoli congelado 1 taza':5,'Espinaca congelada 1 taza':4.5,'Ejotes congelados 1 taza':4,
+  // — frutas —
+  'Aguacate 1/2':5,'Plátano':3,'Mango 1 taza':3,'Piña 1 taza':2.3,'Fresas 1 taza':3,'Manzana 1 pieza':4,'Naranja 1 pieza':3,
+  // — bebidas (0 fiable en azúcares/agua; null donde la marca varía) —
+  'Jugo de naranja 1 vaso':0.5,'Jugo de manzana 1 vaso':0.5,'Bebida deportiva 1 botella':0,'Bebida de electrolitos sin azúcar 1 vaso':0,'Té frío sin azúcar 1 vaso':0,'Kéfir natural 1 taza':0,
+  // — snacks y dips —
+  'Crackers saladas 6 piezas':1,'Guacamole 2 cucharadas':1.5,'Queso crema 2 cucharadas':0,'Pico de gallo 1/4 taza':1,'Hummus 2 cucharadas':1.5,
+  // — frutos secos y untables —
+  'Almendras 28g':3.5,'Nueces 28g':2,'Crema cacahuate cda':1,'Nutella 2 cucharadas':1,'Leche almendra sin azúcar 1 taza':1
+};
+/* Enriquece foods[] UNA vez: f[6]=fibra g, f[7]='estandar'. Si una entrada ya
+   traía f[6] en el catálogo, se respeta y su fuente se lee como 'catalogo'. */
+function completarFibraAplicar(){
+  if(completarFibraAplicar._hecho)return;
+  completarFibraAplicar._hecho=true;
+  var src=(typeof foods!=='undefined')?foods:(this&&this.foods)?this.foods:[];
+  src.forEach(function(f){
+    var v=FIBRA_ESTANDAR[f[0]];
+    if(v!=null&&!(f.length>6&&f[6]!=null)){
+      f[6]=v;
+      f[7]='estandar';
+    }
+  });
+}
+completarFibraAplicar();
+function completarFibraFood(nombre){
+  var src=(typeof foods!=='undefined')?foods:(this&&this.foods)?this.foods:[];
+  for(var i=0;i<src.length;i++){
+    if(src[i][0]===nombre){
+      var f=src[i];
+      if(f.length>6&&f[6]!=null){
+        // f[7]='estandar' → añadido por FIBRA_ESTANDAR; sin f[7] → ya existía
+        return {g:+f[6],fuente:(f[7]==='estandar')?'estandar':'catalogo'};
+      }
+      break;
+    }
+  }
+  var est=(typeof FIBRA_ESTANDAR!=='undefined'&&FIBRA_ESTANDAR)?FIBRA_ESTANDAR[nombre]:undefined;
+  if(est!=null)return {g:+est,fuente:'estandar'};
+  return null; // desconocida: null ≠ 0
+}
+function completarFibraReceta(r){
+  // completo solo si TODOS los componentes detectables tienen dato real
+  if(!r)return {g:null,estado:'desconocida'};
+  if(r.comps&&r.comps.length){
+    var gs=r.comps.map(function(c){return completarFibraFood(c);});
+    if(gs.some(function(g){return g===null;}))return {g:null,estado:'parcial'};
+    var suma=0;gs.forEach(function(g){suma+=g.g;});
+    return {g:suma,estado:'completa'};
+  }
+  var texto=(r.nombre||'')+' '+(r.tags||'')+' '+(r.ingredients||'');
+  var palabras=completarPalabrasAlimento(texto);
+  var bases=Object.keys(palabras);
+  if(!bases.length)return {g:null,estado:'desconocida'};
+  var gs2=bases.map(function(b){return completarFibraFood(completarFoodNombreDe(b));});
+  if(gs2.some(function(g){return g===null;}))return {g:null,estado:'parcial'};
+  var suma2=0;gs2.forEach(function(g){suma2+=g.g;});
+  return {g:suma2,estado:'completa'};
+}
+function completarFibraCandidato(c){
+  var receta=null;
+  (c&&c.partes||[]).forEach(function(p){if(p.tipo==='receta')receta=p;});
+  if(receta){
+    var r=null;if(typeof baseRecipes!=='undefined')baseRecipes.forEach(function(x){if(x.name===receta.nombre)r=x;});
+    if(r&&r.comps&&r.comps.length)return completarFibraReceta(r);
+    return completarFibraReceta({nombre:receta.nombre,tags:receta.tags||'',ingredients:receta.ingredients||''});
+  }
+  var alims=(c&&c.partes||[]).filter(function(p){return p.tipo==='alimento';});
+  if(!alims.length)return {g:null,estado:'desconocida'};
+  var gs=alims.map(function(p){return completarFibraFood(p.nombre);});
+  if(gs.some(function(g){return g===null;}))return {g:null,estado:'parcial'};
+  var suma=0;gs.forEach(function(g){suma+=g.g;});
+  return {g:suma,estado:'completa'};
+}
+function completarFibraHoy(){
+  var iso=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);
+  var d=(state&&state.diary&&state.diary[iso])||{};
+  var total=0,conocidas=0,suma=0;
+  ['breakfast','lunch','dinner','snacks'].forEach(function(m){
+    (d[m]||[]).forEach(function(x){total++;if(x&&x.fibra!=null){conocidas++;suma+=+x.fibra||0;}});
+  });
+  return {total:total,conocidas:conocidas,suma:suma,ratio:total?(conocidas/total):1};
+}
 /* ===== Contenido accionable =====
    - Auxiliares (aderezos/sazonadores/electrolitos): NUNCA propuesta de
      comida completa (ficha propia + recetas compatibles + Potenciar).
    - Micro-resumen REAL desde el primer paso de la receta (sin texto ficticio).
    - Tiempo activo separado del reposo. */
 var RECETA_AUXILIAR=/sazonador|aderezo|electrolit|chile[- ]lim[óo]n|taj[ií]n casero|sal de ajo|sal de hierbas|mezcla de especias|aliño|marinada/i;
+/* Tipos de receta que NUNCA son comida completa (salsas/aderezos/sazonadores):
+   salen de tier A y B; viven en su ficha, en recetas compatibles y en Potenciar. */
+var RECETA_AUXILIAR_TIPO=/^(salsa|aderezo|especia)$/i;
 /* Receta real más rápida para preparar un alimento (método visible). */
 function recetaSugeridaPara(nombre){
   var base=completarNombreCorto(nombre).split(' ')[0].toLowerCase();
@@ -26518,6 +26913,20 @@ function completarProponer(ctx){
     vistos[clave]=x.tipoBebida?'bebida':1;
     unicos.push(x);
   });
+  // Filtros de practicidad (⚙️ Ajustar ahora): sin filtros activos, no-op.
+  // El modo "1 ingrediente faltante" es EXPLÍCITO: nunca se relaja solo.
+  var fFiltros=completarFiltrosActivos();
+  if(fFiltros){
+    var fTiempo={noCocinar:fFiltros.noCocinar,recalentar:fFiltros.recalentar,licuar:fFiltros.licuar,tiempo:fFiltros.tiempo,soloTengo:false,tengo:[]};
+    unicos=unicos.filter(function(x){
+      var r=completarFiltroRecetaDe(x);
+      if(fFiltros.modoFaltante&&fFiltros.tengo&&fFiltros.tengo.length){
+        if(!recetaPasaFiltros(r,fTiempo))return false;
+        return recetaFaltantes(r,fFiltros.tengo).length===1;
+      }
+      return recetaPasaFiltros(r,fFiltros);
+    });
+  }
   // Diversidad estructural: una receta, una alternativa ligera/rápida y una estructura distinta.
   function elegir(catProhibidas){
     for(var i=0;i<unicos.length;i++){
@@ -26668,11 +27077,25 @@ function completarRenderPanel(propsPre){
   var h='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="completarCerrar()">← Volver</button>'
     +'<b style="font-size:17px;color:#12352a;flex:1">🍽 Completar mi día</b></div>'
-    +'<div class="muted" style="font-size:13px;margin-bottom:10px">'+safeText(completarTextoTarjeta())+'</div>';
+    +'<div class="muted" style="font-size:13px;margin-bottom:10px">'+safeText(completarTextoTarjeta())+'</div>'
+    +completarFiltrosUI();
+  var fbHoy=completarFibraHoy();
+  if(fbHoy.ratio>=0.8&&fbHoy.suma>0)h+='<div class="muted" style="font-size:12px;margin-bottom:10px">Fibra: '+Math.round(fbHoy.suma)+' g</div>';
   var franjaR=ctx.franja||completarFranja(ctx.hora);
   var rapidoDiaV=ctx.llenado==='rapido'&&(franjaR==='manana'||franjaR==='trabajo'||franjaR==='madrugada');
   var modoFacilV=window._completarModoFacil!==false;
-  if(!props.length&&!(modoFacilV&&rapidoDiaV)){
+  if(!props.length&&completarFiltrosActivos()){
+    // Estado vacío POR FILTROS: relajación siempre EXPLÍCITA, nunca automática.
+    var fVac=completarFiltrosActivos();
+    h+='<div class="card" style="text-align:center;padding:14px 12px">'
+      +'<b>'+(fVac.modoFaltante?'Tampoco encontré opciones con 1 ingrediente faltante.':'No encontré algo que cumpla todo.')+'</b>'
+      +'<div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:center">'
+      +(fVac.modoFaltante?'<button class="btn" style="padding:8px 12px;font-size:12px" onclick="completarFiltroToggle(\'modoFaltante\',false)">Volver a mis filtros</button>':'')
+      +(!fVac.modoFaltante&&fVac.tiempo!=null?'<button class="btn" style="padding:8px 12px;font-size:12px" onclick="completarFiltroTiempo(\'any\')">Relajar tiempo</button>':'')
+      +(!fVac.modoFaltante&&fVac.noCocinar?'<button class="btn" style="padding:8px 12px;font-size:12px" onclick="completarFiltroToggle(\'noCocinar\',false)">Permitir cocinar</button>':'')
+      +(!fVac.modoFaltante&&fVac.tengo&&fVac.tengo.length?'<button class="btn" style="padding:8px 12px;font-size:12px" onclick="completarFiltroModoFaltante()">Ver opciones con 1 ingrediente faltante</button>':'')
+      +'</div></div>';
+  }else if(!props.length&&!(modoFacilV&&rapidoDiaV)){
     h+='<div class="card"><b>Sin propuestas seguras ahora.</b><div class="muted" style="font-size:13px;margin-top:4px">Registra lo que comiste y vuelve a intentar.</div></div>';
   }
   props.forEach(function(pr,i){
@@ -26685,21 +27108,51 @@ function completarRenderPanel(propsPre){
     if(receta){var rr=null;baseRecipes.forEach(function(x){if(x.name===receta.nombre)rr=x;});if(rr)tm5Rec=/(tm5|thermomix)/i.test(String(rr.method||'')+' '+String(rr.tags||''));}
     var sugMicro=null;
     if(pr.tipoProp==='micro')sugMicro=recetaSugeridaPara((pr.componentes[0]||{}).nombre||'');
+    // chips de filtros: faltante informativo + reposo (⏳ para después)
+    var chipFiltros='';
+    var fChip=completarFiltrosActivos();
+    var rChip=null;if(receta)baseRecipes.forEach(function(x){if(x.name===receta.nombre)rChip=x;});
+    if(rChip&&rChip.reposo)chipFiltros='<span style="font-size:11px;color:#6a4f1a;background:#fdf3e0;border-radius:999px;padding:3px 10px">⏳ Para después (reposo '+safeText(rChip.reposo)+')</span>';
+    if(fChip&&fChip.tengo&&fChip.tengo.length&&!pr.bebida){
+      var rInfo=rChip||{nombre:pr.titulo,tags:'',ingredients:'',tiempo:pr.tiempo};
+      var faltaChip=recetaFaltantes(rInfo,fChip.tengo);
+      if(fChip.modoFaltante&&faltaChip.length===1)chipFiltros+='<span style="font-size:11px;font-weight:800;background:#fff8e1;border-radius:999px;padding:3px 10px">🧺 Te faltaría: '+safeText(faltaChip[0])+'</span>';
+      else if(!fChip.soloTengo&&faltaChip.length>0&&faltaChip.length<=2)chipFiltros+='<span style="font-size:11px;color:#8a6d1a;background:#fff8e1;border-radius:999px;padding:3px 10px">🧺 Te falta: '+safeText(faltaChip.join(', '))+'</span>';
+    }
+    // línea corta "por qué encaja" cuando hay filtros activos (máximo una)
+    var lineaFit='';
+    if(fChip){
+      var fits=[];
+      if(fChip.tiempo!=null)fits.push('✓ '+fChip.tiempo+' min');
+      if(fChip.soloTengo)fits.push('✓ Con lo que tienes');
+      if(fits.length)lineaFit='<div class="muted" style="font-size:11px;margin-top:2px">'+fits.join(' · ')+'</div>';
+    }
+    // fibra: solo dato COMPLETO; badge si ≥5g, inline si 1-4g (nunca ambas)
+    var fbCard=completarFibraCandidato({partes:pr.componentes.map(function(c){return {nombre:c.nombre,tipo:c.tipo,tags:'',ingredients:'',method:'',tiempo:0};})});
+    var fbBadge='',fbInline='';
+    if(fbCard.estado==='completa'&&fbCard.g>0){
+      if(fbCard.g>=5)fbBadge='<span style="font-size:11px;font-weight:800;background:#e8f5e9;border-radius:999px;padding:3px 10px">🌾 Buena fuente de fibra</span>';
+      else fbInline=' · '+fbCard.g+' g fibra';
+    }
     h+='<div style="background:#fff;border:1px solid #d9e3db;border-radius:14px;padding:12px;margin-bottom:10px">'
       +'<b style="font-size:15px">'+safeText(pr.titulo)+'</b>'
       +(esComboB?'<div class="muted" style="font-size:12px;margin-top:2px"><b>Receta:</b> '+safeText(receta.nombre)+'</div><div class="muted" style="font-size:12px"><b>Acompañamiento:</b> '+safeText(alimsComp.map(function(c){return c.nombre;}).join(' + '))+'</div>':'')
-      +'<div style="font-size:13px;font-weight:700;color:#12352a;margin-top:4px">'+safeText(pr.tipoProp==='micro'&&modoFacilV?completarLineaMicro(pr):(esComboB?(Math.round(pr.kcal)+' kcal · '+Math.round(pr.p)+' g proteína'+(pr.tiempo?' · '+pr.tiempo+' min':'')):completarLineaPropuesta(pr)))+'</div>'
+      +'<div style="font-size:13px;font-weight:700;color:#12352a;margin-top:4px">'+safeText(pr.tipoProp==='micro'&&modoFacilV?completarLineaMicro(pr):(esComboB?(Math.round(pr.kcal)+' kcal · '+Math.round(pr.p)+' g proteína'+(pr.tiempo?' · '+pr.tiempo+' min':'')):completarLineaPropuesta(pr)))+fbInline+'</div>'
+      +lineaFit
       +(resumen?'<div style="font-size:12px;color:#56725f;margin-top:2px">'+safeText(resumen)+'</div>':'')
       +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">'
       +((modoFacilV&&rapidoDiaV&&completarEtiquetaTipo(pr))?'<span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">'+completarEtiquetaTipo(pr).icono+' '+safeText(completarEtiquetaTipo(pr).texto)+'</span>':'<span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">'+completarVolBadge(pr.volumen)+'</span>')
       +(tm5Rec?'<span style="font-size:11px;font-weight:800;background:#f3e8ff;border-radius:999px;padding:3px 10px">⚙️ TM5 disponible</span>':'')
+      +fbBadge
       +(pr.tipoProp==='micro'&&modoFacilV?'<span style="font-size:11px;color:#56725f">'+(sugMicro?'🍳 Prepáralo: '+safeText(sugMicro.nombre)+' ('+sugMicro.tiempo+' min)':'🥡 Sin cocinar · Poco volumen')+'</span>':'')
+      +chipFiltros
       +'</div>'
       +(pr.bebida?bebidaMenuHTML(i,pr,ctx):'')
       +'<div class="row" style="gap:8px;margin-top:10px">'
       +(receta?'<button class="btn" style="flex:1;padding:10px;min-height:44px" onclick="completarCocinar('+i+')">🍳 Cocinar</button>':'')
       +'<button class="btn primary" style="flex:1;padding:10px;min-height:44px" onclick="completarAgregar('+i+')">＋ Agregar</button>'
-      +'<button class="btn" style="flex:0 0 auto;padding:10px 12px;min-height:44px" onclick="completarPotenciarAbrir('+i+')" title="Añadir 1-3 extras a esta comida">⚡</button></div></div>';
+      +(potenciarHayExtras(ctx,pr.componentes.map(function(c){return c.nombre;}))?'<button class="btn" style="flex:0 0 auto;padding:10px 12px;min-height:44px" onclick="completarPotenciarAbrir('+i+')" title="Añadir 1-3 extras a esta comida">⚡ <span class="pot-btn-full">Agregar extras</span><span class="pot-btn-corto">Extras</span></button>':'')
+      +'</div></div>';
   });
   if(props.length===3){
     h+='<button class="btn" style="width:100%;padding:12px;min-height:48px" onclick="completarOtras3()">🔄 Otras 3</button>';
@@ -26733,10 +27186,10 @@ var POTENCIAR_MICRO={
   'Crema cacahuate cda':{con:/pan|avena|licuado|manzana|hotcake|platano|fruta/i},
   'Almendras 28g':{con:/ensalada|avena|yogurt|licuado|fruta|queso/i},
   'Nueces 28g':{con:/ensalada|avena|yogurt|licuado|fruta/i},
-  'Queso 28g':{con:/huevo|quesadilla|pasta|arroz|frijol|papa|torta|sandwich|sopa|carne|pollo|enchilada|mole|hamburguesa/i},
-  'Aguacate 1/2':{con:/huevo|taco|torta|arroz|ensalada|pollo|tostada|bowl|frijol|carne|res|cerdo|pescado/i},
+  'Queso 28g':{con:/huevo|quesadilla|pasta|arroz|frijol|papa|torta|sandwich|sopa|carne|pollo|enchilada|mole|hamburguesa|totopo|fritos|chips|chicharr/i},
+  'Aguacate 1/2':{con:/huevo|taco|torta|arroz|ensalada|pollo|tostada|bowl|frijol|carne|res|cerdo|pescado|totopo|chips|fritos|chicharr|cracker/i},
   'Aceite oliva 1 cucharada':{con:/ensalada|pasta|verdura|pescado|arroz/i,soloPlato:1},
-  'Mantequilla 1 cucharada':{con:/pan|papa|hotcake|elote/i,soloPlato:1},
+  'Mantequilla 1 cucharada':{con:/pan|papa(?!s fritas)|hotcake|elote/i,soloPlato:1},
   'Mayonesa 1 cucharada':{con:/sandwich|torta|ensalada|huevo/i,soloPlato:1},
   'Miel 1 cucharada':{con:/avena|licuado|fruta|pan|hotcake|yogurt|leche|platano/i,soloDulce:1},
   'Granola 1/2 taza':{con:/yogurt|licuado|leche|fruta|avena|platano/i,soloDulce:1},
@@ -26757,7 +27210,7 @@ var POTENCIAR_MICRO={
   'Trail mix 1/2 taza':{con:/yogurt|fruta|avena|ensalada/i,soloDulce:1},
   'Nutella 2 cucharadas':{con:/pan|avena|licuado|hotcake|fruta|platano/i,soloDulce:1},
   'Proteína whey 1 scoop':{con:/leche|licuado|yogurt|avena/i,soloDulce:1},
-  'Crema 1 cucharada':{con:/fruta|fresa|platano|gelatina|hotcake|pan|taco|enchilada|quesadilla|sopa/i},
+  'Crema 1 cucharada':{con:/fruta|fresa|platano|gelatina|hotcake|pan|taco|enchilada|quesadilla|sopa|totopo|fritos|chips|chicharr/i},
   'Totopos 1 oz':{con:/comida|frijol|guacamole|ensalada|mole|tinga/i},
   'Bolillo 1 pieza':{con:/huevo|torta|sandwich|carne|pollo|queso|frijol/i},
   'Tortilla de harina grande':{con:/huevo|pollo|carne|queso|frijol|taco|guiso/i},
@@ -26765,7 +27218,13 @@ var POTENCIAR_MICRO={
   'Gelatina regular 1 copa':{con:/desayuno|fruta|postre/i,soloDulce:1},
   'Cereal alto en proteína 1 taza':{con:/leche|yogurt|desayuno|fruta/i,soloDulce:1},
   'Chicharrón de cerdo 1 oz':{con:/frijol|guiso|comida|mole/i},
-  'Jalea de fresa 1 cda':{con:/pan|hotcake|avena|tostada/i,soloDulce:1}
+  'Jalea de fresa 1 cda':{con:/pan|hotcake|avena|tostada/i,soloDulce:1},
+  // === Dips y complementos de BOTANAS (chips/totopos/crackers) ===
+  'Guacamole 2 cucharadas':{con:/totopo|fritos|chips|cracker|chicharr|taco|tostada|ensalada/i},
+  'Salsa 1/2 taza':{con:/totopo|fritos|chips|cracker|chicharr|taco|tostada/i},
+  'Pico de gallo 1/4 taza':{con:/totopo|fritos|chips|cracker|chicharr|taco|tostada/i},
+  'Queso crema 2 cucharadas':{con:/cracker|galleta|pan/i},
+  'Hummus 2 cucharadas':{con:/cracker|galleta|totopo|verdura/i}
 };
 /* Predicado: micro-extra = alimento real, 0 min, ≤240 kcal, Poco volumen, denso. */
 function potenciarEsMicroExtra(x){
@@ -26780,6 +27239,7 @@ function potenciarEsMicroExtra(x){
    - soloPlato → solo con plato compatible (nunca independiente ni bebida). */
 var CALORIAS_FACILES_FAMILIA=[
   [/aceite|mantequilla|mayonesa|manteca/i,{familia:'grasas',funcion:'soloPlato'}],
+  [/leche almendra|leche de almendra/i,{familia:'lacteos',funcion:'bebida'}],
   [/crema de cacahuate|nutella|cacahuate|almendra|nuec|nuez|trail|mani/i,{familia:'frutosSecos',funcion:'snack'}],
   [/granola/i,{familia:'frutosSecos',funcion:'snack'}],
   [/miel|jalea/i,{familia:'toppings',funcion:'topping'}],
@@ -26787,15 +27247,21 @@ var CALORIAS_FACILES_FAMILIA=[
   [/queso|cottage/i,{familia:'lacteos',funcion:'acompanamiento'}],
   [/aguacate/i,{familia:'grasas',funcion:'acompanamiento'}],
   [/leche|yogurt/i,{familia:'lacteos',funcion:'bebida'}],
-  [/tortilla|bolillo|tostada|waffle|totopo|pan /i,{familia:'pan',funcion:'acompanamiento'}],
+  [/agua de coco|jugo|bebida deportiva|bebida de electrolitos|horchata|atole|t[ée] fr[ií]o|k[eé]fir/i,{familia:'bebidas',funcion:'bebida'}],
+  [/tortilla|bolillo|tostada|waffle|pan /i,{familia:'pan',funcion:'acompanamiento'}],
   [/avena|cereal/i,{familia:'cereales',funcion:'snack'}],
-  [/platano|plátano|manzana|mango|pina|piña|fresa|fruta|naranja/i,{familia:'fruta',funcion:'snack'}],
+  // 'pina' NO va (matcheaba "esPINAca"): piña se escribe con ñ.
+  [/platano|plátano|manzana|mango|piña|fresa|fruta|naranja/i,{familia:'fruta',funcion:'snack'}],
   [/huevo/i,{familia:'huevo',funcion:'independiente'}],
   [/atun|atún|sardina/i,{familia:'proteina',funcion:'independiente'}],
+  // botanas ANTES de proteínas: "Chicharrón de cerdo" es snack, no acompañamiento
+  // (totopos = chips de tortilla: botana, no acompañamiento de pan)
+  [/chicharron|chicharrón|fritos|chips|papas fritas|totopo|cracker/i,{familia:'snacksSalados',funcion:'snack'}],
+  // dips: topping para botanas/platos, jamás comida independiente
+  [/guacamole|hummus|pico de gallo/i,{familia:'dips',funcion:'topping'}],
   [/jamón|jamon|pavo|salmón|salm|tilapia|camaron|camarón|pollo|carne|cerdo|res|bistec/i,{familia:'proteina',funcion:'acompanamiento'}],
   [/gelatina/i,{familia:'postres',funcion:'snack'}],
   [/whey/i,{familia:'toppings',funcion:'topping'}],
-  [/chicharron|chicharrón|fritos|chips|papas fritas/i,{familia:'snacksSalados',funcion:'snack'}],
   [/lentejas|garbanzo|tofu|frijol|arroz|papa |pasta|elote|camote|sopa|verdura|brócoli|brocoli|espinaca|ejote|maíz|maiz/i,{familia:'plato',funcion:'acompanamiento'}]
 ];
 function caloriasFacilesDe(nombre){
@@ -26912,7 +27378,7 @@ function potenciarVariante(x,factor,obj,techo){
   return {nombre:nombre,kcal:Math.round(kcal),p:Math.round(x.p*factor*10)/10,c:Math.round(x.c*factor*10)/10,g:Math.round(x.g*factor*10)/10,factor:factor,volumen:x.volumen,tipo:x.tipo,tiempo:x.tiempo||0,metodo:x.metodo||''};
 }
 /* Scoring de Potenciar: INDEPENDIENTE del de Completar mi día. */
-function potenciarScore(o,ctx,f,obj,baseCortos){
+function potenciarScore(o,ctx,f,obj,baseCortos,clase){
   var W=POTENCIAR_PESOS;
   var score=0,razones=[];
   var fitKcal=o.kcal<=obj?(1-Math.min(1,(obj-o.kcal)/obj)):Math.max(0,1-2*Math.min(1,(o.kcal-obj)/obj));
@@ -26932,6 +27398,13 @@ function potenciarScore(o,ctx,f,obj,baseCortos){
   if(cons.indexOf(corto)>=0){score+=W.repeticion*2;razones.push('repetido-hoy');}
   if(o.factor&&o.factor!==1){score+=W.escalado;razones.push('escalado x'+o.factor);}
   if(o.isMicro&&ctx.llenado==='rapido'){score+=W.micro;razones.push('micro-extra');}
+  // Compatibilidad natural del complemento de botana: dip/topping con bonus
+  // pequeño (la naturalidad manda, sin inventar combinaciones).
+  if(clase==='dip'){score+=6;razones.push('dip-natural');}
+  else if(clase==='topping'){score+=3;razones.push('topping-natural');}
+  // Fibra en Potenciar: solo cuando kcal/proteína ya van razonablemente bien
+  var fbX=completarFibraFood(o.nombreBase);
+  if(fbX!=null&&fbX.g>0&&f.k<=300&&f.atrasado!=='p'){score+=2;razones.push('fibra-extra');}
   return {score:score,razones:razones};
 }
 /* Categoría de NECESIDAD que cubre el extra (determinista, desde datos). */
@@ -26941,16 +27414,66 @@ function potenciarCategoria(o,ctx,f){
   if(completarDensidad(o.kcal,o.volumen)>=250)return 'v';
   return 'kcal';
 }
-/* Razón principal (una sola por tarjeta), derivada de la categoría real. */
+/* Equivalencia real oz→g SOLO cuando la variante está en oz ("2 oz ≈ 57 g").
+   Sin equivalencias inventadas para otras unidades. */
+function potenciarEquivOz(nombre){
+  var m=String(nombre||'').match(/(\d+(?:\.\d+)?|1\/2|½|1\/4|¼)\s*oz\b/i);
+  if(!m)return '';
+  var oz=m[1];
+  if(oz==='1/2'||oz==='½')oz=0.5;
+  else if(oz==='1/4'||oz==='¼')oz=0.25;
+  else oz=+oz;
+  if(!(oz>0))return '';
+  return ' · '+String(m[0]).replace(/\s+/g,' ').trim()+' ≈ '+Math.round(oz*28.35)+' g';
+}
+/* Alimentos que NO están listos tal cual: nunca "Listo para comer". */
+function potenciarRequierePrep(nombre){
+  var n=completarNorm(nombre||'');
+  if(/congelad|crud/.test(n))return 'Requiere preparación o licuado';
+  if(/^avena/.test(n))return 'Requiere preparación o licuado';
+  return null;
+}
+/* Razón principal (una sola por tarjeta), derivada del ROL REAL del alimento
+   (familia/función del catálogo), no solo de las kcal:
+   - grasas puras y toppings → "Extra para agregar a comidas" (jamás solos)
+   - botanas saladas y frutos secos → "Snack denso en calorías" (+ oz ≈ g)
+   - bebidas con función → etiqueta de bebida/hidratación/energía
+   - proteína sólida → "Alto en proteína" (jamás "poco volumen")
+   - el resto conserva la lógica de necesidad (kcal/proteína/carbos). */
 function potenciarRazon(cat,esMejor,o,f){
-  if(o.isMicro)return o.p>=7?{icono:'💪',texto:'Proteína + calorías'}:{icono:'⚡',texto:'Extra fácil · poco volumen'};
+  var base=o.nombreBase||o.nombre;
+  var fam=caloriasFacilesDe(base);
+  var eq=potenciarEquivOz(o.nombre);
+  // 0) dip natural para botana (guacamole/salsa/hummus/frijol…): su propia etiqueta
+  if(o.clase==='dip')return {icono:'🥣',texto:'Dip para tu snack'};
+  // 1) micro de proteína REAL (whey, queso, yogurt, jamón…): preparado y denso
+  if(o.isMicro&&o.p>=7&&fam.funcion!=='bebida')return {icono:'💪',texto:'Proteína + calorías'};
+  // 2) grasas puras y toppings: se AGREGAN a comidas, jamás se comen solos
+  if(fam.funcion==='soloPlato'||fam.funcion==='topping')return {icono:'🥄',texto:'Extra para agregar a comidas'};
+  // 3) botanas saladas y frutos secos: snack denso, con equivalencia real
+  if(fam.familia==='snacksSalados'||fam.familia==='frutosSecos')return {icono:'🥜',texto:'Snack denso en calorías'+eq};
+  // 4) bebidas con función: etiqueta de bebida (nunca de sólido)
+  if(fam.funcion==='bebida'&&bebidaFuncionesDe(base).length){
+    var fns=bebidaFuncionesDe(base);
+    if(fns.indexOf('energia_calorias')>=0&&fns.indexOf('proteina')>=0)return {icono:'🥛',texto:'Bebida con energía y proteína'};
+    if(fns.indexOf('energia_calorias')>=0)return {icono:'⚡',texto:'Bebida con energía'};
+    if(fns.indexOf('hidratacion')>=0)return {icono:'💧',texto:'Bebida hidratante'};
+    return {icono:'🥛',texto:'Bebida'};
+  }
+  // 5) proteína sólida (pavo/pollo/jamón en porción real): jamás "poco volumen"
+  if(fam.familia==='proteina'&&(+o.p||0)>=10)return {icono:'💪',texto:'Alto en proteína'+(cat==='p'?' · cubre tu déficit':'')};
+  // 6) micro fácil (gelatina, aguacate…)
+  if(o.isMicro)return {icono:'⚡',texto:'Extra fácil · poco volumen'};
   if(esMejor&&cat==='kcal')return {icono:'⭐',texto:'Mejor ajuste para lo que te falta'};
   if(cat==='p')return {icono:'💪',texto:'Te falta proteína'};
   if(cat==='c')return {icono:'🍚',texto:'Te faltan carbohidratos'};
   if(cat==='v')return {icono:'🥤',texto:'Sube calorías con poco volumen'};
   return {icono:'⚡',texto:'Rápido de agregar'};
 }
-/* Facilidad (una línea), solo cuando hay dato real (tiempo/método). */
+/* Facilidad (una línea), solo cuando hay dato real (tiempo/método).
+   Roles: grasas/toppings → "Muy poco volumen" (nunca Listo para comer);
+   bebidas → "Lista para beber"; congelados/crudos/avena seca → requieren
+   preparación (nunca Listo para comer). */
 function potenciarFacilidad(x){
   if(!x)return null;
   var m=String(x.metodo||'').toLowerCase();
@@ -26958,16 +27481,86 @@ function potenciarFacilidad(x){
   var t=+x.tiempo||0;
   if(t>0&&t<=10)return {icono:'⚡',texto:t+' min'};
   if(t>10)return {icono:'⏱',texto:t+' min'};
-  if(x.tipo==='alimento')return {icono:'🥡',texto:'Listo para comer'};
+  if(x.tipo==='alimento'){
+    var base=x.nombreBase||x.nombre;
+    var fam=caloriasFacilesDe(base);
+    if(fam.funcion==='soloPlato'||fam.funcion==='topping')return {icono:'🥄',texto:'Muy poco volumen'};
+    if(fam.funcion==='bebida')return {icono:'🧊',texto:'Lista para beber'};
+    var prep=potenciarRequierePrep(base);
+    if(prep)return {icono:'🥄',texto:prep};
+    return {icono:'🥡',texto:'Listo para comer'};
+  }
   return null;
 }
 /* Línea del encabezado: datos del faltante real, sin frases fijas. */
 function potenciarTextoFaltante(f){
-  var out=f.k>0?('Te faltan '+Math.round(f.k)+' kcal'):'Kcal del día cubiertas';
-  if(f.p<=5)out+=' · proteína casi cubierta';
-  else if(f.atrasado==='p')out+=' · falta proteína';
-  else if(f.atrasado==='c')out+=' · faltan carbohidratos';
-  return out;
+  return 'Te faltan hoy: '+Math.round(f.k)+' kcal · '+Math.round(f.p)+' g proteína';
+}
+/* Barra horizontal simple: 0-100%, nunca NaN/Infinity, sin desbordar.
+   Objetivo null/0 → sin barra (null). */
+function progresoBarraHTML(consumido,objetivo){
+  if(!(objetivo>0))return null;
+  var c=Math.max(0,+consumido||0);
+  var o=+objetivo;
+  var pct=Math.min(100,Math.round(c/o*100));
+  if(!isFinite(pct))pct=0;
+  return '<div style="background:#e6eee8;border-radius:999px;height:6px;overflow:hidden;margin-top:3px">'
+    +'<div style="width:'+pct+'%;height:100%;background:'+(pct>=100?'#15704f':'#39b77d')+';border-radius:999px"></div></div>';
+}
+/* Fila de progreso: "Calorías · 2450 / 4200 kcal" + barra + faltante real.
+   Si supera el objetivo: "Objetivo alcanzado · +X". */
+function progresoFilaHTML(icono,etiqueta,consumido,objetivo,unidad){
+  var barra=progresoBarraHTML(consumido,objetivo);
+  if(!barra)return '';
+  var c=Math.round(+consumido||0),o=Math.round(+objetivo||0);
+  var faltaLinea=null;
+  if(c<o)faltaLinea='Te faltan '+(o-c)+' '+unidad;
+  else faltaLinea='Objetivo alcanzado'+(c>o?' · +'+(c-o)+' '+unidad:'');
+  return '<div style="margin-top:7px">'
+    +'<div class="row" style="justify-content:space-between;gap:6px;flex-wrap:wrap"><span style="font-size:12px;font-weight:700;color:#12352a">'+icono+' '+etiqueta+'</span><span class="muted" style="font-size:11px">'+c+' / '+o+' '+unidad+'</span></div>'
+    +barra
+    +'<div class="muted" style="font-size:11px;margin-top:2px">'+faltaLinea+'</div>'
+    +'</div>';
+}
+/* Bloque compacto "Progreso de hoy" en Potenciar. SOLO datos reales ya
+   existentes: diario (kcal/proteína consumidas), objetivos del perfil y
+   completarFibraHoy(). Fibra únicamente con objetivo REAL del perfil
+   (state.profile.fibra) y cobertura suficiente del diario (ratio ≥0.8,
+   la misma regla que usa la UI actual). Sin cálculos paralelos. */
+function potenciarProgresoHTML(ctx,falta){
+  if(!ctx)return '';
+  var h='<div style="background:#fff;border:1px solid #d9e3db;border-radius:12px;padding:10px 12px;margin-bottom:10px">'
+    +'<b style="font-size:13px;color:#12352a">📊 Progreso de hoy</b>';
+  h+=progresoFilaHTML('🔥','Calorías',ctx.kcalConsumidas,ctx.kcalObjetivo,'kcal');
+  h+=progresoFilaHTML('💪','Proteína',ctx.macrosConsumidos.p,ctx.macrosObjetivo.p,'g');
+  // fibra: solo con objetivo real y cobertura suficiente (regla actual de la UI)
+  var fbObj=(state&&state.profile)?+state.profile.fibra||0:0;
+  if(fbObj>0){
+    var fbHoy=(typeof completarFibraHoy==='function')?completarFibraHoy():null;
+    if(fbHoy&&fbHoy.ratio>=0.8)h+=progresoFilaHTML('🌾','Fibra',fbHoy.suma,fbObj,'g');
+  }
+  h+='</div>';
+  return h;
+}
+/* Mini tarjeta compacta de la comida base en Potenciar. Reutiliza el contexto
+   REAL de la tarjeta desde la que se abrió (pr = _completarPotBase):
+   titulo, kcal, proteína, porción (si es alimento único) y fibra SOLO si es
+   fiable. No recalcula datos distintos de los de la tarjeta. */
+function potenciarBaseHTML(pr){
+  if(!pr)return '';
+  var cs=pr.componentes||[];
+  var porcion='';
+  if(cs.length===1&&cs[0].tipo!=='receta'){
+    var p0=cs[0].porcion||completarPorcion(cs[0].nombre);
+    porcion=String(p0.texto||'').replace(/\s+de\s+[^·]*$/,'');
+  }
+  var fb=completarFibraCandidato({partes:cs.map(function(c){return {nombre:c.nombre,tipo:c.tipo,tags:'',ingredients:'',method:'',tiempo:0};})});
+  var line=(porcion?porcion+' · ':'')+Math.round(pr.kcal)+' kcal · '+(Math.round((+pr.p||0)*10)/10)+' g proteína';
+  if(fb&&fb.estado==='completa'&&fb.g>0)line+=' · '+(Math.round(fb.g*10)/10)+' g fibra';
+  return '<div style="background:#f5faf7;border:1px solid #d9e3db;border-radius:12px;padding:8px 12px;margin-bottom:10px">'
+    +'<b style="font-size:14px;color:#12352a">'+safeText(pr.titulo||(cs[0]&&cs[0].nombre)||'Esta comida')+'</b>'
+    +'<div class="muted" style="font-size:12px;margin-top:2px">'+safeText(line)+'</div>'
+    +'</div>';
 }
 /* Extras que Potenciar ya agregó a ESTA comida hoy: se leen del diario real
    (entradas con src='potenciar'), así el resumen sobrevive a re-render y
@@ -27216,6 +27809,9 @@ function completarPotenciar(ctx, baseNombres, excluidas){
   // contexto dulce amplio (para micro-extras): además de las recetas dulces,
   // bases líquidas/frutales como leche+plátano o avena son contexto dulce.
   var esDulce=DULCE.test(texto)||/leche|platano|yogurt|avena|granola|miel|cereal|fruta|licuado/i.test(texto);
+  // BOTANA como base (chips/totopos/crackers/chicharrones): solo complementos
+  // naturales de snack — jamás bebidas como topping ni proteínas absurdas.
+  var baseEsSnack=(base.length>0)&&base.every(function(b){return b.tipo==='alimento';})&&/(fritos|totopo|chips|cracker|galleta|chicharr)/i.test(texto);
   var franja=ctx.franja||completarFranja(ctx.hora);
   var f=potenciarFaltante(ctx);
   var obj=completarKcalMomento(ctx);
@@ -27232,6 +27828,18 @@ function completarPotenciar(ctx, baseNombres, excluidas){
     if(baseCortos.indexOf(corto)>=0)return;
     if(exclNorm.indexOf(completarNorm(a.nombre))>=0||exclCorto.indexOf(corto)>=0)return;
     var spec=COMPLETAR_ALIMENTO[a.nombre]||POTENCIAR_MICRO[a.nombre]; if(!spec)return;
+    var famA=caloriasFacilesDe(a.nombre);
+    if(baseEsSnack){
+      if(famA.funcion==='bebida')return;        // bebida jamás es topping de una botana
+      if(famA.familia==='proteina')return;      // proteína encima del snack: absurdo
+      if(famA.funcion==='independiente')return; // huevo/atún/sardinas no coronan botanas
+    }
+    // clase natural del complemento para botanas: dip / topping
+    var claseX=null;
+    if(baseEsSnack){
+      if(/guacamole|hummus|pico de gallo|queso crema|aguacate|frijol|salsa/i.test(a.nombre))claseX='dip';
+      else if(/queso|crema/i.test(a.nombre))claseX='topping';
+    }
     if(spec.funcion==='bebida'&&salado)return;       // bebida NO rellena salados
     if(spec.funcion==='principal'){
       var esAvenaParaLicuado=/avena/i.test(a.nombre)&&/leche|licuado|platano|yogurt|crema|cereal/i.test(texto);
@@ -27245,8 +27853,8 @@ function completarPotenciar(ctx, baseNombres, excluidas){
     [1,0.5,2].forEach(function(factor){
       var v=potenciarVariante(baseX,factor,obj,techo);
       if(!v)return;
-      var s=potenciarScore(v,ctx,f,obj,baseCortos);
-      opciones.push({nombre:v.nombre,nombreBase:a.nombre,kcal:v.kcal,p:v.p,c:v.c,g:v.g,volumen:v.volumen,tipo:v.tipo,tiempo:v.tiempo,metodo:v.metodo,factor:v.factor,isMicro:potenciarEsMicroExtra(v),categoria:potenciarCategoria(v,ctx,f),score:s.score,razones:s.razones});
+      var s=potenciarScore(v,ctx,f,obj,baseCortos,claseX);
+      opciones.push({nombre:v.nombre,nombreBase:a.nombre,kcal:v.kcal,p:v.p,c:v.c,g:v.g,volumen:v.volumen,tipo:v.tipo,tiempo:v.tiempo,metodo:v.metodo,factor:v.factor,isMicro:potenciarEsMicroExtra(v),categoria:potenciarCategoria(v,ctx,f),clase:claseX,score:s.score,razones:s.razones});
     });
   });
   // Un solo lote por alimento: queda la variante que mejor puntúa.
@@ -27286,7 +27894,7 @@ function completarPotenciar(ctx, baseNombres, excluidas){
     }
   }
   return elegidos.slice(0,3).map(function(o,i){
-    return {nombre:o.nombre,nombreBase:o.nombreBase,titulo:completarNombreCorto(o.nombre),kcal:o.kcal,p:o.p,c:o.c,g:o.g,volumen:o.volumen,score:o.score,razones:o.razones,porcion:completarPorcion(o.nombre),factor:o.factor,categoria:o.categoria,isMicro:!!o.isMicro,etiqueta:potenciarRazon(o.categoria,i===0,o,f),facilidad:potenciarFacilidad(o)};
+    return {nombre:o.nombre,nombreBase:o.nombreBase,titulo:completarNombreCorto(o.nombre),kcal:o.kcal,p:o.p,c:o.c,g:o.g,volumen:o.volumen,score:o.score,razones:o.razones,porcion:completarPorcion(o.nombre),factor:o.factor,categoria:o.categoria,clase:o.clase,isMicro:!!o.isMicro,etiqueta:potenciarRazon(o.categoria,i===0,o,f),facilidad:potenciarFacilidad(o)};
   });
 }
 function completarCerrar(){var ov=document.getElementById('completarPanel');if(ov)ov.remove();}
@@ -27305,6 +27913,97 @@ function completarVerNormales(){
   window._completarModoFacil=false;
   completarRenderPanel();
 }
+/* ===== ⚙️ Ajustar ahora (filtros de practicidad, UI compacta) ===== */
+function completarFiltroGet(){
+  if(!window._completarFiltros)completarFiltrosReset();
+  return window._completarFiltros;
+}
+function completarFiltrosUI(){
+  var f=completarFiltroGet();
+  var activos=(f.tengo&&f.tengo.length)||f.noCocinar||(f.tiempo!=null)||f.modoFaltante;
+  var chips=f.tengo.map(function(n,i){
+    return '<span style="display:inline-flex;align-items:center;gap:4px;background:#eafaf0;border:1px solid #9dd5b4;border-radius:999px;padding:3px 8px;font-size:12px">'+safeText(n)+' <span style="cursor:pointer;font-weight:900" onclick="completarFiltroTengoQuitar('+i+')">×</span></span>';
+  }).join(' ');
+  var tiempoChips=[['2','2 min'],['5','5 min'],['10','10 min'],['any','Me da igual']].map(function(p){
+    var on=((f.tiempo!=null?String(f.tiempo):'any')===p[0]);
+    return '<button class="btn '+(on?'primary':'')+'" style="flex:1;padding:6px;font-size:12px;min-height:34px" onclick="completarFiltroTiempo(\''+p[0]+'\')">'+p[1]+'</button>';
+  }).join('');
+  return '<details style="margin-bottom:10px"><summary class="muted" style="font-size:12px;cursor:pointer">⚙️ Ajustar ahora'+(activos?' · filtros activos':'')+'</summary>'
+    +'<div style="background:#fff;border:1px solid #d9e3db;border-radius:12px;padding:10px;margin-top:6px">'
+    +'<b style="font-size:13px">Tengo esto en casa</b>'
+    +'<div class="row" style="gap:6px;margin-top:6px"><input id="filtroTengoInput" placeholder="Buscar ingrediente (ej: huevo, tortilla)" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ccc" oninput="completarFiltroTengoBuscar(this.value)"><button class="btn" style="padding:8px 12px" onclick="completarFiltroTengoAgregar()">Agregar</button></div>'
+    +'<div id="filtroTengoSug" class="row" style="gap:4px;margin-top:6px;flex-wrap:wrap"></div>'
+    +'<div class="row" style="gap:4px;margin-top:6px;flex-wrap:wrap">'+chips+'</div>'
+    +'<label style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #d9e3db;border-radius:10px;margin-top:8px;cursor:pointer;background:#fafbfa;font-size:13px;font-weight:700;min-height:42px"><span>Solo con lo que tengo</span><input type="checkbox" '+(f.soloTengo?'checked':'')+' onchange="completarFiltroToggle(\'soloTengo\',this.checked)" style="width:19px;height:19px;cursor:pointer"></label>'
+    +'<label style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #d9e3db;border-radius:10px;margin-top:6px;cursor:pointer;background:#fafbfa;font-size:13px;font-weight:700;min-height:42px"><span>No quiero cocinar</span><input type="checkbox" '+(f.noCocinar?'checked':'')+' onchange="completarFiltroToggle(\'noCocinar\',this.checked)" style="width:19px;height:19px;cursor:pointer"></label>'
+    +'<label style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #d9e3db;border-radius:10px;margin-top:6px;cursor:pointer;background:#fafbfa;font-size:13px;font-weight:700;min-height:42px"><span>Recalentar sí</span><input type="checkbox" '+(f.recalentar?'checked':'')+' onchange="completarFiltroToggle(\'recalentar\',this.checked)" style="width:19px;height:19px;cursor:pointer"></label>'
+    +'<label style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #d9e3db;border-radius:10px;margin-top:6px;cursor:pointer;background:#fafbfa;font-size:13px;font-weight:700;min-height:42px"><span>Licuar sí</span><input type="checkbox" '+(f.licuar?'checked':'')+' onchange="completarFiltroToggle(\'licuar\',this.checked)" style="width:19px;height:19px;cursor:pointer"></label>'
+    +'<div class="muted" style="font-size:11px;margin-top:4px">Recalentar y Licuar aplican cuando activas "No quiero cocinar".</div>'
+    +'<b style="font-size:13px;display:block;margin-top:10px">Tiempo</b>'
+    +'<div class="row" style="gap:6px;margin-top:6px">'+tiempoChips+'</div>'
+    +'<button class="btn" style="width:100%;margin-top:8px;padding:8px;font-size:12px" onclick="completarFiltroLimpiar()">Limpiar filtros</button>'
+    +'</div></details>';
+}
+function completarFiltroToggle(k,v){
+  var f=completarFiltroGet();
+  f[k]=v;
+  f.modoFaltante=false;
+  completarRenderPanel();
+}
+function completarFiltroTiempo(v){
+  var f=completarFiltroGet();
+  f.tiempo=(v==='any')?null:(+v);
+  f.modoFaltante=false;
+  completarRenderPanel();
+}
+function completarFiltroModoFaltante(){
+  var f=completarFiltroGet();
+  f.modoFaltante=true;
+  completarRenderPanel();
+}
+function completarFiltroLimpiar(){
+  completarFiltrosReset();
+  completarRenderPanel();
+}
+function completarFiltroTengoQuitar(i){
+  var f=completarFiltroGet();
+  f.tengo.splice(i,1);
+  f.modoFaltante=false;
+  completarRenderPanel();
+}
+function completarFiltroTengoAgregar(){
+  var inp=document.getElementById('filtroTengoInput');
+  if(inp&&inp.value.trim())completarFiltroTengoAgregarNombre(inp.value.trim());
+}
+function completarFiltroTengoAgregarNombre(nombre){
+  var f=completarFiltroGet();
+  if(f.tengo.indexOf(nombre)>=0){completarRenderPanel();return;}
+  var bases=completarFoodsBase();
+  var real=null;
+  var pedido=completarNorm(nombre);
+  for(var b in bases){ if(completarNorm(bases[b]).indexOf(pedido)===0||pedido.indexOf(b)===0){real=bases[b];break;} }
+  if(!real)real=nombre;
+  if(f.tengo.indexOf(real)<0)f.tengo.push(real);
+  f.modoFaltante=false;
+  completarRenderPanel();
+}
+function completarFiltroTengoBuscar(q){
+  var box=document.getElementById('filtroTengoSug');
+  if(!box)return;
+  var texto=completarNorm(q||'');
+  if(texto.length<2){box.innerHTML='';return;}
+  var src=(typeof foods!=='undefined')?foods:[];
+  // dedupe por nombre: sin entradas repetidas en las sugerencias
+  var vistos={};
+  var hits=src.filter(function(f){
+    if(vistos[f[0]])return false;
+    vistos[f[0]]=1;
+    return completarNorm(f[0]).indexOf(texto)>=0;
+  }).slice(0,8);
+  box.innerHTML=hits.map(function(f){
+    return '<button class="btn" style="padding:4px 8px;font-size:11px;min-height:30px" onclick="completarFiltroTengoAgregarNombre(\''+String(f[0]).replace(/'/g,'\\\'')+'\')">'+safeText(f[0])+'</button>';
+  }).join(' ');
+}
 function completarAgregar(i){
   var pr=(window._completarPropuestas||[])[i]; if(!pr)return;
   var key=completarMealKey();
@@ -27321,6 +28020,16 @@ function completarCocinar(i){
   if(!receta)return;
   completarCerrar();
   if(typeof abrirReceta==='function')abrirReceta(receta.ref,'pasoapaso');
+}
+/* ¿Esta comida tiene extras naturales compatibles? (para mostrar el botón).
+   Reutiliza completarPotenciar: mismas reglas, sin duplicar lógica. */
+function potenciarHayExtras(ctx,nombres){
+  var key=(nombres||[]).slice().sort().join('|');
+  var cache=window._potExtrasHay||(window._potExtrasHay={});
+  if(cache[key]!==undefined)return cache[key];
+  var n=completarPotenciar(ctx,nombres||[],[]).length>0;
+  cache[key]=n;
+  return n;
 }
 function completarPotenciarAbrir(i){
   var pr=(window._completarPropuestas||[])[i]; if(!pr)return;
@@ -27343,7 +28052,9 @@ function completarPotRender(){
   window._completarPotExtras=extras;
   var h='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="completarPotCerrar()">← Volver</button>'
-    +'<b style="font-size:17px;color:#12352a;flex:1">⚡ Potenciar esta comida</b></div>'
+    +'<b style="font-size:17px;color:#12352a;flex:1">Agregar extras a:</b></div>'
+    +potenciarBaseHTML(pr)
+    +potenciarProgresoHTML(ctx,falta)
     +'<div class="muted" style="font-size:13px;margin-bottom:10px">'+safeText(potenciarTextoFaltante(falta))+'</div>'
     +potenciarResumenHTML(agregados);
   if(!extras.length)h+='<div class="card" style="text-align:center;padding:16px 12px">'
@@ -27374,7 +28085,11 @@ function completarPotAgregar(k){
   var key=completarMealKey();
   // Registra EXACTAMENTE la porción mostrada: el nombre completo (que trae la
   // medida, escalada o no) + sus kcal/macros. Nunca se recalcula otra porción.
-  _guardarComida(x.nombre,x.kcal,x.p,x.c,x.g,key,'potenciar');
+  // Fibra: se escala con la MISMA proporción que la porción (si hay dato real).
+  var fbX=completarFibraFood(x.nombreBase);
+  var fibra=null;
+  if(fbX&&fbX.g!=null)fibra=Math.round(fbX.g*(x.factor||1)*10)/10;
+  _guardarComida(x.nombre,x.kcal,x.p,x.c,x.g,key,'potenciar',fibra);
   try{if(typeof refrescarInicio==='function')refrescarInicio();}catch(e){}
   var por=x.porcion||completarPorcion(x.nombre);
   // Confirmación con los datos REALES recién registrados + faltante nuevo.
@@ -33709,6 +34424,15 @@ function foodSearchDebounced(v){
 }
 function enCarrito(nombre){return (window._carrito||[]).some(function(x){return x.name===nombre;});}
 function enCarritoId(fid){return (window._carrito||[]).some(function(x){return x.id===fid;});}
+/* Check visible del selector: sin seleccionar = círculo vacío; seleccionado =
+   ✓ (o ✓N con cantidad) en círculo verde relleno. No depende solo del color. */
+function carritoCheckHTML(sel,cant){
+  return '<span data-check style="min-width:22px;height:22px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0'+(sel?';background:#15704f;color:#fff':';border:2px solid #b9ccc1;color:transparent')+'">'+(sel?(cant>1?'✓'+cant:'✓'):'✓')+'</span>';
+}
+/* Estilo de fila seleccionada: fondo + anillo verde marcado (2px, sin mover layout). */
+function carritoFilaStyle(sel){
+  return sel?'background:#e8f8ee;box-shadow:inset 0 0 0 2px #15704f':'';
+}
 function toggleCarrito(name,kcal,prot,carb,fat,amount,id){
   var nombre=decodeURIComponent(String(name||''));
   var cant=decodeURIComponent(String(amount||'1 porción'));
@@ -33729,9 +34453,18 @@ function updateFoodRow(fid){
       if(String(r.getAttribute('data-foodid'))===String(fid)){
         var item=null,sel=false;
         (window._carrito||[]).forEach(function(x){if(x.id===fid){item=x;sel=true;}});
-        r.style.background=sel?'#eafaf0':'';
+        // estado seleccionado COMPLETO, in-place (sin re-render → sin perder scroll)
+        r.style.background=sel?'#e8f8ee':'';
+        r.style.boxShadow=sel?'inset 0 0 0 2px #15704f':'';
+        r.style.borderBottom=sel?'0':'';
+        if(r.setAttribute)r.setAttribute('data-sel',sel?'1':'0');
         var badge=r.querySelector?r.querySelector('[data-check]'):null;
-        if(badge)badge.textContent=sel?((item&&item.cant>1)?('✓'+item.cant):'✓'):'';
+        if(badge){
+          badge.textContent=sel?((item&&item.cant>1)?('✓'+item.cant):'✓'):'✓';
+          badge.style.background=sel?'#15704f':'';
+          badge.style.color=sel?'#fff':'';
+          badge.style.border=sel?'':'2px solid #b9ccc1';
+        }
       }
     }
   }catch(e){}
@@ -33769,7 +34502,8 @@ function updateCartTotals(){
     var items=window._carrito||[];
     var t=totalCarrito();
     var set=function(sel,v){var n=r.querySelector(sel);if(n)n.textContent=v;};
-    set('[data-r-n]',items.length);set('[data-r-kcal]',t.kcal);set('[data-r-p]',t.prot);set('[data-r-c]',t.carb);set('[data-r-g]',t.fat);
+    set('[data-r-n]',items.length+(items.length===1?' alimento seleccionado':' alimentos seleccionados'));
+    set('[data-r-kcal]',t.kcal);set('[data-r-p]',t.prot);set('[data-r-c]',t.carb);set('[data-r-g]',t.fat);
   }catch(e){}
 }
 
@@ -34140,15 +34874,16 @@ function searchFood(query){
   function fila(f, esReceta){
     var fid=encodeURIComponent(f[0]+'@'+f[1]);
     var sel=enCarritoId(fid);
+    var item=null;(window._carrito||[]).forEach(function(x){if(x.id===fid)item=x;});
     return `
-    <div data-foodid="${fid}" style="display:flex;justify-content:space-between;align-items:center;padding:10px 8px;border-bottom:1px solid #f0f4f1;cursor:pointer${sel?';background:#eafaf0':''}"
-      onmouseenter="this.style.background='#f0fff4'" onmouseleave="this.style.background='${sel?'#eafaf0':''}'"
+    <div data-foodid="${fid}" data-sel="${sel?'1':'0'}" style="display:flex;justify-content:space-between;align-items:center;padding:10px 8px;border-radius:12px;margin:2px 0;cursor:pointer;${sel?'border-bottom:0;':'border-bottom:1px solid #f0f4f1;'}${carritoFilaStyle(sel)}"
+      onmouseenter="if(this.getAttribute('data-sel')==='0')this.style.background='#f0fff4'" onmouseleave="if(this.getAttribute('data-sel')==='0')this.style.background=''"
       onclick="toggleCarrito('${encodeURIComponent(f[0]).replace(/'/g,"\\'")}',${f[1]},${f[2]},${f[3]},${f[4]},'${encodeURIComponent(f[5]).replace(/'/g,"\\'")}','${fid.replace(/'/g,"\\'")}')">
       <div>
         <div style="font-weight:800;font-size:14px">${esReceta?'🍽️ ':''}${f[0]}</div>
         <div style="font-size:12px;color:var(--m)">${esReceta?String(f[5]).slice(0,55)+'…':f[5]+' · G:'+f[4]+'g'} · P:${f[2]}g</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><span data-check style="min-width:18px;text-align:center;font-weight:900;color:#15704f">${sel?'✓':''}</span><span style="font-weight:900;color:#15704f;white-space:nowrap">${f[1]} kcal</span></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">${carritoCheckHTML(sel,item?item.cant:1)}<span style="font-weight:900;color:#15704f;white-space:nowrap">${f[1]} kcal</span></div>
     </div>`;
   }
   let html='';

@@ -80,14 +80,14 @@ function makeSandbox() {
     'COMPLETAR_VOLUMEN_TIPO', 'COMPLETAR_VOLUMEN_ALIMENTO', 'COMPLETAR_PUNTOS_VOL',
     'COMPLETAR_UNIDAD_TEXTO', 'COMPLETAR_UNIDAD_CONDE', 'COMPLETAR_EQUIV_CASERA', 'COMPLETAR_GENERICOS',
     'POTENCIAR_PESOS', 'POTENCIAR_UNIDAD_ESCALABLE', 'POTENCIAR_MICRO',
-    'BEBIDA_BASE', 'BEBIDA_VARIANTE', 'BEBIDA_LIMITES', 'COMPLETAR_COMBOS_FACILES', 'CALORIAS_FACILES_FAMILIA', 'RECETA_AUXILIAR'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
+    'BEBIDA_BASE', 'BEBIDA_VARIANTE', 'BEBIDA_LIMITES', 'COMPLETAR_COMBOS_FACILES', 'CALORIAS_FACILES_FAMILIA', 'RECETA_AUXILIAR', 'RECETA_AUXILIAR_TIPO', 'RECETA_COCCION', 'RECETA_RECALENTABLE'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
   ['completarNorm', 'completarSinAcentos', 'completarVolumen', 'completarDensidad', 'completarKcalMomento', 'completarCatalogo',
-    'completarCandidatos', 'completarScore', 'completarVolMax', 'completarSuma', 'completarProponer', 'completarPotenciar', 'completarEsRapido', 'completarEsFacilParte', 'completarEsFacil', 'completarEsCandidatoFacil', 'completarEsEstructuraNatural', 'completarEtiquetaTipo', 'completarLineaMicro', 'recetaSugeridaPara', 'recetaResumenCorto', 'pickDiversoFacil', 'caloriasFacilesDe', 'completarFamiliaDe', 'completarFamiliasDe',
+    'completarCandidatos', 'completarScore', 'completarVolMax', 'completarSuma', 'completarProponer', 'completarPotenciar', 'potenciarHayExtras', 'completarEsRapido', 'completarEsFacilParte', 'completarEsFacil', 'completarEsCandidatoFacil', 'completarEsEstructuraNatural', 'completarEtiquetaTipo', 'completarLineaMicro', 'recetaSugeridaPara', 'recetaResumenCorto', 'completarFiltrosActivos', 'completarFiltrosReset', 'completarFiltroRecetaDe', 'recetaPasaFiltros', 'recetaFaltantes', 'recetaCobertura', 'completarPalabrasAlimento', 'completarFoodsBase', 'completarBaseDe', 'completarFoodNombreDe', 'completarFibraFood', 'completarFibraReceta', 'completarFibraCandidato', 'completarFibraHoy', 'completarFiltrosUI', 'completarFiltroGet', 'completarFiltroToggle', 'completarFiltroTiempo', 'completarFiltroModoFaltante', 'completarFiltroLimpiar', 'completarFiltroTengoQuitar', 'completarFiltroTengoAgregar', 'completarFiltroTengoAgregarNombre', 'completarFiltroTengoBuscar', 'pickDiversoFacil', 'caloriasFacilesDe', 'bebidaFuncionesDe', 'completarFamiliaDe', 'completarFamiliasDe',
     'completarNombreCorto', 'completarCategoria', 'completarTituloUI',
     'completarFraccion', 'completarPorcion', 'completarVolBadge', 'completarPorcionComponente', 'completarParteTexto',
     'completarLineaPropuesta', 'completarLineaExtra',
     'potenciarFaltante', 'potenciarEscalarNombre', 'potenciarVariante', 'potenciarScore',
-    'potenciarCategoria', 'potenciarRazon', 'potenciarFacilidad', 'potenciarTextoFaltante',
+    'potenciarCategoria', 'potenciarRazon', 'potenciarFacilidad', 'potenciarEquivOz', 'potenciarRequierePrep', 'potenciarTextoFaltante', 'potenciarBaseHTML', 'progresoBarraHTML', 'progresoFilaHTML', 'potenciarProgresoHTML',
     'potenciarAgregados', 'potenciarResumenHTML', 'potenciarEsMicroExtra',
     'bebidaCat', 'bebidaCombinaciones', 'bebidaTitulo', 'bebidaConstruir', 'bebidaTecho',
     'bebidaOtroSabor', 'bebidaMasCalorias', 'bebidaMasLigero', 'bebidaPropuesta', 'bebidaMenuHTML',
@@ -216,8 +216,8 @@ console.log('== 8 · Kcal visuales = kcal registradas (propuestas y extras) ==')
     sb.completarPotAgregar(0);
     const g = sb.guardados[sb.guardados.length - 1];
     t('extra registrado con nombre y kcal EXACTOS de la tarjeta', g.name === x.nombre && Math.round(g.kcal) === Math.round(x.kcal), g.name + ' · ' + g.kcal + ' kcal');
-    const visual = x.porcion ? x.porcion.texto : sb.completarPorcion(x.nombre).texto;
-    t('extra: porción visual = porción registrada', sb.completarPorcion(g.name).texto === visual && potHtml.includes(visual), visual);
+    const visual = (x.porcion ? x.porcion.texto : sb.completarPorcion(x.nombre).texto).replace(/\s+de\s+[^·]*$/, '');
+    t('extra: porción visual = porción registrada', sb.completarPorcion(g.name).texto.replace(/\s+de\s+[^·]*$/, '') === visual && potHtml.includes(visual), visual);
   }
 })();
 

@@ -123,7 +123,7 @@ function makeSandbox(initialState) {
       guard++;
     }
   };
-  for (const fn of ['openAddFood', 'closeAddFood', 'volverDeAgregar', 'guardarCarrito', 'quickMealsHTML', 'chipCarrito', 'enCarrito', 'enCarritoId', 'renderCarrito', 'renderCarritoLista', 'updateCartChips', 'updateCartTotals', 'updateCartCTA', 'totalCarrito', 'toggleCarrito', 'updateFoodRow', 'carritoQuitar', 'carritoCant', 'carritoCantInput']) {
+  for (const fn of ['openAddFood', 'closeAddFood', 'volverDeAgregar', 'guardarCarrito', 'quickMealsHTML', 'chipCarrito', 'enCarrito', 'enCarritoId', 'renderCarrito', 'renderCarritoLista', 'updateCartChips', 'updateCartTotals', 'updateCartCTA', 'totalCarrito', 'toggleCarrito', 'updateFoodRow', 'carritoQuitar', 'carritoCheckHTML', 'carritoFilaStyle', 'carritoCant', 'carritoCantInput']) {
     sb[fn] = vm.runInNewContext('(' + extractFunc(fn) + ')', sb, { filename: fn });
   }
   return sb;
@@ -192,7 +192,7 @@ console.log('== 3 · Selección y cantidades ==');
   sb.carritoQuitar(1);
   t('quitar uno → 4', nCarrito(sb) === 4);
   t('chips muestran el primero (in-place)', sb.document.getElementById('carritoChips').slots[0].name.textContent === 'A1');
-  t('resumen muestra 4 alimentos', sb.document.getElementById('carritoResumen').r.n.textContent === 4);
+  t('resumen muestra "4 alimentos seleccionados"', sb.document.getElementById('carritoResumen').r.n.textContent === '4 alimentos seleccionados');
   t('CTA: "Agregar 4 alimentos a comida"', sb.document.getElementById('carritoCTA').textContent.indexOf('Agregar 4 alimentos a comida') >= 0);
   t('click NO llama save() ni render global', sb.saves === 0 && sb.renders === 0);
   t('click NO llama sync', sb.window._syncPendiente === false);
@@ -289,6 +289,8 @@ console.log('== 8 · Listas perezosas (sin procesar 945 recetas) ==');
     clearTimeout: function () {}
   };
   sb14.globalThis = sb14;
+  sb14.carritoCheckHTML = vm.runInNewContext('(' + extractFunc('carritoCheckHTML') + ')', sb14, { filename: 'ch14' });
+  sb14.carritoFilaStyle = vm.runInNewContext('(' + extractFunc('carritoFilaStyle') + ')', sb14, { filename: 'cf14' });
   sb14.searchFood = vm.runInNewContext('(' + extractFunc('searchFood') + ')', sb14, { filename: 'sf14' });
   sb14.foodSearchDebounced = vm.runInNewContext('(' + extractFunc('foodSearchDebounced') + ')', sb14, { filename: 'db14' });
   sb14.searchFood('');

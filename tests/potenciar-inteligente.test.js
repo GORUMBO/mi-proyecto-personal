@@ -90,14 +90,14 @@ function makeSandbox() {
     'COMPLETAR_VOLUMEN_TIPO', 'COMPLETAR_VOLUMEN_ALIMENTO', 'COMPLETAR_PUNTOS_VOL',
     'COMPLETAR_UNIDAD_TEXTO', 'COMPLETAR_UNIDAD_CONDE', 'COMPLETAR_EQUIV_CASERA', 'COMPLETAR_GENERICOS',
     'POTENCIAR_PESOS', 'POTENCIAR_UNIDAD_ESCALABLE', 'POTENCIAR_MICRO',
-    'BEBIDA_BASE', 'BEBIDA_VARIANTE', 'BEBIDA_LIMITES', 'COMPLETAR_COMBOS_FACILES', 'CALORIAS_FACILES_FAMILIA', 'RECETA_AUXILIAR'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
+    'BEBIDA_BASE', 'BEBIDA_VARIANTE', 'BEBIDA_LIMITES', 'COMPLETAR_COMBOS_FACILES', 'CALORIAS_FACILES_FAMILIA', 'RECETA_AUXILIAR', 'RECETA_AUXILIAR_TIPO', 'RECETA_COCCION', 'RECETA_RECALENTABLE'].forEach(n => { sb[n] = extractVarAssign('var ' + n); });
   ['completarNorm', 'completarSinAcentos', 'completarFranja', 'completarVolumen', 'completarDensidad', 'completarKcalMomento',
-    'completarCatalogo', 'completarCandidatos', 'completarScore', 'completarVolMax', 'completarSuma', 'completarProponer', 'completarEsRapido', 'completarEsFacilParte', 'completarEsFacil', 'completarEsCandidatoFacil', 'completarEsEstructuraNatural', 'completarEtiquetaTipo', 'completarLineaMicro', 'recetaSugeridaPara', 'recetaResumenCorto', 'pickDiversoFacil', 'caloriasFacilesDe', 'completarFamiliaDe', 'completarFamiliasDe',
-    'completarPotenciar', 'completarNombreCorto', 'completarCategoria', 'completarTituloUI',
+    'completarCatalogo', 'completarCandidatos', 'completarScore', 'completarVolMax', 'completarSuma', 'completarProponer', 'completarEsRapido', 'completarEsFacilParte', 'completarEsFacil', 'completarEsCandidatoFacil', 'completarEsEstructuraNatural', 'completarEtiquetaTipo', 'completarLineaMicro', 'recetaSugeridaPara', 'recetaResumenCorto', 'completarFiltrosActivos', 'completarFiltrosReset', 'completarFiltroRecetaDe', 'recetaPasaFiltros', 'recetaFaltantes', 'recetaCobertura', 'completarPalabrasAlimento', 'completarFoodsBase', 'completarBaseDe', 'completarFoodNombreDe', 'completarFibraFood', 'completarFibraReceta', 'completarFibraCandidato', 'completarFibraHoy', 'completarFiltrosUI', 'completarFiltroGet', 'completarFiltroToggle', 'completarFiltroTiempo', 'completarFiltroModoFaltante', 'completarFiltroLimpiar', 'completarFiltroTengoQuitar', 'completarFiltroTengoAgregar', 'completarFiltroTengoAgregarNombre', 'completarFiltroTengoBuscar', 'pickDiversoFacil', 'caloriasFacilesDe', 'bebidaFuncionesDe', 'completarFamiliaDe', 'completarFamiliasDe',
+    'completarPotenciar', 'potenciarHayExtras', 'completarNombreCorto', 'completarCategoria', 'completarTituloUI',
     'completarFraccion', 'completarPorcion', 'completarVolBadge', 'completarPorcionComponente', 'completarParteTexto',
     'completarLineaPropuesta', 'completarLineaExtra',
     'potenciarFaltante', 'potenciarEscalarNombre', 'potenciarVariante', 'potenciarScore',
-    'potenciarCategoria', 'potenciarRazon', 'potenciarFacilidad', 'potenciarTextoFaltante',
+    'potenciarCategoria', 'potenciarRazon', 'potenciarFacilidad', 'potenciarEquivOz', 'potenciarRequierePrep', 'potenciarTextoFaltante', 'potenciarBaseHTML', 'progresoBarraHTML', 'progresoFilaHTML', 'potenciarProgresoHTML',
     'potenciarAgregados', 'potenciarResumenHTML', 'potenciarEsMicroExtra',
     'bebidaCat', 'bebidaCombinaciones', 'bebidaTitulo', 'bebidaConstruir', 'bebidaTecho',
     'bebidaOtroSabor', 'bebidaMasCalorias', 'bebidaMasLigero', 'bebidaPropuesta', 'bebidaMenuHTML',
@@ -125,9 +125,9 @@ console.log('== 1 · Faltante y encabezado derivados de datos reales ==');
   t('kcal restantes correctas', f.k === 1000);
   t('proteína/carbos/grasa restantes correctos', f.p === 80 && f.c === 200 && f.g === 50);
   t('macro más atrasado = carbohidratos', f.atrasado === 'c');
-  t('encabezado: "Te faltan 1000 kcal · faltan carbohidratos"', sb.potenciarTextoFaltante(f) === 'Te faltan 1000 kcal · faltan carbohidratos');
+  t('encabezado: "Te faltan hoy: 1000 kcal · 80 g proteína"', sb.potenciarTextoFaltante(f) === 'Te faltan hoy: 1000 kcal · 80 g proteína');
   const f2 = sb.potenciarFaltante(ctxBase(sb, { kcalConsumidas: 2000, macrosConsumidos: { p: 178, c: 390, g: 95 } }));
-  t('proteína casi cubierta se dice cuando p≤5', sb.potenciarTextoFaltante(f2).includes('proteína casi cubierta'));
+  t('proteína casi cubierta se dice con su cifra real', sb.potenciarTextoFaltante(f2) === 'Te faltan hoy: 1000 kcal · 2 g proteína');
   t('sin macro atrasado cuando todo está casi cubierto', f2.atrasado === null);
 })();
 
@@ -290,7 +290,7 @@ console.log('== 14 · UX tras agregar: confirmación, resumen, encabezado y esta
   sb.window._completarPotBase = combo;
   sb.completarPotRender();
   const htmlAntes = sb.panels.completarPotPanel.innerHTML;
-  t('encabezado antes: faltante real', htmlAntes.includes('Te faltan 3000 kcal'), (htmlAntes.match(/Te faltan \d+ kcal[^<]*/) || ['?'])[0]);
+  t('encabezado antes: faltante real', htmlAntes.includes('Te faltan hoy: 3000 kcal'), (htmlAntes.match(/Te faltan hoy: \d+ kcal[^<]*/) || ['?'])[0]);
   t('sin resumen antes de agregar nada', !htmlAntes.includes('Agregado a esta comida'));
   const x = sb.window._completarPotExtras[0];
   sb.completarPotAgregar(0);
@@ -308,7 +308,7 @@ console.log('== 14 · UX tras agregar: confirmación, resumen, encabezado y esta
   t('la tarjeta agregada aparece marcada ✅', htmlDespues.includes('✅ ' + x.nombre), (htmlDespues.match(/✅ [^<]*/) || ['?'])[0]);
   t('total añadido real (+kcal · +proteína)', htmlDespues.includes('Total añadido aquí: +' + Math.round(x.kcal) + ' kcal · +' + (Math.round(x.p * 10) / 10) + ' g proteína'));
   // 3) encabezado recalculado al instante
-  t('encabezado después: faltante nuevo', htmlDespues.includes('Te faltan ' + Math.round(faltaDespues) + ' kcal'), (htmlDespues.match(/Te faltan \d+ kcal[^<]*/) || ['?'])[0]);
+  t('encabezado después: faltante nuevo', htmlDespues.includes('Te faltan hoy: ' + Math.round(faltaDespues) + ' kcal'), (htmlDespues.match(/Te faltan hoy: \d+ kcal[^<]*/) || ['?'])[0]);
   // 4) coherencia al reabrir: el resumen viene del diario real
   sb.window._completarPotBase = combo; // simula reapertura con la misma base
   sb.completarPotRender();
