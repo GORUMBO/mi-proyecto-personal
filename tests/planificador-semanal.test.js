@@ -197,6 +197,7 @@ vm.runInNewContext(
   extractFunc('toggleEditWeek') + '\n' +
   extractFunc('setWeekdayAssignment') + '\n' +
   extractFunc('createFitnessToday') + '\n' +
+  extractFunc('f3MismaFechaLocal') + '\n' +
   extractFunc('equipLabel') + '\n' +
   'var F3_ALIASES=' + extractObj('F3_ALIASES') + ';' +
   'var weekdayNames=' + extractVarArr('weekdayNames') + ';' +

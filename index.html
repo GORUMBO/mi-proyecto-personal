@@ -13789,9 +13789,14 @@ function abrirPasosRapido(){
 
 /* ---------- ENTRENÉ / DESCANSÉ: 1 tap ---------- */
 function guardarEjercicio(tipo){
+  // Doble click: el mismo tipo en <2 s no registra dos veces.
+  var ahora=Date.now();
+  if(guardarEjercicio._ult===tipo&&ahora-(guardarEjercicio._t||0)<2000)return;
+  guardarEjercicio._ult=tipo;guardarEjercicio._t=ahora;
   if(!Array.isArray(state.workoutLog)) state.workoutLog=[];
   state.workoutLog.unshift({id:ppUUID(), date:_hoy(), exercise:tipo, weight:0, sets:0, reps:0, nota:'registro rápido'});
-  save(); refrescarInicio();
+  // Registro confirmado por el usuario: persistir ANTES de devolver el control.
+  save(true); refrescarInicio();
   toastReg('✅ '+tipo);
 }
 
@@ -29621,6 +29626,37 @@ function revealFullRoutine(){
   out.style.transition='box-shadow .3s';out.style.boxShadow='0 0 0 3px #15704f';out.style.borderRadius='14px';
   setTimeout(function(){out.style.boxShadow='';},1400);
 }
+/* Sesión real de HOY para la vista de la rutina. El pack (fitnessToday) puede
+   perder su sessionId: la rutina se regenera cuando el día UTC cambia antes
+   que el local (Hawaii UTC-10) o el merge con la nube trae una copia sin el
+   id de esta sesión. NUNCA ocultar series registradas hoy: si el id del pack
+   no coincide con ninguna serie de hoy de ESTE ejercicio, se usa la sesión
+   real más reciente de hoy (la del ejercicio si la hay; si no, la de
+   cualquier ejercicio). Las series sin sessionId cuentan solo cuando el pack
+   tampoco lo tiene. */
+/* ¿fitnessToday pertenece al MISMO día local de entrenamiento? Con desfase
+   UTC (Hawaii, UTC-10) el día UTC cambia antes que el local: una sesión creada
+   en la mañana tiene date(UTC)=hoy y por la tarde ctxDate(UTC)=mañana, pero
+   localDate sigue siendo hoy → es la MISMA sesión y no debe regenerarse. */
+function f3MismaFechaLocal(ft,ctxDate,fechaLocal){
+  if(!ft)return false;
+  if(ft.date===ctxDate)return true;
+  var fL=fechaLocal||((typeof todayLocal==='function')?todayLocal():ctxDate);
+  return !!(ft.localDate&&ft.localDate===fL);
+}
+function f3SesionVisibleHoy(log,hoy,exerciseKey,sidPack){
+  var esValida=function(r){var v=(r.reps||'');var ok=v!=='—'&&v!=='no registradas'&&v!==''&&!/^\d+[-–]\d+$/.test(v);return +r.weight>0&&ok;};
+  var esVisible=function(r){return +r.weight>0||esValida(r);};
+  var hoySeries=(log||[]).filter(function(r){return (r.localDate||r.date||'')===hoy&&esVisible(r);});
+  var sid=sidPack||null;
+  if(!hoySeries.some(function(r){return r.sessionId===sid&&String(r.exercise||'').toLowerCase().trim()===exerciseKey;})){
+    var porEjercicio=hoySeries.filter(function(r){return String(r.exercise||'').toLowerCase().trim()===exerciseKey;});
+    var ultima=(porEjercicio.length?porEjercicio:hoySeries).slice(-1)[0];
+    if(ultima&&ultima.sessionId!=null)sid=ultima.sessionId;
+  }
+  var misma=function(r){return r.sessionId===sid||(sidPack==null&&r.sessionId==null);};
+  return {sid:sid,visibles:hoySeries.filter(function(r){return String(r.exercise||'').toLowerCase().trim()===exerciseKey&&misma(r);})};
+}
 function quickFitnessToday(){
   syncSimpleFitnessInputs();
   // Preservar la posición vertical del usuario: los re-renders internos
@@ -29720,7 +29756,7 @@ function quickFitnessToday(){
         <button class="btn" onclick="exerciseHelp('${String(x.name).replace(/'/g,"\\'")}')" style="font-weight:800;background:#eaf9f0;border-color:#9dd5b4;color:#0d6043">🎬 GIF</button>
       </div>
       ${(function(){
-        var hoy=typeof todayLocal==='function'?todayLocal():todayISO(), sid=pack.sessionId||0;
+        var hoy=typeof todayLocal==='function'?todayLocal():todayISO();
         var exerciseKey=String(x.name||'').toLowerCase().trim();
         // Serie válida = peso>0 Y reps reales (no rangos, no vacíos)
         var esSerieValida=function(r){var v=(r.reps||'');var repsValida=v!=='—'&&v!=='no registradas'&&v!==''&&!/^\d+[-–]\d+$/.test(v);return +r.weight>0 && repsValida;};
@@ -29729,9 +29765,12 @@ function quickFitnessToday(){
         // solo-peso desde el móvil). esSerieValida se usa ÚNICAMENTE para
         // conteos/progreso/veredicto.
         var esSerieVisible=function(r){return +r.weight>0 || esSerieValida(r);};
-        var sessionVisibles=(state.workoutLog||[]).filter(function(r){return (r.localDate||r.date||'')===hoy && String(r.exercise||'').toLowerCase().trim()===exerciseKey && r.sessionId===sid && esSerieVisible(r);});
+        // Sesión real de HOY (ver f3SesionVisibleHoy): NUNCA ocultar series
+        // registradas hoy aunque el pack haya perdido su sessionId.
+        var R=f3SesionVisibleHoy(state.workoutLog,hoy,exerciseKey,pack.sessionId||null);
+        var sessionVisibles=R.visibles;
         // Series de HOY en ESTA sesión — solo válidas
-        var sessionRegs=(state.workoutLog||[]).filter(function(r){return (r.localDate||r.date||'')===hoy && String(r.exercise||'').toLowerCase().trim()===exerciseKey && r.sessionId===sid && esSerieValida(r);});
+        var sessionRegs=R.visibles.filter(esSerieValida);
         // Historial: días anteriores, solo series válidas
         var oldRegs=(state.workoutLog||[]).filter(function(r){return (r.localDate||r.date||'')!==hoy && String(r.exercise||'').toLowerCase().trim()===exerciseKey && esSerieValida(r);}).slice(-30);
         // Publicar completitud en el scope del map (no del IIFE)
@@ -29809,7 +29848,7 @@ function quickFitnessToday(){
         }
         // v1.187: veredicto objetivo vs resultado (✓ cumplido / ↗ progreso / → mantén / ↓ debajo / 🆕 primera)
         if(sessionRegs.length){
-          var evaHoy=evaluarSesionHoy(x.name,x.reps,goalSets,hoy,state.workoutLog,sid);
+          var evaHoy=evaluarSesionHoy(x.name,x.reps,goalSets,hoy,state.workoutLog,R.sid);
           if(evaHoy&&evaHoy.estado==='primera'){
             // Sin sesión anterior: mostrar que quedó registrada como primera referencia.
             regHTML+='<div style="margin-top:6px;font-size:12px;font-weight:800;color:#0d6043;background:#f0f8ff;border:1px solid #b8d8e8;border-radius:8px;padding:5px 9px">🆕 Primera vez registrada'
@@ -30689,7 +30728,7 @@ function activarDiaEntrenamiento(sel){
   if(!guiado){
     // Modo normal: la rutina del dia como lista libre (sin Paso X/Y ni pasos)
     state.activeWorkout=null;
-    state.fitnessToday={date:todayISO(),ctx:{focus:day.day,equip:equipLabel(r.cfg.equip),hard:false,steps:0,energy:3,pain:0,sleep:7},plan:plan,createdAt:new Date().toISOString(),fromSemana:true,semanaDayName:day.day,semanaDia:sel,checked:checkedPrev,checkedDate:todayISO()};
+    state.fitnessToday={date:todayISO(),ctx:{focus:day.day,equip:equipLabel(r.cfg.equip),hard:false,steps:0,energy:3,pain:0,sleep:7},plan:plan,createdAt:new Date().toISOString(),fromSemana:true,semanaDayName:day.day,semanaDia:sel,checked:checkedPrev,checkedDate:todayISO(),sessionId:((prevPack&&prevPack.date===todayISO()&&prevPack.sessionId)?prevPack.sessionId:Date.now())};
     save();
     try{renderGuidedWorkout();}catch(e){}
     try{renderFitnessCoach();}catch(e){}
@@ -30703,7 +30742,7 @@ function activarDiaEntrenamiento(sel){
   }
   state.activeWorkout={date:todayISO(),step:0,done:[],doneSteps:{},plan:plan,startedAt:new Date().toISOString(),fromRoutine:true,routineDayIndex:assign,routineDayName:day.day,dia:sel};
   // fitnessToday refleja el MISMO plan (fuente unica para historial/progreso)
-  state.fitnessToday={date:todayISO(),ctx:{focus:day.day,equip:equipLabel(r.cfg.equip),hard:false,steps:0,energy:3,pain:0,sleep:7},plan:plan,createdAt:new Date().toISOString(),fromSemana:true,semanaDayName:day.day,semanaDia:sel,checked:checkedPrev,checkedDate:todayISO()};
+  state.fitnessToday={date:todayISO(),ctx:{focus:day.day,equip:equipLabel(r.cfg.equip),hard:false,steps:0,energy:3,pain:0,sleep:7},plan:plan,createdAt:new Date().toISOString(),fromSemana:true,semanaDayName:day.day,semanaDia:sel,checked:checkedPrev,checkedDate:todayISO(),sessionId:((prevPack&&prevPack.date===todayISO()&&prevPack.sessionId)?prevPack.sessionId:Date.now())};
   save();
   try{renderGuidedWorkout();}catch(e){}
   try{renderFitnessCoach();}catch(e){}
@@ -32989,9 +33028,13 @@ function createFitnessToday(){
     }
   }
   // Generar sessionId único por sesión de entrenamiento (no mezcla series de distintas sesiones el mismo día)
-  if(!state.fitnessToday||state.fitnessToday.date!==ctx.date){state.fitnessToday={sessionId:Date.now()};}
+  // La comparación usa la fecha LOCAL: en zonas con desfase UTC (p. ej. Hawai,
+  // UTC-10) el día UTC cambia antes que el local; sin esta guarda la sesión se
+  // regeneraba por la tarde y las series de hoy dejaban de verse.
+  var fechaLocal=(typeof todayLocal==='function')?todayLocal():ctx.date;
+  if(!f3MismaFechaLocal(state.fitnessToday,ctx.date,fechaLocal)){state.fitnessToday={sessionId:Date.now()};}
   else{state.fitnessToday.sessionId=state.fitnessToday.sessionId||Date.now();}
-  state.fitnessToday.date=ctx.date; state.fitnessToday.ctx=ctx; state.fitnessToday.plan=plan;
+  state.fitnessToday.date=ctx.date; state.fitnessToday.localDate=fechaLocal; state.fitnessToday.ctx=ctx; state.fitnessToday.plan=plan;
   state.fitnessToday.createdAt=new Date().toISOString(); state.fitnessToday.fromSemana=fromSemana;
   state.fitnessToday.semanaDayName=fromSemana?tr.dayName:null;
   state.fitnessToday.semanaDia=(fromSemana&&tr&&tr.diaIdx!=null)?tr.diaIdx:null;
@@ -33318,7 +33361,11 @@ function saveGuidedWorkoutStep(){
   let stepIndex=aw.step||0,x=aw.plan[stepIndex];if(!x)return;
   let weight=+document.getElementById('guidedWeight')?.value||0,reps=document.getElementById('guidedReps')?.value||x.reps,feel=document.getElementById('guidedFeel')?.value||'Normal';
   let note=`Paso guiado · ${feel}. ${nextWeightAdviceForExercise(x.name,feel,weight,reps)} ${x.note||''}`;
-  state.workoutLog.push({date:todayISO(),exercise:x.name,weight,sets:+x.sets||1,reps,note,id:Date.now()});
+  // Sesión estable: se reutiliza la de la rutina de hoy (se crea si falta).
+  // La serie queda visible en "Mi rutina de hoy" y sobrevive cualquier refresh.
+  var sid=(state.fitnessToday&&state.fitnessToday.sessionId)||aw.sessionId||null;
+  if(!sid){sid=Date.now();if(state.fitnessToday)state.fitnessToday.sessionId=sid;}
+  state.workoutLog.push({date:todayISO(),localDate:(typeof todayLocal==='function'?todayLocal():todayISO()),sessionId:sid,exercise:x.name,weight,sets:+x.sets||1,reps,note,id:ppUUID()});
   aw.doneSteps=aw.doneSteps||{};
   aw.doneSteps[stepIndex]={name:x.name,weight,reps,feel,at:new Date().toISOString()};
   aw.done=Object.values(aw.doneSteps);
@@ -33328,7 +33375,7 @@ function saveGuidedWorkoutStep(){
   }else{
     aw.lastMessage='Guardado: '+x.name+'. Ya llegaste al final; toca Terminar para cerrar la rutina.';
   }
-  save();actualizarResultadosHoy();keepScroll(function(){renderGuidedWorkout();renderWorkoutLog();renderFitnessProgressPanel();});
+  save(true);actualizarResultadosHoy();keepScroll(function(){renderGuidedWorkout();renderWorkoutLog();renderFitnessProgressPanel();});
 }
 function finishGuidedWorkout(){
   if(!state.activeWorkout)return;
@@ -33350,7 +33397,8 @@ function finishGuidedWorkout(){
   // F3c: guardar el resumen para el feedback (separado de workoutLog)
   state.lastGuidedPlan={date:todayISO(),focus:(aw.fromRoutine?aw.routineDayName:''),exIds:(aw.done||[]).map(function(s){return f3IdPorNombre(s.name);}).filter(Boolean)};
   state.activeWorkout=null;
-  save();
+  // Rutina terminada: persistir ANTES de devolver el control (sin debounce).
+  save(true);
   let fbBtns='<div style="margin-top:10px"><div class="muted" style="font-size:12px;font-weight:800;margin-bottom:4px">¿Cómo se sintió esta rutina?</div><div class="row" style="gap:6px;flex-wrap:wrap">'+[['muy_facil','Muy fácil'],['bien','Bien'],['dificil','Difícil'],['demasiado','Demasiado difícil'],['dolor','Dolor/molestia']].map(function(o){return '<button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveFitFeedback(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')+'</div></div>';
   let out=getFitnessMainOut();if(out)out.innerHTML=`<div class="ok" style="margin-top:12px"><b>Rutina terminada.</b> Guardaste ${count} ejercicio(s). Come algo con proteína y agua.${advanced}</div>`+fbBtns;
   renderFitnessProgressPanel();renderRoutineToday();try{renderFitStatsPanel()}catch(e){}

@@ -91,7 +91,7 @@ vm.createContext(sandbox);
   'f3AltsHTML', 'f3RotarAlts',
   'f3AnclarTarjeta', 'f3AnclarEl', 'f3IrARutina', 'f3AplicarIrA', 'f3ClearIrA', 'f3InitIrAListeners',
   'hmForceTopScroll', 'scrollActiveTabTop', 'showSavedRoutines', 'loadSavedRoutine', 'render',
-  'syncSimpleFitnessInputs', 'quickFitnessToday', 'fitPeriodLogs', 'bestByExercise', 'repsTotal',
+  'syncSimpleFitnessInputs', 'quickFitnessToday', 'f3SesionVisibleHoy', 'f3MismaFechaLocal', 'fitPeriodLogs', 'bestByExercise', 'repsTotal',
   'renderSimpleFitnessProgress',
   'logRoutineQuick', 'swapToFirstAlt', 'replaceFitnessExercise', 'setFitEffort', 'setFitEstado', 'f3RenombrarEnlazada',
   'fitEffortHoy', 'toggleSimpleFitDone',

@@ -178,5 +178,134 @@ console.log('== 6 · Toast de éxito SOLO tras persistencia local exitosa ==');
   t('persistencia FALLIDA → NO dice "Guardado"', created.innerHTML.indexOf('Guardado') < 0 && created.innerHTML.indexOf('Poco espacio') >= 0, created.innerHTML);
 })();
 
+console.log('== 9 · Sesión perdida (regresión): las series de HOY nunca se ocultan ==');
+(function () {
+  const f3SesionVisibleHoy = vm.runInNewContext('(' + extractFunc('f3SesionVisibleHoy') + ')');
+  const hoy = '2026-09-06';
+  // pack SIN sessionId + serie con sessionId real (el caso reportado)
+  const log1 = [{ localDate: hoy, date: '2026-09-07', sessionId: 777, exercise: 'Press banca', weight: 50, reps: '10' }];
+  const r1 = f3SesionVisibleHoy(log1, hoy, 'press banca', null);
+  t('pack sin sessionId → recupera la sesión real y la serie se muestra', r1.sid === 777 && r1.visibles.length === 1, JSON.stringify(r1));
+  // pack con sessionId VIEJO (rutina regenerada o copia de la nube)
+  const r2 = f3SesionVisibleHoy(log1, hoy, 'press banca', 999);
+  t('pack con sessionId viejo → la serie de hoy NO se oculta', r2.sid === 777 && r2.visibles.length === 1);
+  // dos sesiones el mismo día: si el pack tiene un id VÁLIDO, solo esa sesión
+  const log2 = log1.concat([{ localDate: hoy, date: hoy, sessionId: 888, exercise: 'Press banca', weight: 55, reps: '8' }]);
+  const r3 = f3SesionVisibleHoy(log2, hoy, 'press banca', 777);
+  t('con sessionId válido del pack: solo esa sesión (777), no la otra (888)', r3.sid === 777 && r3.visibles.length === 1 && r3.visibles[0].weight === 50, JSON.stringify(r3));
+  // series sin sessionId (guiado viejo) con pack sin id → visibles
+  const log3 = [{ localDate: hoy, date: hoy, exercise: 'Sentadilla', weight: 80, reps: '10' }];
+  const r4 = f3SesionVisibleHoy(log3, hoy, 'sentadilla', null);
+  t('series sin sessionId con pack sin id → visibles', r4.visibles.length === 1);
+  // otro ejercicio no roba la sesión del pack
+  const r5 = f3SesionVisibleHoy(log2, hoy, 'sentadilla', 777);
+  t('ejercicio sin series hoy → visibles vacío (no inventa)', r5.visibles.length === 0);
+})();
+
+console.log('== 10 · Paso guiado: sessionId estable + localDate + save(true) ==');
+(function () {
+  const sb = {};
+  const inputs = { guidedWeight: { value: '50' }, guidedReps: { value: '10' }, guidedFeel: { value: 'Normal' } };
+  sb.document = { getElementById: function (id) { return inputs[id] || null; } };
+  sb.state = {
+    activeWorkout: { step: 0, plan: [{ name: 'Press banca', sets: 3, reps: '8-12', muscle: 'Pecho', note: '' }], done: [], doneSteps: {} },
+    fitnessToday: { sessionId: null }, workoutLog: []
+  };
+  sb.todayISO = function () { return '2026-09-07'; };
+  sb.todayLocal = function () { return '2026-09-06'; };
+  sb.ppUUID = vm.runInNewContext('(' + extractFunc('ppUUID') + ')', sb);
+  sb.nextWeightAdviceForExercise = function () { return 'Sigue igual.'; };
+  sb.save = function (inmediato) { sb.saves = (sb.saves || 0) + 1; sb.ultimoInmediato = !!inmediato; };
+  sb.actualizarResultadosHoy = function () {};
+  sb.keepScroll = function (fn) { fn(); };
+  sb.renderGuidedWorkout = function () {}; sb.renderWorkoutLog = function () {}; sb.renderFitnessProgressPanel = function () {};
+  sb.safeText = function (x) { return String(x == null ? '' : x); };
+  sb.saveGuidedWorkoutStep = vm.runInNewContext('(' + extractFunc('saveGuidedWorkoutStep') + ')', sb);
+  sb.saveGuidedWorkoutStep();
+  const e = sb.state.workoutLog[0];
+  t('entrada con sessionId estable (se crea si falta y queda en el pack)', !!e.sessionId && sb.state.fitnessToday.sessionId === e.sessionId, JSON.stringify(e));
+  t('entrada con localDate y fecha UTC por separado', e.localDate === '2026-09-06' && e.date === '2026-09-07');
+  t('id UUID (sin colisiones de Date.now)', typeof e.id === 'string' && e.id.indexOf('-') > 0);
+  t('save(true) inmediato (no debounce)', sb.ultimoInmediato === true);
+  t('la serie queda visible en la rutina de hoy (f3SesionVisibleHoy)', (function () {
+    const f3 = vm.runInNewContext('(' + extractFunc('f3SesionVisibleHoy') + ')');
+    const r = f3(sb.state.workoutLog, '2026-09-06', 'press banca', null);
+    return r.visibles.length === 1;
+  })());
+})();
+
+console.log('== 11 · Guarda de fecha local: la sesión NO se regenera por la tarde (UTC) ==');
+(function () {
+  const f3MismaFechaLocal = vm.runInNewContext('(' + extractFunc('f3MismaFechaLocal') + ')');
+  // Hawaii: mañana creó la sesión (date UTC = 09-06); por la tarde ctxDate(UTC) = 09-07
+  t('mismo día local (date UTC viejo + localDate hoy) → MISMA sesión', f3MismaFechaLocal({ date: '2026-09-06', localDate: '2026-09-06' }, '2026-09-07', '2026-09-06') === true);
+  t('mismo día UTC → misma sesión', f3MismaFechaLocal({ date: '2026-09-06' }, '2026-09-06', '2026-09-06') === true);
+  t('día realmente nuevo → regenera', f3MismaFechaLocal({ date: '2026-09-06', localDate: '2026-09-06' }, '2026-09-07', '2026-09-07') === false);
+  t('sin pack → regenera', f3MismaFechaLocal(null, '2026-09-07', '2026-09-07') === false);
+})();
+
+console.log('== 12 · 1-tap ENTRENÉ/DESCANSÉ: save(true) + anti doble-click ==');
+(function () {
+  const sb = { state: { workoutLog: [] }, saves: [], toast: null };
+  sb.ppUUID = vm.runInNewContext('(' + extractFunc('ppUUID') + ')', sb);
+  sb._hoy = function () { return '2026-09-06'; };
+  sb.save = function (inmediato) { sb.saves.push(!!inmediato); };
+  sb.refrescarInicio = function () {};
+  sb.toastReg = function (t) { sb.toast = t; };
+  sb.guardarEjercicio = vm.runInNewContext('(' + extractFunc('guardarEjercicio') + ')', sb);
+  sb.guardarEjercicio('Entrené');
+  const e = sb.state.workoutLog[0];
+  t('registra la entrada y persiste con save(true)', sb.state.workoutLog.length === 1 && e.exercise === 'Entrené' && sb.saves[0] === true, JSON.stringify(e));
+  t('sobrevive a reload (JSON roundtrip)', JSON.parse(JSON.stringify(sb.state)).workoutLog.length === 1);
+  sb.guardarEjercicio('Entrené'); // doble click inmediato
+  t('doble click del MISMO tipo <2 s → NO duplica', sb.state.workoutLog.length === 1);
+  sb.guardarEjercicio._t = 0; // simula que pasó el tiempo
+  sb.guardarEjercicio('Descansé');
+  t('otro tipo sí registra', sb.state.workoutLog.length === 2 && sb.state.workoutLog[0].exercise === 'Descansé');
+})();
+
+console.log('== 13 · Terminar rutina guiada: save(true) + anti doble ejecución ==');
+(function () {
+  const sb = { state: { activeWorkout: { step: 0, done: [{ name: 'Press banca' }, { name: 'Sentadilla' }], doneSteps: { 0: {}, 1: {} }, plan: [{ name: 'Press banca' }, { name: 'Sentadilla' }], fromRoutine: false, dia: null, routineDayName: null, routineDayIndex: null }, workoutLog: [{ id: 'a', exercise: 'Press banca' }], customRoutine: null, lastGuidedPlan: null }, saves: [] };
+  sb.weekdayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  sb.todayISO = function () { return '2026-09-07'; };
+  sb.todayWeekdayIndex = function () { return 0; };
+  sb.f3IdPorNombre = function () { return null; };
+  sb.save = function (inmediato) { sb.saves.push(!!inmediato); };
+  sb.renderFitnessProgressPanel = function () {}; sb.renderRoutineToday = function () {}; sb.renderFitStatsPanel = function () {};
+  sb.getFitnessMainOut = function () { return { innerHTML: '' }; };
+  sb.safeText = function (x) { return String(x == null ? '' : x); };
+  sb.finishGuidedWorkout = vm.runInNewContext('(' + extractFunc('finishGuidedWorkout') + ')', sb);
+  sb.finishGuidedWorkout();
+  t('termina con save(true) inmediato', sb.saves[0] === true, JSON.stringify(sb.saves));
+  t('la sesión queda cerrada y el historial INTACTO', sb.state.activeWorkout === null && sb.state.workoutLog.length === 1);
+  sb.finishGuidedWorkout(); // doble ejecución
+  t('doble ejecución de Terminar es no-op (sin duplicar historial)', sb.state.workoutLog.length === 1 && sb.saves.length === 1, 'saves=' + sb.saves.length);
+})();
+
+console.log('== 14 · Registro rápido: save(true) ya inmediato + anti doble-click ==');
+(function () {
+  const sb = {};
+  sb._inputs = { rlogW_0: { value: '50' }, rlogR_0: { value: '10' } };
+  sb.document = { getElementById: function (id) { return sb._inputs[id] || null; } };
+  sb.state = { fitnessToday: { plan: [{ name: 'Press banca', sets: 3, muscle: 'Pecho' }], sessionId: 777, checked: {} }, workoutLog: [] };
+  sb.saves = [];
+  sb.f3AnclarTarjeta = function () {};
+  sb.ppUUID = vm.runInNewContext('(' + extractFunc('ppUUID') + ')', sb);
+  sb.todayISO = function () { return '2026-09-07'; };
+  sb.todayLocal = function () { return '2026-09-06'; };
+  sb.save = function (inmediato) { sb.saves.push(!!inmediato); };
+  sb.actualizarResultadosHoy = function () {};
+  sb.quickFitnessToday = function () {};
+  sb.safeText = function (x) { return String(x == null ? '' : x); };
+  sb.logRoutineQuick = vm.runInNewContext('(' + extractFunc('logRoutineQuick') + ')', sb);
+  sb.logRoutineQuick(0);
+  t('registra las series del goal con save(true) inmediato', sb.state.workoutLog.length === 3 && sb.saves[0] === true, 'series=' + sb.state.workoutLog.length + ' saves=' + JSON.stringify(sb.saves));
+  t('sobreviven a reload', JSON.parse(JSON.stringify(sb.state)).workoutLog.length === 3);
+  sb.logRoutineQuick(0); // doble click
+  t('doble click del rápido NO duplica (goal ya cubierto)', sb.state.workoutLog.length === 3);
+  t('ids únicos por serie', new Set(sb.state.workoutLog.map(r => r.id)).size === 3);
+})();
+
 console.log('===== RESULTADO: ' + pasadas + ' PASS / ' + falladas + ' FAIL =====');
 if (falladas) process.exit(1);

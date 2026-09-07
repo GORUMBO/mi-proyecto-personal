@@ -92,6 +92,7 @@ vm.runInNewContext(
   extractFunc('openCreateRoutine') + '\n' +
   extractFunc('crearRutina') + '\n' +
   extractFunc('createFitnessToday') + '\n' +
+  extractFunc('f3MismaFechaLocal') + '\n' +
   extractFunc('renombrarRutina') + '\n' +
   extractFunc('saveCurrentRoutine') + '\n' +
   extractFunc('repetirRutina') + '\n' +
