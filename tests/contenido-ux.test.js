@@ -161,7 +161,9 @@ console.log('== 3 · Método de huevo visible (sugerencia real) ==');
   const propMicro = { tipoProp: 'micro', titulo: 'Huevo', kcal: 72, p: 6, c: 0, g: 0, volumen: 'Poco', tiempo: 0, razones: [], clave: 'Huevo', componentes: [{ tipo: 'alimento', nombre: 'Huevo', kcal: 72, p: 6, c: 0, g: 0, porcion: { texto: '1 huevo' } }] };
   sb.completarRenderPanel([propMicro]);
   const html = sb.panels.completarPanel.innerHTML;
-  t('tarjeta de huevo muestra "Prepáralo:" con receta real', html.includes('🍳 Prepáralo:') && /Prepáralo: [^<]+\(\d+ min\)/.test(html), (html.match(/Prepáralo: [^<]*/) || ['?'])[0]);
+  // La heurística "Prepáralo: X" se retiró a propósito: una comida SIN
+  // componente tipo 'receta' NO tiene receta y así se muestra (no se inventa).
+  t('tarjeta de huevo: sin heurística "Prepáralo", muestra "Sin receta disponible"', !/Prepáralo/.test(html) && /Sin receta disponible/.test(html));
 })();
 
 console.log('== 4 · Resumen de preparación REAL (nunca ficticio) ==');

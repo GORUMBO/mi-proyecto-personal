@@ -455,7 +455,7 @@ console.log('== 9 · Micro-extras como tarjeta real (⚡/🥜/🧀) ==');
   sb.completarAbrir();
   const html = sb.panels.completarPanel.innerHTML;
   t('UI muestra etiquetas de tipo (⚡/🥜/🧀/🍽️/🥤)', /⚡ Suma fácil|🥜 Snack rápido|🧀 Extra pequeño|🍽️ Comida fácil|🥤 Bebida/.test(html));
-  t('UI muestra "Sin cocinar · Poco volumen" en micros', /🥡 Sin cocinar · Poco volumen/.test(html));
+  t('UI muestra "Sin receta disponible" en micros (sin heurística)', /📄 Sin receta disponible · Sin cocinar/.test(html));
 })();
 
 console.log('== 10 · Madrugada (tentempié): la política fácil también aplica ==');
@@ -477,7 +477,7 @@ console.log('== 10 · Madrugada (tentempié): la política fácil también aplic
   sb.completarAbrir();
   const html = sb.panels.completarPanel.innerHTML;
   t('UI madrugada: etiqueta de tipo visible', /⚡ Suma fácil|🥜 Snack rápido|🧀 Extra pequeño|🍽️ Comida fácil|🥤 Bebida/.test(html));
-  t('UI madrugada: micro con "Sin cocinar · Poco volumen"', /🥡 Sin cocinar · Poco volumen/.test(html));
+  t('UI madrugada: micro con "Sin receta disponible"', /📄 Sin receta disponible · Sin cocinar/.test(html));
   // atún + aguacate es estructura natural ahora
   const cat = sb.completarCatalogo(ctxN);
   const atunC = { tier: 'C', partes: [cat.find(a => a.nombre === 'Atún lata'), cat.find(a => a.nombre === 'Aguacate 1/2')] };

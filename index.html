@@ -28370,7 +28370,7 @@ function completarAbrir(){
   window._completarFamiliasVistas=[];
   window._completarModoFacil=true; // cada sesión nueva arranca en modo fácil
   var ov=document.getElementById('completarPanel');
-  if(!ov){ov=document.createElement('div');ov.id='completarPanel';ov.style.cssText='position:fixed;inset:0;background:#f0f4f1;z-index:23000;overflow-y:auto;padding:14px;box-sizing:border-box;-webkit-overflow-scrolling:touch';document.body.appendChild(ov);}
+  if(!ov){ov=document.createElement('div');ov.id='completarPanel';ov.style.cssText='position:fixed;inset:0;background:#f0f4f1;z-index:23000;overflow-y:auto;box-sizing:border-box;-webkit-overflow-scrolling:touch;padding:max(16px,env(safe-area-inset-top,0px)) 14px max(24px,env(safe-area-inset-bottom,0px))';document.body.appendChild(ov);}
   completarRenderPanel();
 }
 function completarRenderPanel(propsPre){
@@ -28379,7 +28379,7 @@ function completarRenderPanel(propsPre){
   var props=propsPre||completarProponer(ctx);
   window._completarPropuestas=props;
   var h='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'
-    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="completarCerrar()">← Volver</button>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 16px;min-height:48px" onclick="completarCerrar()">← Volver</button>'
     +'<b style="font-size:17px;color:#12352a;flex:1">🍽 Completar mi día</b></div>'
     +'<div class="muted" style="font-size:13px;margin-bottom:10px">'+safeText(completarTextoTarjeta())+'</div>'
     +completarFiltrosUI();
@@ -28410,8 +28410,8 @@ function completarRenderPanel(propsPre){
     var resumen=(!pr.bebida&&receta)?recetaResumenCorto(receta.nombre):null;
     var tm5Rec=false;
     if(receta){var rr=null;baseRecipes.forEach(function(x){if(x.name===receta.nombre)rr=x;});if(rr)tm5Rec=/(tm5|thermomix)/i.test(String(rr.method||'')+' '+String(rr.tags||''));}
-    var sugMicro=null;
-    if(pr.tipoProp==='micro')sugMicro=recetaSugeridaPara((pr.componentes[0]||{}).nombre||'');
+    // Sin heurística de receta-por-nombre: una comida SIN componente tipo
+    // 'receta' NO tiene receta (nada que abrir), y así se muestra.
     // chips de filtros: faltante informativo + reposo (⏳ para después)
     var chipFiltros='';
     var fChip=completarFiltrosActivos();
@@ -28448,12 +28448,13 @@ function completarRenderPanel(propsPre){
       +((modoFacilV&&rapidoDiaV&&completarEtiquetaTipo(pr))?'<span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">'+completarEtiquetaTipo(pr).icono+' '+safeText(completarEtiquetaTipo(pr).texto)+'</span>':'<span style="font-size:11px;font-weight:800;background:#eef4fb;border-radius:999px;padding:3px 10px">'+completarVolBadge(pr.volumen)+'</span>')
       +(tm5Rec?'<span style="font-size:11px;font-weight:800;background:#f3e8ff;border-radius:999px;padding:3px 10px">⚙️ TM5 disponible</span>':'')
       +fbBadge
-      +(pr.tipoProp==='micro'&&modoFacilV?'<span style="font-size:11px;color:#56725f">'+(sugMicro?'🍳 Prepáralo: '+safeText(sugMicro.nombre)+' ('+sugMicro.tiempo+' min)':'🥡 Sin cocinar · Poco volumen')+'</span>':'')
+      +(pr.tipoProp==='micro'&&modoFacilV?'<span style="font-size:11px;color:#56725f">📄 Sin receta disponible · Sin cocinar</span>':'')
+      +(!pr.bebida&&!receta&&!(pr.tipoProp==='micro'&&modoFacilV)?'<span style="font-size:11px;color:#8a8f8a">📄 Sin receta disponible</span>':'')
       +chipFiltros
       +'</div>'
       +(pr.bebida?bebidaMenuHTML(i,pr,ctx):'')
       +'<div class="row" style="gap:8px;margin-top:10px">'
-      +(receta?'<button class="btn" style="flex:1;padding:10px;min-height:44px" onclick="completarCocinar('+i+')">🍳 Cocinar</button>':'')
+      +(receta?'<button class="btn" style="flex:1;padding:10px;min-height:44px" onclick="completarCocinar('+i+')">👨‍🍳 Ver receta</button>':'')
       +'<button class="btn primary" style="flex:1;padding:10px;min-height:44px" onclick="completarAgregar('+i+')">＋ Agregar</button>'
       +(potenciarHayExtras(ctx,pr.componentes.map(function(c){return c.nombre;}))?'<button class="btn" style="flex:0 0 auto;padding:10px 12px;min-height:44px" onclick="completarPotenciarAbrir('+i+')" title="Añadir 1-3 extras a esta comida">⚡ <span class="pot-btn-full">Agregar extras</span><span class="pot-btn-corto">Extras</span></button>':'')
       +'</div></div>';
@@ -29340,7 +29341,7 @@ function completarPotenciarAbrir(i){
   window._completarPotBase=pr;
   window._completarExtrasVistas=window._completarExtrasVistas||[];
   var ov=document.getElementById('completarPotPanel');
-  if(!ov){ov=document.createElement('div');ov.id='completarPotPanel';ov.style.cssText='position:fixed;inset:0;background:#f0f4f1;z-index:23100;overflow-y:auto;padding:14px;box-sizing:border-box;-webkit-overflow-scrolling:touch';document.body.appendChild(ov);}
+  if(!ov){ov=document.createElement('div');ov.id='completarPotPanel';ov.style.cssText='position:fixed;inset:0;background:#f0f4f1;z-index:23100;overflow-y:auto;box-sizing:border-box;-webkit-overflow-scrolling:touch;padding:max(16px,env(safe-area-inset-top,0px)) 14px max(24px,env(safe-area-inset-bottom,0px))';document.body.appendChild(ov);}
   completarPotRender();
 }
 function completarPotRender(){
@@ -29355,7 +29356,7 @@ function completarPotRender(){
   var extras=completarPotenciar(ctx,pr.componentes.map(function(c){return c.nombre;}),excluidas);
   window._completarPotExtras=extras;
   var h='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'
-    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="completarPotCerrar()">← Volver</button>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><button class="btn" style="border-radius:999px;padding:10px 16px;min-height:48px" onclick="completarPotCerrar()">← Volver</button>'
     +'<b style="font-size:17px;color:#12352a;flex:1">Agregar extras a:</b></div>'
     +potenciarBaseHTML(pr)
     +potenciarProgresoHTML(ctx,falta)
