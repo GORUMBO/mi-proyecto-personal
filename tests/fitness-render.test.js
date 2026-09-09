@@ -90,7 +90,7 @@ vm.createContext(sandbox);
   'f3NombreRutinaAuto', 'f3NombreMostrar', 'f3CampoNombreHTML',
   'f3AltsHTML', 'f3RotarAlts',
   'f3AnclarTarjeta', 'f3AnclarEl', 'f3IrARutina', 'f3AplicarIrA', 'f3ClearIrA', 'f3InitIrAListeners',
-  'hmForceTopScroll', 'scrollActiveTabTop', 'showSavedRoutines', 'loadSavedRoutine', 'render',
+  'hmForceTopScroll', 'scrollActiveTabTop', 'showSavedRoutines', 'loadSavedRoutine', 'f3PlanDeRutina', 'f3RutinaActiva', 'render',
   'syncSimpleFitnessInputs', 'quickFitnessToday', 'f3SesionVisibleHoy', 'f3MismaFechaLocal', 'fitPeriodLogs', 'bestByExercise', 'repsTotal',
   'renderSimpleFitnessProgress',
   'logRoutineQuick', 'f3BloqueaDebugExercise', 'swapToFirstAlt', 'replaceFitnessExercise', 'setFitEffort', 'setFitEstado', 'f3RenombrarEnlazada',

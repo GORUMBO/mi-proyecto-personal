@@ -196,6 +196,8 @@ vm.runInNewContext(
   extractFunc('renderRoutineToday') + '\n' +
   extractFunc('toggleEditWeek') + '\n' +
   extractFunc('setWeekdayAssignment') + '\n' +
+  extractFunc('f3PlanDeRutina') + '\n' +
+  extractFunc('f3RutinaActiva') + '\n' +
   extractFunc('createFitnessToday') + '\n' +
   extractFunc('f3MismaFechaLocal') + '\n' +
   extractFunc('equipLabel') + '\n' +

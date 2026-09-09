@@ -94,6 +94,7 @@ function makeSandbox(overrides) {
     'bebidaCat', 'bebidaCombinaciones', 'bebidaTitulo', 'bebidaConstruir', 'bebidaTecho',
     'bebidaOtroSabor', 'bebidaMasCalorias', 'bebidaMasLigero', 'bebidaPropuesta', 'bebidaMenuHTML',
     'completarAbrir', 'completarPotenciar', 'potenciarHayExtras', 'completarRenderPanel', 'completarCerrar', 'completarOtras3', 'completarAgregar', 'completarCocinar'].forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
+  ['ppTombstoneItem','ppActivos','ppTombstoneKey','ppKeyActivo','ppKeysActivas','ppDiarioActivos'].forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
   sb.guardados = guardados;
   sb.panelEl = panelEl;
   return sb;

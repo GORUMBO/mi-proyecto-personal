@@ -126,6 +126,9 @@ function makeSandbox(initialState) {
   for (const fn of ['openAddFood', 'closeAddFood', 'volverDeAgregar', 'guardarCarrito', 'quickMealsHTML', 'chipCarrito', 'enCarrito', 'enCarritoId', 'renderCarrito', 'renderCarritoLista', 'updateCartChips', 'updateCartTotals', 'updateCartCTA', 'totalCarrito', 'toggleCarrito', 'updateFoodRow', 'carritoQuitar', 'carritoCheckHTML', 'carritoFilaStyle', 'carritoCant', 'carritoCantInput']) {
     sb[fn] = vm.runInNewContext('(' + extractFunc(fn) + ')', sb, { filename: fn });
   }
+  for (const fn of ['ppTombstoneItem', 'ppActivos', 'ppTombstoneKey', 'ppKeyActivo', 'ppKeysActivas', 'ppDiarioActivos']) {
+    sb[fn] = vm.runInNewContext('(' + extractFunc(fn) + ')', sb, { filename: fn });
+  }
   return sb;
 }
 function nCarrito(sb) { return sb.window._carrito.length; }

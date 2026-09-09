@@ -1,8 +1,29 @@
 {
-  "latest": "1.192.1",
-  "date": "2026-09-07",
+  "latest": "1.193.0",
+  "date": "2026-09-08",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.193.0",
+      "date": "2026-09-08",
+      "type": "recomendada",
+      "nuevas": [
+        "Cola de cambios con sincronización agrupada: cada acción se guarda local al instante, el badge muestra los pendientes (🟡 X cambios pendientes · 🔄 sincronizando · 🟢 sincronizado · ⚪ sin conexión · 🔴 error) y un solo sync silencioso se ejecuta 8 segundos después de tu último cambio (o con el botón Sincronizar ahora).",
+        "Rutina activa persistente: la rutina que cargas con ▶ Usar hoy queda como TU rutina y se carga sola cada vez que entras a Fitness, en PC y en iPhone, sobrevive refrescos, cierres y sincronización; al eliminarla no se selecciona otra automáticamente.",
+        "Dos modos en Fitness: con rutina semanal activa se sigue el entrenamiento programado del día (sin variaciones aleatorias) y el botón 🔄 Usar solo hoy cambia únicamente el entrenamiento de hoy sin tocar la rutina; mañana vuelve el plan semanal. Sin rutina semanal se mantiene la generación automática.",
+        "Borrados a prueba de resurrección (tombstones): eliminar una serie, comida, producto, evento, meal prep, foto o favorito marca el registro en vez de quitarlo, así ninguna copia vieja de otro dispositivo puede revivirlo tras sincronizar."
+      ],
+      "cambios": [
+        "El contador de pendientes se guarda junto con tus datos (sobrevive refrescos y cierre de la app).",
+        "Debounce de sincronización ampliado de 2.5 a 8 segundos para no interrumpir el flujo.",
+        "Pruebas de sincronización deterministas (hora fija en los sandboxes de prueba) y nuevas suites: cola-sync (35), rutina-activa (29), arma-caldo/agua/suero/café."
+      ],
+      "errores": [
+        "Corregido que la rutina semanal no quedara cargada al volver a entrar a Fitness.",
+        "Corregido que el contador de cambios pendientes se perdiera al refrescar antes de sincronizar.",
+        "Corregidos tests que dependían de la hora real del sistema (fallaban de madrugada)."
+      ]
+    },
     {
       "version": "1.192.1",
       "date": "2026-09-07",

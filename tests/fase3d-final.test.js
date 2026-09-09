@@ -139,6 +139,7 @@ vm.runInNewContext(
   extractFunc('f3NombreAGuardar') + '\n' +
   extractFunc('f3FirmaRutina') + '\n' +
   extractFunc('repetirRutina') + '\n' +
+  extractFunc('f3RutinaActiva') + '\n' +
   extractFunc('f3VariarHoy') + '\n' +
   extractFunc('borrarFitFeedback') + '\n' +
   'var SPECIAL_WORKOUTS=' + extractObj('SPECIAL_WORKOUTS') + ';\n' +

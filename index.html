@@ -448,7 +448,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.192.1';
+  window.HM_APP_VERSION='1.193.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -745,6 +745,9 @@ function _doSave(){
       try{var prevSig=JSON.stringify(Object.assign({},JSON.parse(prevRaw),{lastModified:0,offlineChanges:0}));}catch(e){prevSig=null;}
       if(prevSig===sig)return;
     }
+    // COLA: el contador de pendientes se incrementa y PERSISTE junto con los
+    // datos (sobrevive refresh/cierre); scheduleAutoSync solo lo lee.
+    state.offlineChanges=(state.offlineChanges||0)+1;
     state.lastModified=new Date().toISOString();
     let json=JSON.stringify(state);
     // localStorage puede fallar por falta de espacio (~5MB). Guardamos el resultado real para avisar honestamente.
@@ -773,6 +776,27 @@ function save(inmediato){
   clearTimeout(_saveTimeout);
   _saveTimeout=setTimeout(_doSave, 100);
 }
+/* ===== COLA DE CAMBIOS · TOMBSTONES =====
+   Un borrado MARCA en vez de quitar (deleted=true + updated_at nuevo).
+   La unión del merge conserva la marca (updated_at más reciente gana) y
+   ninguna copia vieja de otro dispositivo puede resucitar el elemento.
+   Colecciones de primitivos (favoritos, pestañas, evitar) usan la tumba
+   paralela state._tombstones, unida por clave en mergeCloudStates. */
+function ppTombstoneItem(lista,id){
+  var it=(lista||[]).find(function(x){return x&&x.id===id;});
+  if(!it)return false;
+  it.deleted=true;
+  it.updated_at=new Date().toISOString();
+  return true;
+}
+function ppActivos(lista){ return (lista||[]).filter(function(x){return !(x&&x.deleted);}); }
+function ppTombstoneKey(coleccion,key){
+  state._tombstones=state._tombstones||{};
+  state._tombstones[coleccion+':'+key]=new Date().toISOString();
+}
+function ppKeyActivo(coleccion,key){ return !((state._tombstones||{})[coleccion+':'+key]); }
+function ppKeysActivas(coleccion,lista){ return (lista||[]).filter(function(k){return ppKeyActivo(coleccion,k);}); }
+function ppDiarioActivos(items){ return (items||[]).filter(function(x){return !(x&&x.deleted);}); }
 // Al abrir: usar la copia MÁS NUEVA entre localStorage (ya en state) e IndexedDB.
 // Antes solo cargaba IDB si state estaba vacío, así que un localStorage viejo (o que falló por espacio)
 // tapaba un IndexedDB más reciente y se "perdían" cambios. Ahora comparamos por lastModified.
@@ -985,7 +1009,7 @@ function showGroup(gid,shouldScroll=true){
   // Show sub-tabs if group has multiple tabs
   let wrap = document.getElementById('subNavWrap');
   let snav = document.getElementById('subNav');
-  let visibleTabs=g.tabs.filter(t=>!state.uiSettings.hiddenTabs.includes(t) && tabAllowed(t));
+  let visibleTabs=g.tabs.filter(t=>!state.uiSettings.hiddenTabs.includes(t) && tabAllowed(t) && ppKeyActivo('hiddenTabs',t));
   if(!visibleTabs.length)visibleTabs=[g.tabs[0]];
   // Si la 1a pestaña se llama igual que el grupo, no la repetimos como chip
   // (el grupo ya la abre), pero SÍ la mostramos como contenido.
@@ -4508,7 +4532,7 @@ function recipeSlug(r){
   });
 })();
 function recipeIdOf(index){let r=baseRecipes[index];return r?r.id:null;}
-function isRecipeFav(index){let id=recipeIdOf(index);return id!=null&&Array.isArray(state.recipeFavorites)&&state.recipeFavorites.includes(id);}
+function isRecipeFav(index){let id=recipeIdOf(index);return id!=null&&Array.isArray(state.recipeFavorites)&&ppKeyActivo('favs',id)&&state.recipeFavorites.includes(id);}
 // Migra favoritos guardados por POSICIÓN (formato viejo) a id estable. No destructivo.
 (function migrateRecipeFavorites(){
   let f=state.recipeFavorites;if(!Array.isArray(f)||!f.length)return;
@@ -6113,7 +6137,8 @@ function undoSupplement(i,token){
   var d=state.diary&&state.diary[today];
   if(d&&Array.isArray(d.snacks)){
     var idx=d.snacks.map(function(x){return x&&x._sid;}).lastIndexOf(token);
-    if(idx>=0)d.snacks.splice(idx,1);
+    // TOMBSTONE: marcar en vez de quitar — la copia de la nube no lo resucita.
+    if(idx>=0)d.snacks[idx].deleted=true;
   }
   save();
   try{if(document.getElementById('diaryOut'))renderDiary();}catch(e){}
@@ -9610,7 +9635,7 @@ function secArmaCafe(){
 
 function secRecetas(){
   let _tab=window._recTab||'todas';
-  let _favN=(state.recipeFavorites&&state.recipeFavorites.length)?' ('+state.recipeFavorites.length+')':'';
+  let _favN=(state.recipeFavorites&&ppKeysActivas('favs',state.recipeFavorites).length)?' ('+ppKeysActivas('favs',state.recipeFavorites).length+')':'';
   return `
 <style id="recetas2Css">${RECETAS2_CSS}</style>
 <div class="recetas2">
@@ -10102,7 +10127,8 @@ function saveFoodPick(i){
   let id=recipeIdOf(i);if(id==null)return;
   if(!Array.isArray(state.recipeFavorites))state.recipeFavorites=[];
   let k=state.recipeFavorites.indexOf(id);
-  if(k>=0)state.recipeFavorites.splice(k,1);else state.recipeFavorites.push(id);
+  if(k>=0){state.recipeFavorites.splice(k,1);ppTombstoneKey('favs',id);} // tumba: la copia vieja no la re-favorita
+  else{state.recipeFavorites.push(id);delete (state._tombstones||{})['favs:'+id];}
   save();renderFoodPicks();
   if(document.getElementById('foodSimilarOut')&&document.getElementById('foodSimilarOut').innerHTML)showSimilarInline();
   if(document.getElementById('fridgeRealMatches'))renderFridgeRealMatches();
@@ -11914,7 +11940,7 @@ function guardarMealPrep(){
 function borrarMealPrep(id){
   if(!state.mealPreps) return;
   if(!confirm('¿Borrar este meal prep guardado?')) return;
-  state.mealPreps = state.mealPreps.filter(function(m){ return m.id!==id; });
+  ppTombstoneItem(state.mealPreps,id); // marca que viaja con la unión del merge
   if(typeof save==='function') save();
   var lista = document.getElementById('mealPrepGuardados'); if(lista) lista.innerHTML = mealPrepsGuardadosHTML();
 }
@@ -17807,7 +17833,7 @@ function _sectionBase(t){let fn=({'🏠 Inicio':secInicio,'👤 Perfil':secPerfi
 function todayISO(){return new Date().toISOString().slice(0,10)}
 function todayLocal(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getTodayDiaryTotals(){
-  let today=todayISO(),d=state.diary&&state.diary[today],items=d?[...(d.breakfast||[]),...(d.lunch||[]),...(d.dinner||[]),...(d.snacks||[])]:[];
+  let today=todayISO(),d=state.diary&&state.diary[today],items=ppDiarioActivos(d?[...(d.breakfast||[]),...(d.lunch||[]),...(d.dinner||[]),...(d.snacks||[])]:[]);
   return items.reduce((a,x)=>{a.k+=+x.kcal||0;a.p+=+x.prot||0;a.c+=+x.carb||0;a.f+=+x.fat||0;if(x.fibra!=null){a.fb+=+x.fibra||0;a.fbConocidas++;}return a;},{k:0,p:0,c:0,f:0,fb:0,fbConocidas:0,count:items.length});
 }
 function getDailyMode(){
@@ -20116,7 +20142,8 @@ function guardarComidaPropia(){
 function borrarComidaPropia(id){
   if(!state.savedMeals) return;
   if(typeof confirm==='function' && !confirm('¿Borrar esta comida guardada?')) return;
-  state.savedMeals = state.savedMeals.filter(function(m){ return m.id!==id; });
+  // TOMBSTONE: el borrado viaja con la unión del merge y no puede resucitar.
+  ppTombstoneItem(state.savedMeals,id);
   if(typeof save==='function') save();
   var box=document.getElementById('savedMealsBox'); if(box) box.innerHTML=savedMealsBodyHTML();
 }
@@ -20137,7 +20164,7 @@ function meterComidaGuardada(id){
 }
 
 function savedMealsBodyHTML(){
-  var lista = state.savedMeals || [];
+  var lista = ppActivos(state.savedMeals);
   if(!lista.length){
     return '<div class="muted" style="font-size:13px">Guarda las comidas que comes seguido (tu licuado, tu sándwich) para meterlas al diario con un toque.</div>';
   }
@@ -20205,10 +20232,11 @@ function secContador(){
   if(!state.diary) state.diary={};
   if(!state.diary[today]) state.diary[today]={breakfast:[],lunch:[],dinner:[],snacks:[]};
   let d=state.diary[today];
-  let totalKcal=[...d.breakfast,...d.lunch,...d.dinner,...d.snacks].reduce((a,x)=>a+x.kcal,0);
-  let totalProt=[...d.breakfast,...d.lunch,...d.dinner,...d.snacks].reduce((a,x)=>a+(x.prot||0),0);
-  let totalCarb=[...d.breakfast,...d.lunch,...d.dinner,...d.snacks].reduce((a,x)=>a+(x.carb||0),0);
-  let totalFat=[...d.breakfast,...d.lunch,...d.dinner,...d.snacks].reduce((a,x)=>a+(x.fat||0),0);
+  let dia=ppDiarioActivos([...d.breakfast,...d.lunch,...d.dinner,...d.snacks]);
+  let totalKcal=dia.reduce((a,x)=>a+x.kcal,0);
+  let totalProt=dia.reduce((a,x)=>a+(x.prot||0),0);
+  let totalCarb=dia.reduce((a,x)=>a+(x.carb||0),0);
+  let totalFat=dia.reduce((a,x)=>a+(x.fat||0),0);
   let goal=state.profile?.calorias||2800;
   let protGoal=state.profile?.proteina||Math.round((state.weight&&state.weight.length?+state.weight[state.weight.length-1].kg:70)*1.9)||140;
   let pct=Math.min(100,Math.round(totalKcal/goal*100));
@@ -20217,7 +20245,7 @@ function secContador(){
   let mealNames={breakfast:'🌅 Desayuno',lunch:'☀️ Comida',dinner:'🌙 Cena',snacks:'🍿 Snacks'};
 
   function mealSection(key){
-    let items=d[key]||[];
+    let items=ppDiarioActivos(d[key]);
     let mKcal=items.reduce((a,x)=>a+x.kcal,0);
     return `<div class="card" style="margin:8px 0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -20621,14 +20649,14 @@ var PAREJAS_MUSCULO = [
 /* ===== ⭐ FAVORITOS DE EJERCICIOS ===== */
 
 function isExFav(nombre){
-  return Array.isArray(state.exFavorites) && state.exFavorites.includes(nombre);
+  return Array.isArray(state.exFavorites) && ppKeyActivo('exFavs',nombre) && state.exFavorites.includes(nombre);
 }
 
 function toggleExFav(nombre){
   if(!state.exFavorites) state.exFavorites = [];
   var i = state.exFavorites.indexOf(nombre);
-  if(i>=0){ state.exFavorites.splice(i,1); }
-  else { state.exFavorites.push(nombre); }
+  if(i>=0){ state.exFavorites.splice(i,1); ppTombstoneKey('exFavs',nombre); }
+  else { state.exFavorites.push(nombre); delete (state._tombstones||{})['exFavs:'+nombre]; }
   if(typeof save==='function') save();
   // refrescar estrellas visibles
   document.querySelectorAll('[data-exfav="'+_favKey(nombre)+'"]').forEach(function(el){
@@ -20649,7 +20677,7 @@ function exFavStar(nombre){
 }
 
 function exFavListHTML(){
-  var lista = state.exFavorites || [];
+  var lista = ppKeysActivas('exFavs',state.exFavorites);
   if(!lista.length){
     return '<span class="muted" style="font-size:13px">Toca la estrella ☆ de un ejercicio para guardarlo aquí y encontrarlo rápido.</span>';
   }
@@ -20761,7 +20789,7 @@ function secEjercicio(){
       <div class="fit5-hero-head" onclick="quickFitnessToday()">
         <span class="fit5-hero-icon">🏋️</span>
         <div style="flex:1;min-width:0">
-          <div class="fit5-hero-title">Mi rutina de hoy</div>
+          <div class="fit5-hero-title">${f3RutinaActiva()?((state.fitnessToday&&state.fitnessToday.oneOff)?'🔄 Solo por hoy':'Mi rutina de la semana'):'Mi rutina de hoy'}</div>
           <div class="fit5-hero-sub">${safeText(title)} · ${weekCount} registros esta semana</div>
         </div>
       </div>
@@ -20784,7 +20812,7 @@ function secEjercicio(){
   </div>
   <div class="fit3-card">
     <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:15px;color:#12352a">🏋️ Entrenamiento de hoy</b><span class="muted" style="font-size:11px">peso · series · reps · historial</span></div>
-    <div id="simpleFitnessOut" class="fit-clean-result"><div class="muted"><b>🏋️ Mi rutina de hoy:</b> te genera los ejercicios del día automáticamente según tu peso, pasos y energía. Si ya armaste tu <b>🛠️ plan semanal</b>, toma el entrenamiento que toca hoy. <b>Los ejercicios cambian cada día</b> para no aburrirte.</div></div>
+    <div id="simpleFitnessOut" class="fit-clean-result"><div class="muted"><b>🏋️ Mi rutina de hoy:</b> se genera automáticamente según tu peso, pasos y energía. Si tienes una <b>rutina de la semana</b> guardada, aquí se carga el entrenamiento que toca hoy.</div></div>
   </div>
   </div>
   <details id="savedRoutinesDetails" class="fit-clean-details" ontoggle="fitAcordeonPrincipal(this)">
@@ -21326,7 +21354,7 @@ function misProductosHTML(){
 }
 function renderMyProducts(){
   let el=document.getElementById('myProductsList'); if(!el)return;
-  let list=state.myProducts||[];
+  let list=ppActivos(state.myProducts);
   if(!list.length){ el.innerHTML='<p class="muted">Aún no registras productos. Agrega el primero con el formulario de arriba.</p>'; return; }
   el.innerHTML='<div class="grid">'+list.map(p=>{
     let macros=[p.kcal?p.kcal+' kcal':'',p.prot?('P '+p.prot+'g'):'',p.carb?('C '+p.carb+'g'):'',p.fat?('G '+p.fat+'g'):''].filter(Boolean).join(' · ');
@@ -21362,7 +21390,7 @@ function editMyProduct(id){
   try{document.getElementById('mpName').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('mpName').focus();}catch(e){}
 }
 function cancelEditMyProduct(){_mpClearForm();}
-function deleteMyProduct(id){if(!confirm('¿Borrar este producto?'))return;state.myProducts=(state.myProducts||[]).filter(x=>x.id!==id);save();renderMyProducts();}
+function deleteMyProduct(id){if(!confirm('¿Borrar este producto?'))return;ppTombstoneItem(state.myProducts||[],id);save();renderMyProducts();}
 function logMyProduct(id){
   let p=(state.myProducts||[]).find(x=>x.id===id);if(!p)return;
   let today=new Date().toISOString().slice(0,10);
@@ -24038,14 +24066,14 @@ function addCalendarEvent(){
   state.calendarEvents.push({id:Date.now(),title,date,time:(document.getElementById('eventTime')||{}).value||'',type:(document.getElementById('eventType')||{}).value||'Personal',done:false});save();renderCalendar();
 }
 function toggleCalendarEvent(id,done){let x=state.calendarEvents.find(e=>e.id===id);if(x)x.done=done;save();renderCalendar()}
-function deleteCalendarEvent(id){let item=state.calendarEvents.find(x=>x.id===id);if(item)moveToTrash('calendarEvents',item);state.calendarEvents=state.calendarEvents.filter(x=>x.id!==id);save();renderCalendar();renderTrash()}
+function deleteCalendarEvent(id){let item=state.calendarEvents.find(x=>x.id===id);if(item)moveToTrash('calendarEvents',item);ppTombstoneItem(state.calendarEvents,id);save();renderCalendar();renderTrash()}
 function renderCalendar(){
   let el=document.getElementById('calendarOut');if(!el)return;
-  let events=state.calendarEvents.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,20);
+  let events=ppActivos(state.calendarEvents).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,20);
   el.innerHTML=events.map(x=>`<div class="item row"><input type="checkbox" style="width:auto" ${x.done?'checked':''} onchange="toggleCalendarEvent(${x.id},this.checked)"><span style="flex:1"><b>${safeText(x.title)}</b><br><span class="muted">${x.date} ${x.time} · ${safeText(x.type)}</span></span><button class="btn icon-btn" onclick="deleteCalendarEvent(${x.id})">🗑</button></div>`).join('')||'<p class="muted">Sin eventos.</p>';
 }
 function checkPersonalAlerts(){
-  let today=new Date().toISOString().slice(0,10),events=state.calendarEvents.filter(x=>x.date===today&&!x.done);
+  let today=new Date().toISOString().slice(0,10),events=state.calendarEvents.filter(x=>x.date===today&&!x.done&&!x.deleted);
   let docs=state.documents.filter(x=>{let d=Math.ceil((new Date(x.expiry+'T00:00:00')-new Date())/86400000);return d>=0&&d<=7});
   if(!events.length&&!docs.length)return;
   let box=document.getElementById('personalDueAlert');if(!box){box=document.createElement('div');box.id='personalDueAlert';box.className='warn';box.style.cssText='position:fixed;left:12px;right:12px;top:12px;z-index:19000;box-shadow:0 8px 30px #0004';document.body.appendChild(box)}
@@ -24524,7 +24552,7 @@ function saveCustomSteps(){
   var m=document.getElementById('stepsSavedMsg');if(m)m.innerHTML='<span class="ok" style="padding:4px 8px;font-size:12px">✓ Guardado: '+n.toLocaleString()+' pasos</span>';
   try{calcMacros();}catch(e){}
 }
-function setSectionVisible(tab,visible){let list=state.uiSettings.hiddenTabs,i=list.indexOf(tab);if(visible&&i>=0)list.splice(i,1);if(!visible&&i<0)list.push(tab);save();render()}
+function setSectionVisible(tab,visible){let list=state.uiSettings.hiddenTabs,i=list.indexOf(tab);if(visible&&i>=0){list.splice(i,1);ppTombstoneKey('hiddenTabs',tab);}if(!visible&&i<0){list.push(tab);delete (state._tombstones||{})['hiddenTabs:'+tab];}save();render()}
 function printPersonalReport(){window.print()}
 function findDuplicateData(){
   let groups=['expenses','weight','walks','calendarEvents','foodInventory'],found={};groups.forEach(g=>{let seen=new Set(),dupes=0;(state[g]||[]).forEach(x=>{let k=JSON.stringify({...x,id:0});if(seen.has(k))dupes++;seen.add(k)});found[g]=dupes});alert(Object.entries(found).map(([k,v])=>`${k}: ${v}`).join('\\n'))}
@@ -24776,6 +24804,11 @@ function mergeCloudStates(local,remote){
   // y borraría los mantenimientos registrados en el otro dispositivo.
   base.vehiculos = _mergeVehiculos(local.vehiculos, remote.vehiculos);
 
+  // COLAS DE CAMBIOS: la tumba de borrados de colecciones primitivas
+  // (favoritos, pestañas ocultas, evitar) se une por clave — un borrado hecho
+  // en CUALQUIER dispositivo no puede perderse ni revivir el elemento.
+  base._tombstones=Object.assign({},remote._tombstones||{},local._tombstones||{});
+
   base.lastModified=new Date().toISOString();
   return base;
 }
@@ -24882,8 +24915,9 @@ function renderSyncUI(){
   let b=document.getElementById('syncBadge');
   if(b){let base=_SYNC_LABEL[PP_SYNC.kind]||'Local';
     let extra=(PP_SYNC.detail&&(PP_SYNC.kind==='pending'||PP_SYNC.kind==='offline'))?' · '+PP_SYNC.detail:'';
-    // v1.188.1: estado únicamente 🟢/🟡/🔴, sin paneles técnicos.
-    let emoji=PP_SYNC.kind==='synced'?'🟢':(PP_SYNC.kind==='pending'||PP_SYNC.kind==='offline')?'🟡':(PP_SYNC.kind==='error')?'🔴':'●';
+    // Cola de cambios: estados discretos 🟡 pendientes · 🔄 sincronizando ·
+    // 🟢 sincronizado · ⚪ sin conexión · 🔴 error.
+    let emoji=PP_SYNC.kind==='synced'?'🟢':(PP_SYNC.kind==='pending')?'🟡':(PP_SYNC.kind==='syncing')?'🔄':(PP_SYNC.kind==='offline'||PP_SYNC.kind==='nosession')?'⚪':(PP_SYNC.kind==='error')?'🔴':'●';
     b.textContent=emoji+' '+base+extra;b.style.color=_SYNC_COLOR[PP_SYNC.kind]||'#15704f';
     // En error, el motivo NO se esconde: se ve al tocar y en el título.
     b.title = (PP_SYNC.kind==='error' && PP_SYNC.lastError)
@@ -25388,7 +25422,7 @@ window.addEventListener('load',function(){try{ppDiagActivar();}catch(e){}});
 
 let _autoSyncTimer=null,_syncing=false,_csBusy=false;
 function scheduleAutoSync(){
-  state.offlineChanges=(state.offlineChanges||0)+1;
+  // (el contador ya se incrementó y persistió en _doSave; aquí solo se agenda)
   let session=getCloudSession();
   if(!session){setSync('nosession');return}
   if(!navigator.onLine){setSync('offline',String(state.offlineChanges));return}
@@ -25400,7 +25434,9 @@ function scheduleAutoSync(){
     _autoSyncTimer=setTimeout(()=>{cloudStartupSync({_origin:'autosave-arranque'}).then(()=>cloudSave(true))},1500);
     return;
   }
-  _autoSyncTimer=setTimeout(()=>cloudSave(true),2500);
+  // COLA DE CAMBIOS: debounce de 8 s — acciones continuas reinician el timer
+  // y NO disparan peticiones entre medias; un solo sync agrupado al final.
+  _autoSyncTimer=setTimeout(()=>cloudSave(true),8000);
 }
 var _syncRetries=0, _syncRetryTimer=null;
 async function cloudSave(silent=false){
@@ -25844,7 +25880,7 @@ function saveProgressPhoto(){
 function deleteProgressPhoto(id){
   if(!confirm('¿Eliminar esta foto de progreso?'))return;
   let item=state.progressPhotos.find(x=>x.id===id);if(item)moveToTrash('progressPhotos',item);
-  state.progressPhotos=state.progressPhotos.filter(x=>x.id!==id);save();renderProgressPhotos();
+  ppTombstoneItem(state.progressPhotos,id);save();renderProgressPhotos();
 }
 function compareProgressPhotos(){
   let before=+(document.getElementById('compareBefore')||{}).value,after=+(document.getElementById('compareAfter')||{}).value;
@@ -25859,7 +25895,7 @@ function compareProgressPhotos(){
 }
 function renderProgressPhotos(){
   let gallery=document.getElementById('progressPhotoGallery');if(!gallery)return;
-  let photos=state.progressPhotos||[],options=photos.map(x=>`<option value="${x.id}">${x.date} · ${safeText(x.view)} · ${x.weight||'—'} lb</option>`).join('');
+  let photos=ppActivos(state.progressPhotos),options=photos.map(x=>`<option value="${x.id}">${x.date} · ${safeText(x.view)} · ${x.weight||'—'} lb</option>`).join('');
   gallery.innerHTML=photos.length?`<div class="card"><h3>Comparar antes y después</h3><div class="grid"><select id="compareBefore">${options}</select><select id="compareAfter">${options}</select></div><button class="btn primary" style="width:100%;margin-top:8px" onclick="compareProgressPhotos()">Comparar fotos</button></div>
     <div class="grid">${photos.map(x=>`<div class="card" style="margin:0">${photoImgTag(x,'width:100%;height:220px;object-fit:cover;border-radius:10px','Progreso '+safeText(x.view))}<b>${safeText(x.date)} · ${safeText(x.view)}</b><div class="muted">${x.weight||'—'} lb · ${safeText(x.note)}</div><button class="btn icon-btn" title="Eliminar" onclick="deleteProgressPhoto(${x.id})">🗑</button></div>`).join('')}</div>
     <div class="warn" style="margin-top:10px"><b>Privacidad:</b> tus fotos se guardan en tu almacenamiento privado de la nube (solo tú las ves con tu sesión) y en este dispositivo. Si no has iniciado sesión, quedan solo aquí.</div>`
@@ -28323,7 +28359,7 @@ function completarCtxReal(){
     hora:new Date().getHours(),
     consumidosHoy:consumidos, mostradas:window._completarMostradas||[],
     restricciones:restricciones,
-    favoritos:state.recipeFavorites||[], recientes:state.recetasRecientes||[],
+    favoritos:ppKeysActivas('favs',state.recipeFavorites)||[], recientes:state.recetasRecientes||[],
     catalogo:catalogo
   };
 }
@@ -29408,7 +29444,7 @@ var EVITAR_COMUNES = {
 /* Devuelve las palabras a evitar (comunes marcadas + las que el usuario escribió) */
 function palabrasEvitar(){
   var out = [];
-  var marcados = state.evitarComunes || [];
+  var marcados = ppKeysActivas('evitar',state.evitarComunes);
   marcados.forEach(function(k){
     if(EVITAR_COMUNES[k]) out = out.concat(EVITAR_COMUNES[k].palabras);
   });
@@ -29441,7 +29477,8 @@ function avisoEvitarHTML(receta){
 function toggleEvitarComun(k){
   if(!state.evitarComunes) state.evitarComunes = [];
   var i = state.evitarComunes.indexOf(k);
-  if(i>=0) state.evitarComunes.splice(i,1); else state.evitarComunes.push(k);
+  if(i>=0){ state.evitarComunes.splice(i,1); ppTombstoneKey('evitar',k); }
+  else{ state.evitarComunes.push(k); delete (state._tombstones||{})['evitar:'+k]; }
   if(typeof save==='function') save();
   if(typeof renderRecipes==='function') renderRecipes();
   var box=document.getElementById('evitarBox'); if(box) box.innerHTML=secEvitarBody();
@@ -29475,7 +29512,7 @@ function toggleEsconderEvitar(){
 
 function secEvitarBody(){
   var comunes = Object.keys(EVITAR_COMUNES).map(function(k){
-    var on = (state.evitarComunes||[]).includes(k);
+    var on = (state.evitarComunes||[]).includes(k) && ppKeyActivo('evitar',k);
     return '<button onclick="toggleEvitarComun(&#39;'+k+'&#39;)" style="border:2px solid '+(on?'#c0392b':'#ddd')+';background:'+(on?'#fdeaea':'#fff')+';color:'+(on?'#c0392b':'#333')+';border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;margin:3px;cursor:pointer">'+EVITAR_COMUNES[k].label+(on?' ✓':'')+'</button>';
   }).join('');
 
@@ -29774,7 +29811,8 @@ function toggleFavoriteRecipe(key){
   if(id==null)return;
   if(!Array.isArray(state.recipeFavorites))state.recipeFavorites=[];
   let i=state.recipeFavorites.indexOf(id);
-  if(i>=0)state.recipeFavorites.splice(i,1);else state.recipeFavorites.push(id);
+  if(i>=0){state.recipeFavorites.splice(i,1);ppTombstoneKey('favs',id);}
+  else{state.recipeFavorites.push(id);delete (state._tombstones||{})['favs:'+id];}
   save();renderRecipes();
 }
 // ----- Mi cocina (Fase B): panel de herramientas + selector de método por receta -----
@@ -30910,7 +30948,7 @@ function f3MismaFechaLocal(ft,ctxDate,fechaLocal){
 function f3SesionVisibleHoy(log,hoy,exerciseKey,sidPack){
   var esValida=function(r){var v=(r.reps||'');var ok=v!=='—'&&v!=='no registradas'&&v!==''&&!/^\d+[-–]\d+$/.test(v);return +r.weight>0&&ok;};
   var esVisible=function(r){return +r.weight>0||esValida(r);};
-  var hoySeries=(log||[]).filter(function(r){return (r.localDate||r.date||'')===hoy&&esVisible(r);});
+  var hoySeries=(log||[]).filter(function(r){return !r.deleted&&(r.localDate||r.date||'')===hoy&&esVisible(r);});
   var sid=sidPack||null;
   if(!hoySeries.some(function(r){return r.sessionId===sid&&String(r.exercise||'').toLowerCase().trim()===exerciseKey;})){
     var porEjercicio=hoySeries.filter(function(r){return String(r.exercise||'').toLowerCase().trim()===exerciseKey;});
@@ -30932,7 +30970,9 @@ function quickFitnessToday(){
     createFitnessToday();
     // Al abrir la app, el panel de entrenamiento queda listo con el dia activo
     // (una sola fuente: la seleccion de Mi semana, o hoy si no se toco nada).
-    if(state.customRoutine&&!state.activeWorkout&&typeof activarDiaEntrenamiento==='function'){
+    // El constructor semanal solo se reactiva si NO hay una rutina activa
+    // guardada (▶ Usar hoy tiene prioridad y ya cargó su plan en createFitnessToday).
+    if(state.customRoutine&&!f3RutinaActiva()&&!state.activeWorkout&&typeof activarDiaEntrenamiento==='function'){
       try{activarDiaEntrenamiento(f3DiaActivo(state.customRoutine));}catch(e){}
     }
   }
@@ -30941,7 +30981,7 @@ function quickFitnessToday(){
   if(state.activeWorkout&&state.activeWorkout.plan&&state.activeWorkout.plan.length){
     // Auto-sanado: si el panel muestra OTRA sesion que la del dia activo,
     // se recarga con la correcta (una sola fuente, incluso con estados viejos).
-    if(state.customRoutine&&typeof activarDiaEntrenamiento==='function'&&typeof todayRoutinePlan==='function'){
+    if(state.customRoutine&&!f3RutinaActiva()&&typeof activarDiaEntrenamiento==='function'&&typeof todayRoutinePlan==='function'){
       var trA=todayRoutinePlan();
       if(trA&&!trA.rest&&f3NombresPlan(trA.plan)!==f3NombresPlan(state.activeWorkout.plan)){
         try{activarDiaEntrenamiento(f3DiaActivo(state.customRoutine));}catch(e){}
@@ -30961,6 +31001,10 @@ function quickFitnessToday(){
   let pack=state.fitnessToday&&state.fitnessToday.date===todayISO()?state.fitnessToday:null;
   if(!pack){out.innerHTML='';return;}
   if(!pack.checked||pack.checkedDate!==todayISO()){pack.checked={};pack.checkedDate=todayISO();}
+  // DOS MODOS: rutina de la semana (activa) vs excepción "Usar solo hoy" vs
+  // generación automática (sin rutina semanal). La semanal tiene prioridad.
+  var activaHoy=f3RutinaActiva();
+  var oneOff=!!pack.oneOff;
   let plan=pack.plan||[];
   let hechos=plan.filter((x,i)=>pack.checked[i]).length;
   let pct=plan.length?Math.round(hechos/plan.length*100):0;
@@ -30973,22 +31017,37 @@ function quickFitnessToday(){
   if(incEquipo.length){
     equipoMsg=`<div class="warn" style="margin-bottom:10px"><b>⚠️ Hay ejercicios que ya no son compatibles con tu equipo actual:</b> ${incEquipo.map(function(x){return safeText(x.name);}).join(', ')}.<div class="row" style="margin-top:6px"><button class="btn primary" onclick="adaptarRutinaEquipo()">🔧 Adaptar rutina</button></div></div>`;
   }
+  let modoMsg='';
+  if(oneOff){
+    modoMsg=`<div class="warn" style="margin-bottom:10px"><b>🔄 Solo por hoy:</b> estás usando un entrenamiento distinto a tu rutina de la semana. Mañana vuelve automáticamente tu plan semanal.<div class="row" style="margin-top:6px"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="f3VolverASemanal()">↩ Volver a mi rutina de la semana</button></div></div>`;
+  }else if(activaHoy&&!pack.adaptedOnlyToday&&!pack.fromSemana){
+    modoMsg=`<div class="ok" style="margin-bottom:10px;background:#eef6f1;border:1px solid #bfe3cd"><b>🏋️ Mi rutina de la semana:</b> <b>${safeText(pack.loadedName||f3NombreMostrar(activaHoy))}</b> — entrenamiento de hoy según tu plan guardado.</div>`;
+  }
   out.innerHTML=`
   ${adaptMsg}
   ${semanaMsg}
   ${respaldoMsg}
   ${equipoMsg}
-  <div class="fit2-rutina-head"><b>Rutina lista.</b><span>Marca cada ejercicio al terminarlo · lo avanzado queda cerrado para no estorbar.</span></div>
+  ${modoMsg}
+  <div class="fit2-rutina-head"><b>${oneOff?'🔄 Solo por hoy':(activaHoy?'🏋️ Mi rutina de la semana':'Rutina lista.')}</b><span>Marca cada ejercicio al terminarlo · lo avanzado queda cerrado para no estorbar.</span></div>
   <div class="fit-progress">
     <div class="fit-progress-top"><b>Avance de hoy</b><span class="fit-progress-num">${hechos} de ${plan.length}</span></div>
     <div class="fit-progress-bar"><div class="fit-progress-fill" style="width:${pct}%"></div></div>
     ${hechos===plan.length&&plan.length?'<div style="margin-top:8px;font-weight:800;color:#15704f">🎉 Terminaste la rutina.</div>':''}${fitResumenResultadoHoy()}
   </div>
-  ${(function(){return `<div style="margin:8px 0 10px">
+  ${(function(){
+    if(oneOff){
+      return `<div style="margin:8px 0 10px">${f3CampoNombreHTML()}<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="f3VolverASemanal()">↩ Volver a mi rutina de la semana</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveCurrentRoutine()">💾 Guardar esta rutina</button></div><div class="muted" style="font-size:11px;margin-top:5px">Excepción de un solo día: mañana vuelve automáticamente tu rutina de la semana.</div></div>`;
+    }
+    if(activaHoy){
+      return `<div style="margin:8px 0 10px">${f3CampoNombreHTML()}<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="f3UsarSoloHoy()">🔄 Usar solo hoy</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveCurrentRoutine()">💾 Guardar esta rutina</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="repetirRutina()">🔁 Repetir esta rutina</button></div><div class="muted" style="font-size:11px;margin-top:5px">Sigue el plan de tu rutina de la semana. "Usar solo hoy" es la excepción temporal: mañana vuelve tu plan.</div></div>`;
+    }
+    return `<div style="margin:8px 0 10px">
     ${f3CampoNombreHTML()}
     <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="varyFitnessToday()">🎲 Variar ejercicios</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveCurrentRoutine()">💾 Guardar esta rutina</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="repetirRutina()">🔁 Repetir esta rutina</button></div>
     <div class="muted" style="font-size:11px;margin-top:5px">Los ejercicios cambian cada día para no aburrirte. Toca 🎲 para otra variación, o "Cambiar si está ocupado" en cada uno. El esfuerzo y "¿Cómo llegas hoy?" se ajustan en <b>🔧 Ajuste de HOY</b> (dentro de Crear rutina), solo para hoy.</div>
-  </div>`;})()}
+  </div>`;
+  })()}
   ${(function(){var es=state.fitEstado||'normal';var hoy=typeof todayISO==='function'?todayISO():'';var esHoy=(state.fitEstadoDate===hoy)?es:'normal';var efHoy=fitEffortHoy();var lbls={excelente:'Excelente',normal:'Normal',cansado:'Cansado',muy_fatigado:'Muy fatigado'};var lblInt={suave:'Suave',auto:'Auto',normal:'Normal',fuerte:'Fuerte · crecer',extremo:'Demasiado fuerte'}[efHoy]||efHoy;var parts=[];if(esHoy!=='normal')parts.push(lbls[esHoy]);if(efHoy!=='auto')parts.push(lblInt);var chip=(parts.length?'<div class="ok" style="margin:8px 0 10px;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px">🔧 <b>Hoy:</b> '+parts.join(' · ')+'</span><button class="btn" style="font-size:12px;padding:6px 10px" onclick="openCreateRoutine()">Cambiar</button></div>':'');return chip+'<div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="togglePorqueRutina()">❓ ¿Por qué esta rutina?</button></div><div id="porqueRutina" style="display:none;margin-top:8px;background:#f6fbf8;border:1px solid #cfe6d8;border-radius:10px;padding:8px 10px"></div>';})()}
   ${f3TendenciaDificilSemanas()&&state.deloadFecha!==todayISO()?`<div class="warn" style="margin:8px 0"><b>💤 Sugerencia:</b> tus últimas sesiones han sido difíciles de forma constante (2 semanas). Podrías beneficiarte de una semana más ligera.<div class="row" style="margin-top:6px"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="aplicarDeloadHoy()">Aplicar hoy (volumen −30%)</button></div></div>`:''}
   ${hechos===plan.length&&plan.length?`<div style="margin:8px 0 10px">${(function(){var fb=state.fitFeedbackHoy&&state.fitFeedbackHoy.date===todayISO();return fb?'<div class="ok" style="font-size:12px">✔ Gracias, tu feedback quedó guardado y se usará gradualmente.</div>':`<div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Cómo se sintió esta rutina?</div><div class="row" style="gap:6px;flex-wrap:wrap">${[['muy_facil','Muy fácil'],['bien','Bien'],['dificil','Difícil'],['demasiado','Demasiado difícil'],['dolor','Dolor/molestia']].map(function(o){return '<button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveFitFeedback(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}</div>`;})()}</div>`:''}
@@ -31251,8 +31310,10 @@ function logRoutineQuick(i){
 function deleteWorkoutEntry(id){
   console.log('[DEL] antes workoutLog='+(state.workoutLog||[]).length+' id='+id);
   if(!confirm('¿Borrar esta serie?'))return;
-  state.workoutLog=(state.workoutLog||[]).filter(function(r){return r.id!==id;});
-  console.log('[DEL] después workoutLog='+state.workoutLog.length);
+  // TOMBSTONE: la marca viaja con la unión del merge (updated_at más reciente
+  // gana) y ninguna copia vieja de otro dispositivo puede resucitar la serie.
+  ppTombstoneItem(state.workoutLog||[],id);
+  console.log('[DEL] tombstone aplicado en workoutLog='+state.workoutLog.length);
   save(true);
   actualizarResultadosHoy(); // v1.187: recalcular veredicto tras borrar una serie
   console.log('[DEL] save(true) ejecutado');
@@ -31314,7 +31375,7 @@ function saveSimpleWorkout(){
 function repsTotal(x){var r=String(x.reps||'');var p=r.split(/[^0-9]+/).map(function(n){return parseInt(n,10);}).filter(function(n){return !isNaN(n);});if(p.length)return p.reduce(function(a,b){return a+b;},0);return (+x.sets||1)*8;}
 // Registros dentro de una ventana de [days] días. offset=1 => el periodo anterior (para comparar).
 function fitPeriodLogs(days,offset){offset=offset||0;var endMs=Date.now()-offset*days*86400000;var startMs=endMs-days*86400000;return (state.workoutLog||[]).filter(function(x){// v1.187.2: usar fecha LOCAL (localDate) — x.date es UTC y descartaba registros de hoy (tarde/noche en zonas UTC-negativas)
-var t=Date.parse(((x.localDate||x.date)||'')+'T00:00:00');return isFinite(t)&&t>=startMs&&t<=endMs;});}
+if(x.deleted)return false;var t=Date.parse(((x.localDate||x.date)||'')+'T00:00:00');return isFinite(t)&&t>=startMs&&t<=endMs;});}
 // Mejor peso por ejercicio en una lista de registros.
 function bestByExercise(logs){var m={};logs.forEach(function(x){var n=String(x.exercise||'').trim();if(!n)return;var w=+x.weight||0;if(!m[n]||w>m[n].w)m[n]={w:w,reps:x.reps,date:x.date};});return m;}
 function renderSimpleFitnessProgress(days){
@@ -31651,6 +31712,7 @@ function seriesValidasRegs(regs){
     if(r&&!vistos[r.id]){vistos[r.id]=1;out.push(r);}
   });
   return out.filter(function(r){
+    if(r.deleted)return false;
     var v=(r.reps||'');var repsValida=v!=='—'&&v!=='no registradas'&&v!==''&&!/^\d+[-–]\d+$/.test(v);
     return +r.weight>0 && repsValida;
   });
@@ -31676,7 +31738,7 @@ function seriesHoyEjercicio(name,hoy,log,sessionId){
 // las series extra NO contaminan las normales; nunca se suman pesos.
 function evaluarSesionHoy(name,reps,goalSets,hoy,log,sessionId){
   var hoyE=hoy||todayLocal();
-  var logE=log||state.workoutLog||[];
+  var logE=(log||state.workoutLog||[]).filter(function(x){return !(x&&x.deleted);});
   var sug=sugerenciaSesion(name,reps,goalSets,{log:logE,hoy:hoyE});
   var actual=seriesHoyEjercicio(name,hoyE,logE,sessionId);
   var N=actual.length, G=+(goalSets||3);
@@ -32831,6 +32893,10 @@ function repetirRutina(){
 // 🎲 Variar esta rutina: alternativa con EX_LIB + reglas + validadores (misma
 // semilla+1). Si no existe alternativa válida, se mantiene y se explica.
 function f3VariarHoy(){
+  // Con rutina semanal activa NO se varía automáticamente (el plan tiene
+  // prioridad); para un entrenamiento distinto existe "🔄 Usar solo hoy".
+  if(state.fitnessToday&&state.fitnessToday.oneOff)return {cambio:false,mensaje:'Hoy estás en un entrenamiento de excepción; mañana vuelve tu rutina de la semana.'};
+  if(f3RutinaActiva())return {cambio:false,mensaje:'Tu rutina de la semana está activa: usa "🔄 Usar solo hoy" para un entrenamiento distinto.'};
   var antes=((state.fitnessToday&&state.fitnessToday.plan)||[]).map(function(x){return x.name;}).join('|');
   state.fitVariant=(state.fitVariant||0)+1;
   save();
@@ -33643,13 +33709,18 @@ function renderSavedRoutines(){
   if(window._routineCfg){renderRoutineConfig();return;} // el editor sobrevive a renders de sync
   var list=f3RutinasActivas();
   if(!list.length){el.innerHTML='<p class="muted" style="margin:0">Aún no guardas rutinas. Crea una y toca "💾 Guardar esta rutina".</p>';return;}
-  el.innerHTML='<div class="list">'+list.map(function(r){
+  var activa=f3RutinaActiva();
+  var aviso=activa
+    ?'<div class="ok" style="margin:0 0 8px;font-size:12px"><b>⭐ Rutina activa:</b> '+safeText(f3NombreMostrar(activa))+' — se carga sola cada vez que entras a Fitness.</div>'
+    :'<div class="muted" style="margin:0 0 8px;font-size:12px">No tienes una rutina activa: toca <b>▶ Usar hoy</b> en una rutina y quedará como tu rutina de todos los días.</div>';
+  el.innerHTML=aviso+'<div class="list">'+list.map(function(r){
     var dias=f3DiasRutina(r);
     var nDias=dias?dias.length:1;
     var nExs=dias?dias.reduce(function(a,d){return a+((d.exs||[]).length);},0):((r.plan||[]).length);
     var exs=(r.plan||[]).slice(0,3).map(function(x){return safeText(x.name);}).join(', ');
     var resumen=(dias||[]).map(function(d){return safeText(d.n)+':'+(f3MusculosDia(d)||'—');}).join(' · ');
-    return '<div class="item"><b>'+safeText(f3NombreMostrar(r))+'</b> <span class="muted" style="font-size:12px">· '+nDias+' día'+(nDias!==1?'s':'')+' · '+nExs+' ejercicios</span><div class="muted" style="font-size:12px;margin:2px 0">'+(resumen||exs)+((r.plan||[]).length>3?'…':'')+'</div><div class="row" style="gap:6px;margin-top:4px"><button class="btn primary" onclick="loadSavedRoutine(\''+r.id+'\')">▶ Usar hoy</button><button class="btn" onclick="openRoutineConfig(\''+r.id+'\')">⚙️ Configurar</button><button class="btn" onclick="deleteSavedRoutine(\''+r.id+'\')">🗑</button></div></div>';
+    var badge=(state.activeRoutineId===r.id)?' <span class="pill" style="background:#fff3c4;border:1px solid #e0b93f;font-size:10px">⭐ Activa</span>':'';
+    return '<div class="item"><b>'+safeText(f3NombreMostrar(r))+'</b>'+badge+' <span class="muted" style="font-size:12px">· '+nDias+' día'+(nDias!==1?'s':'')+' · '+nExs+' ejercicios</span><div class="muted" style="font-size:12px;margin:2px 0">'+(resumen||exs)+((r.plan||[]).length>3?'…':'')+'</div><div class="row" style="gap:6px;margin-top:4px"><button class="btn primary" onclick="loadSavedRoutine(\''+r.id+'\')">▶ Usar hoy</button><button class="btn" onclick="openRoutineConfig(\''+r.id+'\')">⚙️ Configurar</button><button class="btn" onclick="deleteSavedRoutine(\''+r.id+'\')">🗑</button></div></div>';
   }).join('')+'</div>';
 }
 // ===== ⚙️ Configurar rutina: edita la PLANTILLA guardada (permanente) =====
@@ -33879,11 +33950,9 @@ function fitAcordeonPrincipal(el){
     if(id!==el.id){var d=document.getElementById(id);if(d)d.open=false;}
   });
 }
-function loadSavedRoutine(id){
-  var r=(state.savedRoutines||[]).find(function(x){return x.id===id&&!x.deleted;}); if(!r)return;
+// Plan del día de HOY de una rutina guardada (misma fuente que loadSavedRoutine).
+function f3PlanDeRutina(r){
   var nombre=f3NombreMostrar(r); // rutinas antiguas sin nombre: presentación generada, datos intactos
-  // Rutinas multi-día (⚙️ Configurar): cargar el día de HOY; si hoy no tiene día
-  // específico, el día Base (di:-1) o el plan clásico, con AVISO visible.
   var plan=(r.plan||[]).slice();
   var usoRespaldo=false;
   var dias=f3DiasRutina(r);
@@ -33899,11 +33968,48 @@ function loadSavedRoutine(id){
       usoRespaldo=true; // hoy no tiene plan propio: fallback con aviso
     }
   }
+  return {plan:plan,nombre:nombre,usoRespaldo:usoRespaldo};
+}
+// Rutina activa persistente (sobrevive refresh/cierre/sync vía el snapshot):
+// la última rutina elegida con ▶ Usar hoy queda como LA rutina del día a día.
+function f3RutinaActiva(){
+  var id=state.activeRoutineId;
+  if(!id)return null;
+  return (state.savedRoutines||[]).find(function(x){return x.id===id&&!x.deleted;})||null;
+}
+function loadSavedRoutine(id){
+  var r=(state.savedRoutines||[]).find(function(x){return x.id===id&&!x.deleted;}); if(!r)return;
+  var P=f3PlanDeRutina(r);
   // loadedRoutineId enlaza el campo "Nombre de rutina" con ESTA rutina (por ID):
   // escribir en el campo la renombra a ella, nunca crea otra.
-  state.fitnessToday={date:todayISO(),plan:JSON.parse(JSON.stringify(plan)),ctx:{focus:nombre,hard:false,steps:0,energy:3,pain:0,sleep:7,equip:'Gimnasio'},createdAt:new Date().toISOString(),loadedName:nombre,loadedRoutineId:r.id,usoRespaldo:usoRespaldo};
+  state.fitnessToday={date:todayISO(),plan:JSON.parse(JSON.stringify(P.plan)),ctx:{focus:P.nombre,hard:false,steps:0,energy:3,pain:0,sleep:7,equip:'Gimnasio'},createdAt:new Date().toISOString(),loadedName:P.nombre,loadedRoutineId:r.id,usoRespaldo:P.usoRespaldo};
+  // RUTINA ACTIVA: queda registrada con su ID estable; al volver a entrar a
+  // Fitness se carga sola, sin ir a Rutinas guardadas.
+  state.activeRoutineId=r.id;
   f3IrARutina(); // cambiar de rutina: dejar el INICIO de la nueva rutina visible
   save(); try{quickFitnessToday()}catch(e){}
+}
+// 🔄 USAR SOLO HOY: excepción de un solo día. NO toca activeRoutineId ni la
+// rutina guardada; mañana createFitnessToday vuelve a cargar el plan semanal.
+function f3UsarSoloHoy(){
+  var activa=f3RutinaActiva(); if(!activa)return;
+  var pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan.length)return;
+  var ctx=readFitnessContext();
+  var alterno=null;
+  try{alterno=buildFitnessTodayPlan(ctx);}catch(e){alterno=null;}
+  if(!alterno||!alterno.length){if(typeof alert==='function')alert('No hay alternativa válida para hoy.');return;}
+  var nombre=f3NombreMostrar(activa);
+  state.fitnessToday={date:todayISO(),localDate:(typeof todayLocal==='function'?todayLocal():todayISO()),ctx:ctx,plan:alterno,createdAt:new Date().toISOString(),loadedRoutineId:activa.id,loadedName:nombre,oneOff:true,checked:{},checkedDate:todayISO(),sessionId:Date.now()};
+  save();
+  try{quickFitnessToday();}catch(e){}
+}
+// ↩ Volver a la rutina de la semana HOY MISMO (descarta la excepción del día).
+function f3VolverASemanal(){
+  var activa=f3RutinaActiva(); if(!activa)return;
+  var P=f3PlanDeRutina(activa);
+  state.fitnessToday={date:todayISO(),localDate:(typeof todayLocal==='function'?todayLocal():todayISO()),plan:JSON.parse(JSON.stringify(P.plan)),ctx:{focus:P.nombre,hard:false,steps:0,energy:3,pain:0,sleep:7,equip:((activa.cfg&&activa.cfg.equip)||'Gimnasio')},createdAt:new Date().toISOString(),loadedRoutineId:activa.id,loadedName:P.nombre,usoRespaldo:P.usoRespaldo,checked:{},checkedDate:todayISO(),sessionId:Date.now()};
+  save();
+  try{quickFitnessToday();}catch(e){}
 }
 function deleteSavedRoutine(id){
   if(!confirm('¿Borrar esta rutina guardada?'))return;
@@ -33914,6 +34020,9 @@ function deleteSavedRoutine(id){
   // la rutina y la eliminación se propaga a iPhone/Windows sin tocar el motor.
   r.deleted=true;
   r.updated_at=new Date().toISOString();
+  // Si era la rutina activa: limpiar la referencia (NO se selecciona otra sola).
+  if(state.activeRoutineId===id)state.activeRoutineId=null;
+  if(state.fitnessToday&&state.fitnessToday.loadedRoutineId===id)state.fitnessToday.loadedRoutineId=null;
   save();
   try{renderSavedRoutines()}catch(e){}
 }
@@ -34271,9 +34380,16 @@ function createFitnessToday(){
   if(document.getElementById('workFatigue'))document.getElementById('workFatigue').value=ctx.hard?'pesado':'normal';
   if(document.getElementById('prio'))document.getElementById('prio').value=ctx.focus;
   if(document.getElementById('equip'))document.getElementById('equip').value=ctx.equip;
-  let tr=todayRoutinePlan();
+  // RUTINA ACTIVA (▶ Usar hoy): se carga SOLA al entrar a Fitness. Prioridad
+  // sobre el constructor semanal; sin scroll, sin cambiar de sección.
+  var activa=f3RutinaActiva();
+  var PActiva=activa?f3PlanDeRutina(activa):null;
+  let tr=PActiva?null:todayRoutinePlan();
   let plan,fromSemana=false;
   if(tr&&!tr.rest&&tr.plan&&tr.plan.length){plan=tr.plan;fromSemana=true;ctx.focus=tr.dayName;}
+  else if(PActiva){
+    plan=PActiva.plan;ctx.focus=PActiva.nombre;
+  }
   else{
     // IDENTIDAD: si hay una rutina CARGADA hoy (loadedRoutineId enlazado y la
     // rutina existe), los ajustes temporales (esfuerzo, estado, nivel, deload)
@@ -34302,6 +34418,13 @@ function createFitnessToday(){
   state.fitnessToday.createdAt=new Date().toISOString(); state.fitnessToday.fromSemana=fromSemana;
   state.fitnessToday.semanaDayName=fromSemana?tr.dayName:null;
   state.fitnessToday.semanaDia=(fromSemana&&tr&&tr.diaIdx!=null)?tr.diaIdx:null;
+  // El enlace de identidad de la rutina activa se aplica DESPUÉS del reinicio
+  // de fecha (el fitnessToday de otro día se regenera sin perder el enlace).
+  if(PActiva){
+    state.fitnessToday.loadedRoutineId=activa.id;
+    state.fitnessToday.loadedName=PActiva.nombre;
+    state.fitnessToday.usoRespaldo=PActiva.usoRespaldo;
+  }
   // F3c: guardar la explicación REAL del generador para "¿Por qué esta rutina?"
   if(plan&&plan.porque){state.fitnessToday.porque=(fromSemana?['De tu plan semanal: hoy toca '+tr.dayName+'.']:[]).concat(plan.porque);delete plan.porque;}
   else state.fitnessToday.porque=null;
@@ -34716,6 +34839,7 @@ function renderWorkoutLog(){
   let weekAgo=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
 
   let logs=state.workoutLog.filter(x=>{
+    if(x.deleted)return false;
     if(filter&&x.exercise!==filter)return false;
     if(_logView==='day'&&x.date!==today)return false;
     if(_logView==='week'&&x.date<weekAgo)return false;
@@ -35925,7 +36049,7 @@ function quickMealsHTML(mealKey){
   // Solo los últimos 10 días (acotado): nada de recorrer el diario completo al abrir.
   var fechas=Object.keys(state.diary||{}).sort().reverse().slice(0,10);
   var todos=[];
-  fechas.forEach(function(dt){['breakfast','lunch','dinner','snacks'].forEach(function(k){(state.diary[dt][k]||[]).forEach(function(x){if(x&&x.name&&String(x.name).indexOf('Extras')!==0)todos.push({nombre:x.name,k:x.kcal||0,p:x.prot||0,c:x.carb||0,f:x.fat||0,a:x.amount||'1 porción'});});});});
+  fechas.forEach(function(dt){['breakfast','lunch','dinner','snacks'].forEach(function(k){ppDiarioActivos(state.diary[dt][k]).forEach(function(x){if(x&&x.name&&String(x.name).indexOf('Extras')!==0)todos.push({nombre:x.name,k:x.kcal||0,p:x.prot||0,c:x.carb||0,f:x.fat||0,a:x.amount||'1 porción'});});});});
   if(!todos.length)return '';
   var html='';
   var vistos={},recientes=[];
@@ -36421,7 +36545,8 @@ function removeDiaryItem(mealKey,idx){
   if(!state.diary?.[date]?.[mealKey]) return;
   var comidaBorrada=state.diary[date][mealKey][idx];
   if(comidaBorrada && typeof registrarCambio==='function') registrarCambio('borrada', comidaBorrada, mealKey, date);
-  state.diary[date][mealKey].splice(idx,1);
+  // TOMBSTONE: marcar en vez de quitar — la copia de la nube no la resucita.
+  state.diary[date][mealKey][idx].deleted=true;
   save();
   let tabEl=document.querySelector('.tab.active');
   if(tabEl) tabEl.innerHTML=section(tabs[_activeTab]);
@@ -36459,7 +36584,7 @@ function hmv413Arr(name){return Array.isArray(state[name])?state[name]:[]}
 function hmv413Obj(name){return state[name]&&typeof state[name]==='object'?state[name]:{}}
 function hmv413DataStats(){
   var diary=hmv413Obj('diary'), meals=hmv413Arr('meals'), recipeFav=hmv413Arr('recipeFavorites');
-  var diaryItems=Object.keys(diary).reduce(function(a,d){var x=diary[d]||{};return a+(x.breakfast||[]).length+(x.lunch||[]).length+(x.dinner||[]).length+(x.snacks||[]).length},0);
+  var diaryItems=Object.keys(diary).reduce(function(a,d){var x=diary[d]||{};return a+ppDiarioActivos(x.breakfast).length+ppDiarioActivos(x.lunch).length+ppDiarioActivos(x.dinner).length+ppDiarioActivos(x.snacks).length},0);
   return {
     comida: meals.length+diaryItems,
     peso: hmv413Arr('weight').length,
