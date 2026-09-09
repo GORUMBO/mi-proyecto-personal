@@ -1,8 +1,23 @@
 {
-  "latest": "1.193.0",
+  "latest": "1.193.1",
   "date": "2026-09-08",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.193.1",
+      "date": "2026-09-08",
+      "type": "recomendada",
+      "nuevas": [
+        "Completar mi día arreglado para iPhone: el botón Volver ya no queda bajo el notch ni la barra del navegador (respeta el área segura y es más grande y fácil de tocar), en ambos paneles (comidas y extras).",
+        "Comidas con y sin receta claramente diferenciadas: si la comida tiene receta asociada aparece 👨🍳 Ver receta (y abre la receta correcta); si no la tiene, se muestra Sin receta disponible y ningún botón sin destino."
+      ],
+      "cambios": [
+        "Se retiró la sugerencia heurística de preparación que adivinaba una receta por el nombre de la comida."
+      ],
+      "errores": [
+        "Corregido que el botón Volver de Completar mi día no respondiera al tocarlo en iPhone (quedaba debajo del área del sistema)."
+      ]
+    },
     {
       "version": "1.193.0",
       "date": "2026-09-08",
