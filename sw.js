@@ -1,4 +1,4 @@
-const CACHE='mi-proyecto-v1-193-1';
+const CACHE='mi-proyecto-v1-194-0';
 const FILES=['./','./index.html'];
 
 // Descarga con límite de tiempo. Sin esto, un corte de red a media descarga
@@ -53,6 +53,23 @@ self.addEventListener('message',function(e){
 });
 
 self.addEventListener('fetch',function(e){
+  // OCR local (Tesseract.js): cachear para que funcione sin internet después
+  // de la primera carga. Nunca intercepta Supabase ni version.json (invariante).
+  var u=String(e.request.url||'');
+  if(/cdn\.jsdelivr\.net\/npm\/tesseract\.js/.test(u)){
+    e.respondWith(
+      caches.open(CACHE).then(function(c){
+        return c.match(e.request).then(function(hit){
+          var p=fetch(e.request).then(function(r){
+            if(r&&r.status===200){var cp=r.clone();c.put(e.request,cp);}
+            return r;
+          }).catch(function(){return hit;});
+          return hit||p;
+        });
+      })
+    );
+    return;
+  }
   const url=e.request.url;
   // NUNCA interceptar ni cachear peticiones a Supabase (auth/rest/storage): deben ir siempre a la red en vivo.
   if(/supabase\.(co|in)\//.test(url)||/\/auth\/v1\/|\/rest\/v1\/|\/storage\/v1\//.test(url)||/workers\.dev\//.test(url)||/\/sync\//.test(url))return; // pasa directo a la red (sync NUNCA se cachea)

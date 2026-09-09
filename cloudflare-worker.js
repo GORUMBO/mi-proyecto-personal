@@ -10,7 +10,7 @@
 const SUPABASE_URL = 'https://fzkpgrvqncqnmvagbjaf.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_v3rxA0aQmdf1Ol4vTTQKqQ_xUDl-b4u'; // llave pública (anon), no es secreto
 
-const TABLAS = new Set(['personal_backups','peso','ejercicios','comidas','calorias','proteina','pasos','gastos','ajustes']);
+const TABLAS = new Set(['personal_backups','peso','ejercicios','comidas','calorias','proteina','pasos','gastos','ajustes','telegram_inbox']);
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -67,7 +67,127 @@ async function proxyAuth(request, supabasePath) {
   }
 }
 
-async function handleRequest(request) {
+/* ===== TELEGRAM (entrada rápida, SOLO chat autorizado) =====
+   Seguridad mínima:
+   - Webhook valida X-Telegram-Bot-Api-Secret-Token (Cloudflare Secret) y que
+     el chat_id sea exactamente TG_ALLOWED_CHAT (Cloudflare Secret).
+   - El bot escribe en telegram_inbox con un JWT de rol `telegram_bot`
+     (firmado aquí con TG_JWT_SECRET, el MISMO secreto custom agregado en
+     Supabase → JWT Settings). RLS: auth.uid()=user_id en TODO momento.
+   - NUNCA usa service_role. Ningún token se registra ni se expone.
+   - El bot SOLO crea entradas pendientes; nunca toca Nevera ni Gastos. */
+function b64url(buf) {
+  var s = '';
+  var bytes = new Uint8Array(buf);
+  for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function firmarTgJwt(env) {
+  var header = b64url(new TextEncoder().encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })));
+  var ahora = Math.floor(Date.now() / 1000);
+  var payload = b64url(new TextEncoder().encode(JSON.stringify({ sub: env.OWNER_USER_ID, role: 'telegram_bot', iat: ahora, exp: ahora + 300 })));
+  var key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.TG_JWT_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  var firma = b64url(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(header + '.' + payload)));
+  return header + '.' + payload + '.' + firma;
+}
+function tgEnvOk(env) {
+  return env && env.BOT_TOKEN && env.TG_WEBHOOK_SECRET && env.TG_ALLOWED_CHAT && env.OWNER_USER_ID && env.TG_JWT_SECRET;
+}
+async function handleTelegramWebhook(request, env) {
+  try {
+    if (!tgEnvOk(env)) return jsonV({ ok: false, error: 'telegram_no_configurado' }, 503);
+    if (request.method !== 'POST') return jsonV({ ok: false, error: 'metodo_no_permitido' }, 405);
+    // 1) Secret del webhook (evita llamadas de cualquiera que conozca la URL).
+    var secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token') || '';
+    if (secret !== env.TG_WEBHOOK_SECRET) return jsonV({ ok: false, error: 'no_autorizado' }, 401);
+    var update = null;
+    try { update = await request.json(); } catch (e) { return jsonV({ ok: false, error: 'body_invalido' }, 400); }
+    var msg = update && update.message;
+    var chatId = msg && msg.chat && String(msg.chat.id);
+    // 2) Solo el chat autorizado (un solo número, configurado como Secret).
+    if (!chatId || chatId !== String(env.TG_ALLOWED_CHAT)) return jsonV({ ok: false, error: 'chat_no_autorizado' }, 403);
+
+    var texto = String(msg.text || msg.caption || '').trim();
+    var foto = null;
+    if (msg.photo && msg.photo.length) foto = msg.photo[msg.photo.length - 1]; // la más grande
+
+    var tipo = foto ? 'ticket' : (/^\/lista\b|^\s*agrega\b/i.test(texto) ? 'lista' : (/comp(?:r[ée]|re)\b|^\/nevera\b/i.test(texto) ? 'nevera' : 'comida'));
+    var imagenUrl = null;
+
+    if (foto) {
+      // 3) Descargar la imagen (token del bot SOLO aquí, nunca se expone).
+      var fileRes = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/getFile?file_id=' + encodeURIComponent(foto.file_id));
+      var fileJson = await fileRes.json();
+      var filePath = fileJson && fileJson.result && fileJson.result.file_path;
+      if (!filePath) return jsonV({ ok: false, error: 'archivo_no_encontrado' }, 502);
+      var imgRes = await fetch('https://api.telegram.org/file/bot' + env.BOT_TOKEN + '/' + filePath);
+      var imgBytes = await imgRes.arrayBuffer();
+      if (!imgRes.ok || !imgBytes.byteLength) return jsonV({ ok: false, error: 'descarga_fallo' }, 502);
+      // 4) Subir a la carpeta del usuario (misma política de RLS por carpeta).
+      var ext = (filePath.match(/\.(\w+)$/) || [0, 'jpg'])[1];
+      var nombre = env.OWNER_USER_ID + '/telegram/' + Date.now() + '.' + ext;
+      var jwt = await firmarTgJwt(env);
+      var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/personal-media/' + encodeURIComponent(nombre), {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + jwt, 'Content-Type': 'image/jpeg', 'x-upsert': 'false' },
+        body: imgBytes
+      });
+      if (!upRes.ok) return jsonV({ ok: false, error: 'storage_rechazo', status: upRes.status }, 502);
+      imagenUrl = nombre;
+    }
+    if (!foto && !texto) return jsonV({ ok: false, error: 'sin_contenido' }, 400);
+    // 5) Insertar SOLO en telegram_inbox (rol telegram_bot, RLS por user_id).
+    var jwt2 = await firmarTgJwt(env);
+    var insRes = await fetch(SUPABASE_URL + '/rest/v1/telegram_inbox', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + jwt2, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify({ user_id: env.OWNER_USER_ID, chat_id: chatId, tipo: tipo, texto: texto || null, imagen_url: imagenUrl, estado: 'pendiente' })
+    });
+    if (!insRes.ok) return jsonV({ ok: false, error: 'buzon_rechazo', status: insRes.status }, 502);
+
+    // 6) Respuesta corta al usuario (sin afirmar conteos que aún no existen).
+    var resp = foto
+      ? '🧾 Ticket recibido. Lo leo y lo dejo pendiente para que lo revises en tu app.'
+      : (tipo === 'lista' ? '🛒 Recibido. Lo agrego a tu lista de compras y te confirmo en un momento.'
+        : (tipo === 'nevera' ? '🧊 Recibido. Lo dejo pendiente para confirmar en tu app.'
+          : '📝 Recibido, pero todavía no entiendo comidas por texto.'));
+    await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: resp })
+    });
+    return jsonV({ ok: true, tipo: tipo, imagen: !!imagenUrl });
+  } catch (e) {
+    return jsonV({ ok: false, error: 'telegram_error' }, 500);
+  }
+}
+async function handleTelegramNotify(request, env) {
+  try {
+    if (!tgEnvOk(env)) return jsonV({ ok: false, error: 'telegram_no_configurado' }, 503);
+    if (request.method !== 'POST') return jsonV({ ok: false, error: 'metodo_no_permitido' }, 405);
+    // La app notifica con su SESIÓN normal: solo el dueño puede responder por el bot.
+    var auth = request.headers.get('Authorization') || '';
+    var token = auth.replace(/^Bearer\s+/i, '');
+    var claims = decodeJwt(token);
+    if (!claims || !claims.sub) return jsonV({ ok: false, error: 'sin_sesion' }, 401);
+    if (claims.exp && Date.now() / 1000 > claims.exp) return jsonV({ ok: false, error: 'sesion_caducada' }, 401);
+    if (String(claims.sub) !== String(env.OWNER_USER_ID)) return jsonV({ ok: false, error: 'no_autorizado' }, 403);
+    var body = null;
+    try { body = await request.json(); } catch (e) { return jsonV({ ok: false, error: 'body_invalido' }, 400); }
+    var texto = String((body && body.text) || '').slice(0, 400);
+    if (!texto) return jsonV({ ok: false, error: 'sin_texto' }, 400);
+    var send = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: env.TG_ALLOWED_CHAT, text: texto })
+    });
+    return jsonV({ ok: send.ok });
+  } catch (e) {
+    return jsonV({ ok: false, error: 'telegram_error' }, 500);
+  }
+}
+
+async function handleRequest(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS });
 
   var url = new URL(request.url);
@@ -75,6 +195,10 @@ async function handleRequest(request) {
 
   // 1) Renovación de sesión (para que el refresh tampoco pase por Canopy).
   if (path === '/auth/refresh') return proxyAuth(request, '/auth/v1/token?grant_type=refresh_token');
+
+  // 1b) Telegram: webhook del bot y envío de respuestas desde la app.
+  if (path === '/telegram/webhook') return handleTelegramWebhook(request, env);
+  if (path === '/telegram/notify') return handleTelegramNotify(request, env);
 
   // 2) Solo rutas de datos permitidas: /sync/<tabla>
   var m = path.match(/^\/sync\/([a-z_]+)$/);

@@ -88,7 +88,8 @@ function makeSb(props) {
   vm.createContext(sb);
   ['completarAbrir', 'completarCerrar', 'completarRenderPanel', 'completarLineaPropuesta', 'completarLineaMicro',
     'completarVolBadge', 'completarEtiquetaTipo', 'recetaResumenCorto', 'completarNorm', 'completarNombreCorto',
-    'completarParteTexto', 'completarPorcionComponente', 'completarPorcion', 'completarFraccion'].forEach(function (n) {
+    'completarParteTexto', 'completarPorcionComponente', 'completarPorcion', 'completarFraccion',
+    'completarComidoYa', 'registrarComidaDiary', 'quitarRegistroComida', 'completarComiEsto'].forEach(function (n) {
     vm.runInContext(extractFunc(n), sb);
   });
   ['COMPLETAR_UNIDAD_TEXTO', 'COMPLETAR_UNIDAD_CONDE', 'COMPLETAR_GENERICOS', 'COMPLETAR_EQUIV_CASERA'].forEach(function (n) {

@@ -37,6 +37,7 @@ function t(label, ok, extra) {
 
 const NOMBRES = ['recetaPorciones', 'recetaTiempoPaso', 'recetaParseIngrediente', 'recetaIngredientes',
   'recetaPasosResumen', 'recetaRapidoHTML', 'recetaPasoHTML', 'recetaCompletoHTML', 'recetaDetalleHTML',
+  'recetaNutLine', 'recetaRegistroHTML', 'recetaPrepHtml', 'recetaComidoYa',
   'recetaComponentesEnPaso', 'recetaComponenteCalif', 'recetaPreparacionPrevia', 'recetaPreviaInterna', 'recetaPreviaHTML',
   'recetaAvisosPreparacionHTML', 'recetaAvisoVisto', 'recetaAuditar', 'recetaSujetoDe', 'recetaExplicaPreparacion',
   'recetaPasoTM5', 'recetaPasoTM5Parametros', 'recetaClasificarTM5', 'recetaTM5TextoCorto', 'recetaTM5ListaHTML', 'recetaMetodo'];
@@ -59,6 +60,7 @@ function sandbox() {
   const ESTADOS = vm.runInNewContext('(' + mEst[0].replace(/^var RECETA_ESTADOS=/, '').replace(/;\s*\n$/, '') + ')');
   const sb = {
     safeText: function (x) { return String(x == null ? '' : x); },
+    state: { diary: {} },
     RECETA_FRACCIONES: RECETA_FRACCIONES, RECETA_COMPONENTES: RECETA_COMPONENTES,
     RECETA_ESTADOS: ESTADOS,
     RECETA_ESTADOS_RX: vm.runInNewContext('(' + mEstRx[0].replace(/^var RECETA_ESTADOS_RX=/, '').replace(/;$/, '') + ')', { RECETA_ESTADOS: ESTADOS }),
@@ -72,6 +74,7 @@ function sandbox() {
   };
   NOMBRES.forEach(n => { sb[n] = vm.runInNewContext('(' + extractFunc(n) + ')', sb); });
   sb.globalThis = sb;
+  sb.window = { _diarySelectedDate: null };
   return sb;
 }
 

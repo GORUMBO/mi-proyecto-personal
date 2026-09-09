@@ -448,7 +448,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.193.1';
+  window.HM_APP_VERSION='1.194.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -20231,6 +20231,7 @@ function secContador(){
   let today=(window._diarySelectedDate)||(new Date().toISOString().slice(0,10));
   if(!state.diary) state.diary={};
   if(!state.diary[today]) state.diary[today]={breakfast:[],lunch:[],dinner:[],snacks:[]};
+  try{telegramPendientesUI();}catch(e){}
   let d=state.diary[today];
   let dia=ppDiarioActivos([...d.breakfast,...d.lunch,...d.dinner,...d.snacks]);
   let totalKcal=dia.reduce((a,x)=>a+x.kcal,0);
@@ -20266,11 +20267,12 @@ function secContador(){
             <button onclick="editarDiaryItem('${key}',${i})" style="background:none;border:none;color:#0d6043;cursor:pointer;font-size:16px" title="Editar">✏️</button>
             <button onclick="removeDiaryItem('${key}',${i})" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:16px">🗑️</button>
           </div>
-        </div>`).join(''):'<div class="muted" style="font-size:13px;padding:4px 0">Sin registros — toca + Agregar</div>'}
+        </div>`).join(''):'<div class="muted" style="font-size:13px;padding:4px 0">⏳ Pendiente — toca + Agregar</div>'}
     </div>`;
   }
 
   return `
+<div id="telegramPendientesOut"></div>
 <div style="background:linear-gradient(135deg,#15704f,#1a9660);border-radius:20px;padding:16px;color:#fff;margin-bottom:12px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
     <div>
@@ -20377,7 +20379,10 @@ ${mealSection('snacks')}
       <span id="carritoChipsMas" class="muted" style="display:none;font-size:11px;font-weight:800"></span>
     </div>
     <div id="carritoResumen" style="font-size:12px;font-weight:800;color:#63706a;margin-bottom:8px"><span data-r-n>0 alimentos seleccionados</span> · <b data-r-kcal style="color:#15704f">0</b> kcal · <span data-r-p>0</span> g P · <span data-r-c>0</span> g C · <span data-r-g>0</span> g G</div>
-    <button id="carritoCTA" class="btn primary" disabled style="width:100%;padding:13px;font-size:15px;border-radius:999px" onclick="guardarCarrito()">Agregar 0 alimentos</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" style="flex:1 1 150px;padding:12px;font-size:14px;border-radius:999px;min-height:46px" onclick="escanearTicket()">📷 Escanear ticket</button>
+      <button id="carritoCTA" class="btn primary" disabled style="flex:2 1 180px;padding:13px;font-size:15px;border-radius:999px" onclick="guardarCarrito()">Agregar 0 alimentos</button>
+    </div>
   </div>
 </div>
 `;}
@@ -20553,6 +20558,7 @@ function ccBodyHTML(){
   html+='<button class="btn" style="background:#fff;color:#0d6043;font-weight:700;padding:8px 12px;font-size:13px;flex:1" onclick="ccAgregarADiario(&#39;dinner&#39;)">🌙 Cena</button>';
   html+='<button class="btn" style="background:#fff;color:#0d6043;font-weight:700;padding:8px 12px;font-size:13px;flex:1" onclick="ccAgregarADiario(&#39;snacks&#39;)">🍿 Snacks</button>';
   html+='</div></div>';
+  html+='<script>try{telegramPendientesUI()}catch(e){}<\/script>'; // indicador de pendientes de Telegram (se pinta tras el render)
   return html;
 }
 
@@ -20585,6 +20591,7 @@ ${secConstructorComida()}
     <button class="btn" style="padding:14px;font-size:16px;border-radius:16px" onclick="makeFridgeShoppingList()">🛒 Lista de compra</button>
     <button class="btn" style="padding:14px;font-size:16px;border-radius:16px" onclick="clearFridgePicked()">🧹 Limpiar</button>
   </div>
+  <button class="btn" style="width:100%;margin-top:10px;padding:11px;font-size:13px;border-radius:14px" onclick="escanearTicket()">📷 ¿Tienes un ticket? Escanéalo</button>
   <div id="fridgeRealMatchesBase"></div>
   <div id="fridgeOut" class="action-result"><div class="muted">Marca algo y toca un botón. No tienes que bajar a buscar el resultado.</div></div>
   <details style="margin-top:14px">
@@ -23972,6 +23979,18 @@ function secBase(){return `<h2>📊 Datos, respaldo y estabilidad</h2>
     <button class="btn" onclick="checkForAppUpdate&&checkForAppUpdate()">Buscar actualización</button>
   </div>
   <div id="updateCheckStatus"></div>
+  <details class="card" style="margin-top:10px"><summary style="font-weight:800">📩 Telegram</summary><div style="padding:6px 2px">
+    <p class="muted" style="margin-top:0;font-size:12px">El token del bot se guarda <b>solo en este dispositivo</b> (nunca en el código, ni en GitHub, ni en la nube). Consíguelo con @BotFather en Telegram.</p>
+    <label>Token del bot</label>
+    <input id="tgBotToken" type="password" placeholder="123456789:ABC-DEF…">
+    <label style="margin-top:8px">Chat ID (tu chat autorizado)</label>
+    <input id="tgChatId" type="text" inputmode="numeric" value="8315587997">
+    <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" style="flex:1 1 180px;min-height:46px" onclick="guardarTelegramCfg()">💾 Guardar configuración</button>
+      <button class="btn" style="flex:1 1 180px;min-height:46px" onclick="telegramEnviarPrueba()">📤 Enviar mensaje de prueba</button>
+    </div>
+    <div id="telegramTestOut" style="margin-top:8px"></div>
+  </div></details>
   <label>Restaurar un respaldo JSON</label>
   <input type="file" id="importFile" accept=".json,application/json">
   <button class="btn" style="margin-top:8px" onclick="importData()">Revisar e importar respaldo</button>
@@ -25221,6 +25240,9 @@ async function cloudStartupSync(opts){
     }
     setSync('synced');
     initRealtimeSync('fin-sync');
+    // 📩 Telegram: procesar la bandeja de entrada (tickets/lista/nevera) una
+    // vez sincronizado. Nada se escribe sin revisión/confirmación.
+    try{telegramProcesarInbox();}catch(e){}
   }catch(e){
     console.error('[SYNC] Error en sincronización inicial:',e);setSync('error',(e&&e.message)||'Error desconocido');
     // v1.187.7: sin respuesta de Supabase NO se pide el registro inicial
@@ -26506,7 +26528,86 @@ function recetaDetalleHTML(){
       +'<button class="btn" style="border-radius:999px;padding:8px 20px;font-size:20px;min-height:48px" onclick="recetaPersonas(1)">+</button></div>';
   }
   var contenido=v.modo==='rapido'?recetaRapidoHTML(r,factor):(v.modo==='pasoapaso'?recetaPasoHTML(r,factor,v.paso,v):recetaCompletoHTML(r));
-  return cab+meta+tabs+metodoRow+tm5Badge+sel+contenido;
+  return cab+meta+recetaNutLine(r,porc)+tabs+metodoRow+tm5Badge+sel+contenido+recetaRegistroHTML(r,porc,v,factor)+recetaPrepHtml(r);
+}
+/* Nutrición por porción vs total (honesto: marcado como estimado). */
+function recetaNutLine(r,porc){
+  if(!r)return '';
+  var kTotal=+(r.k||0), pTotal=+(r.p||0), cTotal=+(r.carbs||0), gTotal=+(r.grasas||0);
+  if(!kTotal&&!pTotal&&!cTotal&&!gTotal)return '';
+  var n=porc?porc.n:1;
+  var line='🔥 Total: '+kTotal+' kcal'+(pTotal?' · 🥩 '+pTotal+' g proteína':'')+(cTotal?' · 🍚 '+cTotal+' g carbohidratos':'')+(gTotal?' · 🥑 '+gTotal+' g grasas':'');
+  var por='Por porción ('+n+'): '+Math.round(kTotal/n)+' kcal'+(pTotal?' · '+(Math.round(pTotal/n*10)/10)+' g proteína':'')+(cTotal?' · '+Math.round(cTotal/n)+' g carbohidratos':'')+(gTotal?' · '+(Math.round(gTotal/n*10)/10)+' g grasas':'');
+  return '<div class="mini" style="font-size:12px;margin-bottom:10px;background:#fff;border:1px solid #d9e3db;border-radius:12px;padding:8px 10px"><b>'+line+'</b><div class="muted">'+por+' · valores estimados</div></div>';
+}
+/* ✅ Registrar lo que comí desde la receta: porciones 1-4 + nota opcional. */
+function recetaRegistroHTML(r,porc,v,factor){
+  var ya=recetaComidoYa(r,1);
+  var sel='<select id="recetaPorcionesSel" style="padding:8px;border-radius:10px;border:1px solid #d9e3db;font-size:14px">'+[1,2,3,4].map(function(n){return '<option value="'+n+'"'+(n===(v.personas||1)?' selected':'')+'>'+n+' '+(n===1?'porción':'porciones')+'</option>';}).join('')+'</select>';
+  return '<div style="margin-top:12px;background:#f2fbf5;border:2px solid #9dd5b4;border-radius:14px;padding:12px">'
+    +'<b style="font-size:14px">✅ Registrar lo que comí</b>'
+    +'<div class="row" style="gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">'+sel
+    +'<button class="btn primary" style="flex:1;padding:10px;min-height:44px" onclick="recetaComiEsto()">✓ Comido</button></div>'
+    +'<div style="margin-top:8px"><input id="recetaNotaReg" placeholder="Nota (opcional): sin sal, doble porción…" style="width:100%;padding:9px;border-radius:10px;border:1px solid #d9e3db;font-size:13px;box-sizing:border-box"></div>'
+    +'</div>';
+}
+function recetaComidoYa(r,porciones){
+  var hoy=(window._diarySelectedDate)||((typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10));
+  var d=state.diary&&state.diary[hoy]; if(!d||!r)return false;
+  var key=(typeof completarMealKey==='function')?completarMealKey():'snacks';
+  var amount=porciones+' '+(porciones===1?'porción':'porciones');
+  return (d[key]||[]).some(function(x){return x.name===r.name&&(x.amount||'')===amount&&x.src==='receta'&&!x.deleted;});
+}
+function recetaComiEsto(){
+  var v=window._recetaVista; if(!v)return;
+  var r=baseRecipes[v.idx]; if(!r)return;
+  var porc=recetaPorciones(r);
+  var n=+(document.getElementById('recetaPorcionesSel')||{}).value||(v.personas||1);
+  if(n<1)n=1; if(n>4)n=4;
+  var factor=porc?(n/porc.n):1;
+  var o={name:r.name,kcal:(r.k||0)*factor,prot:(r.p||0)*factor,carb:(r.carbs||0)*factor,fat:(r.grasas||0)*factor,amount:n+' '+(n===1?'porción':'porciones'),src:'receta',recetaRef:(typeof recipeIdOf==='function')?recipeIdOf(v.idx):v.idx,porciones:n,mealKey:(typeof completarMealKey==='function')?completarMealKey():'snacks'};
+  var nota=(document.getElementById('recetaNotaReg')||{}).value||'';
+  if(nota)o.nota=nota;
+  if(recetaComidoYa(r,n)){quitarRegistroComida(o);}
+  else{registrarComidaDiary(o);}
+  var ov=document.getElementById('recetaDetalle');
+  if(ov)ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
+}
+/* 📝 Notas de preparación: historial múltiple por receta; la receta NO cambia. */
+function recetaPrepHtml(r){
+  var rid=(typeof recipeIdOf==='function')?recipeIdOf((window._recetaVista||{}).idx):null;
+  var lista=((state.prepLog||[]).filter(function(x){return x.recetaRef===rid;})).slice(0,10);
+  var hist=lista.length?('<div style="margin-top:8px">'+lista.map(function(x){
+    var partes=[];
+    if(x.cambios)partes.push('<b>Cambios:</b> '+safeText(x.cambios));
+    if(x.cantidades)partes.push('<b>Cantidades:</b> '+safeText(x.cantidades));
+    if(x.resultado)partes.push('<b>Resultado:</b> '+safeText(x.resultado));
+    if(x.nota)partes.push('<b>Nota:</b> '+safeText(x.nota));
+    return '<div class="mini" style="font-size:12px;margin-top:6px;background:#fff"><b>'+safeText(x.fecha)+'</b><div style="margin-top:2px">'+partes.join('<br>')+'</div></div>';
+  }).join('')+'</div>'):'<div class="muted" style="font-size:12px;margin-top:6px">Aún no anotas preparaciones de esta receta.</div>';
+  return '<div style="margin-top:12px;background:#fff8f0;border:2px solid #f0d9a8;border-radius:14px;padding:12px">'
+    +'<b style="font-size:14px">📝 Mis preparaciones</b>'
+    +'<div class="muted" style="font-size:11px;margin-top:2px">Qué pasó en realidad al cocinar: cambios, cantidades, resultado. La receta original no se modifica.</div>'
+    +hist
+    +'<div style="margin-top:8px"><input id="prepCambios" placeholder="Cambios: usé 2 cdas de chile, agregué Tajín…" style="width:100%;padding:9px;border-radius:10px;border:1px solid #d9e3db;font-size:13px;box-sizing:border-box;margin-bottom:6px"></div>'
+    +'<div class="row" style="gap:6px"><input id="prepCantidades" placeholder="Cantidades modificadas" style="flex:1;padding:9px;border-radius:10px;border:1px solid #d9e3db;font-size:13px;box-sizing:border-box"><input id="prepResultado" placeholder="Resultado: quedó muy buena" style="flex:1;padding:9px;border-radius:10px;border:1px solid #d9e3db;font-size:13px;box-sizing:border-box"></div>'
+    +'<input id="prepNota" placeholder="Comentario libre (opcional)" style="width:100%;padding:9px;border-radius:10px;border:1px solid #d9e3db;font-size:13px;box-sizing:border-box;margin-top:6px">'
+    +'<button class="btn primary" style="width:100%;margin-top:8px;padding:11px;min-height:46px" onclick="recetaGuardarNota()">💾 Guardar preparación</button>'
+    +'</div>';
+}
+function recetaGuardarNota(){
+  var v=window._recetaVista; if(!v)return;
+  var rid=(typeof recipeIdOf==='function')?recipeIdOf(v.idx):v.idx;
+  var cambios=(document.getElementById('prepCambios')||{}).value||'';
+  var cantidades=(document.getElementById('prepCantidades')||{}).value||'';
+  var resultado=(document.getElementById('prepResultado')||{}).value||'';
+  var nota=(document.getElementById('prepNota')||{}).value||'';
+  if(!cambios&&!cantidades&&!resultado&&!nota){if(typeof alert==='function')alert('Escribe algo de tu preparación.');return;}
+  state.prepLog=state.prepLog||[];
+  state.prepLog.unshift({id:(typeof ppUUID==='function')?ppUUID():('p'+Date.now()),recetaRef:rid,fecha:(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10),cambios:cambios,cantidades:cantidades,resultado:resultado,nota:nota});
+  if(typeof save==='function')save();
+  var ov=document.getElementById('recetaDetalle');
+  if(ov)ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:40px">'+recetaDetalleHTML()+'</div>';
 }
 function recetaMetodo(m){
   var v=window._recetaVista; if(!v)return;
@@ -28455,6 +28556,7 @@ function completarRenderPanel(propsPre){
       +(pr.bebida?bebidaMenuHTML(i,pr,ctx):'')
       +'<div class="row" style="gap:8px;margin-top:10px">'
       +(receta?'<button class="btn" style="flex:1;padding:10px;min-height:44px" onclick="completarCocinar('+i+')">👨‍🍳 Ver receta</button>':'')
+      +'<button class="btn" style="flex:1;padding:10px;min-height:44px" onclick="completarComiEsto('+i+')">'+(completarComidoYa(pr)?'✓ Comido':'✅ Comí esto')+'</button>'
       +'<button class="btn primary" style="flex:1;padding:10px;min-height:44px" onclick="completarAgregar('+i+')">＋ Agregar</button>'
       +(potenciarHayExtras(ctx,pr.componentes.map(function(c){return c.nombre;}))?'<button class="btn" style="flex:0 0 auto;padding:10px 12px;min-height:44px" onclick="completarPotenciarAbrir('+i+')" title="Añadir 1-3 extras a esta comida">⚡ <span class="pot-btn-full">Agregar extras</span><span class="pot-btn-corto">Extras</span></button>':'')
       +'</div></div>';
@@ -30652,7 +30754,7 @@ function toggleRecipeVideo(){
 function moveRecipeVideo(direction){recipeVideo.step+=direction;renderRecipeVideoStep()}
 function toggleRecipeVoice(){recipeVideo.voice=!recipeVideo.voice;if(!recipeVideo.voice&&'speechSynthesis'in window)speechSynthesis.cancel();renderRecipeVideoStep()}
 function closeRecipeVideo(){if(recipeVideo.id)clearInterval(recipeVideo.id);recipeVideo.id=null;recipeVideo.playing=false;if('speechSynthesis'in window)speechSynthesis.cancel();let modal=document.getElementById('recipeVideoModal');if(modal)modal.style.display='none'}
-let picked=[];let fridgeComboIdx=0;let fridgeMatchShown=6;document.addEventListener('click',e=>{if(e.target.classList.contains('pick')&&!e.target.getAttribute('onclick')){let x=e.target.dataset.food;e.target.classList.toggle('on'); picked=e.target.classList.contains('on')?[...new Set([...picked,x])]:picked.filter(a=>a!=x); fridgeComboIdx=0; fridgeMatchShown=6;}})
+let picked=(typeof state!=='undefined'&&state&&Array.isArray(state.fridgeTengo))?state.fridgeTengo.slice():[];let fridgeComboIdx=0;let fridgeMatchShown=6;document.addEventListener('click',e=>{if(e.target.classList.contains('pick')&&!e.target.getAttribute('onclick')){let x=e.target.dataset.food;e.target.classList.toggle('on'); picked=e.target.classList.contains('on')?[...new Set([...picked,x])]:picked.filter(a=>a!=x); fridgeComboIdx=0; fridgeMatchShown=6;if(typeof state!=='undefined'&&state){state.fridgeTengo=picked.slice();if(typeof save==='function')save();}}})
 function scoreRecipeByPicked(r){
   if(!picked.length)return 0;
   let ing=(r.ingredients||'').toLowerCase();
@@ -30729,6 +30831,7 @@ function renderFridgePicked(){
 function quickFridgePick(food){
   if(picked.includes(food))picked=picked.filter(x=>x!==food);else picked=[...new Set([...picked,food])];
   fridgeComboIdx=0;fridgeMatchShown=6;
+  state.fridgeTengo=picked.slice();if(typeof save==='function')save(); // inventario persistente
   renderFridgePicked();
   try{ if(typeof renderFridgeRealMatches==='function') renderFridgeRealMatches(); }catch(e){}
   let out=document.getElementById('fridgeOut');
@@ -30736,6 +30839,7 @@ function quickFridgePick(food){
 }
 function clearFridgePicked(){
   picked=[];fridgeComboIdx=0;fridgeMatchShown=6;
+  state.fridgeTengo=[];if(typeof save==='function')save();
   renderFridgePicked();
   try{ if(typeof renderFridgeRealMatches==='function') renderFridgeRealMatches(); }catch(e){}
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="muted">Listo. Marca 2-4 ingredientes y toca Crear comida.</div>';
@@ -35037,6 +35141,21 @@ function setGastoView(v){
   if(v=='save')renderSavingsAnalyzer();
   if(v=='alerts')renderExpenseAlerts();
   if(v=='missing')renderMissingExpenseIdeas();
+  if(v=='paste'){
+    // Borrador de ticket escaneado: sobrevive refresh/cierre antes de confirmar.
+    if(state.ticketBorrador&&Array.isArray(state.ticketBorrador.items)&&state.ticketBorrador.items.length&&!parsedReceiptItems.length){
+      parsedReceiptItems=JSON.parse(JSON.stringify(state.ticketBorrador.items));
+      if(state.ticketBorrador.foto){
+        ticketDataUrl=state.ticketBorrador.foto;
+        try{
+          var tImg=document.getElementById('ticketImg');if(tImg)tImg.src=ticketDataUrl;
+          var tPrev=document.getElementById('ticketPreview');if(tPrev)tPrev.style.display='block';
+          var tZone=document.getElementById('ticketDropZone');if(tZone)tZone.style.display='none';
+        }catch(e){}
+      }
+      renderParsedReceiptTable();
+    }
+  }
 }
 function addExpense(){
   let d=$('#gDate')?.value||new Date().toISOString().slice(0,10);
@@ -35468,23 +35587,28 @@ async function analyzeReceiptWithAI(){
 function renderParsedReceiptTable(){
   let out=document.getElementById('receiptParsedOut');if(!out)return;
   if(!parsedReceiptItems.length){out.innerHTML='<div class="warn">No detecté productos con precio. Revisa el texto o escribe cada línea como PRODUCTO 0.00.</div>';return}
-  out.innerHTML=`<div class="card"><h3 style="margin-top:0">Revisar antes de guardar</h3>
+  out.innerHTML=`<div class="card"><h3 style="margin-top:0">🧾 Revisar antes de guardar</h3>
     <div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:760px">
-      <thead><tr><th>Guardar</th><th>Producto leído</th><th>Precio</th><th>Origen</th><th>Categoría</th><th>Traducido</th></tr></thead>
+      <thead><tr><th>Guardar</th><th>Producto leído</th><th>Precio</th><th>Cantidad</th><th>Unidad</th><th>🧊 Nevera</th><th>Origen</th><th>Categoría</th><th>Traducido</th></tr></thead>
       <tbody>${parsedReceiptItems.map((x,i)=>`<tr style="border-top:1px solid var(--b)">
         <td style="padding:6px;text-align:center"><input type="checkbox" ${x.include?'checked':''} onchange="parsedReceiptItems[${i}].include=this.checked;updateReceiptTotals()"></td>
         <td style="padding:6px"><input value="${safeText(x.name)}" onchange="parsedReceiptItems[${i}].name=this.value;parsedReceiptItems[${i}].spanish=inferReceiptCategory(this.value).es"></td>
         <td style="padding:6px"><input type="number" step=".01" value="${x.amount}" onchange="parsedReceiptItems[${i}].amount=+this.value||0;if(parsedReceiptItems[${i}].priceSource==='REVISAR')parsedReceiptItems[${i}].priceSource='REAL';renderParsedReceiptTable()"></td>
+        <td style="padding:6px"><input value="${safeText(x.qty||'')}" style="width:56px" onchange="parsedReceiptItems[${i}].qty=this.value"></td>
+        <td style="padding:6px"><input value="${safeText(x.unit||'')}" style="width:64px" onchange="parsedReceiptItems[${i}].unit=this.value"></td>
+        <td style="padding:6px;text-align:center"><input type="checkbox" ${x.toFridge?'checked':''} onchange="parsedReceiptItems[${i}].toFridge=this.checked" title="Agregar a Nevera al confirmar"></td>
         <td style="padding:6px">${receiptPriceBadge(x.priceSource)}</td>
         <td style="padding:6px"><select onchange="parsedReceiptItems[${i}].cat=this.value">${receiptCatOptions(x.cat)}</select></td>
         <td style="padding:6px"><span class="badge">${safeText(x.spanish)}</span><div class="muted" style="font-size:12px">${safeText(x.raw)}</div></td>
       </tr>`).join('')}</tbody>
     </table></div>
     <div id="receiptTotalsOut" class="ok" style="margin-top:10px"></div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn primary" onclick="saveParsedReceiptSeparate()">Guardar gastos separados</button>
+    <div class="row" style="margin-top:10px;flex-wrap:wrap">
+      <button class="btn primary" onclick="saveParsedReceiptSeparate()">✅ Confirmar compra</button>
       <button class="btn" onclick="saveParsedReceiptSingle()">Guardar como un solo gasto</button>
       <button class="btn" onclick="copyReceiptParsedSummary()">Copiar resumen</button>
+      <button class="btn" onclick="ticketCancelar()">❌ Cancelar</button>
+      ${(state.ticketBorrador&&state.ticketBorrador.origen!=='ia'&&ticketDataUrl)?'<button class="btn" onclick="ticketIA(ticketDataUrl)">✨ Mejorar lectura con IA</button>':''}
     </div>
   </div>`;
   updateReceiptTotals();
@@ -35493,6 +35617,7 @@ function receiptPriceBadge(source){
   let s=source||'REAL';
   if(s==='REVISAR')return '<span class="badge" style="background:#fff3cd;color:#7a4b00;border-color:#ffd27d">REVISAR</span>';
   if(s==='IA REAL')return '<span class="badge" style="background:#e7f0ff;color:#0b4fa3;border-color:#9fc4ff">IA REAL</span>';
+  if(s==='OCR')return '<span class="badge" style="background:#f0f0f0;color:#4a5560;border-color:#cbd5dc">OCR</span>';
   return '<span class="badge" style="background:#d9f5e7;color:#15704f;border-color:#93d7b6">REAL</span>';
 }
 function updateReceiptTotals(){
@@ -35502,6 +35627,400 @@ function updateReceiptTotals(){
   let total=included.reduce((a,x)=>a+(+x.amount||0),0);
   let bycat={};included.forEach(x=>bycat[x.cat]=(bycat[x.cat]||0)+(+x.amount||0));
   out.innerHTML=`<b>Total REAL a guardar:</b> ${money(total)} · <b>${included.length}</b> líneas${review?` · <b style="color:#b35a00">${review} por revisar</b>`:''}<br>`+Object.entries(bycat).map(([c,v])=>`${catEmoji[c]||'🧾'} ${safeText(c)}: ${money(v)}`).join(' · ');
+}
+/* ===== 📷 ESCANEAR TICKET =====
+   OCR GRATIS PRIMERO (Tesseract.js local, sin API): el flujo normal no
+   cuesta nada y no llama a ninguna API. La IA de Anthropic queda SOLO como
+   botón explícito "✨ Mejorar lectura con IA" cuando el OCR no alcanza. */
+var _tesseractReady=null;
+function tesseractReady(){
+  if(_tesseractReady)return _tesseractReady;
+  _tesseractReady=new Promise(function(res,rej){
+    try{
+      var s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      s.onload=function(){ if(window.Tesseract)res(window.Tesseract); else rej(new Error('ocr_no_disponible')); };
+      s.onerror=function(){ rej(new Error('ocr_sin_red')); };
+      document.head.appendChild(s);
+    }catch(e){ rej(e); }
+  });
+  return _tesseractReady;
+}
+async function ocrLocal(dataUrl){
+  var T=await tesseractReady();
+  var r=await T.recognize(dataUrl,'spa',{logger:function(){}});
+  var texto=String((r&&r.data&&r.data.text)||'').replace(/\r/g,'').trim();
+  var conf=(r&&r.data&&r.data.confidence)||0;
+  return {texto:texto,confianza:conf};
+}
+function escanearTicket(){
+  var inp=document.createElement('input');
+  inp.type='file';
+  inp.accept='image/*';
+  inp.setAttribute('capture','environment'); // iPhone: abre la cámara; Windows/web: selector de archivo
+  inp.style.display='none';
+  document.body.appendChild(inp);
+  inp.onchange=function(){
+    var f=inp.files&&inp.files[0]; if(!f)return;
+    var r=new FileReader();
+    r.onload=function(e){ try{setGastoView('paste');}catch(err){} ticketOCR(e.target.result); };
+    r.readAsDataURL(f);
+    inp.remove();
+  };
+  inp.click();
+}
+async function ticketOCR(dataUrl){
+  try{
+    if(typeof toastReg==='function')toastReg('🔍 Leyendo el ticket con OCR local…');
+    var ocr=await ocrLocal(dataUrl);
+    ticketDataUrl=dataUrl||'';
+    var texto=(ocr.texto||'').trim();
+    var conf=ocr.confianza||0;
+    var re=document.getElementById('receiptText');
+    if(re)re.value=texto;
+    if(texto.length<15||conf<45){
+      // OCR débil: dejar el texto para corregir a mano y ofrecer la IA explícita.
+      try{parseReceiptText();}catch(e){}
+      if(parsedReceiptItems.length){
+        ticketDesdeItems('ocr',{lineas:parsedReceiptItems.length,confianza:Math.round(conf)});
+      }else{
+        parsedReceiptItems=[];
+        state.ticketBorrador={origen:'ocr',foto:dataUrl||null,items:[],confianza:Math.round(conf),tienda:'',fecha:'',total:null,guardado:new Date().toISOString()};
+        if(typeof save==='function')save();
+      }
+      if(typeof alert==='function')alert('El OCR no leyó el ticket completo. Corrige el texto o usa "✨ Mejorar lectura con IA".');
+    }else{
+      try{parseReceiptText();}catch(e){}
+      if(parsedReceiptItems.length){
+        ticketDesdeItems('ocr',{lineas:parsedReceiptItems.length,confianza:Math.round(conf)});
+      }else{
+        if(typeof alert==='function')alert('No detecté productos con precio. Revisa el texto o usa "✨ Mejorar lectura con IA".');
+      }
+    }
+    renderParsedReceiptTable();
+  }catch(e){
+    if(typeof alert==='function')alert('No se pudo leer el ticket con OCR: '+e.message+'. Puedes usar "✨ Mejorar lectura con IA".');
+  }
+}
+/* Convierte las líneas parseadas (mismo formato de parsedReceiptItems) en el
+   MISMO borrador de tickets que usan IA y Telegram. */
+function ticketDesdeItems(origen,meta){
+  meta=meta||{};
+  parsedReceiptItems.forEach(function(x){
+    if(x.priceSource==='REAL')x.priceSource='OCR';
+    if(!x.origen)x.origen=origen;
+  });
+  state.ticketBorrador={origen:origen,tienda:meta.tienda||(document.getElementById('receiptStore')||{}).value||'',fecha:meta.fecha||'',total:meta.total!=null?meta.total:null,items:JSON.parse(JSON.stringify(parsedReceiptItems)),foto:ticketDataUrl||null,confianza:meta.confianza!=null?meta.confianza:null,lineas:meta.lineas!=null?meta.lineas:parsedReceiptItems.length,guardado:new Date().toISOString()};
+  if(typeof save==='function')save();
+}
+async function ticketIA(dataUrl){
+  var key=((state.fitSettings&&state.fitSettings.aiKey)||'').trim();
+  if(!key){
+    if(typeof alert==='function')alert('Para escanear tickets se necesita tu API key de IA (la misma que ya usa la app). Guárdala en ⚙️ Ajustes → sección IA.');
+    return;
+  }
+  var instru='Lee este ticket de compra y extrae los productos. Responde SOLO con JSON válido, sin markdown y sin backticks:\n{"tienda":"nombre de la tienda si aparece, o null","fecha":"YYYY-MM-DD si aparece, o null","total":numero si aparece, o null,"productos":[{"nombre":"texto exacto del producto (si no se puede leer, cadena vacía)","cantidad":numero o null,"unidad":"lb, docena, gal, pza… o cadena vacía","precio":numero o null}]}\nReglas: solo datos que estén en el ticket. NO inventes productos, cantidades ni precios. Si una línea no se entiende, devuélvela con nombre vacío.';
+  var contenido=[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:String(dataUrl).split(',')[1]}},{type:'text',text:instru}];
+  try{
+    var res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-5',max_tokens:1500,messages:[{role:'user',content:contenido}]})
+    });
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    var data=await res.json();
+    var txt=(data.content||[]).filter(function(c){return c.type==='text';}).map(function(c){return c.text;}).join('').replace(/```json|```/g,'').trim();
+    var json=JSON.parse(txt);
+    ticketProcesarIA(json,dataUrl);
+  }catch(e){
+    if(typeof alert==='function')alert('No se pudo leer el ticket: '+e.message);
+  }
+}
+function ticketProcesarIA(json,dataUrl){
+  var prods=(json&&Array.isArray(json.productos))?json.productos:[];
+  if(!prods.length){
+    if(typeof alert==='function')alert('No se detectaron productos en la imagen. Prueba con una foto más clara o pega el texto del ticket aquí mismo.');
+    return;
+  }
+  parsedReceiptItems=prods.map(function(p){
+    var nombre=String((p&&p.nombre)||'').trim();
+    var precio=+(p&&p.precio)||0;
+    var identificado=!!nombre;
+    var inf=(typeof inferReceiptCategory==='function')?inferReceiptCategory(nombre):null;
+    return {
+      name:identificado?nombre:'Producto no identificado',
+      amount:precio,
+      priceSource:precio>0?'IA REAL':'REVISAR',
+      cat:(inf&&inf.cat)||'comida',
+      spanish:(inf&&inf.es)||nombre,
+      raw:identificado?nombre:'No se pudo leer esta línea',
+      include:true,
+      qty:p.cantidad!=null?String(p.cantidad):'',
+      unit:String((p&&(p.unidad||p.unit))||'').trim(),
+      toFridge:false
+    };
+  });
+  if(json.tienda){var rs=document.getElementById('receiptStore');if(rs)rs.value=json.tienda;}
+  if(json.fecha){var rd=document.getElementById('receiptDate');if(rd)rd.value=json.fecha;}
+  ticketDataUrl=dataUrl||'';
+  // Borrador persistente: sobrevive refresh y cierre antes de confirmar.
+  ticketDesdeItems('ia',{tienda:json.tienda||'',fecha:json.fecha||'',total:json.total!=null?+json.total:null,lineas:parsedReceiptItems.length});
+  try{setGastoView('paste');}catch(e){}
+  renderParsedReceiptTable();
+}
+function ticketCancelar(){
+  parsedReceiptItems=[];
+  state.ticketBorrador=null;
+  if(typeof save==='function')save();
+  renderParsedReceiptTable();
+}
+/* Al confirmar: (A) lista de compras marca lo que YA estaba como comprado (nada
+   nuevo pendiente), (B) los marcados 🧊 entran a la Nevera persistente sin
+   duplicados, (D) el borrador se limpia (el gasto y su historial los guardan
+   los flujos de ticket existentes). */
+function ticketAplicarConfirmados(items){
+  items=items||[];
+  window._carrito=window._carrito||[];
+  items.forEach(function(x){
+    if(!x.name||x.name==='Producto no identificado')return;
+    var norm=(typeof completarNorm==='function')?completarNorm(x.name):String(x.name).toLowerCase();
+    var ya=window._carrito.find(function(c){var cn=(typeof completarNorm==='function')?completarNorm(c.name||''):String(c.name||'').toLowerCase();return cn===norm;});
+    if(ya)ya.comprado=true; // solo lo que ya estaba en la lista
+  });
+  var alFridge=items.filter(function(x){return x.toFridge&&x.name&&x.name!=='Producto no identificado';});
+  if(alFridge.length){
+    state.fridgeTengo=state.fridgeTengo||[];
+    var set={};state.fridgeTengo.forEach(function(n){set[String(n).toLowerCase()]=1;});
+    alFridge.forEach(function(x){var k=String(x.name).toLowerCase();if(!set[k]){set[k]=1;state.fridgeTengo.push(x.name);}});
+  }
+  state.ticketBorrador=null;
+}
+/* ===== 📩 TELEGRAM: entrada rápida (buzón telegram_inbox) =====
+   Todo lo recibido termina en los sistemas existentes: la lista de compras
+   (_carrito), la Nevera (fridgeTengo, SIEMPRE vía confirmación) y el MISMO
+   borrador de tickets (state.ticketBorrador) con su revisión/confirmación.
+   Nada se escribe en gastos o inventario sin confirmar en la app. */
+/* 🔑 Configuración de Telegram (SOLO en este dispositivo).
+   El token NO viaja en el snapshot ni a GitHub: vive en safeStorage local,
+   igual que la sesión de Supabase. */
+function getTelegramCfg(){
+  try{return JSON.parse(safeStorage.get('pp_telegram_cfg')||'{}')||{};}catch(e){return {};}
+}
+function guardarTelegramCfg(){
+  var out=document.getElementById('telegramTestOut');
+  var token=String((document.getElementById('tgBotToken')||{}).value||'').trim();
+  var chat=String((document.getElementById('tgChatId')||{}).value||'').trim();
+  if(out)out.innerHTML='';
+  if(!token){ if(out)out.innerHTML='<div class="warn">Pega primero el token de tu bot (lo obtienes con @BotFather).</div>'; return; }
+  if(chat&&!/^\d+$/.test(chat)){ if(out)out.innerHTML='<div class="warn">El Chat ID debe ser solo números.</div>'; return; }
+  try{
+    safeStorage.set('pp_telegram_cfg',JSON.stringify({token:token,chatId:chat||'8315587997'}));
+    var inp=document.getElementById('tgBotToken'); if(inp)inp.value=''; // no dejar el token visible
+    if(out)out.innerHTML='<div class="ok">✅ Configuración guardada solo en este dispositivo.</div>';
+  }catch(e){
+    if(out)out.innerHTML='<div class="warn">No se pudo guardar: '+safeText(e&&e.message||String(e))+'</div>';
+  }
+}
+async function telegramEnviarPrueba(){
+  var out=document.getElementById('telegramTestOut');
+  try{
+    var cfg=getTelegramCfg();
+    var token=cfg.token||String((document.getElementById('tgBotToken')||{}).value||'').trim();
+    var chat=String((document.getElementById('tgChatId')||{}).value||cfg.chatId||'8315587997').trim();
+    if(!token){ if(out)out.innerHTML='<div class="warn">Guarda primero el token del bot (arriba).</div>'; return; }
+    if(!/^\d+$/.test(chat)){ if(out)out.innerHTML='<div class="warn">El Chat ID debe ser solo números.</div>'; return; }
+    if(out)out.innerHTML='<div class="muted">Enviando…</div>';
+    var res=await fetch('https://api.telegram.org/bot'+encodeURIComponent(token)+'/sendMessage',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:chat,text:'✅ Telegram conectado correctamente con mi app de fitness'})
+    });
+    var data=null; try{data=await res.json();}catch(e){}
+    if(res.ok&&data&&data.ok){
+      if(out)out.innerHTML='<div class="ok">✅ Mensaje de prueba enviado. Revisa tu Telegram.</div>';
+    }else{
+      var desc=(data&&data.description)?('Telegram dice: '+data.description):('HTTP '+res.status);
+      if(out)out.innerHTML='<div class="warn">❌ No se pudo enviar. '+safeText(desc)+'</div>';
+    }
+  }catch(e){
+    if(out)out.innerHTML='<div class="warn">❌ Error: '+safeText((e&&e.message)||String(e))+'</div>';
+  }
+}
+function telegramNotify(texto){
+  try{
+    var worker=(typeof ppWorkerUrl==='function')?ppWorkerUrl():'';
+    if(!worker)return;
+    var s=(typeof getCloudSession==='function')?getCloudSession():null;
+    if(!s||!s.access_token)return;
+    fetch(worker+'/telegram/notify',{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+s.access_token},
+      body:JSON.stringify({text:String(texto||'').slice(0,400)})
+    }).catch(function(){});
+  }catch(e){}
+}
+function telegramMarcar(filaId,estado){
+  try{
+    var s=(typeof getCloudSession==='function')?getCloudSession():null;
+    if(!s)return;
+    if(typeof cloudRest==='function'){
+      cloudRest('telegram_inbox?id=eq.'+encodeURIComponent(filaId),{method:'PATCH',body:JSON.stringify({estado:estado}),headers:{'Content-Type':'application/json'}}).catch(function(){});
+    }
+  }catch(e){}
+}
+function telegramBuscarFood(nombre){
+  var norm=(typeof completarNorm==='function')?completarNorm(nombre):String(nombre||'').toLowerCase();
+  if(!norm||norm.length<3)return null;
+  var mejor=null;
+  (typeof foods!=='undefined'?foods:[]).forEach(function(f){
+    var fn=(typeof completarNorm==='function')?completarNorm(f[0]):String(f[0]||'').toLowerCase();
+    if(fn===norm)mejor=f;
+    else if(!mejor&&fn.indexOf(norm)===0)mejor=f;
+  });
+  return mejor;
+}
+function telegramAplicarLista(fila){
+  var txt=String(fila.texto||'');
+  var limpio=txt.replace(/^\s*\/lista\b\s*/i,'').replace(/\bagrega\b|\ba compras\b|\ba la lista\b/ig,'');
+  var nombres=limpio.split(/,|\by\b/).map(function(s){return s.trim();}).filter(function(s){return s.length>=3;});
+  if(!nombres.length){telegramMarcar(fila.id,'necesita_confirmacion');telegramNotify('🛒 No entendí qué agregar. Escríbelo como: agrega leche, huevos y pollo.');return;}
+  window._carrito=window._carrito||[];
+  var agregados=[];
+  nombres.forEach(function(nombre){
+    var f=telegramBuscarFood(nombre);
+    var name=f?f[0]:nombre;
+    var ya=window._carrito.find(function(c){return (typeof completarNorm==='function')?completarNorm(c.name||'')===completarNorm(name):String(c.name||'').toLowerCase()===String(name).toLowerCase();});
+    if(ya)return; // dedupe razonable
+    window._carrito.push(f
+      ?{id:(typeof ppUUID==='function')?ppUUID():('t'+Date.now()),name:f[0],kcal:f[1],prot:f[2],carb:f[4],fat:f[3],amount:'1 porción',cant:1}
+      :{id:(typeof ppUUID==='function')?ppUUID():('t'+Date.now()),name:nombre,kcal:0,prot:0,carb:0,fat:0,amount:'1 porción',cant:1});
+    agregados.push(name);
+  });
+  if(typeof renderCarrito==='function')renderCarrito();
+  telegramMarcar(fila.id,'procesada');
+  telegramNotify('🛒 Agregué '+(agregados.length||0)+' producto'+(agregados.length===1?'':'s')+' a tu lista de compras.');
+}
+function telegramAplicarNevera(fila){
+  var txt=String(fila.texto||'');
+  var posible=null;
+  try{
+    var todos=[];
+    Object.keys(fridgeCats||{}).forEach(function(k){(fridgeCats[k]||[]).forEach(function(x){todos.push(x);});});
+    var normT=(typeof completarNorm==='function')?completarNorm(txt):txt.toLowerCase();
+    posible=todos.find(function(x){return normT.indexOf((typeof completarNorm==='function')?completarNorm(x):x.toLowerCase())>=0;})||null;
+  }catch(e){}
+  if(posible){
+    // Interpretación clara: borrador CONFIRMABLE (nunca modifica inventario directo).
+    state.telegramPendientes=state.telegramPendientes||[];
+    var dup=state.telegramPendientes.some(function(p){return p.tipo==='nevera'&&p.nombre===posible&&p.estado==='pendiente';});
+    if(!dup)state.telegramPendientes.unshift({tipo:'nevera',nombre:posible,textoOriginal:txt,inboxId:fila.id,estado:'pendiente',fecha:new Date().toISOString()});
+    if(typeof save==='function')save();
+    telegramMarcar(fila.id,'procesada');
+    telegramNotify('🧊 '+posible+' queda pendiente de confirmar en tu app.');
+  }else{
+    telegramMarcar(fila.id,'necesita_confirmacion');
+    telegramNotify('🧊 No estoy seguro de qué compraste. Revísalo en tu app.');
+  }
+}
+async function telegramProcesarTicket(fila){
+  try{
+    if(!fila.imagen_url){telegramMarcar(fila.id,'necesita_confirmacion');telegramNotify('🧾 El ticket llegó sin imagen. Vuelve a enviarlo.');return;}
+    var s=(typeof getCloudSession==='function')?getCloudSession():null;
+    if(!s||!s.access_token){return;} // sin sesión: queda pendiente para el próximo arranque
+    var cfg=(typeof getCloudConfig==='function')?getCloudConfig():{url:'',key:''};
+    var res=await fetch(cfg.url+'/storage/v1/object/personal-media/'+encodeURIComponent(fila.imagen_url),{headers:{Authorization:'Bearer '+s.access_token,apikey:cfg.key}});
+    if(!res.ok){telegramMarcar(fila.id,'necesita_confirmacion');return;}
+    var blob=await res.blob();
+    var dataUrl=await new Promise(function(ok,no){var r=new FileReader();r.onload=function(){ok(r.result);};r.onerror=no;r.readAsDataURL(blob);});
+    ticketDataUrl=dataUrl;
+    var ocr=await ocrLocal(dataUrl);
+    var texto=String(ocr.texto||'').trim();
+    var conf=Math.round(ocr.confianza||0);
+    var re=document.getElementById('receiptText');if(re)re.value=texto;
+    var lineas=0;
+    if(texto.length>=15){try{parseReceiptText();lineas=parsedReceiptItems.length;}catch(e){}}
+    if(lineas){
+      ticketDesdeItems('telegram',{lineas:lineas,confianza:conf});
+    }else{
+      state.ticketBorrador={origen:'telegram',foto:dataUrl,items:[],confianza:conf,tienda:'',fecha:'',total:null,lineas:0,guardado:new Date().toISOString()};
+      if(typeof save==='function')save();
+    }
+    telegramMarcar(fila.id,'procesada');
+    if(lineas){
+      telegramNotify(conf>=45?'🧾 Ticket recibido.\nOCR detectó '+lineas+' producto'+(lineas===1?'':'s')+'. Pendiente de revisión en tu app.':'🧾 Recibí el ticket, pero algunas líneas no se pudieron leer bien.\nLo dejé pendiente para que lo corrijas.');
+    }else{
+      telegramNotify('🧾 Recibí el ticket, pero no pude leerlo. Lo dejé pendiente: revísalo en tu app.');
+    }
+  }catch(e){
+    telegramMarcar(fila.id,'necesita_confirmacion');
+  }
+}
+async function telegramProcesarInbox(){
+  try{
+    var s=(typeof getCloudSession==='function')?getCloudSession():null;
+    if(!s||!s.user||!s.user.id)return;
+    var r=(typeof cloudRest==='function')?await cloudRest('telegram_inbox?user_id=eq.'+encodeURIComponent(s.user.id)+'&estado=eq.pendiente&select=*'):null;
+    var rows=(r&&r.ok&&Array.isArray(r.data))?r.data:[];
+    for(var i=0;i<rows.length;i++){
+      var fila=rows[i];
+      try{
+        if(fila.tipo==='lista')telegramAplicarLista(fila);
+        else if(fila.tipo==='nevera')telegramAplicarNevera(fila);
+        else if(fila.tipo==='ticket')await telegramProcesarTicket(fila);
+        else telegramMarcar(fila.id,'necesita_confirmacion'); // comida: extensión futura
+      }catch(e){}
+    }
+    if(rows.length)try{telegramPendientesUI();}catch(e){}
+  }catch(e){}
+}
+/* Indicador discreto de pendientes de Telegram (ticket + nevera). */
+function telegramPendientesUI(){
+  try{
+    var el=document.getElementById('telegramPendientesOut');if(!el)return;
+    var pend=(state.telegramPendientes||[]).filter(function(p){return p.estado==='pendiente';});
+    var ticket=(state.ticketBorrador&&state.ticketBorrador.origen==='telegram'&&state.ticketBorrador.items&&state.ticketBorrador.items.length)?1:0;
+    var total=ticket+pend.length;
+    if(!total){el.innerHTML='';return;}
+    el.innerHTML='<div class="mini" style="background:#fff8e1;border:1px solid #f0d9a8;font-size:12px;margin-bottom:8px">'
+      +'<b>📩 Pendiente de Telegram:</b> '
+      +(ticket?'🧾 1 ticket por revisar':'')
+      +(ticket&&pend.length?' · ':'')
+      +(pend.length?'🧊 '+pend.length+' para confirmar en Nevera':'')
+      +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap">'
+      +(ticket?'<button class="btn" style="padding:7px 11px;font-size:12px" onclick="abrirBorradorTicket()">Revisar ticket</button>':'')
+      +(pend.length?'<button class="btn" style="padding:7px 11px;font-size:12px" onclick="abrirPendientesNevera()">Confirmar Nevera</button>':'')
+      +'<button class="btn" style="padding:7px 11px;font-size:12px" onclick="descartarTelegramPendientes()">Descartar todo</button>'
+      +'</div></div>';
+  }catch(e){}
+}
+function abrirBorradorTicket(){
+  try{
+    if(state.ticketBorrador&&state.ticketBorrador.items&&state.ticketBorrador.items.length){
+      parsedReceiptItems=JSON.parse(JSON.stringify(state.ticketBorrador.items));
+      if(state.ticketBorrador.foto)ticketDataUrl=state.ticketBorrador.foto;
+      setGastoView('paste');
+      renderParsedReceiptTable();
+    }
+  }catch(e){}
+}
+function abrirPendientesNevera(){
+  var pend=(state.telegramPendientes||[]).filter(function(p){return p.estado==='pendiente';});
+  if(!pend.length)return;
+  var msg=pend.map(function(p){return '🧊 '+p.nombre+' — "'+p.textoOriginal+'"';}).join('\n');
+  var decision=confirm('Confirmar en tu Nevera:\n\n'+msg+'\n\nToca Aceptar para agregarlos a tu Nevera, o Cancelar para dejarlos pendientes.');
+  if(!decision)return;
+  state.fridgeTengo=state.fridgeTengo||[];
+  var set={};state.fridgeTengo.forEach(function(n){set[String(n).toLowerCase()]=1;});
+  pend.forEach(function(p){var k=String(p.nombre).toLowerCase();if(!set[k]){set[k]=1;state.fridgeTengo.push(p.nombre);}p.estado='confirmada';});
+  save();
+  telegramNotify('🧊 Confirmado: agregué '+(pend.length===1?pend[0].nombre:pend.length+' productos')+' a tu Nevera.');
+  telegramPendientesUI();
+}
+function descartarTelegramPendientes(){
+  state.telegramPendientes=(state.telegramPendientes||[]).map(function(p){p.estado='descartada';return p;});
+  if(state.ticketBorrador&&state.ticketBorrador.origen==='telegram')state.ticketBorrador=null;
+  save();
+  telegramPendientesUI();
 }
 function baseReceiptExpense(extra){
   return {
@@ -35523,12 +36042,14 @@ function saveParsedReceiptSeparate(){
   let items=parsedReceiptItems.filter(x=>x.include&&x.amount>0&&x.priceSource!=='REVISAR');
   if(!items.length){alert('No hay líneas seleccionadas.');return}
   if(review&&!confirm(`${review} líneas están marcadas como REVISAR y no se guardarán. ¿Continuar?`))return;
+  ticketAplicarConfirmados(parsedReceiptItems.filter(x=>x.include)); // carrito + nevera + borrador
   items.forEach(x=>{
     let need=defaultExpenseNeed(x.cat);
-    state.expenses.push(baseReceiptExpense({id:Date.now()+Math.floor(Math.random()*99999),store:(document.getElementById('receiptStore')?.value||'Ticket')+' · '+x.name,total:+x.amount||0,cat:x.cat,need,type:['gasolina','herramientas trabajo','uniforme botas','materiales negocio','mantenimiento carro'].includes(x.cat)?'work':['salud','dental vision','suplementos'].includes(x.cat)?'health':['comida','comida preparada','snacks bebidas','agua hielo'].includes(x.cat)?'food_gain':'personal',note:`Importado desde ticket. Origen precio: ${x.priceSource||'REAL'}. Línea: ${x.raw}`}));
+    state.expenses.push(baseReceiptExpense({id:Date.now()+Math.floor(Math.random()*99999),store:(document.getElementById('receiptStore')?.value||'Ticket')+' · '+x.name,total:+x.amount||0,cat:x.cat,need,type:['gasolina','herramientas trabajo','uniforme botas','materiales negocio','mantenimiento carro'].includes(x.cat)?'work':['salud','dental vision','suplementos'].includes(x.cat)?'health':['comida','comida preparada','snacks bebidas','agua hielo'].includes(x.cat)?'food_gain':'personal',ticket:ticketDataUrl,note:`Importado desde ticket. Origen precio: ${x.priceSource||'REAL'}. Línea: ${x.raw}`}));
   });
   state.receiptTextHistory.push({date:new Date().toISOString(),store:document.getElementById('receiptStore')?.value||'',count:items.length,total:items.reduce((a,x)=>a+x.amount,0)});
   state.receiptTextHistory=state.receiptTextHistory.slice(-25);
+  parsedReceiptItems=[]; // dedupe: una segunda confirmación no vuelve a guardar
   save();setGastoView('list');
 }
 function saveParsedReceiptSingle(){
@@ -35536,12 +36057,14 @@ function saveParsedReceiptSingle(){
   let items=parsedReceiptItems.filter(x=>x.include&&x.amount>0&&x.priceSource!=='REVISAR');
   if(!items.length){alert('No hay líneas seleccionadas.');return}
   if(review&&!confirm(`${review} líneas están marcadas como REVISAR y no se guardarán. ¿Continuar?`))return;
-  let total=items.reduce((a,x)=>a+(+x.amount||0),0);
+  ticketAplicarConfirmados(parsedReceiptItems.filter(x=>x.include)); // carrito + nevera + borrador
+  let total=Math.round(items.reduce((a,x)=>a+(+x.amount||0),0)*100)/100;
   let bycat={};items.forEach(x=>bycat[x.cat]=(bycat[x.cat]||0)+(+x.amount||0));
   let mainCat=Object.entries(bycat).sort((a,b)=>b[1]-a[1])[0]?.[0]||'otro';
-  state.expenses.push(baseReceiptExpense({id:Date.now(),store:document.getElementById('receiptStore')?.value||'Ticket pegado',total,cat:mainCat,need:defaultExpenseNeed(mainCat),type:'personal',note:'Ticket guardado como un solo gasto. Solo precios reales. Detalle: '+items.map(x=>`${x.name} ${money(x.amount)} (${x.cat}, ${x.priceSource||'REAL'})`).join('; ')}));
+  state.expenses.push(baseReceiptExpense({id:Date.now(),store:document.getElementById('receiptStore')?.value||'Ticket pegado',total,cat:mainCat,need:defaultExpenseNeed(mainCat),type:'personal',ticket:ticketDataUrl,note:'Ticket guardado como un solo gasto. Solo precios reales. Detalle: '+items.map(x=>`${x.name} ${money(x.amount)} (${x.cat}, ${x.priceSource||'REAL'})`).join('; ')}));
   state.receiptTextHistory.push({date:new Date().toISOString(),store:document.getElementById('receiptStore')?.value||'',count:items.length,total});
   state.receiptTextHistory=state.receiptTextHistory.slice(-25);
+  parsedReceiptItems=[]; // dedupe: una segunda confirmación no vuelve a guardar
   save();setGastoView('list');
 }
 function copyReceiptParsedSummary(){
@@ -36355,6 +36878,50 @@ function addQuickMealToDiary(name,kcal,prot,carb,fat,amount,mealKey){
   state.diary[date][key].push({name:decodeURIComponent(String(name||'')),kcal:Math.round(+kcal||0),prot:+prot||0,carb:+carb||0,fat:+fat||0,amount:amount||'1 porción',id:Date.now()});
   save();
   return key;
+}
+/* ===== ✅ COMÍ ESTO: registro real con DEDUPE =====
+   Una misma comida + porción + origen en el MISMO día/comida no se duplica:
+   el segundo toque la QUITA (toggle). Entradas con porción distinta conviven. */
+function registrarComidaDiary(o){
+  var hoy=(window._diarySelectedDate)||((typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10));
+  var d=state.diary[hoy]=state.diary[hoy]||{breakfast:[],lunch:[],dinner:[],snacks:[]};
+  var key=o.mealKey||((typeof completarMealKey==='function')?completarMealKey():'snacks');
+  var lista=d[key]=d[key]||[];
+  var amount=o.amount||'1 porción';
+  var dup=lista.findIndex(function(x){return x.name===o.name&&(x.amount||'')===amount&&(x.src||'')===(o.src||'');});
+  if(dup>=0)return {agregado:false,idx:dup};
+  var e={name:o.name,kcal:Math.round(+o.kcal||0),prot:+o.prot||0,carb:+o.carb||0,fat:+o.fat||0,amount:amount};
+  if(o.src)e.src=o.src;
+  if(o.recetaRef!=null)e.recetaRef=o.recetaRef;
+  if(o.porciones!=null)e.porciones=o.porciones;
+  if(o.nota)e.nota=o.nota;
+  lista.push(e);
+  if(typeof save==='function')save();
+  return {agregado:true,idx:lista.length-1};
+}
+function quitarRegistroComida(o){
+  var hoy=(window._diarySelectedDate)||((typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10));
+  var d=state.diary&&state.diary[hoy]; if(!d)return;
+  var key=o.mealKey||((typeof completarMealKey==='function')?completarMealKey():'snacks');
+  var lista=(d[key]||[]);
+  var i=lista.findIndex(function(x){return x.name===o.name&&(x.amount||'')===(o.amount||'')&&(x.src||'')===(o.src||'');});
+  if(i>=0){lista[i].deleted=true;if(typeof save==='function')save();}
+}
+function completarComidoYa(pr){
+  var hoy=(window._diarySelectedDate)||((typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10));
+  var d=state.diary&&state.diary[hoy]; if(!d)return false;
+  var key=(typeof completarMealKey==='function')?completarMealKey():'snacks';
+  return (d[key]||[]).some(function(x){return x.name===pr.titulo&&!x.deleted;});
+}
+function completarComiEsto(i){
+  var pr=(window._completarPropuestas||[])[i]; if(!pr)return;
+  var o={name:pr.titulo,kcal:pr.kcal||0,prot:pr.p||0,carb:0,fat:0,amount:'1 porción',src:'comido'};
+  (pr.componentes||[]).forEach(function(c){o.carb+=+(c.c||c.carb||c.carbs||0)||0;o.fat+=+(c.g||c.grasa||c.fat||0)||0;});
+  var ya=completarComidoYa(pr);
+  if(ya){quitarRegistroComida(o);}
+  else{registrarComidaDiary(o);}
+  try{if(typeof renderDiary==='function')renderDiary();}catch(e){}
+  try{completarRenderPanel();}catch(e){}
 }
 function makeSmartShoppingFromPicked(){
   let need=[];

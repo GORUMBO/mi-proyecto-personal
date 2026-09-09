@@ -1,8 +1,26 @@
 {
-  "latest": "1.193.1",
+  "latest": "1.194.0",
   "date": "2026-09-08",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.194.0",
+      "date": "2026-09-08",
+      "type": "recomendada",
+      "nuevas": [
+        "Telegram como entrada rápida: manda una foto de tu ticket al bot, la app la lee con OCR gratuito (sin costo por análisis), la deja pendiente de revisión y tú confirmas cuándo quieras. También puedes mandar \"agrega leche y huevos\" para la lista de compras y \"compré 2 lb de pollo\" para la nevera (siempre con confirmación).",
+        "Escáner de tickets con OCR local gratis (funciona sin internet después de la primera carga): la IA de pago queda solo como botón opcional \"Mejorar lectura con IA\".",
+        "Campo seguro de Telegram en Ajustes: el token del bot se guarda únicamente en el dispositivo, nunca en el código, en GitHub ni en la nube, con botón de mensaje de prueba que muestra el error exacto si algo falla."
+      ],
+      "cambios": [
+        "La revisión de tickets ahora distingue el origen de cada línea (OCR, IA o manual) y permite editar cantidades, unidades y decidir qué productos pasan a la nevera.",
+        "El indicador de pendientes de Telegram aparece en el Contador con botones de revisar, confirmar o descartar."
+      ],
+      "errores": [
+        "Corregida una pantalla negra en Windows causada por un cierre de bloque de script dentro de una cadena.",
+        "Corregido que la imagen del ticket no se adjuntara al gasto al confirmar la compra."
+      ]
+    },
     {
       "version": "1.193.1",
       "date": "2026-09-08",
