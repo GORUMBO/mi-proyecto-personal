@@ -87,16 +87,16 @@ function makeSb(state) {
     ticketDataUrl: ''
   };
   vm.createContext(sb);
-  ['ticketProcesarIA', 'ticketCancelar', 'ticketAplicarConfirmados', 'saveParsedReceiptSeparate',
+  ['ticketProcesarIA', 'ticketCancelar', 'ticketAplicarConfirmados',
     'saveParsedReceiptSingle', 'renderParsedReceiptTable', 'updateReceiptTotals',
-    'baseReceiptExpense', 'setGastoView', 'ticketDesdeItems'].forEach(function (n) {
+    'baseReceiptExpense', 'setGastoView', 'ticketDesdeItems', 'ticketPareceDuplicado', 'receiptNotaActual'].forEach(function (n) {
     vm.runInContext(extractFunc(n), sb);
   });
   sb.inputs = inputs;
   return sb;
 }
 function estadoBase() {
-  return { diary: {}, expenses: [], receiptTextHistory: [], fridgeTengo: [], ticketBorrador: null, fitSettings: {} };
+  return { diary: {}, expenses: [], receiptTextHistory: [], fridgeTengo: [], listaCompra: [], ticketBorrador: null, fitSettings: {} };
 }
 
 console.log('== 1 · Ticket con varios productos (detección IA) ==');
@@ -166,15 +166,15 @@ console.log('== 6 · Deduplicación: doble confirmación no guarda dos veces =='
 console.log('== 7 · Lista de compras: solo lo que YA estaba pasa a comprado ==');
 (function () {
   const sb = makeSb(estadoBase());
-  sb.window._carrito = [{ name: 'Pollo', kcal: 0, cant: 1 }];
+  sb.state.listaCompra = [{ id: 1, name: 'Pollo', comprado: false }];
   sb.ticketProcesarIA(TICKET_JSON, 'data:x');
   sb.parsedReceiptItems[4].include = false;
   sb.parsedReceiptItems[3].include = false; // Arroz no estaba en la lista
   sb.parsedReceiptItems[2].include = false;
   sb.parsedReceiptItems[1].include = false;
   sb.saveParsedReceiptSingle();
-  t('Pollo (en la lista) queda marcado comprado', sb.window._carrito[0].comprado === true);
-  t('productos fuera de la lista NO se agregan como pendientes', sb.window._carrito.length === 1);
+  t('Pollo (en la lista) queda marcado comprado', sb.state.listaCompra[0].comprado === true);
+  t('productos fuera de la lista NO se agregan como pendientes', sb.state.listaCompra.length === 1);
 })();
 
 console.log('== 8 · Nevera: solo los marcados 🧊 entran (sin duplicados) ==');

@@ -1,8 +1,29 @@
 {
-  "latest": "1.194.0",
-  "date": "2026-09-08",
+  "latest": "1.195.0",
+  "date": "2026-09-09",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.195.0",
+      "date": "2026-09-09",
+      "type": "recomendada",
+      "nuevas": [
+        "Mis tickets ahora vive en un solo lugar lógico: Comer → Lista de compra → 🧾 Mis tickets, con historial, búsqueda, filtros por tienda/mes/categoría, gasto semanal y mensual, y envío del ticket o del resumen de compras a Telegram.",
+        "Lista de compra persistente: escribe alimentos, márcalos comprados y quítalos; los ingredientes de recetas y Telegram también llegan ahí, y se sincroniza entre dispositivos.",
+        "En Nevera queda solo el acceso pequeño \"📷 Escanear compra y agregar alimentos\": abre la MISMA sección de Mis tickets y el selector de foto o galería en el mismo toque.",
+        "El escaneo del ticket ahora arregla el OCR local (leía el texto pero no separaba los productos) y detecta también alimentos en español (pollo, huevos, arroz…)."
+      ],
+      "cambios": [
+        "Confirmar compra registra UN solo gasto en Dinero con el total confirmado: la foto viaja una sola vez y el detalle de productos queda en la nota; Dinero muestra la relación 🧾 ticket sin duplicar fotografía ni registro.",
+        "La lista de compra y la Nevera solo cambian al confirmar; cancelar no toca nada. El dedupe de tickets ahora también reconoce tickets guardados sin foto y nombres con símbolos (ej. \"Sales tax / impuesto\").",
+        "Cada usuario configura su propio bot y Chat ID de Telegram: se eliminó el Chat ID predeterminado del código para que nadie más pueda enviar información a una cuenta ajena."
+      ],
+      "errores": [
+        "Corregido que el OCR local del ticket no separara los productos (la función de lectura existía pero no estaba definida).",
+        "Corregido que un ticket pegado conservara el valor automático \"Ticket pegado\" aunque se detectara la tienda.",
+        "Corregido que al cancelar un escaneo, un ticket pegado después se guardara con la foto del ticket anterior."
+      ]
+    },
     {
       "version": "1.194.0",
       "date": "2026-09-08",

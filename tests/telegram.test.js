@@ -234,7 +234,7 @@ function estadoBase() {
 
   console.log('== CONFIG · Campo seguro + mensaje de prueba ==');
   const storage = {};
-  const cfgInputs = { tgBotToken: { value: '123456:ABC-DEF' }, tgChatId: { value: '8315587997' } };
+  const cfgInputs = { tgBotToken: { value: '123456:ABC-DEF' }, tgChatId: { value: '9988776655' } };
   const cfgOut = { innerHTML: '' };
   const csb = {
     state: { fitSettings: {} },
@@ -256,11 +256,11 @@ function estadoBase() {
 
   csb.guardarTelegramCfg();
   const guardado = JSON.parse(storage['pp_telegram_cfg'] || '{}');
-  t('el token se guarda SOLO en almacenamiento local del dispositivo', guardado.token === '123456:ABC-DEF' && guardado.chatId === '8315587997');
+  t('el token se guarda SOLO en almacenamiento local del dispositivo', guardado.token === '123456:ABC-DEF' && guardado.chatId === '9988776655');
   t('el token NO entra al estado (no viaja al snapshot ni a la nube)', JSON.stringify(csb.state).indexOf('ABC-DEF') < 0);
   t('el campo del token se limpia tras guardar', cfgInputs.tgBotToken.value === '');
   await csb.telegramEnviarPrueba();
-  t('el mensaje de prueba usa el chat autorizado y el texto exacto', /sendMessage/.test(csb._urls[0]) && csb._body.chat_id === '8315587997' && csb._body.text === '✅ Telegram conectado correctamente con mi app de fitness');
+  t('el mensaje de prueba usa el chat autorizado y el texto exacto', /sendMessage/.test(csb._urls[0]) && csb._body.chat_id === '9988776655' && csb._body.text === '✅ Telegram conectado correctamente con mi app de fitness');
   t('éxito: pantalla confirma el envío', /Mensaje de prueba enviado/.test(cfgOut.innerHTML), cfgOut.innerHTML);
   csb._nextFetch = { ok: false, status: 401, json: async function () { return { ok: false, description: 'Unauthorized' }; } };
   cfgInputs.tgBotToken.value = '';
@@ -270,6 +270,16 @@ function estadoBase() {
   cfgInputs.tgChatId.value = 'abc';
   await csb.telegramEnviarPrueba();
   t('chat id inválido: aviso claro sin llamar a Telegram', /solo números/.test(cfgOut.innerHTML));
+  cfgInputs.tgChatId.value = '';
+  storage['pp_telegram_cfg'] = JSON.stringify({ token: '123456:ABC-DEF', chatId: '' });
+  const antes = csb._urls.length;
+  await csb.telegramEnviarPrueba();
+  t('sin Chat ID: pide configurarlo y NO llama a Telegram', /Chat ID/.test(cfgOut.innerHTML) && csb._urls.length === antes, cfgOut.innerHTML);
+  storage['pp_telegram_cfg'] = JSON.stringify({ token: '123456:ABC-DEF', chatId: '9988776655' });
+  cfgInputs.tgBotToken.value = '123456:ABC-DEF';
+  cfgInputs.tgChatId.value = '';
+  csb.guardarTelegramCfg();
+  t('guardar sin Chat ID: aviso y la configuración previa queda intacta', /Chat ID/.test(cfgOut.innerHTML) && JSON.parse(storage['pp_telegram_cfg']).chatId === '9988776655');
   storage['pp_telegram_cfg'] = '';
   cfgInputs.tgBotToken.value = '';
   await csb.telegramEnviarPrueba();

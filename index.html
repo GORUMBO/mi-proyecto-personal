@@ -448,7 +448,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.194.0';
+  window.HM_APP_VERSION='1.195.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -619,7 +619,7 @@ let state={};
 const _storedStateRaw=safeStorage.get('pp_full')||'';
 try{state=JSON.parse(_storedStateRaw||'{}')||{}}catch(e){state={}}
 console.log('[LOAD] state cargado de localStorage · workoutLog: '+(state.workoutLog||[]).length+' · lastModified: '+(state.lastModified||'—'));
-state.profile=state.profile||{peso:150,altura:170,edad:30,sexo:'hombre',actividad:'muy alta',objetivo:'ganar músculo'};state.meals=state.meals||[];state.weight=state.weight||[];state.walks=state.walks||[];state.expenses=state.expenses||[];state.expenseTemplates=state.expenseTemplates||[];state.expenseSettings=state.expenseSettings||{monthlyIncome:0,foodLimit:700,gasLimit:450,funLimit:150,cashLimit:120};state.receiptTextHistory=state.receiptTextHistory||[];state.budget=Array.isArray(state.budget)?state.budget:[];state.routines=state.routines||[];state.prices=state.prices||[];state.myProducts=state.myProducts||[];state.vehicles=state.vehicles||[];state.tasks=state.tasks||[];state.clothes=state.clothes||[];
+state.profile=state.profile||{peso:150,altura:170,edad:30,sexo:'hombre',actividad:'muy alta',objetivo:'ganar músculo'};state.meals=state.meals||[];state.weight=state.weight||[];state.walks=state.walks||[];state.expenses=state.expenses||[];state.expenseTemplates=state.expenseTemplates||[];state.expenseSettings=state.expenseSettings||{monthlyIncome:0,foodLimit:700,gasLimit:450,funLimit:150,cashLimit:120};state.receiptTextHistory=state.receiptTextHistory||[];state.listaCompra=state.listaCompra||[];state.budget=Array.isArray(state.budget)?state.budget:[];state.routines=state.routines||[];state.prices=state.prices||[];state.myProducts=state.myProducts||[];state.vehicles=state.vehicles||[];state.tasks=state.tasks||[];state.clothes=state.clothes||[];
 state.dating=state.dating||{profile:{name:'Ruben',goal:'conocer',style:'natural',language:'es'},history:[],plans:[]};
 state.dating.profile=state.dating.profile||{name:'Ruben',goal:'conocer',style:'natural',language:'es'};
 state.dating.history=state.dating.history||[];
@@ -8997,6 +8997,7 @@ function builderALista(ING,sel,PARTES){
     else{ window._carrito.push({id:ppUUID(),name:nombre,kcal:x.k*x.n,prot:x.p*x.n,carb:x.c*x.n,fat:x.g*x.n,amount:'1 porción',cant:x.n}); }
   });
   if(typeof renderCarrito==='function')renderCarrito();
+  ingSel.forEach(function(x){ if(typeof listaCompraAgregarNombre==='function')listaCompraAgregarNombre(ING[x.ing].nombre); });
   if(typeof toastReg==='function')toastReg('🛒 Agregado a la lista de compras');
 }
 function builderVerPrep(key,refresh){ var s=builderSel(key); s.verPrep=!s.verPrep; if(typeof save==='function')save(); refresh(); }
@@ -20273,6 +20274,9 @@ function secContador(){
 
   return `
 <div id="telegramPendientesOut"></div>
+<div class="row" style="gap:8px;margin-bottom:10px;flex-wrap:wrap">
+  <button class="btn" style="padding:9px 12px;font-size:13px;border-radius:12px;min-height:44px" onclick="telegramEnviarResumenDia()">📩 Enviar resumen a Telegram</button>
+</div>
 <div style="background:linear-gradient(135deg,#15704f,#1a9660);border-radius:20px;padding:16px;color:#fff;margin-bottom:12px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
     <div>
@@ -20312,6 +20316,25 @@ ${balanceHoyHTML()}
 </div>
 
 ${completarCardHTML()}
+
+<div class="card" id="listaCompraCard" style="margin-top:10px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+    <b style="font-size:15px">🛒 Lista de compra</b>
+    <button class="btn" style="padding:7px 12px;font-size:12px" onclick="openAddFood('lunch')">➕ Agregar alimentos</button>
+  </div>
+  <div class="row" style="gap:6px;flex-wrap:wrap">
+    <input id="listaCompraNombre" placeholder="Escribe un alimento para comprar…" style="flex:1;min-width:140px;padding:9px;border-radius:10px;border:1px solid #d9e3db;font-size:13px">
+    <button class="btn" style="padding:9px 14px;font-size:13px" onclick="listaCompraAgregar()">➕ Agregar</button>
+  </div>
+  <div id="listaCompraOut" style="margin-top:6px">${listaCompraHTML()}</div>
+  <details id="misTicketsDet" style="margin-top:10px"><summary style="font-weight:800;font-size:13px">🧾 Mis tickets</summary>
+    <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn primary" style="padding:9px 14px;font-size:13px;min-height:44px" onclick="escanearTicket()">📷 Escanear ticket</button>
+      <button class="btn" style="padding:9px 14px;font-size:13px;min-height:44px" onclick="abrirPegarTicket()">🧠 Pegar ticket</button>
+    </div>
+    <div id="misTicketsOut" style="margin-top:8px">${misTicketsHTML()}</div>
+  </details>
+</div>
 
 ${secComidasGuardadas()}
 ${secHistorialCambios()}
@@ -20591,7 +20614,7 @@ ${secConstructorComida()}
     <button class="btn" style="padding:14px;font-size:16px;border-radius:16px" onclick="makeFridgeShoppingList()">🛒 Lista de compra</button>
     <button class="btn" style="padding:14px;font-size:16px;border-radius:16px" onclick="clearFridgePicked()">🧹 Limpiar</button>
   </div>
-  <button class="btn" style="width:100%;margin-top:10px;padding:11px;font-size:13px;border-radius:14px" onclick="escanearTicket()">📷 ¿Tienes un ticket? Escanéalo</button>
+  <button class="btn" style="width:100%;margin-top:10px;padding:11px;font-size:13px;border-radius:14px;min-height:44px" onclick="escanearDesdeNevera()">📷 Escanear compra y agregar alimentos</button>
   <div id="fridgeRealMatchesBase"></div>
   <div id="fridgeOut" class="action-result"><div class="muted">Marca algo y toca un botón. No tienes que bajar a buscar el resultado.</div></div>
   <details style="margin-top:14px">
@@ -23984,7 +24007,7 @@ function secBase(){return `<h2>📊 Datos, respaldo y estabilidad</h2>
     <label>Token del bot</label>
     <input id="tgBotToken" type="password" placeholder="123456789:ABC-DEF…">
     <label style="margin-top:8px">Chat ID (tu chat autorizado)</label>
-    <input id="tgChatId" type="text" inputmode="numeric" value="8315587997">
+    <input id="tgChatId" type="text" inputmode="numeric" placeholder="Ej: 9988776655 · consíguelo con @userinfobot">
     <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
       <button class="btn primary" style="flex:1 1 180px;min-height:46px" onclick="guardarTelegramCfg()">💾 Guardar configuración</button>
       <button class="btn" style="flex:1 1 180px;min-height:46px" onclick="telegramEnviarPrueba()">📤 Enviar mensaje de prueba</button>
@@ -35239,7 +35262,7 @@ function renderExpenses(){
     <div class="card" style="margin:6px 0;padding:12px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div style="flex:1">
-          <div style="font-weight:900;font-size:16px">${catEmoji[x.cat]||'📦'} ${x.store}</div>
+          <div style="font-weight:900;font-size:16px">${catEmoji[x.cat]||'📦'} ${x.store}${(x.ticket||x.esTicket)?' <span class="badge" style="background:#e7f0ff;color:#0b4fa3;border-color:#9fc4ff;font-size:11px">🧾 ticket</span>':''}</div>
           <div class="muted" style="font-size:13px">${x.d} · ${x.cat} · ${expenseFrequencyLabel(x.frequency)} · ${expenseNeedLabel(x.need||defaultExpenseNeed(x.cat))} · ${paymentLabel(x.payMethod)} · ${expenseTypeLabel(x.type)}${x.reimbursable?' · reembolsable':''}${x.planned?' · planeado':' · no planeado'}${x.stopped?' · CANCELADO':''}</div>
           ${(x.receiptStatus==='missing'||(!x.ticket&&x.receiptStatus!=='not_needed'))?`<div class="warn" style="margin-top:6px;padding:6px 8px">Falta ticket o comprobante.</div>`:''}
           ${x.budgetLimit?`<div class="${x.total>x.budgetLimit?'warn':'ok'}" style="margin-top:6px;padding:6px 8px">Límite marcado: ${money(x.budgetLimit)} · ${x.total>x.budgetLimit?'te pasaste por '+money(x.total-x.budgetLimit):'quedaste dentro'}</div>`:''}
@@ -35455,14 +35478,14 @@ function renderMissingExpenseIdeas(){
 
 let parsedReceiptItems=[];
 const receiptCategoryRules=[
-  {cat:'comida',es:'Comida',words:['milk','egg','eggs','bread','rice','beans','tortilla','cheese','yogurt','oats','oatmeal','cereal','beef','chicken','pork','fish','tuna','salmon','turkey','ham','bacon','sausage','butter','cream','flour','sugar','salt','oil','pasta','noodle','soup','coffee']},
-  {cat:'comida',es:'Fruta/verdura',words:['banana','bananas','apple','apples','orange','oranges','grape','grapes','tomato','tomatoes','onion','onions','potato','potatoes','lettuce','spinach','avocado','produce','vegetable','vegetables','fruit','carrot','broccoli','cilantro','pepper','peppers','lime','lemon','mango','pineapple','berry','berries']},
+  {cat:'comida',es:'Comida',words:['milk','egg','eggs','bread','rice','beans','tortilla','cheese','yogurt','oats','oatmeal','cereal','beef','chicken','pork','fish','tuna','salmon','turkey','ham','bacon','sausage','butter','cream','flour','sugar','salt','oil','pasta','noodle','soup','coffee','leche','huevo','huevos','pollo','arroz','frijol','frijoles','carne','pescado','atun','queso','pan','tortillas','aceite','azucar','sal','mantequilla','crema','harina','pasta','sopa','cafe']},
+  {cat:'comida',es:'Fruta/verdura',words:['banana','bananas','apple','apples','orange','oranges','grape','grapes','tomato','tomatoes','onion','onions','potato','potatoes','lettuce','spinach','avocado','produce','vegetable','vegetables','fruit','carrot','broccoli','cilantro','pepper','peppers','lime','lemon','mango','pineapple','berry','berries','platano','platanos','manzana','manzanas','naranja','naranjas','uva','uvas','tomate','jitomate','cebolla','papa','papas','lechuga','espinaca','aguacate','zanahoria','brocoli','chile','limon','pina']},
   {cat:'comida preparada',es:'Comida preparada',words:['deli','pizza','sandwich','hot food','rotisserie','bbq','plate','meal','combo','burger','taco','burrito','poke','sushi','chicken bake']},
   {cat:'snacks bebidas',es:'Snacks/bebidas',words:['chips','candy','cookie','cookies','soda','juice','drink','energy','gatorade','monster','red bull','water bottle','ice cream','snack','chocolate','donut','pastry']},
   {cat:'agua hielo',es:'Agua/hielo',words:['water','ice','aquafina','dasani','purified','spring water']},
   {cat:'ropa',es:'Ropa',words:['pants','jeans','shirt','t-shirt','tshirt','socks','underwear','shorts','jacket','hoodie','apparel','clothing','shoe','shoes','men','mens','women','womens']},
   {cat:'salud',es:'Salud',words:['tylenol','advil','ibuprofen','aspirin','medicine','rx','pharmacy','vitamin','bandage','first aid','cough','cold','allergy','pain','toothpaste','mouthwash']},
-  {cat:'cuidado personal',es:'Cuidado personal',words:['soap','shampoo','conditioner','deodorant','razor','lotion','body wash','skincare','sunscreen','toothbrush','face wash']},
+  {cat:'cuidado personal',es:'Cuidado personal',words:['soap','shampoo','conditioner','deodorant','razor','lotion','body wash','skincare','sunscreen','toothbrush','face wash','jabon','desodorante','crema corporal','cepillo dental']},
   {cat:'gasolina',es:'Gasolina',words:['fuel','gas','gasoline','diesel','unleaded','premium']},
   {cat:'mantenimiento carro',es:'Carro/mantenimiento',words:['oil','motor oil','wiper','tire','tires','auto','car wash','brake','coolant','transmission','battery']},
   {cat:'herramientas trabajo',es:'Herramientas trabajo',words:['tool','tools','glove','gloves','blade','trimmer','line','mower','hose','sprayer','fertilizer','soil','mulch','home depot','hardware']},
@@ -35514,14 +35537,15 @@ function detectReceiptStore(lines){
   let first=lines.find(x=>/[a-zA-Z]/.test(x)&&!/\d+\.\d{2}/.test(x));
   return first?first.slice(0,40):'Ticket pegado';
 }
-function analyzeReceiptText(){
+function parseReceiptText(){
   let raw=document.getElementById('receiptText')?.value||'';
-  let out=document.getElementById('receiptParsedOut'),sum=document.getElementById('receiptParseSummary');
-  if(!raw.trim()){alert('Pega el texto del ticket primero.');return}
+  let sum=document.getElementById('receiptParseSummary');
   let lines=raw.split(/\r?\n/).map(normalizeReceiptLine).filter(Boolean);
   let store=detectReceiptStore(lines);
   let date=parseReceiptDate(raw);
-  let storeEl=document.getElementById('receiptStore');if(storeEl&&!storeEl.value)storeEl.value=store;
+  // 'Ticket pegado' es el valor automático débil: si ahora se detecta una
+  // tienda mejor (o el usuario aún no escribió una), se reemplaza.
+  let storeEl=document.getElementById('receiptStore');if(storeEl&&(!storeEl.value||storeEl.value==='Ticket pegado')&&store)storeEl.value=store;
   let dateEl=document.getElementById('receiptDate');if(dateEl&&!dateEl.value)dateEl.value=date;
   let skip=/\b(subtotal|balance|change|cash|visa|mastercard|amex|debit|credit|approved|auth|card|account|cashier|terminal|receipt|member|thank you|items sold|total saved|coupon|payment)\b/i;
   let totalLine=lines.find(l=>/\b(total|amount due|balance due)\b/i.test(l)&&parseReceiptMoney(l));
@@ -35545,6 +35569,11 @@ function analyzeReceiptText(){
   let receiptTotal=totalLine?parseReceiptMoney(totalLine):0;
   if(sum)sum.innerHTML=`<div class="ok"><b>${parsedReceiptItems.length} líneas detectadas.</b> Total leído por líneas: ${money(parsedTotal)}${receiptTotal?` · Total del ticket: ${money(receiptTotal)} · Diferencia: ${money(receiptTotal-parsedTotal)}`:''}</div>`;
   renderParsedReceiptTable();
+}
+function analyzeReceiptText(){
+  let raw=document.getElementById('receiptText')?.value||'';
+  if(!raw.trim()){alert('Pega el texto del ticket primero.');return}
+  parseReceiptText();
 }
 async function analyzeReceiptWithAI(){
   let raw=document.getElementById('receiptText')?.value||'';
@@ -35589,23 +35618,31 @@ function renderParsedReceiptTable(){
   if(!parsedReceiptItems.length){out.innerHTML='<div class="warn">No detecté productos con precio. Revisa el texto o escribe cada línea como PRODUCTO 0.00.</div>';return}
   out.innerHTML=`<div class="card"><h3 style="margin-top:0">🧾 Revisar antes de guardar</h3>
     <div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:760px">
-      <thead><tr><th>Guardar</th><th>Producto leído</th><th>Precio</th><th>Cantidad</th><th>Unidad</th><th>🧊 Nevera</th><th>Origen</th><th>Categoría</th><th>Traducido</th></tr></thead>
+      <thead><tr><th>Guardar</th><th>Producto leído</th><th>Precio</th><th>Cantidad</th><th>Unidad</th><th>🛒 Compra</th><th>🍽 Alimentación</th><th>Origen</th><th>Categoría</th><th>Traducido</th></tr></thead>
       <tbody>${parsedReceiptItems.map((x,i)=>`<tr style="border-top:1px solid var(--b)">
         <td style="padding:6px;text-align:center"><input type="checkbox" ${x.include?'checked':''} onchange="parsedReceiptItems[${i}].include=this.checked;updateReceiptTotals()"></td>
         <td style="padding:6px"><input value="${safeText(x.name)}" onchange="parsedReceiptItems[${i}].name=this.value;parsedReceiptItems[${i}].spanish=inferReceiptCategory(this.value).es"></td>
         <td style="padding:6px"><input type="number" step=".01" value="${x.amount}" onchange="parsedReceiptItems[${i}].amount=+this.value||0;if(parsedReceiptItems[${i}].priceSource==='REVISAR')parsedReceiptItems[${i}].priceSource='REAL';renderParsedReceiptTable()"></td>
         <td style="padding:6px"><input value="${safeText(x.qty||'')}" style="width:56px" onchange="parsedReceiptItems[${i}].qty=this.value"></td>
         <td style="padding:6px"><input value="${safeText(x.unit||'')}" style="width:64px" onchange="parsedReceiptItems[${i}].unit=this.value"></td>
-        <td style="padding:6px;text-align:center"><input type="checkbox" ${x.toFridge?'checked':''} onchange="parsedReceiptItems[${i}].toFridge=this.checked" title="Agregar a Nevera al confirmar"></td>
+        <td style="padding:6px;text-align:center"><input type="checkbox" ${x.compra?'checked':''} onchange="parsedReceiptItems[${i}].compra=this.checked" title="Marca como comprado en tu lista de compras"></td>
+        <td style="padding:6px;text-align:center"><input type="checkbox" ${x.toFridge?'checked':''} onchange="parsedReceiptItems[${i}].toFridge=this.checked" title="Cuenta para tu alimentación: entra a la Nevera al confirmar"></td>
         <td style="padding:6px">${receiptPriceBadge(x.priceSource)}</td>
         <td style="padding:6px"><select onchange="parsedReceiptItems[${i}].cat=this.value">${receiptCatOptions(x.cat)}</select></td>
         <td style="padding:6px"><span class="badge">${safeText(x.spanish)}</span><div class="muted" style="font-size:12px">${safeText(x.raw)}</div></td>
       </tr>`).join('')}</tbody>
     </table></div>
     <div id="receiptTotalsOut" class="ok" style="margin-top:10px"></div>
+    <div style="margin-top:8px"><b style="font-size:12px;color:#12352a">📝 Nota del ticket:</b>
+      <div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap">
+        <button class="btn" style="padding:6px 10px;font-size:12px" onclick="receiptNotaChip('compré más')">Compré más</button>
+        <button class="btn" style="padding:6px 10px;font-size:12px" onclick="receiptNotaChip('no me gustó')">No me gustó</button>
+        <button class="btn" style="padding:6px 10px;font-size:12px" onclick="receiptNotaChip('estaba en oferta')">Estaba en oferta</button>
+      </div>
+      <input id="receiptNota" placeholder="Nota libre (opcional)…" style="width:100%;margin-top:6px;padding:9px;border-radius:10px;border:1px solid #d9e3db;font-size:13px;box-sizing:border-box">
+    </div>
     <div class="row" style="margin-top:10px;flex-wrap:wrap">
-      <button class="btn primary" onclick="saveParsedReceiptSeparate()">✅ Confirmar compra</button>
-      <button class="btn" onclick="saveParsedReceiptSingle()">Guardar como un solo gasto</button>
+      <button class="btn primary" onclick="saveParsedReceiptSingle()">✅ Confirmar compra</button>
       <button class="btn" onclick="copyReceiptParsedSummary()">Copiar resumen</button>
       <button class="btn" onclick="ticketCancelar()">❌ Cancelar</button>
       ${(state.ticketBorrador&&state.ticketBorrador.origen!=='ia'&&ticketDataUrl)?'<button class="btn" onclick="ticketIA(ticketDataUrl)">✨ Mejorar lectura con IA</button>':''}
@@ -35654,20 +35691,50 @@ async function ocrLocal(dataUrl){
   return {texto:texto,confianza:conf};
 }
 function escanearTicket(){
+  // La vista de edición es ÚNICA (Dinero → Pegar ticket). Se abre ANTES de
+  // terminar el OCR para que la vista previa editable quede visible apenas
+  // se complete. Sin 'capture': en iPhone el usuario elige cámara, fototeca
+  // o archivos; en Windows abre el selector de archivos.
+  try{openTab('💳 Gastos');}catch(e){}
+  // 400 ms: espera a que la pestaña termine de renderizarse (bindAll vuelve a
+  // setGastoView('form') al terminar; hay que ir DESPUÉS para ganar la carrera).
+  setTimeout(function(){try{setGastoView('paste');}catch(e){}},400);
   var inp=document.createElement('input');
   inp.type='file';
   inp.accept='image/*';
-  inp.setAttribute('capture','environment'); // iPhone: abre la cámara; Windows/web: selector de archivo
   inp.style.display='none';
   document.body.appendChild(inp);
   inp.onchange=function(){
     var f=inp.files&&inp.files[0]; if(!f)return;
     var r=new FileReader();
-    r.onload=function(e){ try{setGastoView('paste');}catch(err){} ticketOCR(e.target.result); };
+    r.onload=function(e){
+      setTimeout(function(){ try{ticketOCR(e.target.result);}catch(err){} },120);
+    };
     r.readAsDataURL(f);
     inp.remove();
   };
   inp.click();
+}
+/* 🧠 Pegar ticket: abre la MISMA vista de edición de tickets (Dinero →
+   Pegar ticket), sin duplicar secciones ni datos. */
+function abrirPegarTicket(){
+  try{openTab('💳 Gastos');}catch(e){}
+  setTimeout(function(){try{setGastoView('paste');}catch(e){}},400);
+}
+/* 📷 Acceso pequeño de Nevera → abre la MISMA sección de Mis tickets
+   (Comer → Lista de compra) y arranca el escaneo. El input de archivo se
+   abre en el MISMO gesto del dedo (requisito de iOS para abrir cámara). */
+function escanearDesdeNevera(){
+  try{openTab('🍱 Contador');}catch(e){}
+  setTimeout(function(){
+    try{
+      var det=document.getElementById('misTicketsDet');
+      if(det)det.open=true;
+      var card=document.getElementById('listaCompraCard');
+      if(card&&typeof card.scrollIntoView==='function')card.scrollIntoView({block:'start'});
+    }catch(e){}
+  },80);
+  escanearTicket();
 }
 async function ticketOCR(dataUrl){
   try{
@@ -35697,6 +35764,7 @@ async function ticketOCR(dataUrl){
         if(typeof alert==='function')alert('No detecté productos con precio. Revisa el texto o usa "✨ Mejorar lectura con IA".');
       }
     }
+    try{setGastoView('paste');}catch(e){} // asegura la vista editable visible
     renderParsedReceiptTable();
   }catch(e){
     if(typeof alert==='function')alert('No se pudo leer el ticket con OCR: '+e.message+'. Puedes usar "✨ Mejorar lectura con IA".');
@@ -35768,24 +35836,199 @@ function ticketProcesarIA(json,dataUrl){
   try{setGastoView('paste');}catch(e){}
   renderParsedReceiptTable();
 }
+/* 🧾 MIS TICKETS: historial de los gastos con foto de ticket, con búsqueda y
+   filtros, gasto semanal/mensual REAL (nunca inventado) y envío a Telegram
+   usando el token/chat guardados localmente. Nunca se envía la fotografía. */
+function misTicketsLista(){
+  return (state.expenses||[]).filter(function(e){return !!e.ticket||!!e.esTicket;});
+}
+function misTicketsResumen(){
+  var semana=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
+  var mes=new Date().toISOString().slice(0,7);
+  var semanaTotal=0, mesTotal=0, top={};
+  misTicketsLista().forEach(function(e){
+    var d=String(e.d||e.date||'');
+    if(d>=semana)semanaTotal+=+e.total||0;
+    if(String(d).slice(0,7)===mes)mesTotal+=+e.total||0;
+    var m=String(e.note||'').match(/Detalle: ([\s\S]*?)(\. Nota:|$)/);
+    if(m){
+      String(m[1]).split(';').forEach(function(linea){
+        var nm=(String(linea).match(/^([^$]+?)\s+\$/)||[])[1];
+        if(nm){var k=nm.trim().toLowerCase();if(k)top[k]=(top[k]||0)+1;}
+      });
+    }
+  });
+  var topLista=Object.keys(top).map(function(k){return [k,top[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+  return {semana:Math.round(semanaTotal*100)/100,mes:Math.round(mesTotal*100)/100,top:topLista,count:misTicketsLista().length};
+}
+function telegramTextoResumenCompras(){
+  var r=misTicketsResumen();
+  var top=r.top.length?r.top.map(function(t){return t[0]+' ×'+t[1];}).join(', '):'sin datos';
+  return '🧾 Resumen de compras (tickets):\nGasto esta semana: $'+r.semana+'\nGasto este mes: $'+r.mes+'\nMás comprados: '+top;
+}
+function telegramTicketTexto(e){
+  var prods=((String(e.note||'').match(/Detalle: ([\s\S]*?)(\. Nota:|$)/)||[])[1]||'').split(';').map(function(s){return s.trim();}).filter(Boolean);
+  var nota=((String(e.note||'').match(/\. Nota: ([\s\S]*)$/)||[])[1]||'').trim();
+  return '🧾 Ticket\nTienda: '+(e.store||'Sin registro')
+    +'\nFecha: '+(e.d||e.date||'Sin registro')
+    +'\nTotal: $'+(+e.total||0)
+    +(prods.length?'\nProductos:\n- '+prods.join('\n- '):'')
+    +(nota?'\nNota: '+nota:'');
+}
+async function telegramEnviarTicket(id){
+  var e=(state.expenses||[]).find(function(x){return String(x.id)===String(id);});
+  if(!e||!e.ticket)return;
+  try{
+    await telegramEnviarLocal(telegramTicketTexto(e));
+    if(typeof toastReg==='function')toastReg('📩 Ticket enviado a Telegram.');
+  }catch(err){
+    if(typeof alert==='function')alert('No se pudo enviar: '+err.message);
+  }
+}
+async function telegramEnviarResumenCompras(){
+  try{
+    await telegramEnviarLocal(telegramTextoResumenCompras());
+    if(typeof toastReg==='function')toastReg('📩 Resumen de compras enviado.');
+  }catch(err){
+    if(typeof alert==='function')alert('No se pudo enviar: '+err.message);
+  }
+}
+function misTicketsHTML(){
+  var lista=misTicketsLista();
+  if(!lista.length){
+    return '<div class="muted" style="font-size:12px">Aún no guardas tickets. Usa 📷 Escanear ticket (arriba) y confirma la compra para verlos aquí.</div>';
+  }
+  var r=misTicketsResumen();
+  var q=String(window._mtQ||'').toLowerCase();
+  var fTienda=window._mtTienda||'todas';
+  var fMes=window._mtMes||'todos';
+  var fCat=window._mtCat||'todas';
+  var tiendas={};var meses={};var cats={};
+  lista.forEach(function(e){
+    tiendas[e.store||'Sin tienda']=1;
+    meses[String(e.d||e.date||'').slice(0,7)]=1;
+    cats[e.cat||'otro']=1;
+  });
+  var filtrada=lista.filter(function(e){
+    var d=String(e.d||e.date||'');
+    if(q&&!(e.store+' '+e.note+' '+e.cat+' '+d).toLowerCase().includes(q))return false;
+    if(fTienda!=='todas'&&(e.store||'Sin tienda')!==fTienda)return false;
+    if(fMes!=='todos'&&d.slice(0,7)!==fMes)return false;
+    if(fCat!=='todas'&&(e.cat||'otro')!==fCat)return false;
+    return true;
+  });
+  var sel=function(opts,val){return Object.keys(opts).sort().map(function(k){return '<option value="'+k+'"'+(k===val?' selected':'')+'>'+safeText(k)+'</option>';}).join('');};
+  return '<div class="mini" style="background:#fff8e1;border:1px solid #f0d9a8;font-size:12px;margin-bottom:8px">'
+    +'<b>🧾 '+r.count+' ticket'+(r.count===1?'':'s')+' guardado'+(r.count===1?'':'s')+'</b> · Gasto esta semana: <b>$'+r.semana+'</b> · Este mes: <b>$'+r.mes+'</b>'
+    +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn" style="padding:6px 10px;font-size:12px" onclick="telegramEnviarResumenCompras()">📩 Enviar resumen de compras</button></div></div>'
+    +'<input value="'+safeText(window._mtQ||'')+'" placeholder="Buscar en tickets…" oninput="window._mtQ=this.value;misTicketsRender()" style="width:100%;padding:9px;border-radius:10px;border:1px solid #d9e3db;font-size:13px;box-sizing:border-box">'
+    +'<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap">'
+    +'<select onchange="window._mtTienda=this.value;misTicketsRender()" style="flex:1;min-width:110px;padding:8px;border-radius:10px;border:1px solid #d9e3db;font-size:13px"><option value="todas">Todas las tiendas</option>'+sel(tiendas,fTienda)+'</select>'
+    +'<select onchange="window._mtMes=this.value;misTicketsRender()" style="flex:1;min-width:110px;padding:8px;border-radius:10px;border:1px solid #d9e3db;font-size:13px"><option value="todos">Todos los meses</option>'+sel(meses,fMes)+'</select>'
+    +'<select onchange="window._mtCat=this.value;misTicketsRender()" style="flex:1;min-width:110px;padding:8px;border-radius:10px;border:1px solid #d9e3db;font-size:13px"><option value="todas">Todas las categorías</option>'+sel(cats,fCat)+'</select>'
+    +'</div>'
+    +(filtrada.length?'<div style="margin-top:8px">'+filtrada.map(function(e){
+      return '<div class="mini" style="background:#fff;font-size:12px;margin-bottom:6px">'
+        +'<div class="row" style="justify-content:space-between;gap:6px;flex-wrap:wrap;align-items:flex-start">'
+        +'<div style="min-width:0"><b>'+safeText(e.store||'Ticket')+'</b> · '+safeText(e.d||e.date||'')+' · '+safeText(e.cat||'')+'<div style="color:#15704f;font-weight:900">$'+(+e.total||0)+'</div>'
+        +(String(e.note||'').indexOf('Nota:')>=0?'<div class="muted">📝 '+safeText((String(e.note).match(/Nota: ([\s\S]*)$/)||[])[1]||'')+'</div>':'')
+        +'</div>'
+        +'<div class="row" style="gap:6px;flex-shrink:0">'
+        +(e.ticket?'<img src="'+e.ticket+'" onclick="viewTicket(\''+e.id+'\')" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #d9e3db;cursor:pointer" title="Ver foto">':'')
+        +'<button class="btn" style="padding:6px 10px;font-size:12px" onclick="telegramEnviarTicket(\''+e.id+'\')">📩 Enviar a Telegram</button>'
+        +'</div></div></div>';
+    }).join('')+'</div>':'<div class="muted" style="font-size:12px;margin-top:8px">Sin resultados con esos filtros.</div>');
+}
+function misTicketsRender(){
+  var out=document.getElementById('misTicketsOut');
+  if(out)out.innerHTML=misTicketsHTML();
+}
+/* Resumen del día (Completa tu día → Telegram). Datos reales; lo que falta
+   se marca "Sin registro". */
+function telegramResumenDiaTexto(){
+  var pack=state.fitnessToday&&state.fitnessToday.date===(typeof todayISO==='function'?todayISO():'')?state.fitnessToday:null;
+  var rutina=((typeof f3RutinaActiva==='function')&&f3RutinaActiva())?f3NombreMostrar(f3RutinaActiva()):null;
+  var comida=((typeof getTodayDiaryTotals==='function')?getTodayDiaryTotals():null)||{k:0,p:0};
+  var peso=(state.weight&&state.weight.length)?state.weight[state.weight.length-1].w:null;
+  var ejercicios=(pack&&pack.plan&&pack.plan.length)?pack.plan.map(function(x){return x.name;}).slice(0,6).join(', '):null;
+  var metas=((state.tasks||[]).filter(function(t){return t&&!t.done;}).slice(0,3).map(function(t){return t.title||t.t;}).filter(Boolean).join(', '))||null;
+  var lineas=['📅 Resumen del día'];
+  lineas.push('Fecha: '+((typeof todayISO==='function')?todayISO():''));
+  lineas.push('Rutina: '+(rutina||'Sin registro'));
+  lineas.push('Ejercicios: '+(ejercicios||'Sin registro'));
+  lineas.push('Calorías: '+(comida.k>0?comida.k+' kcal':'Sin registro'));
+  lineas.push('Proteína: '+(comida.p>0?comida.p+' g':'Sin registro'));
+  lineas.push('Agua: Sin registro');
+  lineas.push('Peso: '+(peso!=null?peso+' lb':'Sin registro'));
+  lineas.push('Metas pendientes: '+(metas||'Sin registro'));
+  return lineas.join('\n');
+}
+async function telegramEnviarResumenDia(){
+  try{
+    await telegramEnviarLocal(telegramResumenDiaTexto());
+    if(typeof toastReg==='function')toastReg('📩 Resumen del día enviado.');
+  }catch(err){
+    if(typeof alert==='function')alert('No se pudo enviar: '+err.message);
+  }
+}
+function receiptNotaChip(txt){
+  var inp=document.getElementById('receiptNota');
+  if(!inp)return;
+  var actual=inp.value||'';
+  inp.value=actual?(actual+', '+txt):txt;
+}
+function receiptNotaActual(){
+  return String((document.getElementById('receiptNota')||{}).value||'').trim();
+}
 function ticketCancelar(){
   parsedReceiptItems=[];
   state.ticketBorrador=null;
+  ticketDataUrl=''; // descartar también la foto del ticket cancelado
   if(typeof save==='function')save();
   renderParsedReceiptTable();
 }
-/* Al confirmar: (A) lista de compras marca lo que YA estaba como comprado (nada
-   nuevo pendiente), (B) los marcados 🧊 entran a la Nevera persistente sin
-   duplicados, (D) el borrador se limpia (el gasto y su historial los guardan
-   los flujos de ticket existentes). */
+/* Dedupe ENTRE tickets: mismo patrón tienda+total+productos ya guardado → pedir
+   confirmación antes de guardar otra vez. Nunca bloquea sin avisar. */
+function ticketPareceDuplicado(store,total,items){
+  try{
+    var nombres=(items||[]).map(function(x){return (typeof completarNorm==='function')?completarNorm(x.name):String(x.name).toLowerCase();}).filter(Boolean).sort().join('|');
+    if(!nombres)return false;
+    var totalR=Math.round((+total||0)*100)/100;
+    var st=(store||'').trim().toLowerCase();
+    return (state.expenses||[]).some(function(e){
+      if(!e.ticket&&!e.esTicket)return false;
+      if(Math.abs((+e.total||0)-totalR)>0.01)return false;
+      if(st&&String(e.store||'').toLowerCase().indexOf(st)<0&&String(e.store||'').indexOf(st)<0)return false;
+      var nota=String(e.note||'');
+      var m=nota.match(/Detalle: ([\s\S]*?)$/);
+      var det=(m&&m[1])||'';
+      // Compara NORMALIZADO contra NORMALIZADO: 'Sales tax / impuesto' y
+      // 'Sales tax / impuesto' deben coincidir aunque la normalización
+      // convierta símbolos en espacios.
+      var detNorm=(typeof completarNorm==='function')?completarNorm(det):det.toLowerCase();
+      var enNombres=(items||[]).every(function(x){var n=(typeof completarNorm==='function')?completarNorm(x.name):String(x.name).toLowerCase();return detNorm.indexOf(n)>=0;});
+      return enNombres;
+    });
+  }catch(e){return false;}
+}
+/* Al confirmar: (A) lista de compras persistente (state.listaCompra): los
+   marcados 🛒 pasan como comprados (los que no estaban se agregan ya
+   marcados; los que YA estaban quedan comprados porque el ticket los trae),
+   (B) los marcados 🍽 entran a la Nevera persistente sin duplicados,
+   (D) el borrador se limpia. Nada de esto ocurre ANTES de confirmar. */
 function ticketAplicarConfirmados(items){
   items=items||[];
-  window._carrito=window._carrito||[];
+  state.listaCompra=state.listaCompra||[];
   items.forEach(function(x){
     if(!x.name||x.name==='Producto no identificado')return;
     var norm=(typeof completarNorm==='function')?completarNorm(x.name):String(x.name).toLowerCase();
-    var ya=window._carrito.find(function(c){var cn=(typeof completarNorm==='function')?completarNorm(c.name||''):String(c.name||'').toLowerCase();return cn===norm;});
-    if(ya)ya.comprado=true; // solo lo que ya estaba en la lista
+    var ya=state.listaCompra.find(function(c){var cn=(typeof completarNorm==='function')?completarNorm(c.name||''):String(c.name||'').toLowerCase();return cn===norm;});
+    if(x.compra){
+      if(ya){ya.comprado=true;}
+      else{state.listaCompra.push({id:(typeof ppUUID==='function')?ppUUID():('t'+Date.now()),name:x.name,comprado:true,agregado:new Date().toISOString()});}
+    }else if(ya){
+      ya.comprado=true; // estaba en la lista y el ticket lo trae: queda comprado
+    }
   });
   var alFridge=items.filter(function(x){return x.toFridge&&x.name&&x.name!=='Producto no identificado';});
   if(alFridge.length){
@@ -35794,6 +36037,57 @@ function ticketAplicarConfirmados(items){
     alFridge.forEach(function(x){var k=String(x.name).toLowerCase();if(!set[k]){set[k]=1;state.fridgeTengo.push(x.name);}});
   }
   state.ticketBorrador=null;
+  // La tarjeta de Comer ya está en el DOM: refrescar su lista sin esperar re-render.
+  if(typeof listaCompraRender==='function')listaCompraRender();
+}
+/* 🛒 LISTA DE COMPRA persistente (state.listaCompra, viaja con la sync).
+   Fuentes: escribir en la tarjeta de Comer, ingredientes de recetas ("🛒
+   Lista de compras"), Telegram ("/lista") y la confirmación de tickets. */
+function listaCompraAgregarNombre(nombre){
+  var n=String(nombre||'').trim();
+  if(!n)return false;
+  state.listaCompra=state.listaCompra||[];
+  var norm=(typeof completarNorm==='function')?completarNorm(n):n.toLowerCase();
+  var ya=state.listaCompra.find(function(c){var cn=(typeof completarNorm==='function')?completarNorm(c.name||''):String(c.name||'').toLowerCase();return cn===norm;});
+  if(ya)return false; // dedupe razonable por nombre
+  state.listaCompra.push({id:(typeof ppUUID==='function')?ppUUID():('lc'+Date.now()),name:n,comprado:false,agregado:new Date().toISOString()});
+  if(typeof save==='function')save();
+  listaCompraRender();
+  return true;
+}
+function listaCompraAgregar(){
+  var inp=document.getElementById('listaCompraNombre');
+  var ok=listaCompraAgregarNombre(inp?inp.value:'');
+  if(inp)inp.value='';
+  if(!ok&&typeof toastReg==='function')toastReg('🛒 Ese alimento ya está en la lista.');
+}
+function listaCompraToggle(i){
+  state.listaCompra=state.listaCompra||[];
+  var c=state.listaCompra[i];if(!c)return;
+  c.comprado=!c.comprado;
+  if(typeof save==='function')save();
+  listaCompraRender();
+}
+function listaCompraQuitar(i){
+  state.listaCompra=state.listaCompra||[];
+  state.listaCompra.splice(i,1);
+  if(typeof save==='function')save();
+  listaCompraRender();
+}
+function listaCompraHTML(){
+  state.listaCompra=state.listaCompra||[];
+  if(!state.listaCompra.length)return '<div class="muted" style="font-size:12px">Tu lista está vacía. Escribe un alimento arriba o escanea un ticket en 🧾 Mis tickets.</div>';
+  return state.listaCompra.map(function(x,i){
+    return '<div class="fitw-row" style="margin-bottom:5px;padding:6px 10px;align-items:center"><span class="fitw-datos" style="min-width:0;flex:1;cursor:pointer" onclick="listaCompraToggle('+i+')">'+(x.comprado?'<s class="muted">':'<b>')+safeText(x.name)+(x.comprado?'</s>':'</b>')+'</span>'
+      +'<span class="row" style="gap:6px;align-items:center;flex-shrink:0">'
+      +'<button class="btn" style="padding:3px 10px;border-radius:999px;font-size:12px" onclick="listaCompraToggle('+i+')">'+(x.comprado?'✓ Comprado':'Marcar comprado')+'</button>'
+      +'<button class="btn" style="padding:3px 8px;border-radius:999px;font-size:12px;color:#b03030" onclick="listaCompraQuitar('+i+')">✕</button>'
+      +'</span></div>';
+  }).join('');
+}
+function listaCompraRender(){
+  var out=document.getElementById('listaCompraOut');
+  if(out)out.innerHTML=listaCompraHTML();
 }
 /* ===== 📩 TELEGRAM: entrada rápida (buzón telegram_inbox) =====
    Todo lo recibido termina en los sistemas existentes: la lista de compras
@@ -35806,15 +36100,33 @@ function ticketAplicarConfirmados(items){
 function getTelegramCfg(){
   try{return JSON.parse(safeStorage.get('pp_telegram_cfg')||'{}')||{};}catch(e){return {};}
 }
+/* Envío directo con el token/chat guardados LOCALMENTE (sin worker, sin foto).
+   Sin valores predeterminados: cada usuario configura su propio bot y chat. */
+async function telegramEnviarLocal(texto){
+  var cfg=getTelegramCfg();
+  var token=cfg.token||'';
+  var chat=cfg.chatId||'';
+  if(!token)throw new Error('No hay token de Telegram guardado (Ajustes → 📩 Telegram).');
+  if(!chat)throw new Error('No hay Chat ID de Telegram guardado (Ajustes → 📩 Telegram).');
+  var res=await fetch('https://api.telegram.org/bot'+encodeURIComponent(token)+'/sendMessage',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:chat,text:String(texto||'').slice(0,3800)})
+  });
+  var data=null; try{data=await res.json();}catch(e){}
+  if(!res.ok||!data||!data.ok)throw new Error((data&&data.description)?('Telegram dice: '+data.description):('HTTP '+res.status));
+  return true;
+}
 function guardarTelegramCfg(){
   var out=document.getElementById('telegramTestOut');
   var token=String((document.getElementById('tgBotToken')||{}).value||'').trim();
   var chat=String((document.getElementById('tgChatId')||{}).value||'').trim();
   if(out)out.innerHTML='';
   if(!token){ if(out)out.innerHTML='<div class="warn">Pega primero el token de tu bot (lo obtienes con @BotFather).</div>'; return; }
-  if(chat&&!/^\d+$/.test(chat)){ if(out)out.innerHTML='<div class="warn">El Chat ID debe ser solo números.</div>'; return; }
+  if(!chat){ if(out)out.innerHTML='<div class="warn">Pega también tu Chat ID (consíguelo con @userinfobot).</div>'; return; }
+  if(!/^\d+$/.test(chat)){ if(out)out.innerHTML='<div class="warn">El Chat ID debe ser solo números.</div>'; return; }
   try{
-    safeStorage.set('pp_telegram_cfg',JSON.stringify({token:token,chatId:chat||'8315587997'}));
+    safeStorage.set('pp_telegram_cfg',JSON.stringify({token:token,chatId:chat}));
     var inp=document.getElementById('tgBotToken'); if(inp)inp.value=''; // no dejar el token visible
     if(out)out.innerHTML='<div class="ok">✅ Configuración guardada solo en este dispositivo.</div>';
   }catch(e){
@@ -35826,8 +36138,9 @@ async function telegramEnviarPrueba(){
   try{
     var cfg=getTelegramCfg();
     var token=cfg.token||String((document.getElementById('tgBotToken')||{}).value||'').trim();
-    var chat=String((document.getElementById('tgChatId')||{}).value||cfg.chatId||'8315587997').trim();
+    var chat=String((document.getElementById('tgChatId')||{}).value||cfg.chatId||'').trim();
     if(!token){ if(out)out.innerHTML='<div class="warn">Guarda primero el token del bot (arriba).</div>'; return; }
+    if(!chat){ if(out)out.innerHTML='<div class="warn">Pega tu Chat ID (consíguelo con @userinfobot).</div>'; return; }
     if(!/^\d+$/.test(chat)){ if(out)out.innerHTML='<div class="warn">El Chat ID debe ser solo números.</div>'; return; }
     if(out)out.innerHTML='<div class="muted">Enviando…</div>';
     var res=await fetch('https://api.telegram.org/bot'+encodeURIComponent(token)+'/sendMessage',{
@@ -35897,6 +36210,7 @@ function telegramAplicarLista(fila){
     agregados.push(name);
   });
   if(typeof renderCarrito==='function')renderCarrito();
+  agregados.forEach(function(nombre){ if(typeof listaCompraAgregarNombre==='function')listaCompraAgregarNombre(nombre); });
   telegramMarcar(fila.id,'procesada');
   telegramNotify('🛒 Agregué '+(agregados.length||0)+' producto'+(agregados.length===1?'':'s')+' a tu lista de compras.');
 }
@@ -35998,8 +36312,8 @@ function abrirBorradorTicket(){
     if(state.ticketBorrador&&state.ticketBorrador.items&&state.ticketBorrador.items.length){
       parsedReceiptItems=JSON.parse(JSON.stringify(state.ticketBorrador.items));
       if(state.ticketBorrador.foto)ticketDataUrl=state.ticketBorrador.foto;
-      setGastoView('paste');
-      renderParsedReceiptTable();
+      try{openTab('💳 Gastos');}catch(e){}
+      setTimeout(function(){try{setGastoView('paste');renderParsedReceiptTable();}catch(e){}},400);
     }
   }catch(e){}
 }
@@ -36034,38 +36348,35 @@ function baseReceiptExpense(extra){
     planned:false,
     stopped:false,
     ticket:'',
+    esTicket:true, // gasto nacido de un ticket: cuenta en Mis tickets y en el dedupe aunque no tenga foto
     ...extra
   };
 }
-function saveParsedReceiptSeparate(){
-  let review=parsedReceiptItems.filter(x=>x.include&&x.priceSource==='REVISAR').length;
-  let items=parsedReceiptItems.filter(x=>x.include&&x.amount>0&&x.priceSource!=='REVISAR');
-  if(!items.length){alert('No hay líneas seleccionadas.');return}
-  if(review&&!confirm(`${review} líneas están marcadas como REVISAR y no se guardarán. ¿Continuar?`))return;
-  ticketAplicarConfirmados(parsedReceiptItems.filter(x=>x.include)); // carrito + nevera + borrador
-  items.forEach(x=>{
-    let need=defaultExpenseNeed(x.cat);
-    state.expenses.push(baseReceiptExpense({id:Date.now()+Math.floor(Math.random()*99999),store:(document.getElementById('receiptStore')?.value||'Ticket')+' · '+x.name,total:+x.amount||0,cat:x.cat,need,type:['gasolina','herramientas trabajo','uniforme botas','materiales negocio','mantenimiento carro'].includes(x.cat)?'work':['salud','dental vision','suplementos'].includes(x.cat)?'health':['comida','comida preparada','snacks bebidas','agua hielo'].includes(x.cat)?'food_gain':'personal',ticket:ticketDataUrl,note:`Importado desde ticket. Origen precio: ${x.priceSource||'REAL'}. Línea: ${x.raw}`}));
-  });
-  state.receiptTextHistory.push({date:new Date().toISOString(),store:document.getElementById('receiptStore')?.value||'',count:items.length,total:items.reduce((a,x)=>a+x.amount,0)});
-  state.receiptTextHistory=state.receiptTextHistory.slice(-25);
-  parsedReceiptItems=[]; // dedupe: una segunda confirmación no vuelve a guardar
-  save();setGastoView('list');
-}
+/* ✅ Confirmar compra: UN solo gasto en Dinero por ticket (el total REAL
+   confirmado). La foto del ticket viaja UNA sola vez en ese registro y el
+   detalle completo va en la nota — así Dinero muestra el gasto relacionado
+   con el ticket sin duplicar fotografía ni registro. La lista de compra y
+   la Nevera solo cambian aquí, tras la confirmación explícita. */
 function saveParsedReceiptSingle(){
   let review=parsedReceiptItems.filter(x=>x.include&&x.priceSource==='REVISAR').length;
   let items=parsedReceiptItems.filter(x=>x.include&&x.amount>0&&x.priceSource!=='REVISAR');
   if(!items.length){alert('No hay líneas seleccionadas.');return}
   if(review&&!confirm(`${review} líneas están marcadas como REVISAR y no se guardarán. ¿Continuar?`))return;
-  ticketAplicarConfirmados(parsedReceiptItems.filter(x=>x.include)); // carrito + nevera + borrador
   let total=Math.round(items.reduce((a,x)=>a+(+x.amount||0),0)*100)/100;
+  if(ticketPareceDuplicado(document.getElementById('receiptStore')?.value||'',total,items)
+     && typeof confirm==='function'
+     && !confirm('Este ticket se parece a uno que ya guardaste (misma tienda, total y productos). ¿Guardarlo de todos modos?'))return;
+  ticketAplicarConfirmados(parsedReceiptItems.filter(x=>x.include)); // lista de compra + nevera + borrador
   let bycat={};items.forEach(x=>bycat[x.cat]=(bycat[x.cat]||0)+(+x.amount||0));
   let mainCat=Object.entries(bycat).sort((a,b)=>b[1]-a[1])[0]?.[0]||'otro';
-  state.expenses.push(baseReceiptExpense({id:Date.now(),store:document.getElementById('receiptStore')?.value||'Ticket pegado',total,cat:mainCat,need:defaultExpenseNeed(mainCat),type:'personal',ticket:ticketDataUrl,note:'Ticket guardado como un solo gasto. Solo precios reales. Detalle: '+items.map(x=>`${x.name} ${money(x.amount)} (${x.cat}, ${x.priceSource||'REAL'})`).join('; ')}));
+  var notaRecS=receiptNotaActual();
+  var tipo=['gasolina','herramientas trabajo','uniforme botas','materiales negocio','mantenimiento carro'].includes(mainCat)?'work':['salud','dental vision','suplementos'].includes(mainCat)?'health':['comida','comida preparada','snacks bebidas','agua hielo'].includes(mainCat)?'food_gain':'personal';
+  state.expenses.push(baseReceiptExpense({id:Date.now(),store:document.getElementById('receiptStore')?.value||'Ticket pegado',total,cat:mainCat,need:defaultExpenseNeed(mainCat),type:tipo,ticket:ticketDataUrl,note:'Ticket guardado como un solo gasto. Solo precios reales. Detalle: '+items.map(x=>`${x.name} ${money(x.amount)} (${x.cat}, ${x.priceSource||'REAL'})`).join('; ')+(notaRecS?'. Nota: '+notaRecS:'')}));
   state.receiptTextHistory.push({date:new Date().toISOString(),store:document.getElementById('receiptStore')?.value||'',count:items.length,total});
   state.receiptTextHistory=state.receiptTextHistory.slice(-25);
   parsedReceiptItems=[]; // dedupe: una segunda confirmación no vuelve a guardar
   save();setGastoView('list');
+  try{misTicketsRender();}catch(e){} // historial de Mis tickets al día (la pestaña ya está en el DOM)
 }
 function copyReceiptParsedSummary(){
   let items=parsedReceiptItems.filter(x=>x.include);
