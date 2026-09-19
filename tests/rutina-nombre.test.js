@@ -67,7 +67,11 @@ const sandbox = {
   renderSavedRoutines: function () {},
   quickFitnessToday: function () {},
   document: {
-    getElementById: function () { return { value: '', innerHTML: '', textContent: '', style: { opacity: '' }, getBoundingClientRect: function () { return { top: 0 }; } }; },
+    getElementById: function (id) {
+      if (id === 'routineNameInput') return { value: (sandbox._nombreCampoVal || ''), innerHTML: '', textContent: '', style: { opacity: '' }, getBoundingClientRect: function () { return { top: 0 }; } };
+      if (id === 'nombreConfirmRow') return { style: { display: '' } };
+      return { value: '', innerHTML: '', textContent: '', style: { opacity: '' }, getBoundingClientRect: function () { return { top: 0 }; } };
+    },
     addEventListener: function () {}
   },
   setTimeout: setTimeout,
@@ -86,6 +90,9 @@ vm.runInNewContext(
   extractFunc('f3RenombrarEnlazada') + '\n' +
   extractFunc('f3NombreInput') + '\n' +
   extractFunc('f3NombreBlur') + '\n' +
+  extractFunc('f3NombreKey') + '\n' +
+  extractFunc('f3NombreConfirmar') + '\n' +
+  extractFunc('f3NombreCancelar') + '\n' +
   extractFunc('deleteSavedRoutine') + '\n' +
   extractFunc('f3RutinasActivas') + '\n' +
   extractFunc('f3CampoNombreHTML') + '\n' +
@@ -95,6 +102,7 @@ vm.runInNewContext(
   extractFunc('f3MismaFechaLocal') + '\n' +
   extractFunc('f3PlanDeRutina') + '\n' +
   extractFunc('f3RutinaActiva') + '\n' +
+  extractFunc('f3FitnessDesdeRutina') + '\n' +
   extractFunc('renombrarRutina') + '\n' +
   extractFunc('saveCurrentRoutine') + '\n' +
   extractFunc('repetirRutina') + '\n' +
@@ -136,14 +144,28 @@ t('B2 · guarda los ejercicios actuales intactos',
 t('B3 · limpia el campo tras guardar', sandbox.window._routineName === '');
 
 // ============================================================
-// C · Auto-nombre al guardar sin escribir nada
+// C · Sin nombre escrito: pide un nombre EDITABLE (nunca inventa uno fijo)
 // ============================================================
-console.log('\n== C · Auto-nombre al guardar ==');
+console.log('\n== C · Nombre editable al guardar ==');
 sandbox.window._routineName = undefined;
 sandbox.state.savedRoutines = [];
+sandbox._prompts = [];
+sandbox.prompt = function (msg, sugerido) {
+  sandbox._prompts.push({ msg: msg, sugerido: sugerido });
+  return 'Mi rutina del martes';
+};
 sandbox.saveCurrentRoutine();
-t('C1 · sin nombre escrito genera el descriptivo', sandbox.state.savedRoutines[0].name.indexOf('Pecho') >= 0 && sandbox.state.savedRoutines[0].name.indexOf('· 16 ago') >= 0,
-  sandbox.state.savedRoutines[0].name);
+t('C1 · sin nombre escrito pregunta y guarda EXACTO lo que respondes', sandbox.state.savedRoutines[0].name === 'Mi rutina del martes',
+  sandbox.state.savedRoutines[0] && sandbox.state.savedRoutines[0].name);
+t('C2 · el nombre sugerido es descriptivo (músculos + fecha), no un nombre personal', sandbox._prompts[0].sugerido.indexOf('Pecho') >= 0 && sandbox._prompts[0].sugerido.indexOf('· 16 ago') >= 0, sandbox._prompts[0].sugerido);
+t('C3 · cancelar el nombre NO guarda nada', (function () {
+  sandbox.state.savedRoutines = [];
+  sandbox.prompt = function () { return null; };
+  sandbox.saveCurrentRoutine();
+  var nada = sandbox.state.savedRoutines.length === 0;
+  sandbox.prompt = function () { return sandbox.promptResult; }; // restaurar
+  return nada;
+})());
 
 // ============================================================
 // D · Repetir conserva el nombre
@@ -239,9 +261,13 @@ t('T1 · cargar una rutina guardada la ENLAZA por id (loadedRoutineId)',
   sandbox.state.fitnessToday.loadedRoutineId === 'r1');
 var antesPlanT = JSON.stringify(sandbox.state.savedRoutines[0].plan);
 var antesFechaT = sandbox.state.savedRoutines[0].date;
-// Escribir + perder foco (blur) renombra ESA rutina por id
+// Escribir + CONFIRMAR renombra ESA rutina por id (perder el foco NO guarda)
+var nombreAntesT2 = sandbox.state.savedRoutines[0].name;
+sandbox._nombreCampoVal = 'Nombre escrito hoy';
 sandbox.f3NombreBlur({ target: { value: 'Nombre escrito hoy' } });
-t('T2 · escribir y salir del campo renombra la rutina enlazada', sandbox.state.savedRoutines[0].name === 'Nombre escrito hoy');
+t('T2a · perder el foco NO guarda (espera confirmación)', sandbox.state.savedRoutines[0].name === nombreAntesT2);
+sandbox.f3NombreConfirmar();
+t('T2 · confirmar el nombre renombra la rutina enlazada', sandbox.state.savedRoutines[0].name === 'Nombre escrito hoy');
 t('T3 · NO crea otra rutina ni toca plan/fecha/id',
   sandbox.state.savedRoutines.length === 2
   && JSON.stringify(sandbox.state.savedRoutines[0].plan) === antesPlanT

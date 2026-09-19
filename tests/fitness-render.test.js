@@ -90,12 +90,13 @@ vm.createContext(sandbox);
   'f3NombreRutinaAuto', 'f3NombreMostrar', 'f3CampoNombreHTML',
   'f3AltsHTML', 'f3RotarAlts',
   'f3AnclarTarjeta', 'f3AnclarEl', 'f3IrARutina', 'f3AplicarIrA', 'f3ClearIrA', 'f3InitIrAListeners',
-  'hmForceTopScroll', 'scrollActiveTabTop', 'showSavedRoutines', 'loadSavedRoutine', 'f3PlanDeRutina', 'f3RutinaActiva', 'render',
+  'hmForceTopScroll', 'scrollActiveTabTop', 'showSavedRoutines', 'loadSavedRoutine', 'f3PlanDeRutina', 'f3RutinaActiva', 'f3FitnessDesdeRutina', 'renderDescansoHTML', 'render',
   'syncSimpleFitnessInputs', 'quickFitnessToday', 'f3SesionVisibleHoy', 'f3MismaFechaLocal', 'fitPeriodLogs', 'bestByExercise', 'repsTotal',
   'renderSimpleFitnessProgress',
   'logRoutineQuick', 'f3BloqueaDebugExercise', 'swapToFirstAlt', 'replaceFitnessExercise', 'setFitEffort', 'setFitEstado', 'f3RenombrarEnlazada',
   'fitEffortHoy', 'toggleSimpleFitDone',
-  'f3DiasRutina', 'f3DiaDePlan', 'f3CfgCopia', 'f3MusculosDia', 'f3PropuestaDia', 'openRoutineConfig', 'renderRoutineConfig',
+  'f3DiasRutina', 'f3DiaDePlan', 'f3CfgCopia', 'f3MusculosDia', 'f3PropuestaDia', 'openRoutineConfig', 'renderRoutineConfig', 'f3CfgRender',
+  'f3TarjetaEjercicioHTML', 'f3GoalSets', 'f3SeriesEjercicio', 'f3EstadoEjercicio',
   'cfgToggleDia', 'cfgCopiarDia', 'cfgDiaEditar', 'cfgSetNombre', 'cfgGuardar', 'cfgCancelar',
   'cfgExAgregar', 'cfgExQuitar', 'cfgExMover', 'cfgExSet', 'f3CfgBancoHTML', 'cfgDiaIdx', 'f3EquipKey', 'f3CfgFilaExs', 'f3AltsBanco', 'f3NivelNum']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sandbox); });
@@ -407,14 +408,16 @@ t('R13 · v1.188.4.1: el campo de nombre de rutina tiene fila propia, etiqueta y
   const html = fn.quick();
   const i = html.indexOf('id="routineNameInput"');
   if (i < 0) return false;
-  const etiqueta = html.indexOf('✏️ Nombre de rutina (opcional)');
-  const guardar = html.indexOf('saveCurrentRoutine()');
+  const etiqueta = html.indexOf('✏️ Nombre de la nueva rutina');
+  // desde el flujo semanal el botón llama saveCurrentRoutine({crear:...}):
+  // se busca el nombre de la función, no la firma exacta.
+  const guardar = html.indexOf('saveCurrentRoutine(');
   const bloque = html.slice(Math.max(0, i - 60), i + 420);
   // 1) etiqueta visible 2) fila propia ANTES de "Guardar" 3) ancho útil explícito
   return etiqueta >= 0 && etiqueta < guardar && i < guardar
     && /id="routineNameInput"[^>]*width:100%/.test(bloque)
     && /max-width:340px/.test(bloque)
-    && bloque.indexOf('placeholder="Escribe un nombre…"') >= 0;
+    && bloque.indexOf('Nombre de la nueva rutina') >= 0;
 }());
 
 console.log('\n== RENDER Ver progreso (renderSimpleFitnessProgress real) ==');
@@ -949,7 +952,7 @@ t('C14 · el plan de respaldo queda en "Avanzado" con días, y visible como resp
   return sinDiasOk && conDiasOk;
 }());
 
-t('C15 · Usar hoy: carga el día correcto; el fallback entra SOLO cuando falta plan, con aviso', function () {
+t('C15 · Usar hoy: carga el día correcto; en una semana explícita el día sin entrada es DESCANSO real (nunca el plan viejo)', function () {
   cargarRubenA();
   abrirCfg('rA');
   sandbox.cfgToggleDia(5);
@@ -959,11 +962,12 @@ t('C15 · Usar hoy: carga el día correcto; el fallback entra SOLO cuando falta 
   sandbox.loadSavedRoutine('rA');
   var htmlSab = fn.quick();
   var okDia = htmlSab.indexOf('Propuesta A') >= 0 && htmlSab.indexOf('plan de respaldo') < 0;
-  sandbox._hoyW = 1; // hoy = Martes (sin día) → respaldo CON aviso
+  sandbox._hoyW = 1; // hoy = Martes (sin día) → DESCANSO, 0 ejercicios
   sandbox.loadSavedRoutine('rA');
   var htmlMar = fn.quick();
-  var okFb = htmlMar.indexOf('plan de respaldo') >= 0 && htmlMar.indexOf('Press banca con barra') >= 0;
-  return okDia && okFb;
+  var okDesc = htmlMar.indexOf('Día de descanso') >= 0 && htmlMar.indexOf('Press banca con barra') < 0
+    && sandbox.state.fitnessToday.descanso === true && (sandbox.state.fitnessToday.plan || []).length === 0;
+  return okDia && okDesc;
 }());
 
 t('C16 · rutina antigua (solo plan clásico): migración segura, mismo id/nombre, sin inventar días', function () {

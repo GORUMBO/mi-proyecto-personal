@@ -151,6 +151,7 @@ vm.runInNewContext(
   extractFunc('f3FirmaRutina') + '\n' +
   extractFunc('f3PlanDeRutina') + '\n' +
   extractFunc('f3RutinaActiva') + '\n' +
+  extractFunc('f3FitnessDesdeRutina') + '\n' +
   extractFunc('loadSavedRoutine') + '\n' +
   extractFunc('deleteSavedRoutine') + '\n' +
   extractFunc('f3RutinasActivas') + '\n' +

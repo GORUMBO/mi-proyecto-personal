@@ -1,8 +1,34 @@
 {
-  "latest": "1.195.0",
-  "date": "2026-09-09",
+  "latest": "1.195.1",
+  "date": "2026-09-19",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.195.1",
+      "date": "2026-09-19",
+      "type": "recomendada",
+      "nuevas": [
+        "Editor de rutinas corregido: carga la rutina exacta por su ID estable, los días seleccionados aparecen marcados (verde ✓) y descanso en los demás, y todos los campos muestran los valores guardados.",
+        "Editor fijo: ahora es un modal que no desaparece ni se reconstruye al editar; Guardar/Cancelar/X/Escape funcionan con borrador propio sin mezclar rutinas.",
+        "Rutina semanal y días de descanso corregidos: el bloque Entrenamiento de hoy distingue entrenamiento, descanso programado, Solo hoy, sin rutina y día visto, sin mensajes automáticos incorrectos.",
+        "Pantalla de Fitness simplificada: Mi semana muestra solo barra, resumen y botones; la lista completa de ejercicios aparece una sola vez.",
+        "Tarjetas de ejercicio visuales: estados Pendiente/En progreso/Completado/Omitido con color, icono y texto; círculos de series grandes; leyenda y barra de progreso real por series.",
+        "Demostraciones grandes conservadas dentro de cada tarjeta (fotos reales o animación) con reproducción, pausa, velocidad y pantalla completa; fallback claro cuando no existe demo.",
+        "Búsquedas externas por ejercicio: ▶ Buscar en YouTube y 🌐 Buscar en Google con el nombre exacto en español (e inglés si existe) + 'técnica correcta español'."
+      ],
+      "cambios": [
+        "El nombre de la rutina siempre aparece en el campo (con etiqueta según contexto) y solo se guarda al confirmar; cancelar conserva el nombre anterior.",
+        "Con rutina guardada, los botones muestran Guardar cambios, Renombrar, Duplicar como nueva y Usar nuevamente esta semana; Guardar esta rutina queda solo para rutinas nuevas.",
+        "El progreso de ejercicios, series, peso y repeticiones persiste al cerrar, abrir y recargar; la selección de día vista no se arrastra al día siguiente.",
+        "El descanso entre series incluye +30 s y Saltar; el descanso programado ofrece Ver próxima sesión y Cambiar rutina."
+      ],
+      "errores": [
+        "Corregido que el editor mostrara otra rutina o valores por defecto al abrirlo (el borrador usaba una forma anidada distinta de la del editor).",
+        "Corregido que el bloque inferior mostrara 'se genera automáticamente' teniendo rutina semanal fijada, y que apareciera una rutina automática en días libres.",
+        "Corregido que logRoutineQuick contara series borradas como registradas y bloqueara registrar de nuevo.",
+        "Corregido que la selección de Mi semana reapareciera al cerrar/abrir por la copia de IndexedDB."
+      ]
+    },
     {
       "version": "1.195.0",
       "date": "2026-09-09",

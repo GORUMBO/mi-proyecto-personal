@@ -71,7 +71,7 @@ function makeSb(state) {
   };
   sb.window = sb;
   vm.createContext(sb);
-  ['f3RutinaActiva', 'f3PlanDeRutina', 'loadSavedRoutine', 'deleteSavedRoutine', 'createFitnessToday',
+  ['f3RutinaActiva', 'f3PlanDeRutina', 'f3FitnessDesdeRutina', 'loadSavedRoutine', 'deleteSavedRoutine', 'createFitnessToday',
     'f3UsarSoloHoy', 'f3VolverASemanal', 'f3VariarHoy',
     'f3NombreMostrar', 'f3RutinasActivas', 'f3DiasRutina', 'renderSavedRoutines', 'f3MismaFechaLocal',
     'todayISO', 'todayLocal', 'readFitnessContext', 'todayWeekdayIndex', 'buildFitnessTodayPlan'].forEach(function (n) {
