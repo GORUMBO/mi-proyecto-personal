@@ -1,5 +1,16 @@
 # CHANGELOG — Mi Proyecto Personal
 
+## v1.195.2 (2026-09-19)
+
+**Fondo de pantalla personalizado + navegación móvil.**
+
+- **Fondo de pantalla personalizado**: elige una imagen o toma una foto con vista previa **inmediata**; ajuste (cubrir/contener/repetir), posición, brillo, oscurecimiento, desenfoque y transparencia; alcance a toda la app o solo al modo activo. Se administra desde Perfil → Cambiar fondo y desde Ajustes → Apariencia (con miniatura, archivo y Quitar fondo).
+- **Editor de fondo seguro**: hoja inferior con borrador propio — nada se guarda hasta Aplicar; Cancelar restaura el fondo anterior; Quitar vuelve al predeterminado.
+- **Correcciones del fondo**: Elegir imagen / Tomar foto ahora son controles nativos (label con input anidado, antes un input desvinculado del DOM podía no abrir el selector); Quitar + Aplicar persiste la eliminación (antes el fondo reaparecía tras recargar).
+- **Navegación móvil (teléfono)**: barra inferior con los botones del modo activo, pastilla del modo y menú Más; Windows queda exactamente igual.
+- **Fitness móvil**: una tarjeta de ejercicio expandida a la vez con "Siguiente ejercicio"; la posición de Ejercicio se conserva al volver.
+- **Detalles móviles**: campos con letra 16 px (sin zoom automático de iOS), botones táctiles de al menos 44 px, e idioma de la app en español por defecto.
+
 ## v1.195.1 (2026-09-19)
 
 **Fitness: rutinas semanales, editor y demostraciones estabilizados.**

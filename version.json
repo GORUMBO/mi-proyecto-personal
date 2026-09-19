@@ -1,8 +1,30 @@
 {
-  "latest": "1.195.1",
+  "latest": "1.195.2",
   "date": "2026-09-19",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.195.2",
+      "date": "2026-09-19",
+      "type": "recomendada",
+      "nuevas": [
+        "Fondo de pantalla personalizado: elige una imagen o toma una foto, con vista previa inmediata, ajuste (cubrir/contener/repetir), posición, brillo, oscurecimiento, desenfoque y transparencia; aplica a toda la app o solo al modo activo.",
+        "Editor de fondo como hoja inferior con borrador propio: nada se guarda hasta Aplicar; Cancelar restaura el fondo anterior y Quitar vuelve al predeterminado.",
+        "El fondo se administra también desde Ajustes → Apariencia, con miniatura, nombre de archivo, alcance y botón Quitar fondo.",
+        "Navegación móvil (teléfono ≤768 px): barra inferior con los botones del modo activo, pastilla del modo arriba y menú Más; la navegación de escritorio de Windows queda exactamente igual.",
+        "Fitness móvil: una tarjeta de ejercicio expandida a la vez con botón \"Siguiente ejercicio\", y la posición de Ejercicio se conserva al volver a la pestaña."
+      ],
+      "cambios": [
+        "Elegir imagen y Tomar foto ahora son controles nativos <label> con el input anidado (antes un input suelto podía no abrir el selector del sistema).",
+        "La imagen elegida aparece en la vista previa al momento, sin esperar a pulsar Aplicar.",
+        "Quitar + Aplicar persiste la eliminación del fondo (antes el fondo reaparecía tras recargar).",
+        "Idioma de la app en español por defecto (quien quiera inglés lo elige en Ajustes → Idioma).",
+        "En móvil los campos usan letra 16 px (sin zoom automático de iOS) y los botones táctiles miden al menos 44 px."
+      ],
+      "errores": [
+        "Corregido que el selector de archivos no se abriera al pulsar Elegir imagen (input desvinculado del DOM)."
+      ]
+    },
     {
       "version": "1.195.1",
       "date": "2026-09-19",

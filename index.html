@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -486,11 +486,52 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 .sec-hero-chips span{font-size:11px;color:var(--m);font-weight:800}
 .macro-out-clean:empty{display:none}
 
+
+/* ===== FASE 1 · MÓVIL (≤768px). Windows (>768px) queda EXACTAMENTE igual ===== */
+#mobileNavBar{display:none}
+#mobileModePill{display:none}
+.mnav-only{display:none}
+@media (max-width:768px){
+  #mobileModePill{display:inline-flex;position:fixed;top:calc(8px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:11450;align-items:center;gap:6px;background:#fff;border:1.5px solid #d9e3db;border-radius:999px;padding:7px 14px;box-shadow:0 2px 10px rgba(0,0,0,.12);cursor:pointer;font-size:13px;font-weight:900;color:#12352a;min-height:40px}
+  #mobileModePill .mpill-ico{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;color:#fff;font-size:13px}
+  #mobileModePill .mpill-flecha{font-size:10px;color:#63706a}
+  #modoResumenOut{display:none}
+  .mmodo-tarjeta{flex:1;min-width:96px;background:#fff;border:1px solid #d9e3db;border-radius:12px;padding:8px 10px;text-align:center}
+  .mmodo-tarjeta b{display:block;font-size:16px;color:#0d6043}
+  .mmodo-tarjeta span{font-size:10px;color:#63706a;font-weight:800}
+  .quick-nav{display:none} /* una sola navegación en móvil */
+  #groupNav{display:none!important} /* fila de grupos (Inicio/Comer/...) — el contenedor real */
+  .nav{display:none!important}
+  #subNavWrap{display:none!important} /* chips de sub-pestañas */
+  #quickRail{display:none!important} /* riel rápido flotante */
+  #mobileModePill{position:static;transform:none;margin:8px 10px 2px;width:fit-content;align-self:flex-start}
+  #app{position:relative;z-index:1}
+  #mobileNavBar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:11500;background:#fff;border-top:1px solid #d9e3db;padding:6px 4px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;box-shadow:0 -4px 14px rgba(0,0,0,.08)}
+  .mnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;font-weight:800;color:#63706a;cursor:pointer;min-height:48px;justify-content:center;border-radius:12px;user-select:none;-webkit-tap-highlight-color:transparent}
+  .mnav-item .mnav-ico{font-size:20px;line-height:1}
+  .mnav-item.mnav-activo{color:#0d6043;background:#eaf9f0}
+  .mnav-mas{position:fixed;left:8px;right:8px;bottom:calc(60px + env(safe-area-inset-bottom));background:#fff;border:1px solid #d9e3db;border-radius:14px;box-shadow:0 -6px 20px rgba(0,0,0,.12);padding:8px;z-index:11501;max-height:55vh;overflow-y:auto}
+  body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+  input,select,textarea{font-size:16px} /* evita el zoom automático de iOS */
+  /* Fitness: UNA tarjeta expandida a la vez */
+  .fit-card-ej:not(.fit-ej-abierta) .fit-card-ej-demo{display:none !important} /* el inline display:block de la demo no puede ganarle al colapso móvil */
+  .fit-card-ej:not(.fit-ej-abierta) .fit-card-ej-acciones,
+  .fit-card-ej:not(.fit-ej-abierta) .fit-ex-log,
+  .fit-card-ej:not(.fit-ej-abierta) .fit-card-ej-series,
+  .fit-card-ej:not(.fit-ej-abierta) details{display:none}
+  .fit-card-ej:not(.fit-ej-abierta){padding:8px 10px}
+  .fit-card-ej.fit-ej-abierta .fit-card-ej-demo{flex:none;width:100%;max-width:none}
+  .mnav-only{display:inline-flex !important}
+  /* Editor: panel abajo, por encima del teclado, con scroll interno */
+  #routineCfgModal{align-items:flex-end}
+  #routineCfgPanel{max-height:calc(88dvh - env(safe-area-inset-bottom));border-radius:16px 16px 0 0}
+}
+
 </style>
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.195.1';
+  window.HM_APP_VERSION='1.195.2';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -1128,9 +1169,12 @@ function showTab(i,b){
     }
   }
   if(t&&i!==0)safeStorage.set('pp_last_tab',t);
+  try{if(typeof f3MobileNavMark==='function')f3MobileNavMark();}catch(e){}
+  try{if(typeof f3ModosState==='function'){f3ModosState();if(state.misModos&&state.misModos.ultimoTab)state.misModos.ultimoTab[state.misModos.activo]=t;}}catch(e){}
+  try{if(typeof f3ModoResumenActualizar==='function')f3ModoResumenActualizar();}catch(e){}
   updateBackButton();
-  if(t&&t.includes('Ejercicio')){setTimeout(drawGrafica,80);setTimeout(()=>{if(window._initHuman)window._initHuman();},150);}
   if(t&&t.includes('Gastos'))setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);
+  if(t&&t.includes('Ejercicio')){setTimeout(drawGrafica,80);setTimeout(()=>{if(window._initHuman)window._initHuman();},150);if(typeof f3MobileNavMark==='function')f3MobileNavMark();try{if(state.fitUltimoScroll&&state.fitUltimoScrollDate===(typeof todayISO==='function'?todayISO():'')&&typeof window!=='undefined'&&window.innerWidth<=768){setTimeout(function(){try{window.scrollTo(0,state.fitUltimoScroll);}catch(e){}},140);}}catch(e){}}
   if(_justBuilt)setTimeout(bindAll,0);
 }
 function hmForceTopScroll(behavior='smooth'){
@@ -24422,13 +24466,9 @@ function idiomaActual(){
   // si el usuario ya eligió, respetar su elección
   if(state._idioma==='en') return 'en';
   if(state._idioma==='es') return 'es';
-  // primera vez: detectar el idioma del teléfono
-  try{
-    var lang = (navigator.language || navigator.userLanguage || 'es').toLowerCase();
-    // si el teléfono NO está en español, mostrar inglés (útil para USA)
-    if(lang.indexOf('es')!==0){ return 'en'; }
-  }catch(e){}
-  return 'es'; // por defecto español
+  // La interfaz de la app es en español por defecto (quien quiera inglés
+  // lo elige en Ajustes → Idioma de la app).
+  return 'es';
 }
 
 function setIdioma(lang){
@@ -24631,6 +24671,7 @@ function renderAjustesUnificados(){
       +'<p class="muted" style="margin:0 0 8px">Elige el color y diseño de la app:</p>'
       +'<div class="row" style="gap:8px;flex-wrap:wrap">'+Object.keys(PP_THEMES).map(function(k){var t=PP_THEMES[k];return '<button class="btn"'+(themeKey===k?' primary':'')+'" style="border-left:14px solid '+t.g+'" onclick="setTheme(&quot;'+k+'&quot;)">'+t.nombre+'</button>';}).join('')+'</div>'
       +'<div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" onclick="toggleDarkMode()">'+((state.uiSettings&&state.uiSettings.dark)?'☀️ Desactivar modo nocturno':'🌙 Activar modo nocturno')+'</button></div>'
+      +'<div id="fondoEstadoOut">'+(typeof f3FondoEstadoHTML==='function'?f3FondoEstadoHTML():'')+'</div>'
     +'</div></details>'
     +'<details class="settings-clean-details acc" id="ajNotif" ontoggle="accordion(this)"><summary>🔔 Notificaciones <span id="cfgResumenNotif" class="muted" style="font-weight:400;font-size:12px">'+safeText(R.notif)+'</span></summary><div class="card">'
       +'<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" '+((state.uiSettings&&state.uiSettings.notif)?'checked':'')+' onchange="state.uiSettings.notif=this.checked;quickSaved()"> Avisos y recordatorios dentro de la app</label>'
@@ -26097,7 +26138,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{quickFitnessToday();}catch(e){}try{renderRoutineToday();}catch(e){}try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();try{renderPesoInterno()}catch(e){}renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);try{hydrateCloudImages(document)}catch(e){}try{renderVeggies()}catch(e){}try{renderVegCombine()}catch(e){}try{renderHorno()}catch(e){}}
+function bindAll(){try{f3MobileNavInit();}catch(e){}try{f3FondoCargarVisual();}catch(e){}try{f3ActualizacionInit();}catch(e){}try{quickFitnessToday();}catch(e){}try{renderRoutineToday();}catch(e){}try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();try{renderPesoInterno()}catch(e){}renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);try{hydrateCloudImages(document)}catch(e){}try{renderVeggies()}catch(e){}try{renderVegCombine()}catch(e){}try{renderHorno()}catch(e){}}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -31821,10 +31862,11 @@ function f3TarjetaEjercicioHTML(i,x,pack){
     }
     var alts=(typeof f3AltsHTML==='function')?f3AltsHTML(i,x):'';
     var h=[];
-    h.push('<div class="fit-card-ej '+claseEstado+((estado==='completado')?' done':'')+'" id="fitCard_'+i+'">');
+    var _abiertaM=(typeof state!=='undefined'&&state.fitEjercicioAbierto===i&&state.fitEjercicioAbiertoDate===(typeof todayISO==='function'?todayISO():''))?' fit-ej-abierta':'';
+    h.push('<div class="fit-card-ej '+claseEstado+((estado==='completado')?' done':'')+_abiertaM+'" id="fitCard_'+i+'">');
     h.push('<div class="fit-card-ej-grid">');
     h.push('<div style="flex:1;min-width:0">');
-    h.push('<div class="fit-card-ej-head">');
+    h.push('<div class="fit-card-ej-head" onclick="f3AbrirEjercicio('+i+')" style="cursor:pointer">');
     h.push('<div class="fit-card-ej-circulo" aria-label="'+badge.replace(/"/g,'')+'">'+circulo+'</div>');
     h.push('<div style="flex:1;min-width:0">');
     h.push('<div class="fit-row-name">'+(i+1)+'. '+safeText(x.name)+' <span class="fit-card-ej-badge '+estado+'">'+safeText(badge)+'</span></div>');
@@ -31840,6 +31882,7 @@ function f3TarjetaEjercicioHTML(i,x,pack){
     h.push('<button class="btn" style="font-size:12px;padding:8px 10px" onclick="f3CambiarEjercicio('+i+')">🔁 Cambiar ejercicio</button>');
     h.push('<button class="btn'+(estado==='completado'?' primary':'')+'" style="font-size:12px;padding:8px 10px" onclick="f3MarcarEjercicioTerminado('+i+')">'+(estado==='completado'?'✓ Completado':'✓ Terminé')+'</button>');
     h.push('<button class="btn" style="font-size:12px;padding:8px 10px" onclick="f3OmitirEjercicio('+i+')">'+(estado==='omitido'?'↩ Quitar omitir':'🚫 Omitir')+'</button>');
+    h.push('<button class="btn mnav-only" style="font-size:13px;padding:9px 12px;width:100%" onclick="f3SiguienteEjercicio('+i+')">↓ Siguiente ejercicio</button>');
     h.push('</div>');
     h.push(regHTML);
     if(window._fitCompleto&&window._fitCompleto[i]){
@@ -33226,7 +33269,8 @@ function f3PerfilSectionHTML(){
   var p=state.profile||{};
   var avatars=['🌺','😎','💪','🥑','🏝️','🐢','🔥','⭐','🍍','🌊'];
   return '<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><span>'+profileAvatarHTML(56)+'</span>'
-    +'<label class="btn" style="margin:0">📷 Cambiar foto<input type="file" accept="image/*" style="display:none" onchange="setProfilePhoto(this)"></label></div>'
+    +'<label class="btn" style="margin:0">🖼️ Cambiar foto de perfil<input type="file" accept="image/*" style="display:none" onchange="setProfilePhoto(this)"></label>'
+    +'<button class="btn" style="min-height:44px" onclick="f3FondoAbrir()">🎨 Cambiar fondo de pantalla</button></div>'
     +'<p class="muted" style="margin:8px 0 4px;font-size:12px">O elige un avatar:</p>'
     +'<div class="row" style="gap:6px;flex-wrap:wrap">'+avatars.map(function(a){return '<button class="btn"'+((p.avatar===a&&!p.photo)?' primary':'')+'" style="font-size:20px;min-width:44px" onclick="setAvatar(&quot;'+a+'&quot;)">'+a+'</button>';}).join('')+'</div>'
     +'<div class="grid" style="margin-top:10px">'
@@ -34950,6 +34994,961 @@ function f3GenerarHoyConfirmar(){
   try{quickFitnessToday();}catch(e){}
   try{var el=document.getElementById('simpleFitnessOut');if(el)el.scrollIntoView({block:'start'});}catch(e){}
 }
+// ===== FASE 1 · BARRA INFERIOR MÓVIL (solo ≤768px; Windows intacto) =====
+function f3MobileNavIr(gid){
+  try{
+    var g=GROUPS.find(function(x){return x.id===gid;});
+    if(!g)return;
+    var tab=null;
+    for(var i=0;i<g.tabs.length;i++){if(typeof tabAllowed==='function'&&tabAllowed(g.tabs[i])){tab=g.tabs[i];break;}}
+    if(!tab&&g.tabs.length)tab=g.tabs[0];
+    if(tab)openTab(tab);
+  }catch(e){}
+}
+// ===== FASE 1 · TARJETA ÚNICA EXPANDIDA (Fitness móvil) =====
+function f3AbrirEjercicio(i){
+  try{
+    var cards=document.querySelectorAll('#simpleFitnessOut .fit-card-ej');
+    cards.forEach(function(c){c.classList.remove('fit-ej-abierta');});
+    var el=document.getElementById('fitCard_'+i);
+    if(el)el.classList.add('fit-ej-abierta');
+    state.fitEjercicioAbierto=i;
+    state.fitEjercicioAbiertoDate=(typeof todayISO==='function')?todayISO():'';
+    save();
+  }catch(e){}
+}
+function f3SiguienteEjercicio(i){
+  try{
+    var pack=state.fitnessToday;if(!pack||!pack.plan)return;
+    var prox=i+1;
+    if(prox>=pack.plan.length){if(typeof toastReg==='function')toastReg('🎉 Es el último ejercicio de hoy');return;}
+    f3AbrirEjercicio(prox);
+    var el=document.getElementById('fitCard_'+prox);
+    if(el)el.scrollIntoView({block:'start'});
+  }catch(e){}
+}
+// ===== ✨ MIS MODOS · navegación móvil personalizable (mismos datos, sin copias) =====
+var MIS_MODOS_FIJOS=[
+  {id:'personalizar',icono:'🎨',txt:'Personalizar apariencia',fn:"f3IrAApariencia()"},
+  {id:'cambiar',icono:'🔄',txt:'Cambiar modo',fn:'f3ModoSelectorAbrir()'},
+  {id:'admin',icono:'⚙️',txt:'Administrar modos',fn:'f3ModoAdminAbrir()'},
+  {id:'completo',icono:'🏠',txt:'Modo completo',fn:"f3ModoActivar('completo')"},
+  {id:'ajustes',icono:'🔧',txt:'Ajustes',fn:"openTab('👤 Perfil')"}
+];
+var MIS_MODOS_TABS=['🏠 Inicio','🍱 Contador','🍽️ Recetas','🥗 Nevera','💪 Ejercicio','⚖️ Peso','🚶 Caminata','💳 Gastos','💰 Presupuesto','🛒 Precios','🌺 Ahorro','💸 Remesas','🧤 Trabajo','🚗 Vehículos','🏡 Casa','👕 Ropa','🧴 Piel','❤️ Ligar','👤 Perfil','🌎 Región','📊 Base datos','🎯 Metas','🗣️ Inglés','🔧 Aparatos','🤖 Thermomix TM5'];
+var MIS_MODOS_ACCIONES=[{id:'🏋️ Rutina',txt:'Rutina',fn:'quickStartRoutine()'}];
+var MIS_MODOS_RESUMEN=[{id:'entrenamiento',txt:'🏋️ Entrenamiento de hoy'},{id:'calorias',txt:'🔥 Calorías'},{id:'pasos',txt:'🚶 Pasos'},{id:'peso',txt:'⚖️ Peso'},{id:'gastos',txt:'💳 Gastos'},{id:'presupuesto',txt:'💰 Presupuesto'},{id:'tareas',txt:'📝 Tareas'},{id:'recetas',txt:'🍽️ Recetas'},{id:'progreso',txt:'📈 Progreso'}];
+var MIS_MODOS_COLORES=['#15704f','#0d6043','#b8860b','#b42318','#1e5a8a','#7a4fb0','#0e7c86'];
+function f3ModosCompleto(){return {id:'completo',nombre:'Modo completo',icono:'🏠',color:'#0d6043',descripcion:'Navegación completa protegida: la salida segura.',inicio:'🏠 Inicio',barra:[{dest:'🏠 Inicio',icono:'🏠',txt:'Inicio'},{dest:'🍱 Contador',icono:'🍽️',txt:'Comer'},{dest:'💪 Ejercicio',icono:'💪',txt:'Fitness'},{dest:'💳 Gastos',icono:'💳',txt:'Dinero'}],mas:[],resumen:[],auto:null};}
+function f3ModosState(){
+  try{
+    if(!state.misModos||!state.misModos.modos||!state.misModos.modos.completo){
+      state.misModos={activo:'completo',predeterminado:'completo',orden:['completo'],modos:{completo:f3ModosCompleto()},ultimoTab:{}};
+      save();
+    }
+    if(!state.misModos.modos.completo)state.misModos.modos.completo=f3ModosCompleto();
+    if(state.misModos.orden.indexOf('completo')<0)state.misModos.orden.unshift('completo');
+    if(!state.misModos.ultimoTab)state.misModos.ultimoTab={};
+    // Migración: ningún modo debe tener dos botones al MISMO destino
+    try{
+      Object.keys(state.misModos.modos).forEach(function(k){
+        var m=state.misModos.modos[k];
+        if(!m||!Array.isArray(m.barra))return;
+        var vistos={};
+        m.barra=m.barra.filter(function(b){if(!b.dest)return true;if(vistos[b.dest])return false;vistos[b.dest]=1;return true;});
+      });
+    }catch(e){}
+  }catch(e){}
+}
+function f3ModoActivo(){
+  f3ModosState();
+  var id=state.misModos.activo;
+  var m=state.misModos.modos[id];
+  if(!m||!Array.isArray(m.barra)||!m.barra.length)return state.misModos.modos.completo;
+  return m;
+}
+function f3ModoNavTab(tab){
+  try{
+    if(tabs[_activeTab]===tab){f3MobileNavMark();return;} // ya estás ahí: no reiniciar ni scrollear
+    openTab(tab);
+  }catch(e){}
+}
+function f3ModoDestFn(dest){
+  try{
+    if(dest==='🏋️ Rutina')return 'quickStartRoutine()';
+    return "f3ModoNavTab('"+dest+"')";
+  }catch(e){return '';}
+}
+// ===== BARRA INFERIOR según el modo activo (≤4 + Más) =====
+function f3MobileNavRender(){
+  try{
+    var bar=document.getElementById('mobileNavBar');if(!bar)return;
+    var m=f3ModoActivo();
+    var botones=(m.barra||[]).slice(0,4);
+    var h='';
+    botones.forEach(function(b){
+      var dest=b.dest;
+      var fn=f3ModoDestFn(dest);
+      if(!fn)return;
+      h+='<div class="mnav-item" data-mnavdest="'+safeText(dest)+'" onclick="'+fn+'"><span class="mnav-ico">'+safeText(b.icono||'•')+'</span><span>'+safeText(b.txt||dest)+'</span></div>';
+    });
+    h+='<div class="mnav-item" data-mnav="mas" onclick="f3MobileMasToggle()"><span class="mnav-ico">☰</span><span>Más</span></div>';
+    bar.innerHTML=h+'<div id="mobileMasMenu" class="mnav-mas" style="display:none"></div>';
+    f3MobileNavMark();
+    // pastilla del modo
+    var pill=document.getElementById('mobileModePill');
+    if(!pill){pill=document.createElement('div');pill.id='mobileModePill';document.body.appendChild(pill);}
+    pill.innerHTML='<span class="mpill-ico" style="background:'+safeText(m.color||'#0d6043')+'">'+safeText(m.icono||'✨')+'</span><span class="mpill-txt">'+safeText(m.nombre||'Modo')+'</span><span class="mpill-flecha">▾</span>';
+    pill.onclick=function(){try{f3ModoSelectorAbrir();}catch(e){}};
+  }catch(e){}
+}
+function f3MobileNavInit(){
+  try{
+    if(document.getElementById('mobileNavBar')){f3MobileNavRender();return;}
+    var bar=document.createElement('div');
+    bar.id='mobileNavBar';
+    document.body.appendChild(bar);
+    var res=document.createElement('div');
+    res.id='modoResumenOut';
+    res.style.display='none';
+    var app=document.getElementById('app');
+    if(app&&app.parentNode)app.parentNode.insertBefore(res,app);
+    else document.body.insertBefore(res,document.body.firstChild);
+    var pill=document.createElement('div');
+    pill.id='mobileModePill';
+    if(app&&app.parentNode)app.parentNode.insertBefore(pill,app);
+    f3MobileNavRender();
+    try{
+      window.addEventListener('scroll',function(){
+        try{
+          if(window.innerWidth>768)return;
+          if((tabs[_activeTab]||'')!=='💪 Ejercicio')return;
+          if(window._scrollGuardTimer)clearTimeout(window._scrollGuardTimer);
+          window._scrollGuardTimer=setTimeout(function(){
+            try{
+              state.fitUltimoScroll=window.scrollY;
+              state.fitUltimoScrollDate=(typeof todayISO==='function')?todayISO():'';
+              save();
+            }catch(e){}
+          },600);
+        }catch(e){}
+      },{passive:true});
+    }catch(e){}
+  }catch(e){}
+}
+function f3MobileNavMark(){
+  try{
+    var bar=document.getElementById('mobileNavBar');if(!bar)return;
+    bar.querySelectorAll('.mnav-item').forEach(function(it){
+      var dest=it.getAttribute('data-mnavdest');
+      var esMas=it.getAttribute('data-mnav')==='mas';
+      var activo=!esMas&&dest&&dest===tabs[_activeTab];
+      it.classList.toggle('mnav-activo',activo);
+    });
+  }catch(e){}
+}
+// ===== HOJA INFERIOR (selector y otros) =====
+function f3ModoSheetHTML(html){
+  var ov=document.getElementById('modoSheet');
+  if(!ov){ov=document.createElement('div');ov.id='modoSheet';document.body.appendChild(ov);}
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:11600;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML='<div style="background:#fff;border-radius:18px 18px 0 0;width:min(560px,100%);max-height:80dvh;overflow-y:auto;padding:14px 16px calc(14px + env(safe-area-inset-bottom))">'+html+'</div>';
+  ov.onclick=function(ev){if(ev.target===ov)f3ModoSheetCerrar();};
+}
+function f3ModoSheetCerrar(){var ov=document.getElementById('modoSheet');if(ov)ov.remove();}
+function f3ModoSelectorAbrir(){
+  f3ModosState();
+  var activo=f3ModoActivo();
+  var filas=state.misModos.orden.map(function(id){
+    var m=state.misModos.modos[id];if(!m)return '';
+    var esActivo=id===state.misModos.activo;
+    return '<button class="btn" style="width:100%;text-align:left;font-size:14px;padding:11px 12px;margin:2px 0;'+(esActivo?'background:#eaf9f0;border-color:#9dd5b4;font-weight:900':'')+'" onclick="f3ModoActivar(\''+id+'\');f3ModoSheetCerrar();">'+safeText(m.icono||'✨')+' '+safeText(m.nombre)+(esActivo?' <b>· activo</b>':'')+(state.misModos.predeterminado===id?' <span class="muted">⭐</span>':'')+'</button>';
+  }).join('');
+  var plantillas=[
+    {t:'fitness',n:'💪 Modo Fitness',d:'Fitness · Rutina · Caminata · Peso'},
+    {t:'ahorro',n:'💰 Modo Ahorro',d:'Dinero · Gastos · Ahorro · Metas'},
+    {t:'cocina',n:'🍳 Modo Cocina',d:'Comer · Recetas · Nevera · Compras'},
+    {t:'trabajo',n:'🌴 Modo Trabajo',d:'Día a día · Casa · Vehículos · Dinero'},
+    {t:'pareja',n:'❤️ Modo Pareja/Social',d:'navegación editable, sin datos extra'},
+    {t:'vacio',n:'✨ Modo personalizado',d:'empieza vacío, paso a paso'}
+  ];
+  var galeria=plantillas.map(function(p){
+    return '<button class="btn" style="width:100%;text-align:left;font-size:13px;padding:9px 12px;margin:2px 0" onclick="f3ModoEditorNuevoDesde(\''+p.t+'\')">'+p.n+'<div class="muted" style="font-size:11px">'+p.d+'</div></button>';
+  }).join('');
+  f3ModoSheetHTML('<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:16px">✨ Mis modos</b><button class="btn" style="font-size:12px;padding:6px 10px" onclick="f3ModoSheetCerrar()">✕</button></div>'
+    +'<div class="muted" style="font-size:12px;margin-bottom:4px">Activo: '+safeText(activo.icono||'✨')+' '+safeText(activo.nombre)+'</div>'
+    +'<div style="margin-bottom:6px">'+filas+'</div>'
+    +'<button class="btn primary" style="width:100%;font-size:14px;padding:12px" onclick="f3ModoSheetCerrar();f3ModoEditorAbrir(null);">✨ Crear nuevo modo</button>'
+    +'<button class="btn" style="width:100%;font-size:14px;padding:12px" onclick="f3ModoSheetCerrar();f3ModoAdminAbrir();">⚙️ Administrar modos</button>'
+    +'<button class="btn" style="width:100%;font-size:14px;padding:12px" onclick="f3ModoActivar(\'completo\');f3ModoSheetCerrar();">🏠 Modo completo</button>'
+    +'<div class="muted" style="font-size:12px;font-weight:800;margin:10px 0 4px">Plantillas (elige una para agregarla)</div>'
+    +'<div>'+galeria+'</div>');
+}
+// ===== CONSTRUCTOR (6 pasos) =====
+function f3ModoPlantilla(tipo){
+  var base={id:'',nombre:'',icono:'✨',color:'#15704f',descripcion:'',inicio:'🏠 Inicio',barra:[],mas:[],resumen:[],auto:null};
+  if(tipo==='fitness'){base.nombre='Modo Fitness';base.icono='💪';base.color='#15704f';base.inicio='💪 Ejercicio';
+    base.barra=[{dest:'💪 Ejercicio',icono:'💪',txt:'Fitness'},{dest:'🚶 Caminata',icono:'🚶',txt:'Caminata'},{dest:'⚖️ Peso',icono:'⚖️',txt:'Peso'}];
+    base.resumen=['entrenamiento','pasos','peso','progreso'];}
+  if(tipo==='ahorro'){base.nombre='Modo Ahorro';base.icono='💰';base.color='#b8860b';base.inicio='💰 Presupuesto';
+    base.barra=[{dest:'💰 Presupuesto',icono:'💰',txt:'Dinero'},{dest:'💳 Gastos',icono:'💳',txt:'Gastos'},{dest:'🌺 Ahorro',icono:'🌺',txt:'Ahorro'},{dest:'🎯 Metas',icono:'🎯',txt:'Metas'}];
+    base.resumen=['presupuesto','gastos','tareas'];}
+  if(tipo==='cocina'){base.nombre='Modo Cocina';base.icono='🍳';base.color='#b42318';base.inicio='🍱 Contador';
+    base.barra=[{dest:'🍱 Contador',icono:'🍽️',txt:'Comer'},{dest:'🍽️ Recetas',icono:'🍽️',txt:'Recetas'},{dest:'🥗 Nevera',icono:'🥗',txt:'Nevera'},{dest:'🛒 Precios',icono:'🛒',txt:'Compras'}];
+    base.resumen=['calorias','recetas'];}
+  if(tipo==='trabajo'){base.nombre='Modo Trabajo';base.icono='🌴';base.color='#1e5a8a';base.inicio='🧤 Trabajo';
+    base.barra=[{dest:'🧤 Trabajo',icono:'🧤',txt:'Trabajo'},{dest:'🏡 Casa',icono:'🏡',txt:'Tareas'},{dest:'🚗 Vehículos',icono:'🚗',txt:'Vehículos'},{dest:'💳 Gastos',icono:'💳',txt:'Dinero'}];
+    base.resumen=['tareas','gastos'];}
+  if(tipo==='pareja'){base.nombre='Modo Pareja';base.icono='❤️';base.color='#7a4fb0';base.inicio='❤️ Ligar';base.barra=[{dest:'❤️ Ligar',icono:'❤️',txt:'Pareja'}];}
+  return base;
+}
+function f3ModoEditorAbrir(id){
+  f3ModosState();
+  var draft;
+  if(id&&state.misModos.modos[id]){
+    draft=JSON.parse(JSON.stringify(state.misModos.modos[id]));
+  }else{
+    draft=f3ModoPlantilla('vacio');
+    draft.id=(typeof ppUUID==='function')?ppUUID():('m'+Date.now());
+  }
+  if(!draft.id)draft.id=(typeof ppUUID==='function')?ppUUID():('m'+Date.now());
+  window._modoEdit={id:draft.id,esNuevo:!(id&&state.misModos.modos[id]),draft:draft,paso:1,original:(id&&state.misModos.modos[id])?JSON.parse(JSON.stringify(state.misModos.modos[id])):null};
+  f3ModoEditorModalAbrir();
+}
+function f3ModoEditorNuevoDesde(tipo){
+  f3ModoSheetCerrar();
+  f3ModosState();
+  var draft=f3ModoPlantilla(tipo);
+  draft.id=(typeof ppUUID==='function')?ppUUID():('m'+Date.now());
+  window._modoEdit={id:draft.id,esNuevo:true,draft:draft,paso:1,original:null};
+  f3ModoEditorModalAbrir();
+}
+function f3ModoEditorModalAbrir(){
+  try{
+    var modal=document.getElementById('modoEditorModal');
+    if(!modal){modal=document.createElement('div');modal.id='modoEditorModal';document.body.appendChild(modal);}
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:12100;display:flex;align-items:flex-end;justify-content:center;padding:0';
+    modal.innerHTML='<div id="modoEditorPanel" style="background:#fff;border-radius:18px 18px 0 0;width:min(640px,100%);max-height:calc(90dvh - env(safe-area-inset-bottom));overflow-y:auto;padding:14px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.3)">'
+      +'<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:16px">✨ Crear mi modo</b><button class="btn" style="font-size:12px;padding:6px 10px" onclick="f3ModoEditorCerrar()">✕</button></div>'
+      +'<div id="modoEditorBody"></div>'
+      +'</div>';
+    try{document.body.style.overflow='hidden';}catch(e){}
+    try{document.removeEventListener('keydown',f3ModoEditorKey);}catch(e){}
+    try{document.addEventListener('keydown',f3ModoEditorKey);}catch(e){}
+    if(typeof window!=='undefined')window._modoEditorModal=1;
+    f3ModoEditorRender();
+  }catch(e){}
+}
+function f3ModoEditorKey(ev){if(ev&&ev.key==='Escape'){ev.preventDefault();try{f3ModoEditorCerrar();}catch(e){}}}
+function f3ModoSucio(){
+  try{
+    var e=window._modoEdit;if(!e)return false;
+    if(e.esNuevo){
+      var vacio=f3ModoPlantilla('vacio');vacio.id=e.draft.id;
+      return JSON.stringify(e.draft)!==JSON.stringify(vacio);
+    }
+    return JSON.stringify(e.draft)!==JSON.stringify(e.original);
+  }catch(err){return false;}
+}
+function f3ModoEditorCerrar(){
+  if(f3ModoSucio()&&typeof confirm==='function'&&!confirm('Hay cambios sin guardar. ¿Descartarlos?'))return; // Cancelar = seguir editando
+  f3ModoEditorDescartar();
+}
+function f3ModoEditorDescartar(){
+  try{
+    window._modoEdit=null;
+    var modal=document.getElementById('modoEditorModal');
+    if(modal)modal.remove();
+    try{document.body.style.overflow='';}catch(e){}
+    try{document.removeEventListener('keydown',f3ModoEditorKey);}catch(e){}
+    if(typeof window!=='undefined')window._modoEditorModal=0;
+  }catch(e){}
+}
+function f3ModoEditorIr(paso){
+  var e=window._modoEdit;if(!e)return;
+  e.paso=Math.max(1,Math.min(6,paso));
+  f3ModoEditorRender();
+}
+function f3ModoEditorRender(){
+  var e=window._modoEdit;if(!e)return;
+  var body=document.getElementById('modoEditorBody');if(!body)return;
+  var d=e.draft;
+  var pasos=['Identidad','Pantalla inicial','Barra inferior','Más','Resumen','Vista previa'];
+  var html='<div class="row" style="gap:4px;flex-wrap:wrap;margin-bottom:8px">'+pasos.map(function(p,idx){var n=idx+1;var act=n===e.paso;return '<span class="pill" style="font-size:10px;'+(act?'background:#15704f;color:#fff;border:none':'')+'">'+(act?'✓ ':'')+n+'. '+p+'</span>';}).join('')+'</div>';
+  if(e.paso===1){
+    html+='<label style="font-size:13px;font-weight:800">Nombre del modo</label><input id="modoNombre" value="'+safeText(d.nombre)+'" oninput="f3ModoSetCampo(\'nombre\',event)" placeholder="Ej. Modo ligar, Ahorro, Gym…" style="width:100%;box-sizing:border-box;margin-top:4px;padding:10px;border:1.5px solid #cbd8cf;border-radius:10px">';
+    html+='<label style="font-size:13px;font-weight:800;margin-top:8px;display:block">Icono</label><select id="modoIcono" onchange="f3ModoSetCampo(\'icono\',event)" style="width:100%;margin-top:4px;padding:10px">'+['💪','💰','🍳','🌴','❤️','🌙','✨','🏠','⚡','🎯','🧘','📚'].map(function(ic){return '<option'+(d.icono===ic?' selected':'')+'>'+ic+'</option>';}).join('')+'</select>';
+    html+='<label style="font-size:13px;font-weight:800;margin-top:8px;display:block">Color</label><div class="row" style="gap:8px;margin-top:4px">'+MIS_MODOS_COLORES.map(function(c){return '<button class="btn" style="width:38px;height:38px;min-height:38px;border-radius:50%;background:'+c+';'+(d.color===c?'box-shadow:0 0 0 3px #15704f;':'')+'" onclick="f3ModoSetColor(\''+c+'\')"></button>';}).join('')+'</div>';
+    html+='<label style="font-size:13px;font-weight:800;margin-top:8px;display:block">Descripción (opcional)</label><input id="modoDesc" value="'+safeText(d.descripcion)+'" oninput="f3ModoSetCampo(\'descripcion\',event)" style="width:100%;box-sizing:border-box;margin-top:4px;padding:10px;border:1.5px solid #cbd8cf;border-radius:10px">';
+  }else if(e.paso===2){
+    html+='<label style="font-size:13px;font-weight:800">Pantalla inicial (sección real de la app)</label><select id="modoInicio" onchange="f3ModoSetCampo(\'inicio\',event)" style="width:100%;margin-top:4px;padding:10px">'+MIS_MODOS_TABS.map(function(tb){return '<option'+(d.inicio===tb?' selected':'')+'>'+safeText(tb)+'</option>';}).join('')+'</select>';
+    html+='<div class="muted" style="font-size:11px;margin-top:4px">Se abre al activar este modo (o la última sección que usaste en él).</div>';
+  }else if(e.paso===3){
+    html+='<b style="font-size:13px">Barra inferior (máximo 4 + Más)</b>';
+    html+='<div class="muted" style="font-size:11px;margin:2px 0 6px">"Más" siempre está disponible con Cambiar modo, Administrar modos, Modo completo y Ajustes.</div>';
+    (d.barra||[]).forEach(function(b,bi){
+      html+='<div class="row" style="gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap">'
+        +'<input value="'+safeText(b.icono||'')+'" placeholder="icono" oninput="f3ModoSetBtn('+bi+',\'icono\',event)" style="width:58px;padding:9px;border:1.5px solid #cbd8cf;border-radius:10px">'
+        +'<input value="'+safeText(b.txt||'')+'" placeholder="texto" oninput="f3ModoSetBtn('+bi+',\'txt\',event)" style="flex:1;min-width:90px;padding:9px;border:1.5px solid #cbd8cf;border-radius:10px">'
+        +'<select onchange="f3ModoSetBtn('+bi+',\'dest\',event)" style="flex:2;min-width:140px;padding:9px;border:1.5px solid #cbd8cf;border-radius:10px">'
+        +'<option value="">— destino —</option>'
+        +MIS_MODOS_TABS.map(function(tb){return '<option'+(b.dest===tb?' selected':'')+'>'+safeText(tb)+'</option>';}).join('')
+        +MIS_MODOS_ACCIONES.map(function(a){return '<option'+(b.dest===a.id?' selected':'')+'>'+safeText(a.id)+'</option>';}).join('')
+        +'</select>'
+        +'<button class="btn" style="font-size:12px;padding:8px 10px" onclick="f3ModoBtnSubir('+bi+')">▲</button>'
+        +'<button class="btn" style="font-size:12px;padding:8px 10px" onclick="f3ModoBtnBajar('+bi+')">▼</button>'
+        +'<button class="btn" style="font-size:12px;padding:8px 10px;color:#b42318" onclick="f3ModoBtnQuitar('+bi+')">✕</button>'
+        +'</div>';
+    });
+    html+='<div id="modoBarraError" class="warn" style="font-size:12px;margin-top:6px;display:none"></div>';
+    if((d.barra||[]).length<4)html+='<button class="btn" style="width:100%;margin-top:8px;padding:11px" onclick="f3ModoBtnAgregar()">➕ Agregar botón</button>';
+  }else if(e.paso===4){
+    html+='<b style="font-size:13px">Contenido de "Más"</b><div class="muted" style="font-size:11px;margin:2px 0 6px">Elige accesos extra. Cambiar modo, Administrar modos, Modo completo y Ajustes SIEMPRE están disponibles.</div>';
+    var usados={};d.barra.forEach(function(b){if(b.dest)usados[b.dest]=1;});
+    MIS_MODOS_TABS.forEach(function(tb){
+      if(usados[tb])return;
+      var on=(d.mas||[]).indexOf(tb)>=0;
+      html+='<label class="row" style="align-items:center;gap:8px;padding:9px 6px;border-bottom:1px dashed #e4ebe6"><input type="checkbox" '+(on?'checked':'')+' onchange="f3ModoToggleMas(\''+tb+'\')">'+safeText(tb)+'</label>';
+    });
+  }else if(e.paso===5){
+    html+='<b style="font-size:13px">Tarjetas de resumen en la pantalla inicial</b><div class="muted" style="font-size:11px;margin:2px 0 6px">Solo tarjetas y datos que ya existen (sin duplicar ni crear registros).</div>';
+    MIS_MODOS_RESUMEN.forEach(function(r){
+      var on=(d.resumen||[]).indexOf(r.id)>=0;
+      html+='<label class="row" style="align-items:center;gap:8px;padding:9px 6px;border-bottom:1px dashed #e4ebe6"><input type="checkbox" '+(on?'checked':'')+' onchange="f3ModoToggleResumen(\''+r.id+'\')">'+r.txt+'</label>';
+    });
+  }else{
+    // paso 6: vista previa
+    var previaBotones=(d.barra||[]).slice(0,4).map(function(b){return '<span class="pill" style="font-size:11px;background:#f4f6f5">'+safeText(b.icono||'•')+' '+safeText(b.txt||b.dest)+'</span>';}).join(' ');
+    html+='<div style="border:2px solid #d9e3db;border-radius:20px;padding:12px;background:#fafcfb">'
+      +'<div class="row" style="align-items:center;gap:8px"><span class="pill" style="background:'+safeText(d.color)+';color:#fff;border:none;font-size:12px">'+safeText(d.icono||'✨')+' '+safeText(d.nombre||'Modo')+' ▾</span></div>'
+      +'<div class="muted" style="font-size:11px;margin-top:6px">Pantalla inicial: '+safeText(d.inicio)+'</div>'
+      +'<div style="margin-top:10px;padding:14px;background:#fff;border:1px solid #e4ebe6;border-radius:12px;text-align:center;color:#8a9790;font-size:12px">(contenido real de la sección)</div>'
+      +'<div class="row" style="gap:6px;margin-top:10px;justify-content:center;flex-wrap:wrap">'+previaBotones+'<span class="pill" style="font-size:11px;background:#eaf9f0;border-color:#9dd5b4">☰ Más</span></div>'
+      +'</div>';
+  }
+  html+='<div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap">';
+  if(e.paso>1)html+='<button class="btn" style="flex:1;padding:12px" onclick="f3ModoEditorIr('+(e.paso-1)+')">← Atrás</button>';
+  if(e.paso<6)html+='<button class="btn primary" style="flex:1;padding:12px" onclick="f3ModoEditorIr('+(e.paso+1)+')">Siguiente →</button>';
+  html+='<button class="btn" style="flex:1;padding:12px" onclick="f3ModoEditorCerrar()">Cancelar</button>';
+  if(e.paso===6)html+='<button class="btn primary" style="flex:1;padding:12px;font-weight:900" onclick="f3ModoGuardar()">💾 Guardar modo</button>';
+  html+='</div>';
+  body.innerHTML=html;
+}
+function f3ModoSetCampo(campo,ev){var e=window._modoEdit;if(!e)return;e.draft[campo]=ev&&ev.target?ev.target.value:'';}
+function f3ModoSetColor(c){var e=window._modoEdit;if(!e)return;e.draft.color=c;f3ModoEditorRender();}
+function f3ModoBtnAgregar(){var e=window._modoEdit;if(!e)return;if((e.draft.barra||[]).length>=4)return;e.draft.barra=e.draft.barra||[];e.draft.barra.push({dest:'',icono:'',txt:''});f3ModoEditorRender();}
+function f3ModoBtnQuitar(bi){var e=window._modoEdit;if(!e)return;e.draft.barra.splice(bi,1);f3ModoEditorRender();}
+function f3ModoBtnSubir(bi){var e=window._modoEdit;if(!e||bi<=0)return;var b=e.draft.barra;var t=b[bi];b[bi]=b[bi-1];b[bi-1]=t;f3ModoEditorRender();}
+function f3ModoBtnBajar(bi){var e=window._modoEdit;if(!e)return;var b=e.draft.barra;if(bi>=b.length-1)return;var t=b[bi];b[bi]=b[bi+1];b[bi+1]=t;f3ModoEditorRender();}
+function f3ModoSetBtn(bi,campo,ev){var e=window._modoEdit;if(!e)return;e.draft.barra[bi][campo]=ev&&ev.target?ev.target.value:'';if(campo==='dest')f3ModoBarraValidar();}
+function f3ModoToggleMas(tb){var e=window._modoEdit;if(!e)return;var m=e.draft.mas||[];var i=m.indexOf(tb);if(i>=0)m.splice(i,1);else m.push(tb);e.draft.mas=m;f3ModoEditorRender();}
+function f3ModoToggleResumen(id){var e=window._modoEdit;if(!e)return;var m=e.draft.resumen||[];var i=m.indexOf(id);if(i>=0)m.splice(i,1);else m.push(id);e.draft.resumen=m;f3ModoEditorRender();}
+function f3ModoBarraValidar(){
+  var e=window._modoEdit;if(!e)return true;
+  var err=document.getElementById('modoBarraError');
+  var vistos={},msgs=[];
+  e.draft.barra.forEach(function(b){
+    if(!b.dest)msgs.push('Hay un botón sin destino.');
+    else if(vistos[b.dest])msgs.push('Destino repetido: '+b.dest);
+    else vistos[b.dest]=1;
+  });
+  if(err){err.style.display=msgs.length?'block':'none';err.textContent='⚠ '+msgs[0];}
+  return msgs.length===0;
+}
+function f3ModoGuardar(){
+  var e=window._modoEdit;if(!e)return;
+  var d=e.draft;
+  if(!String(d.nombre||'').trim()){if(typeof alert==='function')alert('Escribe un nombre para el modo.');f3ModoEditorIr(1);return;}
+  var validos=(d.barra||[]).filter(function(b){return !!b.dest;});
+  if(!validos.length){if(typeof alert==='function')alert('Agrega por lo menos un botón con destino (además de Más).');f3ModoEditorIr(3);return;}
+  if(!f3ModoBarraValidar())return;
+  f3ModosState();
+  var id=d.id||((typeof ppUUID==='function')?ppUUID():('m'+Date.now()));
+  d.id=id;
+  state.misModos.modos[id]=JSON.parse(JSON.stringify(d));
+  if(state.misModos.orden.indexOf(id)<0)state.misModos.orden.push(id);
+  state.misModos.activo=id; // el modo recién guardado queda activo
+  save(true);
+  f3ModoEditorDescartar();
+  f3MobileNavRender();
+  try{openTab(d.inicio);}catch(err){}
+  if(typeof toastReg==='function')toastReg('✓ '+d.nombre+' activado');
+}
+// ===== ACTIVAR / ADMINISTRAR =====
+function f3ModoActivar(id){
+  f3ModosState();
+  var m=state.misModos.modos[id];
+  if(!m||!Array.isArray(m.barra)||!m.barra.length){m=state.misModos.modos.completo;id='completo';}
+  state.misModos.activo=id;
+  save();
+  f3MobileNavRender();
+  try{if(typeof f3FondoCargarVisual==='function')f3FondoCargarVisual();}catch(e){}
+  // restaurar la última subsección útil de este modo (o su pantalla inicial)
+  var destino=state.misModos.ultimoTab[id];
+  if(!destino||MIS_MODOS_TABS.indexOf(destino)<0)destino=m.inicio;
+  try{openTab(destino);}catch(e){}
+  if(typeof toastReg==='function')toastReg('✓ '+m.nombre+' activado');
+}
+function f3ModoAdminAbrir(){
+  f3ModosState();
+  var filas=state.misModos.orden.map(function(id,idx){
+    var m=state.misModos.modos[id];if(!m)return '';
+    var esCompleto=id==='completo';
+    var bots=(m.barra||[]).map(function(b){return safeText(b.txt||b.dest);}).join(' · ')||'—';
+    return '<div class="item" draggable="'+(esCompleto?'false':'true')+'" ondragstart="f3ModoDragStart(\''+id+'\')" ondragover="event.preventDefault()" ondrop="f3ModoDropSobre(\''+id+'\')" style="padding:8px 4px;border-bottom:1px solid #e4ebe6">'
+      +'<div class="row" style="align-items:center;gap:8px;flex-wrap:wrap"><span class="pill" style="background:'+safeText(m.color)+';color:#fff;border:none;font-size:12px">'+safeText(m.icono||'✨')+'</span><b style="flex:1;min-width:100px">'+safeText(m.nombre)+(state.misModos.predeterminado===id?' ⭐':'')+'</b><span class="muted" style="font-size:11px">'+safeText(m.inicio)+'</span></div>'
+      +'<div class="muted" style="font-size:11px;margin:2px 0 4px">'+bots+'</div>'
+      +'<div class="row" style="gap:6px;flex-wrap:wrap">'
+      +'<button class="btn" style="font-size:11px;padding:7px 10px" onclick="f3ModoActivar(\''+id+'\');f3ModoSheetCerrar();">▶ Abrir</button>'
+      +'<button class="btn" style="font-size:11px;padding:7px 10px" onclick="f3ModoSheetCerrar();f3ModoEditorAbrir(\''+id+'\');">✏️ Editar</button>'
+      +'<button class="btn" style="font-size:11px;padding:7px 10px" onclick="f3ModoDuplicar(\''+id+'\');">⧉ Duplicar</button>'
+      +'<button class="btn" style="font-size:11px;padding:7px 10px" onclick="f3ModoPredeterminado(\''+id+'\');">⭐ Predeterminado</button>'
+      +'<button class="btn" style="font-size:11px;padding:7px 10px" onclick="f3ModoSubir(\''+id+'\')">▲</button>'
+      +'<button class="btn" style="font-size:11px;padding:7px 10px" onclick="f3ModoBajar(\''+id+'\')">▼</button>'
+      +(esCompleto?'':'<button class="btn" style="font-size:11px;padding:7px 10px;color:#b42318" onclick="f3ModoEliminar(\''+id+'\')">🗑 Eliminar</button>')
+      +'</div></div>';
+  }).join('');
+  f3ModoSheetHTML('<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:16px">⚙️ Administrar mis modos</b><button class="btn" style="font-size:12px;padding:6px 10px" onclick="f3ModoSheetCerrar()">✕</button></div>'
+    +'<div class="muted" style="font-size:11px;margin-bottom:6px">Arrastra o usa ▲▼ para reordenar. El Modo completo no se puede borrar.</div>'
+    +filas);
+}
+function f3ModoDuplicar(id){
+  f3ModosState();
+  var m=state.misModos.modos[id];if(!m)return;
+  var copia=JSON.parse(JSON.stringify(m));
+  copia.id=(typeof ppUUID==='function')?ppUUID():('m'+Date.now());
+  copia.nombre=m.nombre+' (copia)';
+  state.misModos.modos[copia.id]=copia;
+  var i=state.misModos.orden.indexOf(id);
+  state.misModos.orden.splice(i+1,0,copia.id);
+  save();
+  f3ModoAdminAbrir();
+  if(typeof toastReg==='function')toastReg('⧉ Modo duplicado: '+copia.nombre);
+}
+function f3ModoPredeterminado(id){f3ModosState();state.misModos.predeterminado=id;save();f3ModoAdminAbrir();if(typeof toastReg==='function')toastReg('⭐ Modo predeterminado actualizado');}
+function f3ModoSubir(id){f3ModosState();var o=state.misModos.orden;var i=o.indexOf(id);if(i<=0)return;var t=o[i];o[i]=o[i-1];o[i-1]=t;save();f3ModoAdminAbrir();}
+function f3ModoBajar(id){f3ModosState();var o=state.misModos.orden;var i=o.indexOf(id);if(i<0||i>=o.length-1)return;var t=o[i];o[i]=o[i+1];o[i+1]=t;save();f3ModoAdminAbrir();}
+function f3ModoEliminar(id){
+  f3ModosState();
+  if(id==='completo')return;
+  var m=state.misModos.modos[id];if(!m)return;
+  if(!confirm('¿Eliminar este modo? No se borrarán tus rutinas, comidas, registros ni datos.'))return;
+  // si es el activo, volver primero al Modo completo
+  if(state.misModos.activo===id){state.misModos.activo='completo';f3MobileNavRender();}
+  delete state.misModos.modos[id];
+  state.misModos.orden=state.misModos.orden.filter(function(x){return x!==id;});
+  if(state.misModos.predeterminado===id)state.misModos.predeterminado='completo';
+  save();
+  f3ModoAdminAbrir();
+  if(typeof toastReg==='function')toastReg('🗑 Modo eliminado (tus datos siguen intactos)');
+}
+var _modoDragId=null;
+function f3ModoDragStart(id){_modoDragId=id;}
+function f3ModoDropSobre(id){
+  try{
+    if(!_modoDragId||_modoDragId===id||id==='completo'){_modoDragId=null;return;}
+    f3ModosState();
+    var o=state.misModos.orden;
+    var from=o.indexOf(_modoDragId);var to=o.indexOf(id);
+    if(from<0||to<0){_modoDragId=null;return;}
+    o.splice(from,1);o.splice(to,0,_modoDragId);
+    _modoDragId=null;
+    save();
+    f3ModoAdminAbrir();
+  }catch(e){_modoDragId=null;}
+}
+// ===== Más (contenido del modo + fijos) =====
+function f3MobileMasToggle(){
+  var m=document.getElementById('mobileMasMenu');if(!m)return;
+  if(m.style.display!=='none'){m.style.display='none';return;}
+  var modo=f3ModoActivo();
+  var items='';
+  (modo.mas||[]).forEach(function(tb){
+    items+='<button class="btn" style="width:100%;text-align:left;font-size:14px;padding:10px 12px" onclick="f3MobileMasToggle();openTab(\''+tb+'\')">'+safeText(tb)+'</button>';
+  });
+  MIS_MODOS_FIJOS.forEach(function(f){
+    items+='<button class="btn" style="width:100%;text-align:left;font-size:14px;padding:10px 12px" onclick="f3MobileMasToggle();'+f.fn+'">'+f.icono+' '+f.txt+'</button>';
+  });
+  m.innerHTML=items;
+  m.style.display='block';
+}
+// ===== RESUMEN en la pantalla inicial del modo (tarjetas reales) =====
+function f3ModoResumenHTML(m){
+  try{
+    if(!m||!(m.resumen||[]).length)return '';
+    var h='';
+    var hoy=(typeof todayISO==='function')?todayISO():'';
+    m.resumen.forEach(function(r){
+      var valor='—',sub='';
+      if(r==='entrenamiento'){
+        var ft=state.fitnessToday;
+        if(ft&&ft.date===hoy&&ft.plan&&ft.plan.length){
+          var hechos=(ft.checked?ft.plan.filter(function(x,i){return ft.checked[i];}).length:0);
+          valor=hechos+'/'+ft.plan.length;sub='ejercicios hoy';
+        }else{sub='descanso o sin rutina';}
+      }else if(r==='calorias'){
+        var cal=((state.meals||[]).filter(function(x){return x.date===hoy;}).reduce(function(a,x){return a+(+x.k||0);},0));
+        valor=cal?String(cal):'0';sub='kcal hoy';
+      }else if(r==='pasos'){
+        var pasos=((state.walks||[]).slice(-1)[0]&&(state.walks||[]).slice(-1)[0].steps)||0;
+        valor=String(pasos);sub='pasos últimos';
+      }else if(r==='peso'){
+        var p=((state.weight||[]).slice(-1)[0]&&(state.weight||[]).slice(-1)[0].weight)||null;
+        valor=p!=null?String(p):'—';sub='peso actual';
+      }else if(r==='gastos'){
+        var mes=hoy.slice(0,7);
+        var g=((state.expenses||[]).filter(function(x){return (x.date||'').indexOf(mes)===0;}).reduce(function(a,x){return a+(+x.amount||0);},0));
+        valor=String(Math.round(g));sub='gastos del mes';
+      }else if(r==='presupuesto'){
+        var mes2=hoy.slice(0,7);
+        var in2=(state.budget||[]).filter(function(x){return x.amount>0&&(x.date||'').indexOf(mes2)===0;}).reduce(function(a,x){return a+(+x.amount||0);},0);
+        var out2=(state.budget||[]).filter(function(x){return x.amount<0&&(x.date||'').indexOf(mes2)===0;}).reduce(function(a,x){return a+(+x.amount||0);},0);
+        valor=String(Math.round(in2+out2));sub='balance del mes';
+      }else if(r==='tareas'){
+        var pend=((state.tasks||[]).filter(function(x){return !x.done;}).length);
+        valor=String(pend);sub='tareas pendientes';
+      }else if(r==='recetas'){
+        valor=String(((state.recipeFavorites||[]).length));sub='recetas favoritas';
+      }else if(r==='progreso'){
+        var sem=hoy.slice(0,8)+'';
+        var n=(state.workoutLog||[]).filter(function(x){return !x.deleted&&(x.localDate||x.date||'').slice(0,8)>=hoy.slice(0,8);}).length;
+        valor=String(n);sub='series esta semana';
+      }
+      h+='<div class="mmodo-tarjeta"><b>'+valor+'</b><span>'+sub+'</span></div>';
+    });
+    if(!h)return '';
+    return '<div id="modoResumenInner" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 10px 4px">'+h+'</div>';
+  }catch(e){return '';}
+}
+function f3ModoResumenActualizar(){
+  try{
+    var out=document.getElementById('modoResumenOut');
+    if(!out){return;}
+    if(window.innerWidth>768){out.style.display='none';return;}
+    var m=f3ModoActivo();
+    var esInicio=m&&tabs[_activeTab]===m.inicio;
+    if(!esInicio||!(m.resumen||[]).length){out.style.display='none';return;}
+    out.innerHTML=f3ModoResumenHTML(m);
+    out.style.display='block';
+  }catch(e){}
+}
+
+// ===== 🎨 FONDO PERSONALIZADO (una sola fuente, un solo editor) =====
+// Imagen: IndexedDB 'media' (blob comprimido). Estado: solo id+configuración.
+// Capa exclusiva #ppCustomBackground: fixed, detrás del contenido, delante
+// del fondo predeterminado. La foto de perfil NUNCA se toca.
+function f3FondoCfg(){state.fondoCfg=state.fondoCfg||{imgId:null,alcance:'app',modoId:null,ajuste:'cover',posicion:'centro',brillo:100,oscurecer:20,desenfoque:0,transparencia:100,nombreArchivo:null,actualizado:null};return state.fondoCfg;}
+function f3FondoCapa(){
+  var capa=document.getElementById('ppCustomBackground');
+  if(!capa){
+    capa=document.createElement('div');
+    capa.id='ppCustomBackground';
+    capa.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;background-color:transparent';
+    document.body.insertBefore(capa,document.body.firstChild);
+  }
+  return capa;
+}
+function f3FondoAplicaEnModo(cfg){
+  try{
+    if(cfg.alcance==='app')return true;
+    if(cfg.alcance==='modo'&&typeof f3ModoActivo==='function'&&cfg.modoId===f3ModoActivo().id)return true;
+    return false;
+  }catch(e){return false;}
+}
+// Aplicar el fondo REAL al DOM (y verificar que quedó aplicado).
+function f3FondoAplicarVisual(url){
+  try{
+    var cfg=f3FondoCfg();
+    var capa=f3FondoCapa();
+    var aplica=f3FondoAplicaEnModo(cfg)&&!!url;
+    if(!aplica){
+      capa.style.background='';
+      capa.style.filter='';
+      capa.style.opacity='';
+      try{document.body.style.background='';}catch(e){}
+      return false;
+    }
+    // el fondo predeterminado del body se vuelve transparente para que la
+    // capa sea lo único detrás del contenido (nada opaco la tapa)
+    try{document.body.style.background='transparent';}catch(e){}
+    var posMap={centro:'center',arriba:'top',abajo:'bottom',izquierda:'left',derecha:'right'};
+    var sizeMap={cover:'cover',contain:'contain',repeat:'auto'};
+    var osc=(cfg.oscurecer||0)/100;
+    capa.style.backgroundImage='linear-gradient(rgba(0,0,0,'+osc+'),rgba(0,0,0,'+osc+')),url("'+url+'")';
+    capa.style.backgroundSize=sizeMap[cfg.ajuste]||'cover';
+    capa.style.backgroundPosition=(posMap[cfg.posicion]||'center')+' center';
+    capa.style.backgroundRepeat=(cfg.ajuste==='repeat')?'repeat':'no-repeat';
+    var filtros=[];
+    if(cfg.brillo!=null&&cfg.brillo!==100)filtros.push('brightness('+(cfg.brillo/100)+')');
+    if(cfg.desenfoque)filtros.push('blur('+cfg.desenfoque+'px)');
+    capa.style.filter=filtros.join(' ');
+    capa.style.opacity=((cfg.transparencia!=null?cfg.transparencia:100)/100);
+    // verificación real: la capa tiene imagen Y está visible
+    return capa.style.backgroundImage.indexOf('url(')>=0&&capa.style.opacity!=='0';
+  }catch(e){return false;}
+}
+// Cargar al arrancar / al cambiar de modo: reconstruye la URL desde IDB.
+function f3FondoCargarVisual(){
+  try{
+    var cfg=f3FondoCfg();
+    if(!cfg.imgId){f3FondoAplicarVisual(null);return;}
+    if(window._fondoObjectURL){f3FondoAplicarVisual(window._fondoObjectURL);return;}
+    openPersonalDB().then(function(db){
+      try{
+        var tx=db.transaction('media','readonly');
+        var req=tx.objectStore('media').get('fondo_usuario');
+        req.onsuccess=function(){
+          try{
+            if(req.result&&req.result instanceof Blob){
+              if(window._fondoObjectURL)URL.revokeObjectURL(window._fondoObjectURL);
+              window._fondoObjectURL=URL.createObjectURL(req.result);
+              f3FondoAplicarVisual(window._fondoObjectURL);
+            }else{
+              f3FondoAplicarVisual(null);
+            }
+          }catch(e){f3FondoAplicarVisual(null);}
+        };
+        req.onerror=function(){f3FondoAplicarVisual(null);};
+      }catch(e){f3FondoAplicarVisual(null);}
+    }).catch(function(){f3FondoAplicarVisual(null);});
+  }catch(e){}
+}
+// ===== EDITOR (hoja inferior, borrador: nada se guarda hasta Aplicar) =====
+function f3FondoAbrir(){
+  try{
+    var cfg=f3FondoCfg();
+    // borrador: copia de la configuración guardada + imagen pendiente
+    window._fondoBorrador=JSON.parse(JSON.stringify(cfg));
+    window._fondoPendienteURL=null;
+    window._fondoPendienteDataURL=null;
+    f3FondoEditorRender();
+    // la vista previa debe mostrar el fondo APLICADO: reconstruir la objectURL
+    // desde IndexedDB (mismo recurso que el fondo general, sin duplicar blob)
+    if(cfg.imgId&&!window._fondoObjectURL){
+      openPersonalDB().then(function(db){
+        try{
+          var tx=db.transaction('media','readonly');
+          var req=tx.objectStore('media').get('fondo_usuario');
+          req.onsuccess=function(){
+            try{
+              if(req.result&&req.result instanceof Blob){
+                window._fondoObjectURL=URL.createObjectURL(req.result);
+                f3FondoPreviewUpdate(window._fondoObjectURL);
+              }
+            }catch(e){}
+          };
+        }catch(e){}
+      }).catch(function(){});
+    }
+  }catch(e){}
+}
+function f3FondoEditorRender(){
+  try{
+    var b=window._fondoBorrador||f3FondoCfg();
+    var actual=window._fondoPendienteURL||(b.imgId&&window._fondoObjectURL)||null;
+    var html='<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:16px">🎨 Fondo de pantalla</b><button class="btn" style="font-size:12px;padding:6px 10px" onclick="f3FondoCancelar()">✕</button></div>';
+    html+='<div id="fondoPreview" style="height:110px;border-radius:14px;border:1.5px solid #cbd8cf;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:#8a9790;font-size:12px;background:#f4f6f5">'+(actual?'':'Fondo predeterminado')+'</div>';
+    html+='<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px">'
+      +'<label class="btn primary" style="flex:1;padding:12px;min-height:44px;text-align:center;cursor:pointer">🖼️ Elegir imagen<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="f3FondoInputChange(this)"></label>'
+      +'<label class="btn" style="flex:1;padding:12px;min-height:44px;text-align:center;cursor:pointer">📷 Tomar foto<input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" style="display:none" onchange="f3FondoInputChange(this)"></label>'
+      +'</div>';
+    if(b.imgId||window._fondoPendienteDataURL){
+      html+='<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px">'
+        +'<label class="btn" style="flex:1;padding:11px;min-height:44px;text-align:center;cursor:pointer">Cambiar imagen<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="f3FondoInputChange(this)"></label>'
+        +'<button class="btn" style="flex:1;padding:11px;min-height:44px" onclick="f3FondoQuitar()">🚫 Quitar fondo</button>'
+        +'</div>';
+    }
+    html+='<label style="font-size:13px;font-weight:800">Ajuste</label><select id="fondoAjuste" onchange="f3FondoBorradorSet(\'ajuste\',event)" style="width:100%;margin:4px 0 8px;padding:10px">'
+      +[['cover','Cubrir'],['contain','Contener'],['repeat','Repetir']].map(function(a){return '<option value="'+a[0]+'"'+(b.ajuste===a[0]?' selected':'')+'>'+a[1]+'</option>';}).join('')+'</select>';
+    html+='<label style="font-size:13px;font-weight:800">Posición</label><select id="fondoPosicion" onchange="f3FondoBorradorSet(\'posicion\',event)" style="width:100%;margin:4px 0 8px;padding:10px">'
+      +[['centro','Centro'],['arriba','Arriba'],['abajo','Abajo'],['izquierda','Izquierda'],['derecha','Derecha']].map(function(a){return '<option value="'+a[0]+'"'+(b.posicion===a[0]?' selected':'')+'>'+a[1]+'</option>';}).join('')+'</select>';
+    html+='<label style="font-size:13px;font-weight:800">Brillo · '+b.brillo+'%</label><input type="range" min="40" max="160" value="'+b.brillo+'" oninput="f3FondoBorradorSet(\'brillo\',event)" style="width:100%">';
+    html+='<label style="font-size:13px;font-weight:800">Oscurecimiento · '+b.oscurecer+'%</label><input type="range" min="0" max="70" value="'+b.oscurecer+'" oninput="f3FondoBorradorSet(\'oscurecer\',event)" style="width:100%">';
+    html+='<label style="font-size:13px;font-weight:800">Desenfoque · '+b.desenfoque+'px</label><input type="range" min="0" max="12" value="'+b.desenfoque+'" oninput="f3FondoBorradorSet(\'desenfoque\',event)" style="width:100%">';
+    html+='<label style="font-size:13px;font-weight:800">Transparencia · '+b.transparencia+'%</label><input type="range" min="30" max="100" value="'+b.transparencia+'" oninput="f3FondoBorradorSet(\'transparencia\',event)" style="width:100%">';
+    html+='<label class="row" style="align-items:center;gap:8px;padding:10px 4px"><input type="checkbox" '+(b.alcance==='app'?'checked':'')+' onchange="f3FondoBorradorAlcance(this)">Aplicar a toda la app</label>';
+    html+='<div class="muted" style="font-size:11px;margin-bottom:8px">Sin marcar, el fondo aplica SOLO al modo actual ('+safeText((typeof f3ModoActivo==='function'?f3ModoActivo().nombre:'Modo'))+').</div>';
+    html+='<div id="fondoError" class="warn" style="display:none;font-size:12px;margin-bottom:8px"></div>';
+    html+='<div class="row" style="gap:8px"><button class="btn primary" style="flex:1;padding:13px;font-weight:900;min-height:44px" onclick="f3FondoAplicar()">✓ Aplicar</button><button class="btn" style="flex:1;padding:13px;min-height:44px" onclick="f3FondoCancelar()">Cancelar</button></div>';
+    f3ModoSheetHTML(html);
+    f3FondoPreviewUpdate(actual);
+  }catch(e){}
+}
+function f3FondoBorradorSet(campo,ev){
+  try{
+    var b=window._fondoBorrador;if(!b)return;
+    var v=ev&&ev.target?ev.target.value:'';
+    b[campo]=(campo==='brillo'||campo==='oscurecer'||campo==='desenfoque'||campo==='transparencia')?+v:v;
+    f3FondoPreviewUpdate(window._fondoPendienteURL||window._fondoObjectURL);
+  }catch(e){}
+}
+function f3FondoBorradorAlcance(cb){
+  try{
+    var b=window._fondoBorrador;if(!b)return;
+    b.alcance=cb.checked?'app':'modo';
+    if(b.alcance==='modo'&&typeof f3ModoActivo==='function')b.modoId=f3ModoActivo().id;
+    f3FondoEditorRender();
+  }catch(e){}
+}
+function f3FondoCancelar(){
+  // descarta TODO lo temporal; lo ya guardado queda intacto
+  try{
+    window._fondoBorrador=null;
+    window._fondoPendienteURL=null;
+    window._fondoPendienteDataURL=null;
+    var o=document.getElementById('modoSheet');if(o)o.remove();
+    // restaurar el visual guardado (por si la vista previa lo cambió)
+    f3FondoCargarVisual();
+  }catch(e){}
+}
+function f3FondoQuitar(){
+  if(typeof confirm==='function'&&!confirm('¿Quitar el fondo personalizado y volver al predeterminado? No se borrará nada más.'))return;
+  try{
+    var b=window._fondoBorrador;if(!b)return;
+    b.imgId=null;b.nombreArchivo=null;
+    window._fondoPendienteURL=null;window._fondoPendienteDataURL=null;
+    f3FondoEditorRender();
+  }catch(e){}
+}
+function f3FondoInputChange(inp){
+  try{
+    var f=inp&&inp.files&&inp.files[0];
+    if(f)f3FondoProcesar(f);
+    inp.value='';
+  }catch(e){}
+}
+function f3FondoElegir(){f3FondoPicker('files');}
+function f3FondoTomarFoto(){f3FondoPicker('capture');}
+function f3FondoPicker(kind){
+  try{
+    var inp=document.createElement('input');
+    inp.type='file';inp.accept='image/jpeg,image/png,image/webp';
+    inp.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0';
+    if(kind==='capture')inp.setAttribute('capture','environment');
+    inp.onchange=function(){try{f3FondoProcesar(inp.files&&inp.files[0]);}finally{try{inp.remove();}catch(e){}}};
+    // el input DEBE estar en el DOM para abrir el selector en todos los navegadores
+    document.body.appendChild(inp);
+    inp.click();
+  }catch(e){}
+}
+function f3FondoError(txt){
+  try{
+    var e=document.getElementById('fondoError');
+    if(e){e.style.display='block';e.textContent='⚠ '+txt;}
+  }catch(e){}
+  if(typeof toastReg==='function')toastReg('⚠ '+txt);
+}
+function f3FondoProcesar(file){
+  if(!file){return;}
+  if(!/image\/(jpeg|png|webp)/.test(file.type||'')){f3FondoError('No se pudo usar esta imagen. Prueba con JPG, PNG o WebP.');return;}
+  try{if(typeof toastReg==='function')toastReg('⏳ Procesando imagen…');}catch(e){}
+  var decode=function(bitmap){
+    try{
+      var max=1600;var w=bitmap.width,h=bitmap.height;
+      if(Math.max(w,h)>max){var k=max/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k);}
+      var c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(bitmap,0,0,w,h);
+      var dataURL=c.toDataURL('image/jpeg',0.85);
+      window._fondoPendienteDataURL=dataURL;
+      window._fondoPendienteURL=dataURL;
+      var b=window._fondoBorrador;
+      if(b){b.imgId='fondo_usuario';b.nombreArchivo=file.name||null;}
+      f3FondoEditorRender();
+    }catch(e){f3FondoError('No se pudo usar esta imagen. Prueba con JPG, PNG o WebP.');}
+  };
+  var onfail=function(){f3FondoError('No se pudo usar esta imagen. Prueba con JPG, PNG o WebP.');};
+  // EXIF: createImageBitmap con orientación correcta cuando el navegador lo permite
+  try{
+    if(typeof createImageBitmap==='function'&&'imageOrientation' in {imageOrientation:1}===false){
+      createImageBitmap(file).then(decode,onfail);
+    }else{
+      createImageBitmap(file,{imageOrientation:'from-image'}).then(decode,onfail);
+    }
+  }catch(e){
+    var img=new Image();
+    img.onload=function(){decode(img);};
+    img.onerror=onfail;
+    img.src=URL.createObjectURL(file);
+  }
+}
+function f3FondoPreviewUpdate(url){
+  try{
+    var el=document.getElementById('fondoPreview');
+    if(!el)return;
+    var b=window._fondoBorrador||f3FondoCfg();
+    var src=url||null;
+    if(src){
+      var osc=(b.oscurecer||0)/100;
+      var posMap={centro:'center',arriba:'top',abajo:'bottom',izquierda:'left',derecha:'right'};
+      var sizeMap={cover:'cover',contain:'contain',repeat:'auto'};
+      el.style.backgroundImage='linear-gradient(rgba(0,0,0,'+osc+'),rgba(0,0,0,'+osc+')),url("'+src+'")';
+      el.style.backgroundSize=sizeMap[b.ajuste]||'cover';
+      el.style.backgroundPosition=(posMap[b.posicion]||'center')+' center';
+      el.style.backgroundRepeat=(b.ajuste==='repeat')?'repeat':'no-repeat';
+      el.style.filter=((b.brillo!=null&&b.brillo!==100)?'brightness('+(b.brillo/100)+') ':'')+(b.desenfoque?'blur('+b.desenfoque+'px)':'');
+      el.style.opacity=((b.transparencia!=null?b.transparencia:100)/100);
+      el.style.color='#fff';el.style.textShadow='0 1px 3px rgba(0,0,0,.7)';
+      el.textContent='Vista previa';
+    }else{
+      el.style.background='#f4f6f5';el.style.filter='';el.style.opacity='';el.style.color='#8a9790';el.textContent='Fondo predeterminado';
+    }
+  }catch(e){}
+}
+function f3FondoAplicar(){
+  try{
+    var b=window._fondoBorrador;if(!b)return;
+    var promesa=Promise.resolve(null);
+    if(window._fondoPendienteDataURL){
+      promesa=new Promise(function(res,rej){
+        try{
+          var bytes=atob(window._fondoPendienteDataURL.split(',')[1]);
+          var arr=new Uint8Array(bytes.length);
+          for(var i=0;i<bytes.length;i++)arr[i]=bytes.charCodeAt(i);
+          var blob=new Blob([arr],{type:'image/jpeg'});
+          openPersonalDB().then(function(db){
+            var tx=db.transaction('media','readwrite');
+            tx.objectStore('media').put(blob,'fondo_usuario');
+            tx.oncomplete=function(){res(blob);};
+            tx.onerror=function(){rej(new Error('guardado falló'));};
+          }).catch(rej);
+        }catch(e){rej(e);}
+      });
+    }
+    promesa.then(function(blob){
+      try{
+        b.imgId=window._fondoPendienteDataURL?'fondo_usuario':(b.imgId||null);
+        if(!b.imgId){
+          // Quitar + Aplicar: persistir la eliminación, no solo el visual,
+          // o el fondo reaparecería tras recargar.
+          f3FondoAplicarVisual(null);
+          state.fondoCfg=JSON.parse(JSON.stringify(b));
+          save(true);
+          if(window._fondoObjectURL){URL.revokeObjectURL(window._fondoObjectURL);window._fondoObjectURL=null;}
+          if(typeof toastReg==='function')toastReg('✓ Fondo predeterminado restaurado');
+          window._fondoBorrador=null;
+          window._fondoPendienteURL=null;window._fondoPendienteDataURL=null;
+          var o=document.getElementById('modoSheet');if(o)o.remove();
+          try{if(typeof f3FondoEstadoRender==='function')f3FondoEstadoRender();}catch(e){}
+          return;
+        }
+        b.actualizado=new Date().toISOString();
+        // una sola fuente: el estado guarda solo id+configuración
+        state.fondoCfg=JSON.parse(JSON.stringify(b));
+        save(true);
+        // URL real desde el blob (nunca la dataURL gigante en el visual persistente)
+        if(blob){
+          if(window._fondoObjectURL)URL.revokeObjectURL(window._fondoObjectURL);
+          window._fondoObjectURL=URL.createObjectURL(blob);
+        }else if(window._fondoPendienteDataURL){
+          if(window._fondoObjectURL)URL.revokeObjectURL(window._fondoObjectURL);
+          window._fondoObjectURL=window._fondoPendienteDataURL;
+        }
+        var aplicado=f3FondoAplicarVisual(window._fondoObjectURL);
+        // confirmación SOLO si se verificó que el fondo quedó aplicado
+        if(aplicado){
+          if(typeof toastReg==='function')toastReg('✓ Fondo aplicado');
+        }else{
+          if(typeof toastReg==='function')toastReg('⚠ El fondo no se pudo aplicar');
+        }
+        window._fondoBorrador=null;
+        window._fondoPendienteURL=null;
+        window._fondoPendienteDataURL=null;
+        var ov=document.getElementById('modoSheet');if(ov)ov.remove();
+        try{if(typeof f3FondoEstadoRender==='function')f3FondoEstadoRender();}catch(e){}
+      }catch(e){}
+    }).catch(function(){f3FondoError('No se pudo guardar la imagen. Inténtalo de nuevo.');});
+  }catch(e){}
+}
+// ===== Estado del fondo en Ajustes (miniatura, alcance, botones) =====
+function f3FondoEstadoHTML(){
+  try{
+    var cfg=f3FondoCfg();
+    var esPerso=!!cfg.imgId;
+    var miniatura='';
+    if(esPerso&&window._fondoObjectURL){
+      miniatura='<div style="width:64px;height:40px;border-radius:10px;border:1px solid #cbd8cf;background:url('+window._fondoObjectURL+') center/cover"></div>';
+    }else{
+      miniatura='<div style="width:64px;height:40px;border-radius:10px;border:1px dashed #cbd8cf;display:flex;align-items:center;justify-content:center;color:#8a9790;font-size:10px">—</div>';
+    }
+    var alcanceTxt=cfg.alcance==='app'?'Toda la app':('Aplicado solamente a: '+safeText(cfg.modoId&&typeof f3ModoActivo==='function'&&state.misModos&&state.misModos.modos&&state.misModos.modos[cfg.modoId]?state.misModos.modos[cfg.modoId].nombre:'modo'));
+    return '<div class="row" style="gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">'+miniatura
+      +'<div style="flex:1;min-width:140px"><b style="font-size:13px">'+(esPerso?'Fondo personalizado':'Fondo predeterminado')+'</b>'
+      +'<div class="muted" style="font-size:11px">'+(esPerso&&cfg.nombreArchivo?('Archivo: '+safeText(cfg.nombreArchivo)):'Sin imagen personalizada')+'</div>'
+      +'<div class="muted" style="font-size:11px">'+safeText(alcanceTxt)+'</div></div></div>'
+      +'<div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">'
+      +'<button class="btn primary" style="min-height:44px" onclick="f3FondoAbrir()">🎨 Cambiar fondo</button>'
+      +(esPerso?'<button class="btn" style="min-height:44px" onclick="f3FondoQuitarGuardado()">🚫 Quitar fondo</button>':'')
+      +'</div>';
+  }catch(e){return '';}
+}
+function f3FondoQuitarGuardado(){
+  if(typeof confirm==='function'&&!confirm('¿Quitar el fondo personalizado y volver al predeterminado? No se borrará nada más.'))return;
+  try{
+    state.fondoCfg.imgId=null;state.fondoCfg.nombreArchivo=null;
+    save(true);
+    if(window._fondoObjectURL){URL.revokeObjectURL(window._fondoObjectURL);window._fondoObjectURL=null;}
+    f3FondoAplicarVisual(null);
+    try{if(typeof f3FondoEstadoRender==='function')f3FondoEstadoRender();}catch(e){}
+    if(typeof toastReg==='function')toastReg('✓ Fondo predeterminado restaurado');
+  }catch(e){}
+}
+function f3FondoEstadoRender(){
+  try{
+    var el=document.getElementById('fondoEstadoOut');
+    if(el)el.innerHTML=f3FondoEstadoHTML();
+  }catch(e){}
+}
+
+// ===== AVISO DE ACTUALIZACIÓN DE LA PWA (nueva versión disponible) =====
+// Más → Personalizar apariencia: abre Ajustes generales → Apariencia
+// (un solo editor de fondo; nada duplicado dentro de Más).
+function f3IrAApariencia(){
+  try{
+    openTab('👤 Perfil');
+    setTimeout(function(){
+      try{
+        var d=document.getElementById('ajAp');
+        if(d){d.open=true;}
+        var out=document.getElementById('fondoEstadoOut');
+        if(out){try{out.scrollIntoView({block:'center'});}catch(e){}}
+      }catch(e){}
+    },300);
+  }catch(e){}
+}
+function f3ActualizacionInit(){
+  try{
+    if(!('serviceWorker' in navigator))return;
+    navigator.serviceWorker.getRegistration().then(function(reg){
+      if(!reg||!reg.waiting){return;}
+      f3ActualizacionBanner();
+    }).catch(function(){});
+    if(navigator.serviceWorker.addEventListener){
+      navigator.serviceWorker.addEventListener('controllerchange',function(){
+        try{location.reload();}catch(e){}
+      });
+    }
+  }catch(e){}
+}
+function f3ActualizacionBanner(){
+  try{
+    if(document.getElementById('updateBanner'))return;
+    var b=document.createElement('div');
+    b.id='updateBanner';
+    b.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:11800;background:#0d6043;color:#fff;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 6px 20px rgba(0,0,0,.3)';
+    b.innerHTML='<b style="font-size:14px">✨ Nueva versión disponible</b><button class="btn" style="background:#fff;color:#0d6043;font-weight:900;font-size:13px;padding:9px 14px" onclick="f3ActualizacionAhora()">Actualizar ahora</button>';
+    document.body.appendChild(b);
+  }catch(e){}
+}
+function f3ActualizacionAhora(){
+  try{
+    navigator.serviceWorker.getRegistration().then(function(reg){
+      if(reg&&reg.waiting)reg.waiting.postMessage({tipo:'skipWaiting'});
+      // al terminar, controllerchange recarga y pp_last_tab restaura la sección
+    }).catch(function(){});
+    var b=document.getElementById('updateBanner');if(b)b.remove();
+  }catch(e){}
+}
+
 // ===== ENCABEZADO del bloque "Entrenamiento de hoy" (una sola fuente) =====
 // 5 estados: (1) semanal + entreno · (2) semanal + descanso · (3) solo hoy
 // (4) sin rutina semanal · (5) viendo otro día. Nunca "se genera automáticamente".
