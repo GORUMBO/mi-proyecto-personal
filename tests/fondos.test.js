@@ -104,7 +104,7 @@ function buildSandbox() {
   sb.document = {
     getElementById: function (id) { return sb._byId(id); },
     createElement: function (tag) { return sb._mkEl(tag); },
-    body: { insertBefore: function () {}, appendChild: function () {}, firstChild: null, style: {} },
+    body: { insertBefore: function () {}, appendChild: function () {}, firstChild: null, style: {}, classList: { add: function () {}, remove: function () {}, toggle: function () {} } },
     head: { appendChild: function () {} },
     querySelector: function () { return null; }
   };
@@ -162,7 +162,7 @@ function buildSandbox() {
   sb.clearTimeout = clearTimeout;
   vm.createContext(sb);
   ['f3FondoCfg', 'f3FondoCapa', 'f3FondoAplicaEnModo', 'f3FondoAplicarVisual',
-    'f3FondoAbrir', 'f3FondoEditorRender', 'f3FondoBorradorSet', 'f3FondoBorradorAlcance',
+    'f3FondoSize', 'f3FondoAbrir', 'f3FondoEditorRender', 'f3FondoBorradorSet', 'f3FondoBorradorAlcance',
     'f3FondoCancelar', 'f3FondoQuitar', 'f3FondoInputChange', 'f3FondoProcesar',
     'f3FondoPreviewUpdate', 'f3FondoAplicar', 'f3FondoQuitarGuardado'
   ].forEach(function (n) { vm.runInContext(extractFunc(n), sb); });
@@ -308,6 +308,20 @@ function buildSandbox() {
       sb._saveCalls >= 2 && vm.runInContext('window._fondoObjectURL', sb) === null);
     t('F29 · La hoja se cierra y avisa con el toast de restaurado',
       sb._byId('modoSheet') === null && sb._toasts.some(x => /restaurado/.test(x)));
+  }
+
+  console.log('\n== Presentación de la imagen: CSS estándar en la capa fija ==');
+  {
+    const sb = buildSandbox();
+    t('F30 · Contener: background-size "contain" en la capa fija (nunca un elemento con tamaño de imagen)',
+      vm.runInContext('f3FondoSize({ajuste:"contain",imgW:800,imgH:600}).size', sb) === 'contain');
+    t('F31 · Cubrir: background-size "cover"',
+      vm.runInContext('f3FondoSize({ajuste:"cover",imgW:800,imgH:600}).size', sb) === 'cover');
+    t('F32 · Repetir: patrón automático',
+      vm.runInContext('f3FondoSize({ajuste:"repeat",imgW:200,imgH:200}).size', sb) === 'auto' &&
+      vm.runInContext('f3FondoSize({ajuste:"repeat",imgW:200,imgH:200}).repeat', sb) === true);
+    t('F33 · Sin dimensiones (configuración antigua): Contener sigue siendo seguro',
+      vm.runInContext('f3FondoSize({ajuste:"contain"}).size', sb) === 'contain');
   }
 
   console.log('\n== AplicarVisual verifica de verdad ==');

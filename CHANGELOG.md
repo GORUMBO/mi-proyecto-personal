@@ -1,5 +1,15 @@
 # CHANGELOG — Mi Proyecto Personal
 
+## v1.195.3 (2026-09-19)
+
+**Distribución predeterminada reparada, editor de apariencia estable y contraste accesible en modales.**
+
+- **Distribución predeterminada limpia** por dispositivo: logo, nombre y subtítulo en la primera fila, navegación debajo, Rápido y Puente Cloudflare separados y dentro del viewport; validación al cargar con aviso "Tu distribución anterior no cabe correctamente en esta pantalla." y opciones Reparar automáticamente / Restaurar diseño predeterminado / Conservar y editar.
+- **Modales siempre legibles**: tokens propios (superficie, controles, texto, borde, foco, overlay) con contraste WCAG AA en los 6 temas y 4 modos; Colores y tema reorganizado en tarjetas compactas.
+- **Navegación y botones en tarjetas claras** (asa de arrastre, miniatura, Mostrar Sí/No, Tamaño, Forma, colores con etiqueta, Bloquear, Subir/Bajar, Restaurar) con visibilidad unificada que se respeta al guardar, recargar y cambiar de modo.
+- **Selección múltiple real** (Ctrl/Cmd+clic, Shift+clic, rectángulo, pulsación larga táctil) con acciones de grupo; los campos de texto conservan el foco al escribir; la barra inferior del iPhone abre cada sección desde arriba.
+
+
 ## v1.195.2 (2026-09-19)
 
 **Fondo de pantalla personalizado + navegación móvil.**

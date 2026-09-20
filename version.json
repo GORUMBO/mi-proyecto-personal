@@ -1,8 +1,31 @@
 {
-  "latest": "1.195.2",
+  "latest": "1.195.3",
   "date": "2026-09-19",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.195.3",
+      "date": "2026-09-19",
+      "type": "recomendada",
+      "nuevas": [
+        "Distribución predeterminada limpia por dispositivo (escritorio, iPhone vertical y horizontal): logo, nombre y subtítulo en la primera fila, navegación debajo, Rápido y Puente Cloudflare separados y sin superposiciones.",
+        "Validación y recuperación de distribuciones: si una distribución guardada no cabe en la pantalla, se muestra un aviso con Reparar automáticamente, Restaurar diseño predeterminado y Conservar y editar (sin borrar colores ni preferencias)."
+      ],
+      "cambios": [
+        "Modales legibles con cualquier tema: tokens propios de modal (superficie, controles, texto, borde, foco y overlay) con contraste WCAG AA en los 6 temas y 4 modos.",
+        "Colores y tema reorganizado en tarjetas compactas con etiqueta, muestra, valor hexadecimal y botón Automático juntos, máximo dos columnas en escritorio.",
+        "Navegación y botones rediseñada en tarjetas claras (asa de arrastre, miniatura, Mostrar Sí/No, Tamaño, Forma, colores con etiqueta, Bloquear, Subir/Bajar y Restaurar).",
+        "Visibilidad unificada de botones (visible:false se respeta al guardar, recargar y cambiar de modo o sección).",
+        "Selección múltiple real: Ctrl/Cmd+clic, Shift+clic, rectángulo de selección y pulsación larga táctil; las acciones de grupo (mover, escalar, alinear, distribuir) actúan sobre toda la selección.",
+        "Los campos de texto ya no pierden el foco al escribir (vista previa sin reconstruir el modal).",
+        "La barra inferior del iPhone abre cada sección desde arriba y cierra el menú Más."
+      ],
+      "errores": [
+        "Corregido que las posiciones guardadas no se aplicaran fuera del modo edición.",
+        "Corregido que el Puente Cloudflare volviera a su posición anterior tras recargar.",
+        "Corregido que los textos de las tarjetas de Apariencia se desbordaran en ventanas estrechas."
+      ]
+    },
     {
       "version": "1.195.2",
       "date": "2026-09-19",
