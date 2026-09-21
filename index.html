@@ -268,7 +268,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 .appStatusBox{display:flex;gap:5px;align-items:flex-end;justify-content:flex-end;flex-wrap:wrap;min-width:86px;padding-top:2px}.versionChip,.localChip{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;font-size:12px;font-weight:900;line-height:1;background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.28)}.localChip{background:rgba(255,255,255,.92);color:#15704f;border-color:#fff}
 .groupNavCompact{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;max-width:1180px;margin:0 auto}.groupNavCompact::-webkit-scrollbar{display:none}
 @media(max-width:520px){
-  .appTop{padding-left:10px!important;padding-right:10px!important;padding-bottom:7px!important}
+  .appTop{padding-left:max(10px,env(safe-area-inset-left))!important;padding-right:max(10px,env(safe-area-inset-right))!important;padding-bottom:7px!important}
   .appTitleRow{align-items:center;margin-bottom:6px;gap:8px}
   .appTitle{font-size:26px;max-width:72vw;line-height:1.04}
   .appMeta{font-size:12px;gap:4px;max-width:72vw;overflow:hidden;white-space:nowrap;flex-wrap:nowrap}
@@ -527,11 +527,58 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
   #routineCfgPanel{max-height:calc(88dvh - env(safe-area-inset-bottom));border-radius:16px 16px 0 0}
 }
 
+/* ===== RESPONSIVE REAL DEL DISPOSITIVO (sin parches de zoom) =====
+   El ancho CSS >768px NO significa escritorio si el dispositivo es un
+   iPhone (p. ej. horizontal). La clase html.pp-iphone (JS, por user-agent)
+   mantiene la navegación móvil en horizontal sin tocar Windows ni SE 2. */
+html.pp-iphone #groupNav,html.pp-iphone .nav,html.pp-iphone #subNavWrap,
+html.pp-iphone #quickRail,html.pp-iphone .quick-nav{display:none!important}
+html.pp-iphone #mobileNavBar{display:flex}
+html.pp-iphone #mobileModePill{display:inline-flex;position:static;transform:none;margin:8px 10px 2px;width:fit-content;align-self:flex-start}
+html.pp-iphone body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+
+/* Áreas seguras laterales (notch en horizontal): encabezado, contenido y barra inferior */
+header.appTop{padding-left:max(12px,env(safe-area-inset-left))!important;padding-right:max(12px,env(safe-area-inset-right))!important}
+@media(max-width:520px){header.appTop{padding-left:max(10px,env(safe-area-inset-left))!important;padding-right:max(10px,env(safe-area-inset-right))!important}}
+main{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+#mobileNavBar{padding-left:max(4px,env(safe-area-inset-left));padding-right:max(4px,env(safe-area-inset-right))}
+#mobileModePill{margin-left:max(10px,calc(env(safe-area-inset-left) + 2px))}
+
+/* Higiene global: nada puede ensanchar la página más allá del dispositivo.
+   overflow-x:clip no crea contenedor de scroll (Safari <16 cae a hidden). */
+html{overflow-x:clip}
+@supports not (overflow:clip){html{overflow-x:hidden}}
+img,video,canvas,svg{max-width:100%}
+img,video{height:auto}
+
+/* Insignias del encabezado (versión · flor/logo · sync/error): nunca se salen */
+.appTitleRow>div:first-child{min-width:0;flex:1 1 auto}
+.appTitleRow>div:first-child .appTitle{overflow-wrap:anywhere}
+.appStatusBox{min-width:0;max-width:min(46vw,300px)}
+#syncLastLine{flex-basis:100%;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===== MENÚ LATERAL POR GESTOS DE BORDE (solo móvil + Modo completo) ===== */
+#edgeHandle{display:none}
+#edgeScrim{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:11520;opacity:0;pointer-events:none;visibility:hidden;transition:opacity .22s ease,visibility .22s}
+#edgeScrim.edge-open{opacity:1;pointer-events:auto;visibility:visible}
+#edgeDrawer{position:fixed;top:0;bottom:0;left:0;z-index:11530;width:min(78vw,320px);max-width:320px;background:#fff;box-shadow:6px 0 24px rgba(0,0,0,.25);display:flex;flex-direction:column;transform:translateX(-104%);visibility:hidden;transition:transform .24s ease,visibility .24s}
+#edgeDrawer.edge-open{transform:translateX(0);visibility:visible}
+#edgeDrawerHead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px calc(12px + env(safe-area-inset-left));border-bottom:1px solid #d9e3db;background:linear-gradient(135deg,var(--app-header-bg1),var(--app-header-bg2));color:#fff}
+#edgeDrawerHead b{font-size:16px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#edgeDrawerClose{width:44px;height:44px;min-width:44px;border-radius:12px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:#fff;font-size:18px;font-weight:900;cursor:pointer;flex-shrink:0}
+#edgeDrawerBody{flex:1;overflow-y:auto;padding:10px 10px calc(14px + env(safe-area-inset-bottom));overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.edge-tabbtn{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:10px 12px;margin:3px 0;border:1px solid #d9e3db;border-radius:13px;background:#fff;font-size:14.5px;font-weight:800;color:#17231e;text-align:left;cursor:pointer}
+.edge-tabbtn.edge-activo{background:#eaf9f0;border-color:#9dd5b4;color:#0d6043}
+.edge-drawer-hint{margin-top:10px;font-size:11px;color:#63706a;padding:4px 2px;font-weight:700;line-height:1.4}
+#edgeHandle{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:11510;width:44px;height:44px;border-radius:0 14px 14px 0;border:1px solid rgba(255,255,255,.35);background:var(--g);color:#fff;font-size:18px;font-weight:900;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.25);-webkit-tap-highlight-color:transparent}
+#edgeHandle:active{background:var(--app-primary-dark,#0d6043)}
+@media (prefers-reduced-motion: reduce){#edgeScrim,#edgeDrawer{transition:none}}
+
 </style>
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.195.3';
+  window.HM_APP_VERSION='1.196.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -1624,6 +1671,8 @@ document.addEventListener('keydown', function(e){
 
   // ESC: cerrar panel de "agregar rápido", o quitar el foco de un campo, o ir atrás.
   if(e.key==='Escape'){
+    // Si el menú lateral por gestos está abierto, Escape solo lo cierra a él.
+    if(window._edgeDrawer&&window._edgeDrawer.abierto){try{f3DrawerCerrar();}catch(_){}e.preventDefault();return;}
     var qa=document.getElementById('quickAddPanel');
     if(qa && qa.classList.contains('open')){ try{toggleQuickAddPanel(false);}catch(_){} e.preventDefault(); return; }
     if(escribiendo){ try{el.blur();}catch(_){} return; }
@@ -35486,6 +35535,7 @@ function f3MobileNavRender(){
     if(!pill){pill=document.createElement('div');pill.id='mobileModePill';document.body.appendChild(pill);}
     pill.innerHTML='<span class="mpill-ico" style="background:'+safeText(m.color||'#0d6043')+'">'+safeText(m.icono||'✨')+'</span><span class="mpill-txt">'+safeText(m.nombre||'Modo')+'</span><span class="mpill-flecha">▾</span>';
     pill.onclick=function(){try{f3ModoSelectorAbrir();}catch(e){}};
+    try{f3DrawerSync();}catch(e){}
   }catch(e){}
 }
 function f3MobileNavInit(){
@@ -35859,6 +35909,240 @@ function f3MobileMasToggle(){
   m.innerHTML=items;
   m.style.display='block';
 }
+// ===== 🖐️ MENÚ LATERAL POR GESTOS DE BORDE (solo móvil + Modo completo) =====
+// Abre con desliz izquierda→derecha desde el borde izquierdo o derecha→izquierda
+// desde el derecho (mismo menú). Cierra con gesto en sentido contrario, tocando
+// fuera, con ✕ o con Escape. Muestra los minibotones de la sección actual
+// (pestañas del grupo activo). No roba el scroll vertical ni los carruseles,
+// formularios o videos: el gesto solo se confirma si es horizontal desde el borde.
+window._edgeDrawer={abierto:false,desde:null,gesto:null,focoAnt:null};
+var F3_BORDE_ZONA=26,F3_BORDE_MIN=48;
+function f3DrawerEsMovil(){
+  try{return window.innerWidth<=768||/iPhone|iPod/i.test(navigator.userAgent);}catch(e){return window.innerWidth<=768;}
+}
+function f3DrawerModoNormal(){
+  try{return f3ModoActivo().id==='completo';}catch(e){return false;}
+}
+function f3DrawerDisponible(){return f3DrawerEsMovil()&&f3DrawerModoNormal();}
+function f3DrawerCrear(){
+  try{
+    if(document.getElementById('edgeDrawer'))return;
+    var scrim=document.createElement('div');scrim.id='edgeScrim';scrim.setAttribute('aria-hidden','true');document.body.appendChild(scrim);
+    var d=document.createElement('aside');d.id='edgeDrawer';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');d.setAttribute('aria-label','Menú de navegación de la sección');d.setAttribute('aria-hidden','true');
+    d.innerHTML='<div id="edgeDrawerHead"><b id="edgeDrawerTitle">Menú</b><button type="button" id="edgeDrawerClose" aria-label="Cerrar menú">✕</button></div><div id="edgeDrawerBody"></div>';
+    document.body.appendChild(d);
+    var h=document.createElement('button');h.type='button';h.id='edgeHandle';h.setAttribute('aria-label','Abrir menú de navegación');h.setAttribute('aria-expanded','false');h.setAttribute('aria-controls','edgeDrawer');h.textContent='☰';document.body.appendChild(h);
+    scrim.onclick=function(){f3DrawerCerrar();};
+    h.onclick=function(){f3DrawerAbrir('borde');};
+    d.querySelector('#edgeDrawerClose').onclick=function(){f3DrawerCerrar();};
+    document.addEventListener('touchstart',f3DrawerTouchStart,{passive:true});
+    document.addEventListener('touchmove',f3DrawerTouchMove,{passive:false});
+    document.addEventListener('touchend',f3DrawerTouchEnd,{passive:true});
+    document.addEventListener('touchcancel',f3DrawerTouchEnd,{passive:true});
+    document.addEventListener('keydown',function(ev){
+      if(ev.key==='Escape'&&window._edgeDrawer.abierto){ev.preventDefault();try{f3DrawerCerrar();}catch(e){}}
+    });
+    window.addEventListener('resize',function(){try{f3DrawerSync();}catch(e){}});
+  }catch(e){}
+}
+// Zona segura: ignora formularios, controles, videos, carruseles horizontales
+// y componentes con touch-action horizontal.
+function f3DrawerZonaOk(t){
+  try{
+    if(!t||t.nodeType!==1)return false;
+    if(t.closest('input,textarea,select,button,a,label,summary,video,audio,[contenteditable="true"],[role="button"],[role="slider"],[draggable="true"]'))return false;
+    var el=t;
+    for(var i=0;i<5&&el&&el!==document.body;i++){
+      var st=el.ownerDocument&&el.ownerDocument.defaultView?el.ownerDocument.defaultView.getComputedStyle(el):null;
+      if(st){
+        var ta=String(st.touchAction||'').toLowerCase();
+        if(ta==='none'||ta.indexOf('pan-x')>=0)return false;
+        var ox=st.overflowX||'';
+        if((ox==='auto'||ox==='scroll')&&el.scrollWidth>el.clientWidth+2)return false;
+      }
+      el=el.parentElement;
+    }
+    return true;
+  }catch(e){return false;}
+}
+function f3DrawerTouchStart(ev){
+  try{
+    if(!f3DrawerDisponible())return;
+    var t=ev.touches&&ev.touches[0];if(!t)return;
+    var x=t.clientX;
+    if(window._edgeDrawer.abierto){
+      var d=document.getElementById('edgeDrawer'),sc=document.getElementById('edgeScrim');
+      var enDrawer=!!(d&&d.contains(ev.target));
+      var enScrim=!!(sc&&sc.contains(ev.target));
+      if(enDrawer||enScrim)window._edgeDrawer.gesto={x:x,y:t.clientY,modo:'cerrar',lugar:enDrawer?'drawer':'scrim',activo:true};
+      return;
+    }
+    if(x>F3_BORDE_ZONA&&x<window.innerWidth-F3_BORDE_ZONA)return;
+    if(!f3DrawerZonaOk(ev.target))return;
+    window._edgeDrawer.gesto={x:x,y:t.clientY,modo:'abrir',borde:(x<=F3_BORDE_ZONA?'izq':'der'),activo:true};
+  }catch(e){}
+}
+function f3DrawerTouchMove(ev){
+  try{
+    var g=window._edgeDrawer.gesto;if(!g||!g.activo)return;
+    var t=ev.touches&&ev.touches[0];if(!t)return;
+    var dx=t.clientX-g.x,dy=t.clientY-g.y,adx=Math.abs(dx),ady=Math.abs(dy);
+    // El scroll vertical siempre gana: cancela el gesto.
+    if(ady>14&&ady>adx){g.activo=false;return;}
+    if(adx<F3_BORDE_MIN||adx<ady*1.3)return;
+    if(g.modo==='abrir'){
+      var dir=dx>0?1:-1;
+      if((g.borde==='izq'&&dir<0)||(g.borde==='der'&&dir>0)){g.activo=false;return;}
+      if(ev.cancelable)ev.preventDefault(); // evita el "atrás" de Safari al ganar el gesto
+      g.activo=false;
+      f3DrawerAbrir(g.borde);
+    }else{
+      var dirC=dx>0?1:-1;
+      // Sobre el panel: hacia la izquierda (su posición cerrada) siempre cierra.
+      // Sobre el telón: cierra el gesto CONTRARIO al borde con el que se abrió.
+      if(g.lugar==='drawer'){if(dirC>0)return;}
+      else{var desde=window._edgeDrawer.desde||'izq';if((desde==='izq'&&dirC>0)||(desde==='der'&&dirC<0))return;}
+      if(ev.cancelable)ev.preventDefault();
+      g.activo=false;
+      f3DrawerCerrar();
+    }
+  }catch(e){}
+}
+function f3DrawerTouchEnd(){try{window._edgeDrawer.gesto=null;}catch(e){}}
+function f3DrawerRender(){
+  try{
+    var body=document.getElementById('edgeDrawerBody');if(!body)return;
+    var g=GROUPS.find(function(x){return x.id===_activeGroup});
+    var titulo=document.getElementById('edgeDrawerTitle');
+    if(titulo)titulo.textContent=g?grupoLabel(g):'Menú';
+    var nav=(typeof f3NavCfg==='function')?f3NavCfg():{};
+    var lista=(g&&g.tabs||[]).filter(function(tb){
+      if(typeof tabAllowed==='function'&&!tabAllowed(tb))return false;
+      if(nav.tabs&&nav.tabs[tb]&&nav.tabs[tb].visible===false)return false;
+      return true;
+    });
+    var h='';
+    lista.forEach(function(tb){
+      var activo=tb===tabs[_activeTab];
+      h+='<button type="button" class="edge-tabbtn'+(activo?' edge-activo':'')+'" aria-current="'+(activo?'page':'false')+'" onclick="f3DrawerIr(\''+tb+'\')">'+safeText(tb)+'</button>';
+    });
+    if(!h)h='<div class="muted" style="padding:8px 4px;font-size:13px">No hay secciones disponibles aquí.</div>';
+    body.innerHTML=h+'<div class="edge-drawer-hint">Desliza desde el borde izquierdo o derecho para abrir este menú · desliza en sentido contrario para cerrarlo.</div>';
+  }catch(e){}
+}
+function f3DrawerAbrir(desde){
+  try{
+    f3DrawerCrear();
+    var d=document.getElementById('edgeDrawer'),sc=document.getElementById('edgeScrim'),h=document.getElementById('edgeHandle');
+    if(!d||!sc)return;
+    var ant=document.activeElement;
+    window._edgeDrawer.focoAnt=(ant&&ant!==document.body&&ant!==document.documentElement)?ant:null;
+    window._edgeDrawer.abierto=true;
+    window._edgeDrawer.desde=desde||'izq';
+    f3DrawerRender();
+    d.classList.add('edge-open');d.setAttribute('aria-hidden','false');
+    sc.classList.add('edge-open');
+    if(h){h.setAttribute('aria-expanded','true');h.style.display='none';} // el panel sustituye a la pestaña mientras está abierto
+    try{document.body.style.overflow='hidden';}catch(e){} // bloquea el scroll del fondo
+    setTimeout(function(){
+      try{
+        var prim=document.querySelector('#edgeDrawerBody .edge-tabbtn');
+        (prim||document.getElementById('edgeDrawerClose')).focus();
+      }catch(e){}
+    },80);
+  }catch(e){}
+}
+function f3DrawerCerrar(){
+  try{
+    var d=document.getElementById('edgeDrawer'),sc=document.getElementById('edgeScrim'),h=document.getElementById('edgeHandle');
+    if(d){d.classList.remove('edge-open');d.setAttribute('aria-hidden','true');}
+    if(sc)sc.classList.remove('edge-open');
+    if(h)h.setAttribute('aria-expanded','false');
+    try{document.body.style.overflow='';}catch(e){}
+    var abierto=window._edgeDrawer.abierto;
+    window._edgeDrawer.abierto=false;
+    window._edgeDrawer.desde=null;
+    try{f3DrawerSync();}catch(e){} // restaura la pestaña ☰ según modo y dispositivo
+    if(abierto){
+      // devuelve el foco al botón que abrió el menú (o a la pestaña ☰)
+      setTimeout(function(){
+        try{
+          var f=window._edgeDrawer.focoAnt;
+          if(!f||!document.contains(f)||typeof f.focus!=='function')f=document.getElementById('edgeHandle');
+          if(f&&f!==document.body)f.focus();
+        }catch(e){}
+      },60);
+    }
+  }catch(e){}
+}
+// Al tocar un minibotón: abre la sección y sube hasta arriba DESPUÉS de renderizar
+// (doble requestAnimationFrame), con scroll suave salvo prefers-reduced-motion.
+function f3DrawerIr(tab){
+  try{
+    f3DrawerCerrar();
+    try{var mm=document.getElementById('mobileMasMenu');if(mm&&mm.style.display&&mm.style.display!=='none')f3MobileMasToggle();}catch(e){}
+    try{openTab(tab);}catch(e){}
+    var reducir=false;
+    try{reducir=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);}catch(e){}
+    var beh=reducir?'auto':'smooth';
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        try{
+          window.scrollTo({top:0,behavior:beh});
+          var cont=document.scrollingElement||document.documentElement;
+          if(cont)cont.scrollTo({top:0,behavior:beh});
+        }catch(e){}
+      });
+    });
+  }catch(e){}
+}
+// Sincroniza visibilidad (móvil + Modo completo) y marca el iPhone para el CSS.
+// También revisa el aviso de "sitio de escritorio" (idempotente).
+function f3DrawerSync(){
+  try{
+    f3DrawerCrear();
+    var h=document.getElementById('edgeHandle');
+    var ok=f3DrawerDisponible();
+    if(h)h.style.display=ok?'flex':'none';
+    if(!ok&&window._edgeDrawer.abierto)f3DrawerCerrar();
+    try{
+      var si=/iPhone|iPod/i.test(navigator.userAgent);
+      document.documentElement.classList.toggle('pp-iphone',!!si);
+    }catch(e){}
+    try{f3AvisoSitioEscritorio();}catch(e){}
+  }catch(e){}
+}
+// Aviso si Safari muestra la "versión de escritorio" en un teléfono táctil:
+// CSS no puede revertir ese ajuste del navegador; se guía al usuario (no es un parche).
+function f3AvisoSitioEscritorio(){
+  try{
+    var tactil=('ontouchstart'in window)||(navigator.maxTouchPoints>0);
+    var ua=navigator.userAgent||'';
+    var sinIphone=!/iphone|ipad|ipod/i.test(ua);
+    var pantallaPequena=(window.screen&&window.screen.width&&window.screen.width<=500);
+    if(!(tactil&&sinIphone&&pantallaPequena&&window.innerWidth>=900))return;
+    try{if(sessionStorage.getItem('pp_aviso_escritorio')==='1')return;}catch(e){}
+    var av=document.createElement('div');
+    av.id='ppAvisoEscritorio';
+    av.setAttribute('role','note');
+    av.style.cssText='position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:12000;background:#fff8f0;border:1.5px solid #efc75e;color:#5a4a12;padding:10px 14px;border-radius:14px;font-size:13px;font-weight:800;max-width:92%;box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;gap:8px;align-items:flex-start';
+    av.innerHTML='<span style="flex:1">Tu navegador está mostrando la versión de escritorio de la página. En Safari: toca <b>aA</b> → <b>Solicitar sitio móvil</b> para ver la app móvil.</span><button type="button" aria-label="Cerrar aviso" style="background:none;border:none;font-size:16px;font-weight:900;color:#8a6d1a;cursor:pointer;min-width:32px;min-height:32px">✕</button>';
+    document.body.appendChild(av);
+    av.querySelector('button').onclick=function(){av.remove();try{sessionStorage.setItem('pp_aviso_escritorio','1');}catch(e){}};
+  }catch(e){}
+}
+// Arranque idempotente: inicializa la navegación móvil publicada (barra inferior,
+// pastilla y este menú) aunque el arranque no llame a f3MobileNavInit.
+(function(){
+  function f3DrawerBootInit(){
+    try{if(typeof f3MobileNavInit==='function')f3MobileNavInit();}catch(e){}
+    try{f3DrawerSync();}catch(e){}
+  }
+  if(document.readyState!=='loading')f3DrawerBootInit();
+  else document.addEventListener('DOMContentLoaded',f3DrawerBootInit);
+  setTimeout(f3DrawerBootInit,1500); // por si el estado o los modos llegan después
+  setTimeout(f3DrawerBootInit,4000);
+})();
 // ===== RESUMEN en la pantalla inicial del modo (tarjetas reales) =====
 function f3ModoResumenHTML(m){
   try{

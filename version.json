@@ -1,8 +1,29 @@
 {
-  "latest": "1.195.3",
-  "date": "2026-09-19",
+  "latest": "1.196.0",
+  "date": "2026-09-20",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.196.0",
+  "date": "2026-09-20",
+  "type": "recomendada",
+  "nuevas": [
+    "Menú lateral por gestos en iPhone (solo Modo completo): desliza desde el borde izquierdo hacia la derecha o desde el derecho hacia la izquierda para abrir el menú de la sección actual; se cierra con el gesto contrario, tocando fuera, con ✕ o con Escape.",
+    "Pestaña ☰ visible en el borde izquierdo como alternativa a los gestos (por si Safari reserva el gesto del borde para volver atrás).",
+    "El menú muestra los minibotones de la sección actual (p. ej. en Comer: Contador, Recetas, Nevera, Aparatos) y al tocarlos abre la sección y sube hasta arriba con scroll suave.",
+    "iPhone en horizontal: la navegación móvil se mantiene a cualquier ancho (antes, a más de 768 px se activaba el diseño de escritorio).",
+    "Áreas seguras laterales (notch en horizontal) en encabezado, contenido y barra inferior, y aviso si Safari muestra la versión de escritorio de la página."
+  ],
+  "cambios": [
+    "Los gestos no roban el scroll vertical ni los carruseles, formularios, videos o componentes arrastrables (solo se confirman como gesto si son horizontales y empiezan cerca del borde).",
+    "Accesibilidad del menú: botones de al menos 44 px, aria-label, aria-expanded y aria-hidden, bloqueo del scroll de fondo, foco devuelto al abrir el menú y soporte de prefers-reduced-motion.",
+    "Sin desplazamiento horizontal en 320–430 px y textos, botones y tarjetas que se acomodan sin cortarse."
+  ],
+  "errores": [
+    "Corregido que el iPhone en horizontal mostrara el encabezado, textos, botones y tarjetas con medidas de escritorio.",
+    "Corregido que las insignias del encabezado (versión, logo y estado de sincronización) pudieran salirse del encabezado en pantallas estrechas."
+  ]
+},
     {
       "version": "1.195.3",
       "date": "2026-09-19",
