@@ -1,8 +1,29 @@
 {
-  "latest": "1.197.0",
+  "latest": "1.198.0",
   "date": "2026-09-21",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.198.0",
+  "date": "2026-09-21",
+  "type": "recomendada",
+  "nuevas": [
+    "Fitness en iPhone: Modo rápido de un ejercicio por pantalla (nombre, Ejercicio X de N, músculo, series y repeticiones, descanso, equipo, último registro, rueditas S1-Sn, peso y repeticiones grandes, Registrar serie, cronómetro compacto y Anterior/Siguiente) con selector ⚡ Modo rápido / 📖 Modo informativo que se recuerda.",
+    "Entrada directa a la rutina al abrir Fitness en móvil: la rutina y su selector van primero; el héroe y las herramientas quedan debajo.",
+    "Cada ejercicio muestra su equipo real desde la biblioteca (Mancuernas · peso por mancuerna, Barra · peso total, Peso corporal, Máquina, Polea, Banda elástica, Sin equipo) y su técnica.",
+    "Registrar serie ahora guarda UNA serie a la vez con el peso y las repeticiones tecleados (pesos distintos por serie); los ejercicios de peso corporal y tiempo se registran con peso 0."
+  ],
+  "cambios": [
+    "Los campos de peso y repeticiones llevan etiqueta (Peso en lb o kg, último peso usado y peso a registrar), tamaño cómodo para el dedo y ya no quedan cortados ni debajo de otros elementos.",
+    "Anterior/Siguiente reemplazan la tarjeta sin mover la pantalla; en el primer ejercicio Anterior se desactiva y en el último aparece Finalizar rutina; el usuario decide cuándo avanzar.",
+    "Al regresar a un ejercicio se conservan series, peso tecleado, repeticiones, estado, descanso y cambios de ejercicio; alternar entre modos no pierde ni duplica registros (una sola fuente de datos).",
+    "La barra inferior no tapa los controles del entrenamiento."
+  ],
+  "errores": [
+    "Corregido que el campo de peso quedara cortado o poco visible en algunas pantallas de Fitness.",
+    "Corregido que los ejercicios de peso corporal no se pudieran registrar (peso 0 se descartaba)."
+  ]
+},
 {
   "version": "1.197.0",
   "date": "2026-09-21",

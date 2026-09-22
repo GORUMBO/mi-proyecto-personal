@@ -574,11 +574,54 @@ img,video{height:auto}
 #edgeHandle:active{background:var(--app-primary-dark,#0d6043)}
 @media (prefers-reduced-motion: reduce){#edgeScrim,#edgeDrawer{transition:none}}
 
+/* ===== ⚡ MODO RÁPIDO FITNESS (un ejercicio por pantalla, móvil) ===== */
+.fit-modo-bar{display:flex;align-items:center;gap:8px;margin:8px 0 10px;flex-wrap:wrap}
+.fit-modo-bar .muted{flex:1;min-width:60px}
+body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba */
+.fit-card-ej-rapida{display:block!important;border:2px solid #15704f!important;padding:12px}
+.fit-rapida-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.fit-rapida-pos{font-size:12px;font-weight:900;color:#0d6043;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.fit-rapida-equipo{display:inline-flex;align-items:center;gap:6px;background:#eaf5ef;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:800;margin:6px 0;max-width:100%}
+.fit-rapida-tec{font-size:12.5px;color:#4a5a52;background:#f4f8f6;border-radius:8px;padding:7px 10px;margin:4px 0;line-height:1.45}
+.fit-rapida-ult{font-size:12.5px;color:#63706a;margin:4px 0}
+.fit-rapida-series{display:flex;gap:12px;justify-content:center;margin:10px 0 6px;flex-wrap:wrap}
+.fit-rapida-chips{text-align:center;margin-bottom:6px}
+.fit-peso-box{background:#f7fff9;border:1px solid #9dd5b4;border-radius:12px;padding:10px;margin-top:8px}
+.fit-peso-linea{font-size:11.5px;color:#0d6043;font-weight:800;margin-bottom:6px}
+.fit-peso-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fit-peso-grid label{font-size:11.5px;font-weight:800;color:#4a5a52;margin:0 0 3px;display:block}
+.fit-peso-grid input{font-size:17px;min-height:46px;padding:10px;width:100%}
+.fit-peso-btn{width:100%;margin-top:8px;min-height:48px;font-size:16px}
+.fit-rapida-nav{display:flex;gap:8px;margin-top:10px}
+.fit-nav-btn{flex:1;min-height:48px;font-size:15px}
+.fit-nav-btn:disabled{opacity:.4;cursor:default}
+.fit-nav-listo{box-shadow:0 0 0 3px #9dd5b4;background:#eaf9f0!important;border-color:#15704f!important;color:#15704f!important}
+.fit-rapida-extras{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.fit-rapida-crono{display:flex;align-items:center;gap:6px;font-size:12.5px}
+.fit-rapida-crono b{font-variant-numeric:tabular-nums;min-width:64px;font-size:15px;color:#15704f}
+.fit-rapida-mas{flex:1;min-width:200px}
+.fit-rapida-mas summary{font-size:13px;font-weight:800;color:#15704f;padding:8px 0;cursor:pointer}
+.fit-rapida-mas-body{display:flex;flex-direction:column;gap:6px;padding:8px 0 4px}
+.fit-rapida-mas-body .btn{min-height:44px;font-size:13.5px;text-align:left}
+.fit-rapida-alts summary{font-size:12.5px;font-weight:800;color:#0d6043;cursor:pointer;padding:4px 0}
+@media(max-width:768px){
+  /* Entrada directa: la rutina (y su selector de modo) van PRIMERO en iPhone;
+     el héroe y las herramientas quedan debajo. Escritorio intacto. */
+  .fit5-wrap{display:flex;flex-direction:column}
+  .fit5-head{order:0}
+  #routineTodayCard{order:1}
+  #fitHoyCard{order:2}
+  .fit5-grid{order:3}
+  #savedRoutinesDetails,#fitnessRegisterDetails,#masHerramientasDetails{order:4}
+  .fit-card-ej-rapida{margin-bottom:14px}
+  .fit-rapida-nav{padding-bottom:4px}
+}
+
 </style>
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.197.0';
+  window.HM_APP_VERSION='1.198.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -1566,7 +1609,11 @@ function showTab(i,b){
   try{if(typeof f3ModosState==='function'){f3ModosState();if(state.misModos&&state.misModos.ultimoTab)state.misModos.ultimoTab[state.misModos.activo]=t;}}catch(e){}
   try{if(typeof f3ModoResumenActualizar==='function')f3ModoResumenActualizar();}catch(e){}
   updateBackButton();
-  if(t&&t.includes('Ejercicio')){setTimeout(drawGrafica,80);setTimeout(()=>{if(window._initHuman)window._initHuman();},150);if(typeof f3MobileNavMark==='function')f3MobileNavMark();try{if(state.fitUltimoScroll&&state.fitUltimoScrollDate===(typeof todayISO==='function'?todayISO():'')&&typeof window!=='undefined'&&window.innerWidth<=768){setTimeout(function(){try{window.scrollTo(0,state.fitUltimoScroll);}catch(e){}},140);}}catch(e){}}
+  if(t&&t.includes('Ejercicio')){setTimeout(drawGrafica,80);setTimeout(()=>{if(window._initHuman)window._initHuman();},150);if(typeof f3MobileNavMark==='function')f3MobileNavMark();try{if(state.fitUltimoScroll&&state.fitUltimoScrollDate===(typeof todayISO==='function'?todayISO():'')&&typeof window!=='undefined'&&window.innerWidth<=768){setTimeout(function(){try{window.scrollTo(0,state.fitUltimoScroll);}catch(e){}},140);}}catch(e){}
+    // RenderRutinaHook: la rutina de hoy SIEMPRE se pinta al abrir Fitness
+    // (en versiones con y sin bindAll). Idempotente y sin mover el scroll.
+    setTimeout(function(){try{if(typeof quickFitnessToday==='function')quickFitnessToday();}catch(e){}},90);
+    setTimeout(function(){try{if(typeof renderRoutineToday==='function')renderRoutineToday();}catch(e){}},120);}
   // Peso: la sección es una cáscara que renderPesoInterno rellena; garantiza
   // que NUNCA quede vacía al mostrarse (ni tras un render que la reconstruya).
   if(t==='⚖️ Peso'){setTimeout(function(){try{if(typeof renderPesoInterno==='function')renderPesoInterno();}catch(e){}},60);}
@@ -21371,10 +21418,10 @@ function secEjercicio(){
       <button class="fit5-tile" onclick="showSavedRoutines()"><span class="fit5-tile-icon">📁</span><span><b>Rutinas guardadas</b><span>tus plantillas</span></span></button>
     </div>
   </div>
-  <div class="fit3-card">
+  <div class="fit3-card" id="routineTodayCard">
     <div id="routineTodayOut"></div>
   </div>
-  <div class="fit3-card">
+  <div class="fit3-card" id="fitHoyCard">
     <div id="fitHoyHead" style="margin-bottom:6px"></div>
     <div id="simpleFitnessOut" class="fit-clean-result"></div>
   </div>
@@ -31804,7 +31851,8 @@ function quickFitnessToday(){
   ${(function(){var es=state.fitEstado||'normal';var hoy=typeof todayISO==='function'?todayISO():'';var esHoy=(state.fitEstadoDate===hoy)?es:'normal';var efHoy=fitEffortHoy();var lbls={excelente:'Excelente',normal:'Normal',cansado:'Cansado',muy_fatigado:'Muy fatigado'};var lblInt={suave:'Suave',auto:'Auto',normal:'Normal',fuerte:'Fuerte · crecer',extremo:'Demasiado fuerte'}[efHoy]||efHoy;var parts=[];if(esHoy!=='normal')parts.push(lbls[esHoy]);if(efHoy!=='auto')parts.push(lblInt);var chip=(parts.length?'<div class="ok" style="margin:8px 0 10px;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px">🔧 <b>Hoy:</b> '+parts.join(' · ')+'</span><button class="btn" style="font-size:12px;padding:6px 10px" onclick="openCreateRoutine()">Cambiar</button></div>':'');return chip+'<div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="togglePorqueRutina()">❓ ¿Por qué esta rutina?</button></div><div id="porqueRutina" style="display:none;margin-top:8px;background:#f6fbf8;border:1px solid #cfe6d8;border-radius:10px;padding:8px 10px"></div>';})()}
   ${f3TendenciaDificilSemanas()&&state.deloadFecha!==todayISO()?`<div class="warn" style="margin:8px 0"><b>💤 Sugerencia:</b> tus últimas sesiones han sido difíciles de forma constante (2 semanas). Podrías beneficiarte de una semana más ligera.<div class="row" style="margin-top:6px"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="aplicarDeloadHoy()">Aplicar hoy (volumen −30%)</button></div></div>`:''}
   ${hechos===plan.length&&plan.length?`<div style="margin:8px 0 10px">${(function(){var fb=state.fitFeedbackHoy&&state.fitFeedbackHoy.date===todayISO();return fb?'<div class="ok" style="font-size:12px">✔ Gracias, tu feedback quedó guardado y se usará gradualmente.</div>':`<div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Cómo se sintió esta rutina?</div><div class="row" style="gap:6px;flex-wrap:wrap">${[['muy_facil','Muy fácil'],['bien','Bien'],['dificil','Difícil'],['demasiado','Demasiado difícil'],['dolor','Dolor/molestia']].map(function(o){return '<button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveFitFeedback(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}</div>`;})()}</div>`:''}
-  <div class="fit-list-compact">${plan.map((x,i)=>(typeof f3TarjetaEjercicioHTML==='function')?f3TarjetaEjercicioHTML(i,x,pack):('<div class="fit-card-ej" id="fitCard_'+i+'">'+(i+1)+'. '+safeText(x.name)+'</div>')).join('')}</div>
+  ${(typeof f3ModoBarHTML==='function')?f3ModoBarHTML():''}
+  <div class="fit-list-compact" id="f3RapidaCardWrap">${(typeof f3ModoVista==='function'&&f3ModoVista()==='rapido'&&typeof f3TarjetaRapidaHTML==='function')?f3TarjetaRapidaHTML(f3RapidoIndice(),pack):plan.map((x,i)=>(typeof f3TarjetaEjercicioHTML==='function')?f3TarjetaEjercicioHTML(i,x,pack):('<div class="fit-card-ej" id="fitCard_'+i+'">'+(i+1)+'. '+safeText(x.name)+'</div>')).join('')}</div>
   <details style="margin-top:10px"><summary style="font-size:13px">📝 Feedback reciente</summary>
     <div class="muted" style="font-size:11px;margin:4px 0">${(state.sessionFeedbacks||[]).length?'Toca 🗑 para borrar una entrada registrada por error.':'Aún no hay feedback de sesiones.'}</div>
     ${(state.sessionFeedbacks||[]).slice(-8).reverse().map(function(f,i){var idx=(state.sessionFeedbacks.length-1-i);var lbl={muy_facil:'Muy fácil',bien:'Bien',dificil:'Difícil',demasiado:'Demasiado difícil',dolor:'Dolor/molestia'}[f.feel]||f.feel;var est={excelente:'🟢',normal:'🟡',cansado:'🟠',muy_fatigado:'🔴'}[f.estado]||'';return '<div class="row" style="justify-content:space-between;gap:6px;align-items:center;font-size:12px;padding:3px 0;border-bottom:1px dashed #e4ebe6"><span>'+safeText(f.date)+' · '+safeText(f.focus||'rutina')+' '+(est?'· estado '+est:'')+' · '+safeText(lbl)+'</span><button class="btn" style="font-size:11px;padding:3px 8px" onclick="borrarFitFeedback('+idx+')">🗑</button></div>';}).join('')}
@@ -31868,7 +31916,9 @@ function logRoutineQuick(i){
   var ctx=pack.ctx||{};
   var wEl=document.getElementById('rlogW_'+i);
   var weight=+(wEl?.value)||0;
-  if(!weight){ console.log('[QUICK] Ignorado: sin peso'); return; }
+  // Peso corporal / ejercicios de tiempo: peso 0 es válido (adicional opcional)
+  var esPC=(typeof f3EsPesoCorporal==='function')?f3EsPesoCorporal(x):false;
+  if(!weight&&!esPC){ console.log('[QUICK] Ignorado: sin peso'); return; }
   // Leer reps del input rápido (opcional)
   var rEl=document.getElementById('rlogR_'+i);
   var repsInput=(rEl?.value||'').trim();
@@ -32067,12 +32117,13 @@ function f3RegistrarSeries(i){
   var w=document.getElementById('rlogW_'+i);
   if(w){try{w.scrollIntoView({block:'center'});}catch(e){}setTimeout(function(){try{w.focus();}catch(e){}},60);}
 }
-function f3CambiarEjercicio(i){
+function f3CambiarEjercicio(i,sinScroll){
   var d=document.getElementById('fitAlts_'+i);
   if(!d)return;
   var abrir=!d.open;
   d.open=abrir;
-  if(abrir){try{d.scrollIntoView({block:'center'});}catch(e){}}
+  // En el Modo rápido no se mueve la pantalla (todo cabe en la tarjeta)
+  if(abrir&&!sinScroll){try{d.scrollIntoView({block:'center'});}catch(e){}}
 }
 // ===== Demostración dentro de la tarjeta =====
 function f3ToggleDemo(i){
@@ -32291,6 +32342,7 @@ function f3TarjetaEjercicioHTML(i,x,pack){
     h.push('<div style="flex:1;min-width:0">');
     h.push('<div class="fit-row-name">'+(i+1)+'. '+safeText(x.name)+' <span class="fit-card-ej-badge '+estado+'">'+safeText(badge)+'</span></div>');
     h.push('<div class="fit-row-meta">'+safeText(x.muscle)+' · '+goal+' series · '+safeText(x.reps)+' reps · descanso '+safeText(x.rest)+'s</div>');
+    try{h.push('<div class="fit-row-meta" style="margin-top:2px;color:#0d6043">'+(typeof f3EquipoLinea==='function'?f3EquipoLinea(x).linea:'')+'</div>');}catch(e){}
     if(x.note)h.push('<div class="mini" style="margin-top:3px;font-size:11px;color:var(--m)">'+safeText(x.note)+'</div>');
     h.push('<div class="fit-card-ej-series">'+circles+'</div>');
     if(chipsSeries)h.push('<div style="margin-top:6px">'+chipsSeries+'</div>');
@@ -32311,11 +32363,13 @@ function f3TarjetaEjercicioHTML(i,x,pack){
       h.push('<div style="margin-top:4px" class="row"><input id="rlogSW_'+i+'" type="number" inputmode="decimal" placeholder="Peso '+U.pesoUnidad()+'" style="flex:1"><input id="rlogSR_'+i+'" inputmode="numeric" placeholder="Reps" style="flex:1"><button class="btn primary" onclick="logRoutineExercise('+i+',this)" style="font-size:12px;white-space:nowrap">Registrar extra</button></div>');
       h.push('</details>');
     }else{
-      h.push('<div class="fit-ex-log row" style="gap:6px;margin-top:8px;align-items:center">');
-      h.push('<input id="rlogW_'+i+'" type="number" inputmode="decimal" placeholder="Peso '+U.pesoUnidad()+'" value="'+(sugR&&sugR.lastWeight?(''+sugR.lastWeight):'')+'" style="width:92px">');
-      h.push('<input id="rlogR_'+i+'" inputmode="numeric" placeholder="Reps '+safeText(String(x.reps||''))+'" value="'+(sugR&&sugR.targetReps&&sugR.targetReps.length?(''+sugR.targetReps[0]):'')+'" style="flex:1;min-width:64px">');
-      h.push('<button class="btn primary" onclick="logRoutineQuick('+i+')" style="flex:2;font-size:13px;min-height:36px">Registrar serie</button>');
-      h.push('</div>');
+      try{
+        h.push((typeof f3PesoInputsHTML==='function')?f3PesoInputsHTML(i,x,pack):('<div class="fit-ex-log row" style="gap:6px;margin-top:8px;align-items:center">'
+          +'<input id="rlogW_'+i+'" type="number" inputmode="decimal" placeholder="Peso '+U.pesoUnidad()+'" value="'+(sugR&&sugR.lastWeight?(''+sugR.lastWeight):'')+'" style="width:92px">'
+          +'<input id="rlogR_'+i+'" inputmode="numeric" placeholder="Reps '+safeText(String(x.reps||''))+'" value="'+(sugR&&sugR.targetReps&&sugR.targetReps.length?(''+sugR.targetReps[0]):'')+'" style="flex:1;min-width:64px">'
+          +'<button class="btn primary" onclick="logRoutineQuick('+i+')" style="flex:2;font-size:13px;min-height:36px">Registrar serie</button>'
+          +'</div>'));
+      }catch(e){}
     }
     h.push('<div id="rlogOut_'+i+'"></div>');
     h.push('<details id="fitAlts_'+i+'" style="margin-top:6px"><summary style="font-size:13px">🔄 Cambiar ejercicio</summary>');
@@ -32359,6 +32413,312 @@ function f3TarjetaEjercicioHTML(i,x,pack){
   }
 }
 
+// ===== ⚡ MODO RÁPIDO / 📖 INFORMATIVO (misma rutina, dos vistas) =====
+// Una sola fuente de datos: state.fitnessToday (plan/checked/estado) y
+// state.workoutLog (series reales). El modo rápido es OTRA VISTA del mismo
+// progreso: alternar entre modos nunca pierde ni duplica registros.
+function f3ModoVista(){
+  state.uiSettings=state.uiSettings||{};
+  if(!state.uiSettings.fitModoVista){
+    // Predeterminado: rápido en móvil real, informativo en escritorio/pruebas
+    state.uiSettings.fitModoVista=((typeof window!=='undefined'&&window.innerWidth>0&&window.innerWidth<=768)||/iPhone|iPod/i.test(navigator.userAgent))?'rapido':'info';
+    try{save();}catch(e){}
+  }
+  try{document.body.classList.toggle('fit-modo-rapido',state.uiSettings.fitModoVista==='rapido');}catch(e){}
+  return state.uiSettings.fitModoVista;
+}
+function f3ModoVistaSet(m){
+  try{
+    state.uiSettings=state.uiSettings||{};
+    state.uiSettings.fitModoVista=(m==='rapido')?'rapido':'info';
+    save(true);
+    try{document.body.classList.toggle('fit-modo-rapido',state.uiSettings.fitModoVista==='rapido');}catch(e){}
+    try{window._fitAncla=null;window._fitAnclaEl=null;window._fitAnclaTop=null;}catch(e){}
+    if(typeof f3AnclarEl==='function')f3AnclarEl('f3ModoBar');
+    try{quickFitnessToday();}catch(e){}
+  }catch(e){}
+}
+function f3RapidoIndice(){
+  try{
+    state.uiSettings=state.uiSettings||{};
+    var pack=state.fitnessToday;
+    if(pack&&pack.plan&&pack.plan.length){
+      var n=+state.uiSettings.fitRapidoIndice||0;
+      if(n>=pack.plan.length)n=pack.plan.length-1;
+      if(n<0)n=0;
+      state.uiSettings.fitRapidoIndice=n;
+    }
+    return state.uiSettings.fitRapidoIndice||0;
+  }catch(e){return 0;}
+}
+function f3RapidoMover(delta){
+  var pack=state.fitnessToday;if(!pack||!pack.plan||!pack.plan.length)return;
+  state.uiSettings=state.uiSettings||{};
+  var max=pack.plan.length-1;
+  var nuevo=Math.max(0,Math.min(max,f3RapidoIndice()+delta));
+  if(nuevo===f3RapidoIndice())return;
+  state.uiSettings.fitRapidoIndice=nuevo;
+  save();
+  // El ancla conserva el offset visual de la tarjeta: Anterior/Siguiente NUNCA
+  // mueven la pantalla ni suben al inicio.
+  if(typeof f3AnclarTarjeta==='function')f3AnclarTarjeta(nuevo);
+  try{quickFitnessToday();}catch(e){}
+}
+function f3RapidoFinalizar(){
+  try{
+    var pack=state.fitnessToday;if(!pack||!pack.plan)return;
+    var i=f3RapidoIndice();
+    var s=f3SeriesEjercicio(pack.plan[i],pack);
+    var est=f3EstadoEjercicio(i,pack,s);
+    if(est.est!=='completado'&&est.est!=='omitido'){f3MarcarEjercicioTerminado(i);}
+    if(typeof toastReg==='function')toastReg('🎉 Rutina completada');
+  }catch(e){}
+}
+// Selector de vista (visible solo con rutina lista)
+function f3ModoBarHTML(){
+  try{
+    var m=f3ModoVista();
+    return '<div class="fit-modo-bar" id="f3ModoBar"><span class="muted" style="font-size:12px;font-weight:800">Vista:</span>'
+      +'<button class="btn'+(m==='rapido'?' primary':'')+'" style="font-size:13px;padding:8px 12px" onclick="f3ModoVistaSet(\'rapido\')" aria-pressed="'+(m==='rapido')+'">⚡ Modo rápido</button>'
+      +'<button class="btn'+(m==='info'?' primary':'')+'" style="font-size:13px;padding:8px 12px" onclick="f3ModoVistaSet(\'info\')" aria-pressed="'+(m==='info')+'">📖 Modo informativo</button></div>';
+  }catch(e){return '';}
+}
+// ===== EQUIPO REAL DEL EJERCICIO (de EX_LIB, nunca inventado del nombre) =====
+var F3_EQ_LABELS={bar:'Barra · peso total (barra + discos)',man:'Mancuernas · peso por mancuerna',pc:'Peso corporal',maq:'Máquina · peso seleccionado',pol:'Polea · peso seleccionado',ban:'Banda elástica',sin:'Sin equipo'};
+function f3EquipoEjercicio(x){
+  try{
+    if(x&&x.eq)return {eq:String(x.eq),exid:null,ins:x.ins||null,clase:x.clase||null};
+    var nom=String(x&&x.name||'').toLowerCase().trim();
+    var modo=(typeof f3EquipoActualLabel==='function')?f3EquipoActualLabel():'';
+    var key={Gimnasio:'gym','Casa / sin equipo':'casa','Mancuernas':'man'}[modo]||null;
+    var ids=Object.keys(EX_LIB||{});
+    var porNombre=null;
+    for(var k=0;k<ids.length;k++){
+      var e=EX_LIB[ids[k]];if(!e)continue;
+      var vs=e.var||{};
+      if((e.n||'').toLowerCase()===nom){porNombre={e:e,v:(key&&vs[key])?vs[key]:null};break;}
+      var hit=null;
+      for(var vk in vs){if(vs[vk]&&vs[vk].n&&String(vs[vk].n).toLowerCase()===nom){hit=vs[vk];break;}}
+      if(hit){return {eq:hit.eq?String(hit.eq):null,exid:e.id||null,ins:e.ins||null,clase:e.clase||null};}
+    }
+    if(porNombre){
+      var v=porNombre.v||null;
+      var eqFallback=null;
+      if(!v){for(var vk2 in (porNombre.e.var||{})){if(porNombre.e.var[vk2]&&porNombre.e.var[vk2].eq){eqFallback=porNombre.e.var[vk2].eq;break;}}}
+      return {eq:(v&&v.eq)?String(v.eq):(eqFallback||null),exid:porNombre.e.id||null,ins:porNombre.e.ins||null,clase:porNombre.e.clase||null};
+    }
+    // Sin coincidencia confiable en la biblioteca: NO inventar equipo.
+    return {eq:null,exid:null,ins:null,clase:null};
+  }catch(e){return {eq:null,exid:null,ins:null,clase:null};}
+}
+function f3EquipoLinea(x){
+  try{
+    var info=f3EquipoEjercicio(x);
+    var eq=info.eq;
+    if(!eq){
+      var nm=String(x&&x.name||'');
+      if((x&&x.clase==='tiempo')||/plancha|mountain|bicicleta|superman|movilidad|hollow|dead_bug|puente|abdominal|crunch|lagartija|flexi/i.test(nm))eq='pc';
+      else eq='sin';
+    }
+    var base=F3_EQ_LABELS[eq]||F3_EQ_LABELS.sin;
+    if(eq==='pc'&&(!x||!x.clase||x.clase!=='tiempo'))base='Peso corporal · sin peso adicional';
+    return {linea:'Equipo: '+base,tec:info.ins||null,eq:eq};
+  }catch(e){return {linea:'Equipo: Sin equipo',tec:null,eq:'sin'};}
+}
+function f3EsPesoCorporal(x){
+  try{
+    var info=f3EquipoEjercicio(x);
+    if(info.eq==='pc')return true;
+    if(x&&x.clase==='tiempo')return true;
+    return false;
+  }catch(e){return false;}
+}
+// Registrar UNA serie (la siguiente ruedita libre) con el peso y las
+// repeticiones tecleados. Permite pesos distintos por serie y nunca duplica:
+// si el ejercicio ya tiene sus series, avisa y no escribe nada.
+function f3RegistrarSerieActual(i){
+  try{
+    var pack=state.fitnessToday;if(!pack||!pack.plan||!pack.plan[i])return;
+    if(typeof f3AnclarTarjeta==='function')f3AnclarTarjeta(i);
+    var x=pack.plan[i];
+    if(typeof f3BloqueaDebugExercise==='function'&&f3BloqueaDebugExercise(x.name))return;
+    var esPC=(typeof f3EsPesoCorporal==='function')?f3EsPesoCorporal(x):false;
+    var wEl=document.getElementById('rlogW_'+i);
+    var weight=+(wEl&&wEl.value)||0;
+    if(!weight&&!esPC){if(wEl){try{wEl.focus();}catch(e){}}if(typeof toastReg==='function')toastReg('Escribe el peso y toca Registrar serie');return;}
+    var rEl=document.getElementById('rlogR_'+i);
+    var repsIn=(rEl&&rEl.value||'').trim();
+    var isRange=/^\d+[-–]\d+$/.test(repsIn);
+    var repsStr=repsIn&&!isRange?repsIn:'';
+    if(!repsStr){var mr=String(x.reps||'8-12').match(/(\d+)\s*[-–]\s*(\d+)/);repsStr=mr?mr[2]:String(x.reps||'8');}
+    var s=f3SeriesEjercicio(x,pack);
+    var goal=f3GoalSets(pack,i);
+    if(s.visibles.length>=goal){if(typeof toastReg==='function')toastReg('Ya completaste las '+goal+' series de este ejercicio');return;}
+    if(!pack.sessionId)pack.sessionId=Date.now();
+    state.workoutLog=state.workoutLog||[];
+    state.workoutLog.push({id:((typeof ppUUID==='function')?ppUUID():Date.now()),date:todayISO(),localDate:(typeof todayLocal==='function')?todayLocal():todayISO(),sessionId:pack.sessionId,exercise:x.name,weight:weight,sets:1,reps:repsStr,note:'Rutina · '+(x.muscle||'')+(esPC&&!weight?' · Peso corporal':'')+' · Serie '+(s.visibles.length+1)});
+    pack.checked=pack.checked||{};pack.checkedDate=todayISO();
+    save(true);
+    try{if(typeof actualizarResultadosHoy==='function')actualizarResultadosHoy();}catch(e){}
+    try{state.uiSettings=state.uiSettings||{};state.uiSettings.fitBorrador=state.uiSettings.fitBorrador||{};state.uiSettings.fitBorrador[i]={};}catch(e){}
+    if(wEl)wEl.value='';
+    if(rEl)rEl.value='';
+    try{quickFitnessToday();}catch(e){}
+  }catch(e){}
+}
+// ===== CAMPOS DE PESO/REPS (una sola fuente para ambas vistas) =====
+function f3PesoInputsHTML(i,x,pack){
+  try{
+    var sugR=null;
+    try{var mr=String(x.sets||'3').match(/\d+/);sugR=sugerenciaSesion(x.name,x.reps,mr?+mr[0]:3);}catch(e){}
+    var last=lastWorkoutForExercise(x.name);
+    var esPC=f3EsPesoCorporal(x);
+    var b=(state.uiSettings&&state.uiSettings.fitBorrador&&state.uiSettings.fitBorrador[i])||{};
+    var pesoIni=(b.w!=null&&b.w!=='')?b.w:(sugR&&sugR.lastWeight?(''+sugR.lastWeight):(last&&last.weight?(''+last.weight):''));
+    var repsIni=(b.r!=null&&b.r!=='')?b.r:(sugR&&sugR.targetReps&&sugR.targetReps.length?(''+sugR.targetReps[0]):(last&&last.reps&&String(last.reps)!=='no registradas'?(''+last.reps):''));
+    var unidad=U.pesoUnidad();
+    var eqLinea=f3EquipoLinea(x).linea;
+    var ultTxt=(last&&last.weight)?(' · Último: '+last.weight+' '+unidad+' × '+safeText(last.reps||'—')):(esPC?' · Último: peso corporal':'');
+    return '<div class="fit-peso-box">'
+      +'<div class="fit-peso-linea">'+eqLinea+ultTxt+'</div>'
+      +'<div class="fit-peso-grid">'
+      +'<div><label for="rlogW_'+i+'">Peso ('+unidad+')'+(esPC?' · adicional (0 = sin peso)':'')+'</label><input id="rlogW_'+i+'" type="number" inputmode="decimal" placeholder="'+(esPC?'0':'Ej. 45')+'" value="'+pesoIni+'" oninput="f3RapidoGuardarBorrador('+i+',this)"></div>'
+      +'<div><label for="rlogR_'+i+'">Repeticiones</label><input id="rlogR_'+i+'" inputmode="numeric" placeholder="'+safeText(String(x.reps||'10'))+'" value="'+repsIni+'" oninput="f3RapidoGuardarBorrador('+i+',this)"></div>'
+      +'</div>'
+      +'<button class="btn primary fit-peso-btn" onclick="f3RegistrarSerieActual('+i+')">💾 Registrar serie</button>'
+      +'</div>';
+  }catch(e){return '';}
+}
+function f3RapidoGuardarBorrador(i,inp){
+  try{
+    state.uiSettings=state.uiSettings||{};
+    state.uiSettings.fitBorrador=state.uiSettings.fitBorrador||{};
+    state.uiSettings.fitBorrador[i]=state.uiSettings.fitBorrador[i]||{};
+    if(inp&&inp.id&&inp.id.indexOf('rlogW_')===0)state.uiSettings.fitBorrador[i].w=inp.value;
+    else state.uiSettings.fitBorrador[i].r=inp.value;
+    try{save();}catch(e){}
+  }catch(e){}
+}
+// ===== TARJETA DEL MODO RÁPIDO (un ejercicio por pantalla) =====
+function f3CronoIniciar(i){
+  try{
+    var pack=state.fitnessToday;if(!pack||!pack.plan||!pack.plan[i])return;
+    var x=pack.plan[i];
+    var m=String(x.rest||'90').match(/\d+/);
+    var seg=m?+m[0]:90;
+    if(window._f3CronoInt){clearInterval(window._f3CronoInt);window._f3CronoInt=null;}
+    var fin=Date.now()+seg*1000;
+    window._f3CronoInt=setInterval(function(){
+      try{
+        var rest=Math.max(0,Math.round((fin-Date.now())/1000));
+        var o=document.getElementById('f3Crono_'+i);
+        if(o)o.textContent=Math.floor(rest/60)+':'+('0'+(rest%60)).slice(-2)+(rest===0?' · listo ✔':'');
+        if(rest<=0&&window._f3CronoInt){clearInterval(window._f3CronoInt);window._f3CronoInt=null;}
+      }catch(e){}
+    },250);
+  }catch(e){}
+}
+function f3RapidaDemo(i){
+  try{
+    var box=document.getElementById('fitDemo_'+i);if(!box)return;
+    if(box.style.display==='block'){box.style.display='none';return;}
+    if(!box.innerHTML.trim()){
+      var pack=state.fitnessToday;var x=pack&&pack.plan?pack.plan[i]:null;if(!x)return;
+      var eDemo=(typeof exBuscar==='function')?exBuscar(x.name):null;
+      var keyDemo=(typeof exNormal==='function')?exNormal(x.name):String(x.name);
+      var fotoPropia=state.exFotosPropias&&state.exFotosPropias[keyDemo];
+      var idDemo=(typeof f3IdPorNombre==='function')?f3IdPorNombre(x.name):null;
+      var fotoReal=(idDemo&&typeof exTieneFoto==='function'&&exTieneFoto(idDemo)&&typeof exFoto==='function')?exFoto(idDemo,0):null;
+      var demoHTML='';
+      if(fotoPropia){demoHTML='<div class="fit-demo-imggrande"><img src="'+fotoPropia+'" alt="'+safeText(x.name)+'" style="max-width:100%;max-height:240px;object-fit:contain;border-radius:10px"></div>';}
+      else if(eDemo&&typeof exAnimacionHTML==='function'){demoHTML=exAnimacionHTML(x.name,'fitDemo_'+i);}
+      else if(fotoReal){demoHTML='<div class="fit-demo-imggrande"><img src="'+fotoReal+'" alt="'+safeText(x.name)+'" style="max-width:100%;max-height:240px;object-fit:contain;border-radius:10px"></div>';}
+      else{demoHTML='<div class="fit-demo-imggrande"><div style="text-align:center;padding:18px"><div style="font-size:38px">🏋️</div><div style="font-weight:900;margin-top:6px;font-size:15px">'+safeText(x.name)+'</div><div class="muted" style="font-size:12px;margin-top:4px">Imagen de demostración</div></div></div>';}
+      box.innerHTML='<div class="fit-demo-stage" id="fitDemoStage_'+i+'" data-exnombre="'+safeText(x.name)+'" style="cursor:zoom-in" onclick="f3DemoPantallaCompleta('+i+')">'+demoHTML+'</div>'
+        +'<div class="fit-demo-controles" style="margin-top:6px">'
+        +'<button class="btn" id="fitDemoPlay_'+i+'" style="font-size:11px;padding:6px 9px" onclick="f3DemoPlayPause('+i+')">▶ Reproducir</button>'
+        +'<button class="btn" style="font-size:11px;padding:6px 9px" onclick="f3DemoVelocidad('+i+',900)">1×</button>'
+        +'<button class="btn" style="font-size:11px;padding:6px 9px" onclick="f3DemoVelocidad('+i+',2600)">🐢 Lento</button>'
+        +'<button class="btn" style="font-size:11px;padding:6px 9px" onclick="f3DemoPantallaCompleta('+i+')">⛶ Pantalla completa</button>'
+        +'</div>';
+    }
+    box.style.display='block';
+  }catch(e){}
+}
+function f3TarjetaRapidaHTML(idx,pack){
+  try{
+    var i=Math.max(0,Math.min(idx,pack.plan.length-1));
+    var x=pack.plan[i];
+    var total=pack.plan.length;
+    var goal=f3GoalSets(pack,i);
+    var s=f3SeriesEjercicio(x,pack);
+    var est=f3EstadoEjercicio(i,pack,s);
+    var estado=est.est;
+    var badge=(estado==='completado')?('✓ Completado · '+est.n+' de '+goal+' series'):((estado==='omitido')?'! Omitido':((estado==='progreso')?('◐ En progreso · '+est.n+' de '+goal+' series'):'○ Pendiente'));
+    var circles='';
+    for(var cj=0;cj<goal;cj++){
+      var claseC='fit-circle vacia',icoC='',titC='Serie '+(cj+1),onclickC='f3MarcarSerie('+i+')';
+      var regC=s.visibles[cj];
+      if(cj<s.visibles.length){
+        if(s.esValida(regC)){claseC='fit-circle ok';icoC='✓';titC='Serie '+(cj+1)+' completada · toca para quitar';}
+        else{claseC='fit-circle inc';icoC='!';titC='Serie '+(cj+1)+' incompleta (faltan reps) · toca para quitar';}
+        onclickC='f3DesmarcarSerie('+i+','+cj+')';
+      }else if(cj===s.visibles.length&&(estado==='pendiente'||estado==='progreso')){
+        claseC='fit-circle ahora';titC='Serie '+(cj+1)+' (actual) · toca para registrar';
+      }
+      circles+='<div style="text-align:center"><button class="'+claseC+'" title="'+titC+'" onclick="'+onclickC+'">'+icoC+'</button><div class="fit-circle-lbl">S'+(cj+1)+'</div></div>';
+    }
+    var chipsSeries=s.visibles.map(function(r){
+      return '<span style="display:inline-block;background:#fff;border:1px solid '+(s.esValida(r)?'#9dd5b4':'#e6b9b6')+';border-radius:6px;padding:2px 7px;margin:0 4px 4px 0;font-size:12px;white-space:nowrap"><b>'+(r.weight?r.weight+' '+U.pesoUnidad()+' × ':'')+safeText(r.reps||'—')+'</b></span>';
+    }).join('');
+    var eq=f3EquipoLinea(x);
+    var last=lastWorkoutForExercise(x.name);
+    var esPrimero=i===0,esUltimo=i===total-1;
+    var todoListo=estado==='completado';
+    var restM=String(x.rest||'90').match(/\d+/);
+    var restSeg=restM?+restM[0]:90;
+    var h=[];
+    h.push('<div class="fit-card-ej fit-card-ej-rapida fit-ej-abierta'+(todoListo?' done':'')+'" id="fitCard_'+i+'">');
+    h.push('<div class="fit-rapida-top"><div style="flex:1;min-width:0"><div class="fit-rapida-pos">Ejercicio '+(i+1)+' de '+total+'</div><div class="fit-row-name" style="font-size:18px">'+safeText(x.name)+'</div></div><span class="fit-card-ej-badge '+estado+'">'+safeText(badge)+'</span></div>');
+    h.push('<div class="fit-row-meta" style="font-size:13px">💪 '+safeText(x.muscle)+' · '+goal+' series × '+safeText(x.reps)+' · descanso '+restSeg+'s</div>');
+    h.push('<div class="fit-rapida-equipo">'+eq.linea+'</div>');
+    if(eq.tec)h.push('<div class="fit-rapida-tec">💡 Técnica: '+safeText(eq.tec)+'</div>');
+    if(last&&last.weight)h.push('<div class="fit-rapida-ult">🕘 Último registro: <b>'+last.weight+' '+U.pesoUnidad()+' × '+safeText(last.reps||'—')+'</b> · '+safeText((last.localDate||last.date||''))+'</div>');
+    h.push('<div class="fit-rapida-series">'+circles+'</div>');
+    if(chipsSeries)h.push('<div class="fit-rapida-chips">'+chipsSeries+'</div>');
+    h.push(f3PesoInputsHTML(i,x,pack));
+    h.push('<div class="fit-rapida-nav">'
+      +'<button class="btn fit-nav-btn" '+(esPrimero?'disabled':'')+' onclick="f3RapidoMover(-1)" aria-label="Ejercicio anterior">← Anterior</button>'
+      +(esUltimo
+        ?'<button class="btn primary fit-nav-btn" onclick="f3RapidoFinalizar()">🏁 Finalizar rutina</button>'
+        :'<button class="btn fit-nav-btn'+(todoListo?' fit-nav-listo':'')+'" onclick="f3RapidoMover(1)" aria-label="Siguiente ejercicio">Siguiente →</button>')
+      +'</div>');
+    h.push('<div class="fit-rapida-extras">'
+      +'<div class="fit-rapida-crono"><span class="muted" style="font-size:12px">⏱️ Descanso</span><button class="btn" style="font-size:12px;padding:7px 11px" onclick="f3CronoIniciar('+i+')">▶ Iniciar</button><b id="f3Crono_'+i+'"></b></div>'
+      +'<details class="fit-rapida-mas"><summary>☰ Más opciones</summary><div class="fit-rapida-mas-body">'
+      +'<button class="btn" onclick="f3RapidaDemo('+i+')">▶ Ver demostración</button>'
+      +'<button class="btn" onclick="f3MarcarEjercicioTerminado('+i+')">'+(todoListo?'✓ Completado':'✓ Terminé')+'</button>'
+      +'<button class="btn" onclick="f3OmitirEjercicio('+i+')">'+(estado==='omitido'?'↩ Quitar omitir':'🚫 Omitir')+'</button>'
+      +'<button class="btn" onclick="f3CambiarEjercicio('+i+',true)">🔁 Cambiar ejercicio</button>'
+      +'</div>'
+      +'<div id="fitDemo_'+i+'" style="display:none;margin-top:8px"></div>'
+      +'<details id="fitAlts_'+i+'" class="fit-rapida-alts" style="margin-top:6px"><summary style="font-size:12.5px">🔄 Alternativas</summary>'
+      +'<div class="muted" style="font-size:12px;margin:6px 0 4px">Motivo:</div>'
+      +'<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">'
+      +'<button class="btn" style="font-size:12px;padding:6px 10px" onclick="swapToFirstAlt('+i+')">🚫 Está ocupado</button>'
+      +'<button class="btn" style="font-size:12px;padding:6px 10px" onclick="dislikeExercise(\''+String(x.name).replace(/'/g,"\\'")+'\')">👎 No me gusta</button>'
+      +'</div><div id="altsRow_'+i+'">'+(typeof f3AltsHTML==='function'?f3AltsHTML(i,x):'')+'</div></details>'
+      +'</details></div>');
+    if(todoListo)h.push('<div style="margin-top:8px;text-align:center;background:#eaf9f0;border:1px solid #9dd5b4;border-radius:10px;padding:8px;font-size:13px;font-weight:800;color:#15704f">✓ Series completadas</div>');
+    h.push('</div>');
+    return h.join('');
+  }catch(e){
+    try{
+      var x0=pack&&pack.plan&&pack.plan[idx];var i0=Math.max(0,Math.min(idx,(pack.plan||[]).length-1));
+      return '<div class="fit-card-ej fit-ej-abierta" id="fitCard_'+i0+'"><div class="warn"><b>⚠️ No se pudo mostrar este ejercicio.</b><button class="btn" style="margin-top:6px" onclick="f3ModoVistaSet(\'info\')">Ver Modo informativo</button></div></div>';
+    }catch(e2){return '';}
+  }
+}
 function saveSimpleWorkout(){
   let exercise=(document.getElementById('simpleWorkoutExercise')?.value||'').trim();
   if(!exercise){alert('Escribe el ejercicio que hiciste.');return}
