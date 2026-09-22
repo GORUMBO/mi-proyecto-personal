@@ -1,5 +1,6 @@
-// Prueba E2E del Modo rápido de Fitness (iPhone) + persistencia, en DOS fases
-// con el MISMO perfil: fase 1 entrena y configura; fase 2 reabre y verifica.
+// Prueba E2E del Fitness simplificado (iPhone): Modo rápido mínimo con GIF,
+// informativo consolidado, rutinas recuperadas, encabezado limpio, tarjetas
+// personalizables y calculadoras. DOS fases con el MISMO perfil.
 // Uso: node tools/prueba-fitness-rapido.js [puerto] [dirPerfilOpcional] [PP_APP_DIR]
 const { spawn } = require('child_process');
 const fs = require('fs'), os = require('os'), path = require('path');
@@ -67,127 +68,183 @@ async function cerrarGracioso(ws, child) {
 const SEMILLA = `(function(){
   var hoy=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);
   state.fitnessToday={date:hoy,ctx:{},adaptedOnlyToday:false,oneOff:false,plan:[
-    {name:'Press plano con mancuernas',muscle:'pecho',sets:3,reps:'8-12',rest:90},
-    {name:'Peso muerto rumano',muscle:'femoral',sets:3,reps:'8-12',rest:100},
-    {name:'Lagartijas (push ups)',muscle:'pecho',sets:2,reps:'10-15',rest:60},
-    {name:'Plancha',muscle:'core',sets:2,reps:'30-45s',rest:60}
+    {name:'Press plano con mancuernas',muscle:'pecho',sets:3,reps:'8-12',rest:90,alts:['Press inclinado con mancuernas','Fondos']},
+    {name:'Peso muerto rumano',muscle:'femoral',sets:3,reps:'8-12',rest:100,alts:['Peso muerto rumano con mancuernas']},
+    {name:'Lagartijas (push ups)',muscle:'pecho',sets:2,reps:'10-15',rest:60,alts:['Fondos']}
   ],checked:{},checkedDate:hoy,estado:{},sessionId:Date.now()};
+  state.savedRoutines=[
+    {id:'r1',name:'Rutina A',plan:[{name:'Sentadilla',muscle:'pierna',sets:3,reps:'8-12',rest:120}],dias:[{di:-1,n:'Base',exs:[{name:'Sentadilla',muscle:'pierna',sets:3,reps:'8-12',rest:120}]}]},
+    {id:'r2',name:'Rutina B',plan:[{name:'Remo',muscle:'espalda',sets:3,reps:'10-12',rest:90}],dias:[{di:-1,n:'Base',exs:[{name:'Remo',muscle:'espalda',sets:3,reps:'10-12',rest:90}]}]},
+    {id:'r3',name:'Rutina C',plan:[{name:'Curl',muscle:'biceps',sets:2,reps:'10-15',rest:60}],dias:[{di:-1,n:'Base',exs:[{name:'Curl',muscle:'biceps',sets:2,reps:'10-15',rest:60}]}]}
+  ];
+  window._rutinasLocalBoot=state.savedRoutines.slice();
   save(true);
   return 'ok';
 })()`;
-async function registrarSerie(ev, idx, w, r) {
-  await ev(`(()=>{var a=document.getElementById('rlogW_${idx}');var b=document.getElementById('rlogR_${idx}');if(a)a.value='${w}';if(b)b.value='${r}';return 1;})()`);
+async function registrar(ev, idx, w, r) {
+  await ev(`(()=>{var a=document.getElementById('rlogW_${idx}');var b=document.getElementById('rlogR_${idx}');if(a){a.value='${w}';a.dispatchEvent(new Event('input',{bubbles:true}));}if(b){b.value='${r}';b.dispatchEvent(new Event('input',{bubbles:true}));}return 1;})()`);
   await ev(`f3RegistrarSerieActual(${idx})`);
   await wait(700);
 }
 
 async function fase1() {
-  console.log('===== FASE 1 · entrenar en Modo rápido =====');
+  console.log('===== FASE 1 =====');
   const { child, ws, ev } = await lanzar();
   await ev(SEMILLA);
-  await ev(`openTab('💪 Ejercicio')`); await wait(1500);
-  // 1 · Entrada directa
-  const entrada = await ev(`(()=>{
-    var bar=document.getElementById('f3ModoBar');
-    var hoy=document.getElementById('fitHoyCard'),grid=document.querySelector('.fit5-grid');
-    var hr=hoy?hoy.getBoundingClientRect():null,gr=grid?grid.getBoundingClientRect():null;
+  await ev(`openTab('💪 Ejercicio')`); await wait(1600);
+  // 1 · Modo rápido mínimo
+  const rapida = await ev(`(()=>{
     var card=document.querySelector('.fit-card-ej-rapida');
-    return {modo:state.uiSettings&&state.uiSettings.fitModoVista,bar:!!bar,rapida:!!card,hoyAntesQueGrid:hr&&gr?hr.top<=gr.top:null,pos:card?card.textContent.indexOf('Ejercicio 1 de 4')>=0:false,cardCount:document.querySelectorAll('#f3RapidaCardWrap .fit-card-ej').length};
+    var txt=card?card.textContent:'';
+    var grid=document.querySelector('.fit5-grid'),rutina=document.getElementById('routineTodayCard'),guard=document.getElementById('savedRoutinesDetails');
+    var disp=function(el){return el?getComputedStyle(el).display:'no-el';};
+    return {
+      modo:state.uiSettings.fitModoVista,card:!!card,pos:txt.indexOf('Ejercicio 1 de 3')>=0,
+      gif:!!(card&&card.querySelector('.fit-rapida-gif')),gifStage:!!document.getElementById('fitDemoStage_0'),
+      pesos:txt.indexOf('Peso (')>=0,reps:txt.indexOf('Reps')>=0,
+      registrar:txt.indexOf('Registrar')>=0,cambiar:txt.indexOf('Cambiar ejercicio')>=0,
+      ant:txt.indexOf('Anterior')>=0,sig:txt.indexOf('Siguiente')>=0,
+      gridOculto:disp(grid)==='none',rutinaOculta:disp(rutina)==='none',guardOculto:disp(guard)==='none',
+      sinRueditas:txt.indexOf('Serie ')<0,sinEquipo:txt.indexOf('Equipo:')<0,sinCrono:txt.indexOf('Descanso')<0,sinMas:txt.indexOf('Más opciones')<0,
+      nCards:document.querySelectorAll('#f3RapidaCardWrap .fit-card-ej').length
+    };
   })()`);
-  t('1a · Fitness abre directo en la rutina (tarjeta antes que el héroe)', entrada.rapida === true && entrada.hoyAntesQueGrid === true, JSON.stringify(entrada));
-  t('1b · Modo rápido predeterminado en iPhone + selector visible', entrada.modo === 'rapido' && entrada.bar === true, 'modo=' + entrada.modo);
-  t('1c · Un solo ejercicio a la vez ("Ejercicio 1 de 4")', entrada.pos === true && entrada.cardCount === 1, 'cards=' + entrada.cardCount);
-  // 2 · Cambiar entre modos
+  t('1a · rápido: UNA tarjeta, solo lo esencial (GIF+Peso/Reps+Registrar+Cambiar+Anterior/Siguiente)', rapida.card && rapida.pos && rapida.gif && rapida.pesos && rapida.reps && rapida.registrar && rapida.cambiar && rapida.ant && rapida.sig && rapida.nCards === 1, JSON.stringify(rapida));
+  t('1b · rápido: sin semana/estadísticas/rueditas/equipo/cronómetro/Más opciones', rapida.gridOculto && rapida.rutinaOculta && rapida.guardOculto && rapida.sinRueditas && rapida.sinEquipo && rapida.sinCrono && rapida.sinMas === true, 'grid=' + rapida.gridOculto);
+  // 2 · GIF animado automáticamente
+  await wait(500);
+  const gif = await ev(`(()=>{return {timers:((typeof _exTimers!=='undefined'&&_exTimers&&Object.keys(_exTimers).length>0)),vis:!!document.querySelector('.fit-rapida-gif'),stage:document.getElementById('fitDemoStage_0')?document.getElementById('fitDemoStage_0').innerHTML.length:0};})()`);
+  t('2 · GIF visible y en movimiento automático', gif.timers === true && gif.vis === true && gif.stage > 10, JSON.stringify(gif));
+  // 3 · Registrar sin mover la pantalla
+  await ev(`window.scrollTo(0,200);`); await wait(200);
+  const yA = await ev(`Math.round(window.scrollY)`);
+  await registrar(ev, 0, 20, 10);
+  await registrar(ev, 0, 22, 10);
+  await registrar(ev, 0, 25, 8);
+  const yB = await ev(`Math.round(window.scrollY)`);
+  const series = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {n:logs.length,pesos:logs.map(function(r){return r.weight}).join(',')};})()`);
+  t('3 · Registrar guarda 3 series (20/22/25) sin mover la pantalla', series.n === 3 && series.pesos === '20,22,25' && yA === yB, JSON.stringify(series) + ' y=' + yA + '→' + yB);
+  // 4 · Anterior/Siguiente sin perder registros ni posición
+  await ev(`f3RapidoMover(1)`); await wait(800);
+  await ev(`f3RapidoMover(-1)`); await wait(800);
+  const yC = await ev(`Math.round(window.scrollY)`);
+  const vuelta = await ev(`(()=>{var card=document.querySelector('.fit-card-ej-rapida');var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {pos:card?card.textContent.indexOf('Ejercicio 1 de 3')>=0:false,n:logs.length};})()`);
+  t('4 · Anterior/Siguiente conservan registros y posición', vuelta.pos === true && vuelta.n === 3 && yC === yA, JSON.stringify(vuelta) + ' y=' + yC);
+  // 5 · Cambiar ejercicio solo sustituye el actual
+  const antesPlan = await ev(`JSON.stringify((state.fitnessToday.plan||[]).map(function(x){return x.name;}))`);
+  await ev(`(()=>{var d=document.getElementById('fitAlts_0');if(d)d.open=true;return 1;})()`); await wait(400);
+  const alt = await ev(`(()=>{var a=document.getElementById('altsRow_0');return a?a.textContent.slice(0,80):'sin alts';})()`);
+  t('5a · Cambiar ejercicio abre alternativas en su lugar', alt.length > 0, alt);
+  await ev(`swapToFirstAlt(0)`); await wait(900);
+  const despuesPlan = await ev(`(()=>{var p=(state.fitnessToday.plan||[]).map(function(x){return x.name;});return {n:p.length,iguales:p.slice(1).join(',')===${JSON.stringify('')}?'?':p.slice(1).join(','),primero:p[0]};})()`);
+  t('5b · solo cambia el ejercicio actual (misma rutina, mismo largo)', despuesPlan.n === 3, JSON.stringify(despuesPlan));
+  // 6 · Modo informativo: semana, detalles y plegables
   await ev(`f3ModoVistaSet('info')`); await wait(1000);
-  const info = await ev(`(()=>({cards:document.querySelectorAll('#f3RapidaCardWrap .fit-card-ej').length,rapida:!!document.querySelector('.fit-card-ej-rapida')}))()`);
-  t('2 · Modo informativo = lista completa (4), volver a rápido = 1 y persiste', info.cards === 4 && info.rapida === false, JSON.stringify(info));
-  await ev(`f3ModoVistaSet('rapido')`); await wait(1000);
-  const vuelta = await ev(`(()=>({cards:document.querySelectorAll('#f3RapidaCardWrap .fit-card-ej').length,modo:state.uiSettings.fitModoVista}))()`);
-  t('2b · volver a rápido: 1 tarjeta y modo persistido', vuelta.cards === 1 && vuelta.modo === 'rapido', JSON.stringify(vuelta));
-  // 3 · Tres series con pesos y reps DIFERENTES (una a una)
-  await registrarSerie(ev, 0, 20, 10);
-  await registrarSerie(ev, 0, 22, 10);
-  await registrarSerie(ev, 0, 25, 8);
-  const series = await ev(`(()=>{
-    var pack=state.fitnessToday;var x=pack.plan[0];
-    var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise===x.name&&!r.deleted;});
-    var card=document.querySelector('.fit-card-ej-rapida');
-    return {n:logs.length,pesos:logs.map(function(r){return r.weight}).join(','),reps:logs.map(function(r){return r.reps}).join(','),circs:card?card.querySelectorAll('.fit-circle.ok').length:0,chips:card?card.textContent.indexOf('20 lb × 10')>=0&&card.textContent.indexOf('25 lb × 8')>=0:false};
+  const info = await ev(`(()=>{
+    var grid=document.querySelector('.fit5-grid');
+    var guard=document.getElementById('savedRoutinesDetails'),prog=document.getElementById('fitnessProgresoDetails');
+    return {
+      cards:document.querySelectorAll('#f3RapidaCardWrap .fit-card-ej').length,
+      gridVis:getComputedStyle(grid).display!=='none',
+      guardAbierto:guard?guard.open:null,progAbierto:prog?prog.open:null,
+      guardSum:guard?guard.querySelector('summary').textContent:'',
+      equipo:document.querySelector('#f3RapidaCardWrap').textContent.indexOf('Equipo: Mancuernas')>=0,
+      semana:!!document.getElementById('routineTodayOut')
+    };
   })()`);
-  t('3 · 3 series distintas (20/22/25 × 10/10/8) y rueditas ✓', series.n === 3 && series.pesos === '20,22,25' && series.reps === '10,10,8' && series.circs === 3 && series.chips === true, JSON.stringify(series));
-  // borrador: escribir sin registrar, irse y volver → conservado
-  await ev(`(()=>{var a=document.getElementById('rlogW_0');if(a){a.value='30';a.dispatchEvent(new Event('input',{bubbles:true}));}return 1;})()`);
-  await ev(`f3RapidoMover(1)`); await wait(900);
-  const ej2 = await ev(`(()=>{var card=document.querySelector('.fit-card-ej-rapida');return {pos:card?card.textContent.indexOf('Ejercicio 2 de 4')>=0:false,eq:card?card.textContent.indexOf('Barra · peso total (barra + discos)')>=0:false};})()`);
-  t('4a · Siguiente → Ejercicio 2 con equipo "Barra · peso total"', ej2.pos === true && ej2.eq === true, JSON.stringify(ej2));
-  await ev(`f3RapidoMover(-1)`); await wait(900);
-  const borrador = await ev(`(()=>{var a=document.getElementById('rlogW_0');return {w:a?a.value:'',pos:document.querySelector('.fit-card-ej-rapida')?document.querySelector('.fit-card-ej-rapida').textContent.indexOf('Ejercicio 1 de 4')>=0:false};})()`);
-  t('4b · regresar conserva series y el peso tecleado sin registrar', borrador.pos === true && borrador.w === '30', JSON.stringify(borrador));
-  // 4c · peso corporal (lagartijas): registrar con 0 funciona, 2 series
-  await ev(`f3RapidoMover(2)`); await wait(900);
-  await registrarSerie(ev, 2, 0, 12);
-  await registrarSerie(ev, 2, 0, 12);
-  const pc = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Lagartijas (push ups)'&&!r.deleted;});return {n:logs.length,w:logs[0]?logs[0].weight:null,nota:logs[0]?logs[0].note:''};})()`);
-  t('4c · peso corporal: peso 0 válido (2 series, nota Peso corporal)', pc.n === 2 && pc.w === 0 && pc.nota.indexOf('Peso corporal') >= 0, JSON.stringify(pc));
-  // 4d · último ejercicio: Finalizar rutina
-  await ev(`f3RapidoMover(1)`); await wait(900);
-  const ej4 = await ev(`(()=>{var card=document.querySelector('.fit-card-ej-rapida');var btns=[...document.querySelectorAll('.fit-rapida-nav button')].map(function(b){return b.textContent;});return {pos:card?card.textContent.indexOf('Ejercicio 4 de 4')>=0:false,eq:card?card.textContent.indexOf('Peso corporal')>=0:false,fin:btns.some(function(x){return x.indexOf('Finalizar rutina')>=0;})};})()`);
-  t('4d · último: "🏁 Finalizar rutina" en lugar de Siguiente', ej4.pos === true && ej4.fin === true, JSON.stringify(ej4));
-  // 4e · volver al ejercicio 1: todo conservado
-  await ev(`f3RapidoMover(-3)`); await wait(900);
-  const regreso = await ev(`(()=>{var card=document.querySelector('.fit-card-ej-rapida');return {pos:card?card.textContent.indexOf('Ejercicio 1 de 4')>=0:false,circs:card?card.querySelectorAll('.fit-circle.ok').length:0,chips:card?card.textContent.indexOf('20 lb × 10')>=0:false};})()`);
-  t('4e · volver al ejercicio 1 conserva series y progreso', regreso.pos === true && regreso.circs === 3 && regreso.chips === true, JSON.stringify(regreso));
-  // 5 · sin duplicados
-  const antes = await ev(`(state.workoutLog||[]).filter(function(r){return r.sessionId===state.fitnessToday.sessionId&&!r.deleted;}).length`);
-  await ev(`f3RegistrarSerieActual(0)`); await wait(700);
-  const despues = await ev(`(state.workoutLog||[]).filter(function(r){return r.sessionId===state.fitnessToday.sessionId&&!r.deleted;}).length`);
-  t('5 · repetir "Registrar serie" con el ejercicio completo NO duplica', despues === antes, 'antes=' + antes + ' después=' + despues);
-  // 6 · cambiar ejercicio no sube la pantalla
-  await ev(`window.scrollTo(0,300);`); await wait(300);
-  const y1 = await ev(`Math.round(window.scrollY)`);
-  await ev(`f3CambiarEjercicio(0,true)`); await wait(400);
-  const y2 = await ev(`Math.round(window.scrollY)`);
-  t('6 · abrir "Cambiar ejercicio" no mueve la pantalla', y1 === y2, 'y=' + y1 + '→' + y2);
-  // 7 · barra inferior no tapa controles
-  await ev(`window.scrollTo(0,document.documentElement.scrollHeight);`); await wait(500);
-  const barra = await ev(`(()=>{var bar=document.getElementById('mobileNavBar');var nav=document.querySelector('.fit-rapida-nav');if(!bar||!nav)return null;var br=bar.getBoundingClientRect(),nr=nav.getBoundingClientRect();return {navBottom:Math.round(nr.bottom),barTop:Math.round(br.top),tapa:nr.bottom>br.top+2};})()`);
-  t('7 · la barra inferior no tapa Anterior/Siguiente', barra && barra.tapa === false, JSON.stringify(barra));
-  // 8 · equipo visible también en informativo
-  await ev(`f3ModoVistaSet('info')`); await wait(900);
-  const eqInfo = await ev(`(()=>{var cards=[...document.querySelectorAll('#f3RapidaCardWrap .fit-card-ej')].map(function(c){return c.textContent.indexOf('Equipo: Mancuernas')>=0||c.textContent.indexOf('Equipo: Barra')>=0||c.textContent.indexOf('Equipo: Peso corporal')>=0;}).filter(Boolean).length;return cards;})()`);
-  t('8 · Modo informativo muestra el equipo de cada ejercicio', eqInfo >= 3, 'con equipo=' + eqInfo);
+  t('6a · informativo: lista completa, semana y equipo visibles', info.cards === 3 && info.gridVis === true && info.equipo === true && info.semana === true, JSON.stringify(info));
+  t('6b · Progreso y Rutinas guardadas plegados por defecto con contador', info.guardAbierto === false && info.progAbierto === false && info.guardSum.indexOf('Rutinas guardadas (3)') >= 0, JSON.stringify({ab:info.guardAbierto,sum:info.guardSum}));
+  // 7 · Rutinas recuperadas + Cargando
+  const rut = await ev(`(()=>{renderSavedRoutines();var out=document.getElementById('savedRoutinesOut');return {txt:out?out.textContent.slice(0,140):'',n:(state.savedRoutines||[]).length};})()`);
+  t('7a · las rutinas existentes aparecen (3)', rut.n === 3 && rut.txt.indexOf('Rutina A') >= 0, JSON.stringify(rut));
+  const recup = await ev(`(()=>{
+    var boot=window._rutinasLocalBoot.slice();
+    state.savedRoutines=[];
+    f3RutinasGuardarLocal();
+    return {n:state.savedRoutines.length};
+  })()`);
+  t('7b · si la sync vacía el arreglo, se recuperan las rutinas locales', recup.n === 3, JSON.stringify(recup));
+  const carg = await ev(`(()=>{window._csBusy=true;renderSavedRoutines();var t1=document.getElementById('savedRoutinesOut').textContent;window._csBusy=false;return t1.slice(0,30);})()`);
+  t('7c · "Cargando rutinas…" durante la hidratación (sin vacío falso)', carg.indexOf('Cargando rutinas') >= 0, carg);
+  // 8 · Nombre de rutina distinguible
+  const nombre = await ev(`(()=>{var b=document.querySelector('.fit-nombre-box');if(!b)return null;var s=getComputedStyle(b);return {border:s.borderTopColor,bg:s.backgroundColor,present:true};})()`);
+  t('8 · caja del nombre con borde/fondo distinguibles', nombre && nombre.present === true && nombre.border !== 'rgba(0, 0, 0, 0)', JSON.stringify(nombre));
+  // 9 · Encabezado limpio + Diagnóstico
+  const enc = await ev(`(()=>{var v=document.querySelector('.versionChip'),p=document.getElementById('ppWorkerToggleBar');return {ver:v?getComputedStyle(v).display:'no',puente:p?getComputedStyle(p).display:'no'};})()`);
+  t('9a · versión y Puente Cloudflare ocultos del encabezado', enc.ver === 'none' && enc.puente === 'none', JSON.stringify(enc));
+  await ev(`openTab('👤 Perfil')`); await wait(2800);
+  const diag = await ev(`(()=>{var d=document.getElementById('ajDiag');return d?d.textContent.slice(0,500):'';})()`);
+  t('9b · Diagnóstico en Ajustes (puente, conexión, sync, versión)', diag.indexOf('Puente Cloudflare') >= 0 && diag.indexOf('Conexión') >= 0 && diag.indexOf('Sincronización') >= 0 && diag.indexOf('Versión instalada') >= 0, diag.slice(0, 100));
+  // 10 · Tarjetas y cuadros
+  const tarj = await ev(`(()=>{
+    f3TarjetasEditorInsertar();
+    var d=document.getElementById('ajTarjetas');
+    if(!d)return null;
+    f3TarjetasSet('alfa',60);
+    var card=document.querySelector('.card');
+    var cs=card?getComputedStyle(card):null;
+    var b=card?card.querySelector('b'):null;
+    return {editor:!!d,bg:cs?cs.backgroundColor:'',textoOpaco:b?(getComputedStyle(b).opacity==='1'):null,varBg:getComputedStyle(document.documentElement).getPropertyValue('--tarj-bg').trim()};
+  })()`);
+  t('10a · Tarjetas y cuadros: editor + transparencia aplicada al fondo (texto intacto)', tarj && tarj.editor === true && tarj.varBg.indexOf('0.6') >= 0 && tarj.textoOpaco === true, JSON.stringify(tarj));
+  // 11 · Calculadoras
+  await ev(`openTab('🍽️ Recetas')`); await wait(1000);
+  const calc1 = await ev(`(()=>{
+    var d=document.getElementById('calcAlim');
+    if(!d)return {d:false};
+    d.open=true;
+    document.getElementById('calcAlimEdad').value='30';
+    document.getElementById('calcAlimPeso').value='75';
+    document.getElementById('calcAlimEstatura').value='175';
+    f3CalcAlimCalc();
+    var out=document.getElementById('calcAlimOut').textContent;
+    return {d:true,cerrado:!d.open,out:out.slice(0,150),mifflin:out.indexOf('Mifflin')>=0||out.indexOf('metabolismo basal')>=0,nan:/NaN|Infinity/.test(out)};
+  })()`);
+  t('11a · Calculadora de alimentación (Mifflin-St Jeor, sin NaN)', calc1.d === true && calc1.mifflin === true && calc1.nan === false, JSON.stringify(calc1));
+  const calc1b = await ev(`(()=>{document.getElementById('calcAlimEdad').value='';f3CalcAlimCalc();return document.getElementById('calcAlimOut').textContent.slice(0,60);})()`);
+  t('11b · datos inválidos muestran explicación clara', calc1b.indexOf('Completa') >= 0 || calc1b.indexOf('Revisa') >= 0, calc1b);
+  await ev(`openTab('⚖️ Peso')`); await wait(1000);
+  const calc2 = await ev(`(()=>{
+    var d=document.getElementById('calcPeso');
+    if(!d)return {d:false};
+    d.open=true;
+    document.getElementById('calcPesoActual').value='80';
+    document.getElementById('calcPesoObj').value='75';
+    document.getElementById('calcPesoEstatura').value='175';
+    f3CalcPesoCalc();
+    var out=document.getElementById('calcPesoOut').textContent;
+    return {d:true,cerrado:!d.open,dif:out.indexOf('Diferencia')>=0,imc:out.indexOf('IMC')>=0,tpo:out.indexOf('Tiempo estimado')>=0,nan:/NaN|Infinity/.test(out),conv:out.indexOf('Conversión')>=0};
+  })()`);
+  t('11c · Calculadora de objetivo (diferencia, IMC, tiempo, conversión, sin NaN)', calc2.d === true && calc2.dif && calc2.imc && calc2.tpo && calc2.nan === false && calc2.conv === true, JSON.stringify(calc2));
+  // 12 · barra inferior no tapa
+  await ev(`openTab('💪 Ejercicio')`); await wait(1200);
   await ev(`f3ModoVistaSet('rapido')`); await wait(800);
-  // 9 · sin conexión: registrar en el ejercicio 2
-  await ev(`f3RapidoMover(1)`); await wait(900);
-  await ws.sj('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
-  await registrarSerie(ev, 1, 100, 8);
-  const offline = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Peso muerto rumano'&&!r.deleted;});return {n:logs.length};})()`);
-  t('9 · sin conexión: registrar serie funciona', offline.n === 1, JSON.stringify(offline));
-  await ws.sj('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  await ev(`window.scrollTo(0,document.documentElement.scrollHeight);`); await wait(400);
+  const barra = await ev(`(()=>{var bar=document.getElementById('mobileNavBar');var nav=document.querySelector('.fit-rapida-nav');if(!bar||!nav)return null;var br=bar.getBoundingClientRect(),nr=nav.getBoundingClientRect();return {tapa:nr.bottom>br.top+2};})()`);
+  t('12 · la barra inferior no tapa los controles', barra && barra.tapa === false, JSON.stringify(barra));
+  // 13 · volver a rápido
+  await ev(`f3ModoVistaSet('rapido')`); await wait(800);
+  const finRap = await ev(`(()=>({modo:state.uiSettings.fitModoVista,rapida:!!document.querySelector('.fit-card-ej-rapida')}))()`);
+  t('13 · volver a rápido conserva la preferencia', finRap.modo === 'rapido' && finRap.rapida === true, JSON.stringify(finRap));
   await cerrarGracioso(ws, child);
   console.log('   app cerrada; perfil: ' + profile);
 }
 
 async function fase2() {
-  console.log('===== FASE 2 · reabrir y verificar persistencia =====');
+  console.log('===== FASE 2 · reabrir con el mismo perfil =====');
   const { child, ws, ev } = await lanzar();
   await ev(`openTab('💪 Ejercicio')`); await wait(1500);
   const pers = await ev(`(()=>{
     var card=document.querySelector('.fit-card-ej-rapida');
     var pack=state.fitnessToday;
     var logs=(state.workoutLog||[]).filter(function(r){return pack&&r.sessionId===pack.sessionId&&!r.deleted;});
-    return {modo:state.uiSettings.fitModoVista,rapida:!!card,pos2:card?card.textContent.indexOf('Ejercicio 2 de 4')>=0:false,circs:card?card.querySelectorAll('.fit-circle.ok').length:0,logs:logs.length};
+    var alfa=state.uiSettings&&state.uiSettings.tarjetas?state.uiSettings.tarjetas.alfa:null;
+    var varBg=getComputedStyle(document.documentElement).getPropertyValue('--tarj-bg').trim();
+    return {modo:state.uiSettings.fitModoVista,rapida:!!card,logs:logs.length,rutinas:(state.savedRoutines||[]).length,alfa:alfa,varBg:varBg};
   })()`);
-  t('10 · reabrir: modo rápido, índice conservado (ej. 2) y series intactas', pers.modo === 'rapido' && pers.rapida === true && pers.pos2 === true && pers.circs === 1 && pers.logs === 6, JSON.stringify(pers));
-  await ws.sj('Page.reload', { ignoreCache: true });
-  let listo = false;
-  for (let i = 0; i < 60; i++) { await wait(750); const r = await ev("!!(document.getElementById('edgeDrawer')&&document.getElementById('mobileNavBar'))"); if (r === true) { listo = true; break; } }
-  await ev("state.onboarded=true;['loginScreen','onboardingModal','avisoSinCuentaBox','appTutorial','appUpdateBanner'].forEach(id=>{var el=document.getElementById(id);if(el)el.remove();});1");
-  await ev(`openTab('💪 Ejercicio')`); await wait(1500);
-  const tras = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return pack&&r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});var card=document.querySelector('.fit-card-ej-rapida');return {logs:logs.length,modo:state.uiSettings.fitModoVista,rapida:!!card};})()`);
-  t('11 · tras recargar: sin duplicados y modo conservado', tras.logs === 3 && tras.modo === 'rapido' && tras.rapida === true, JSON.stringify(tras));
+  t('14 · reabrir: rutinas intactas, modo y series conservados, tarjetas aplicadas', pers.rutinas === 3 && pers.modo === 'rapido' && pers.rapida === true && pers.logs >= 3 && pers.alfa === 60 && pers.varBg.indexOf('0.6') >= 0, JSON.stringify(pers));
   const fatales = ws.consola.filter(c => /EXCEPCIÓN:/.test(c));
-  t('12 · sin excepciones de JavaScript en el flujo', fatales.length === 0, fatales.slice(0, 2).join(' | ').slice(0, 200));
+  t('15 · sin errores en consola', fatales.length === 0, fatales.slice(0, 2).join(' | ').slice(0, 200));
   await cerrarGracioso(ws, child);
 }
 

@@ -354,7 +354,13 @@ async function main() {
       if(!el){out.piezas[sel]='FALTA';out.dentro=false;return;}
       var r=el.getBoundingClientRect();
       out.piezas[sel]=Math.round(r.left)+'-'+Math.round(r.right);
-      if(r.width===0||r.left<hdr.left-1||r.right>hdr.right+1)out.dentro=false;
+      if(r.width===0){
+        // la versión está OCULTA por diseño (vive en Diagnóstico); las demás
+        // piezas del encabezado sí deben tener tamaño y caber.
+        if(sel!=='.versionChip')out.dentro=false;
+        return;
+      }
+      if(r.left<hdr.left-1||r.right>hdr.right+1)out.dentro=false;
     });
     return out;
   })()`);

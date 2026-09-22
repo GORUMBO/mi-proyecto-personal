@@ -102,8 +102,8 @@ vm.createContext(sandbox);
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sandbox); });
 
 const fn = {
-  quick: function () { sandbox.quickFitnessToday(); return fakeEls['simpleFitnessOut'].innerHTML; },
-  progress: function () { sandbox.renderSimpleFitnessProgress(7); return fakeEls['simpleFitnessOut'].innerHTML; },
+  quick: function () { sandbox.quickFitnessToday(); return (fakeEls['fitnessProgresoOut']||fakeEls['simpleFitnessOut']).innerHTML; },
+  progress: function () { sandbox.renderSimpleFitnessProgress(7); return (fakeEls['fitnessProgresoOut']||fakeEls['simpleFitnessOut']).innerHTML; },
   actualizar: sandbox.actualizarResultadosHoy
 };
 
@@ -593,9 +593,9 @@ t('R20 · Registro de hace 40 días queda FUERA del Mes', function () {
 t('R21 · Semana, 2 semanas y Mes renderizan sin romperse', function () {
   nuevoEstado();
   sandbox.state.workoutLog = regsRealesHoy();
-  const h7 = sandbox.renderSimpleFitnessProgress(7), html7 = fakeEls['simpleFitnessOut'].innerHTML;
-  const h14 = sandbox.renderSimpleFitnessProgress(14), html14 = fakeEls['simpleFitnessOut'].innerHTML;
-  const h30 = sandbox.renderSimpleFitnessProgress(30), html30 = fakeEls['simpleFitnessOut'].innerHTML;
+  const h7 = sandbox.renderSimpleFitnessProgress(7), html7 = (fakeEls['fitnessProgresoOut']||fakeEls['simpleFitnessOut']).innerHTML;
+  const h14 = sandbox.renderSimpleFitnessProgress(14), html14 = (fakeEls['fitnessProgresoOut']||fakeEls['simpleFitnessOut']).innerHTML;
+  const h30 = sandbox.renderSimpleFitnessProgress(30), html30 = (fakeEls['fitnessProgresoOut']||fakeEls['simpleFitnessOut']).innerHTML;
   return html7.indexOf('📊 Progreso · Semana') >= 0
     && html14.indexOf('📊 Progreso · 2 semanas') >= 0
     && html30.indexOf('📊 Progreso · Mes') >= 0
@@ -641,7 +641,7 @@ t('S1 · cargar B → render inmediato + render de sync + render de badge + rend
   sandbox.updateSyncBadge('Sincronizado', '#d9f5e7'); // render de badge
   sandbox.render(); // render tardío (~10 s)
   var yFinal = sandbox.window.scrollY;
-  var rutinaDibujada = fakeEls['simpleFitnessOut'].innerHTML.indexOf('Press banca con barra') >= 0;
+  var rutinaDibujada = (fakeEls['fitnessProgresoOut']||fakeEls['simpleFitnessOut']).innerHTML.indexOf('Press banca con barra') >= 0;
   return yInicial > 0 && yFinal > 0 && rutinaDibujada;
 }());
 
@@ -725,7 +725,7 @@ t('S6 · abrir Historial → render tardío: el viewport NO se mueve y el sync N
   sandbox._vistaRutina = false;
   var yFinal = renderTardio();
   // El sync no debe re-dibujar la rutina encima de la vista que el usuario eligió.
-  var noArrebato = !fakeEls['simpleFitnessOut'] || (fakeEls['simpleFitnessOut'].innerHTML || '').indexOf('fitCard_') < 0;
+  var noArrebato = !fakeEls['simpleFitnessOut'] || ((fakeEls['fitnessProgresoOut']||fakeEls['simpleFitnessOut']).innerHTML || '').indexOf('fitCard_') < 0;
   return yAntes > 0 && yFinal === yAntes && noArrebato;
 }());
 
@@ -1015,7 +1015,7 @@ function cargarRubenA(nombre) {
   return sandbox.window.scrollY;
 }
 function nombreEnCampo() {
-  var html = fakeEls['simpleFitnessOut'].innerHTML || '';
+  var html = (fakeEls['fitnessProgresoOut']||fakeEls['simpleFitnessOut']).innerHTML || '';
   var m = html.match(/id="routineNameInput"[^>]*value="([^"]*)"/);
   return m ? m[1] : null;
 }

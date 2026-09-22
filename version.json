@@ -1,8 +1,31 @@
 {
-  "latest": "1.198.0",
+  "latest": "1.199.0",
   "date": "2026-09-21",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.199.0",
+  "date": "2026-09-22",
+  "type": "recomendada",
+  "nuevas": [
+    "Modo rápido mínimo en iPhone: solo el GIF animado grande del ejercicio, Peso y Repeticiones compactos, Registrar, Cambiar ejercicio y Anterior/Siguiente; sin semana, estadísticas, progreso ni tarjetas extra.",
+    "Fitness completo (informativo) consolidado: Mi semana una sola vez, Progreso y Rutinas guardadas como secciones plegables cerradas por defecto con contador (p. ej. Rutinas guardadas (3)).",
+    "Diagnóstico en Ajustes: estado del Puente Cloudflare, conexión, sincronización, última sincronización, versión instalada y botones para comprobar conexión y buscar actualización.",
+    "Tarjetas y cuadros en Apariencia: color, transparencia, desenfoque, borde e intensidad de sombra para todas las tarjetas (incluida la verde de la rutina), con Restaurar diseño original; la transparencia solo afecta al fondo.",
+    "Calculadora de alimentación (Mifflin-St Jeor) en Comida y Calculadora de objetivo (diferencia, conversión, IMC de referencia y tiempo estimado) en Peso; plegadas por defecto, guardan los datos, validan entradas y permiten copiar resultados."
+  ],
+  "cambios": [
+    "El encabezado queda limpio: el número de versión y el Puente Cloudflare ya no se muestran (ahora viven en Diagnóstico).",
+    "Rutinas guardadas: se recuperan del almacenamiento local si la sincronización llega vacía, se muestra Cargando rutinas… durante la hidratación y el contador coincide con la lista real.",
+    "El nombre de la rutina tiene su propia caja con borde y fondo distinguibles (legible con fondos claros u oscuros).",
+    "Progreso y Rutinas guardadas no ocupan pantalla completa ni mandan al usuario al final de la página."
+  ],
+  "errores": [
+    "Corregido que el encabezado mostrara la versión y el control técnico del puente al usuario normal.",
+    "Corregido que la interfaz dijera que no había rutinas guardadas cuando sí las había.",
+    "Corregido que el Modo rápido obligara a hacer scroll por tarjetas y controles que no se necesitan para entrenar."
+  ]
+},
 {
   "version": "1.198.0",
   "date": "2026-09-21",

@@ -574,6 +574,47 @@ img,video{height:auto}
 #edgeHandle:active{background:var(--app-primary-dark,#0d6043)}
 @media (prefers-reduced-motion: reduce){#edgeScrim,#edgeDrawer{transition:none}}
 
+/* ===== ENCABEZADO LIMPIO: sin versión ni puente flotante (viven en Diagnóstico) ===== */
+.versionChip{display:none!important}
+#ppWorkerToggleBar{display:none!important}
+
+/* ===== TARJETAS Y CUADROS (variables globales desde Apariencia) ===== */
+:root{--tarj-bg:rgba(255,255,255,1);--tarj-borde:rgba(217,227,219,.6);--tarj-sombra:0 2px 6px rgba(23,35,30,.08);--tarj-blur:none;--tarj-hero:linear-gradient(135deg,rgba(21,112,79,.94),rgba(26,150,96,.94));--tarj-hero-text:#ffffff}
+.card,.item,.mini,.fit3-card,.mode-card,.recipe-card,.fridge-cat,.cat-group,.pantry-card,.step,.tm-result,.fit-ex,.fit-card-ej,.exercise-card,.day,details,summary,.settings-clean-details .card{background:var(--tarj-bg,#fff)!important;border-color:var(--tarj-borde)!important;box-shadow:var(--tarj-sombra)!important;-webkit-backdrop-filter:var(--tarj-blur);backdrop-filter:var(--tarj-blur)}
+/* La tarjeta verde de la rutina (héroe) también obedece la configuración:
+   con valores originales conserva su verde; personalizada usa el color de
+   las tarjetas y ajusta el color del texto para conservar el contraste. */
+.fit5-hero{background:var(--tarj-hero)!important;color:var(--tarj-hero-text)}
+.fit5-hero .fit5-hero-title,.fit5-hero .fit5-hero-sub,.fit5-hero .fit5-hero-stat,.fit5-hero .fit5-statuschip{color:var(--tarj-hero-text)}
+/* Caja del nombre de la rutina: siempre distinguible, legible con cualquier fondo */
+.fit-nombre-box{margin:8px 0 4px;padding:10px 12px;border:1.5px solid #9dd5b4;border-radius:14px;background:rgba(234,249,240,.85);box-shadow:0 2px 8px rgba(21,112,79,.12)}
+.fit-nombre-box input:focus{outline:3px solid #15704f;outline-offset:2px;border-color:#0d6043}
+body.dark .fit-nombre-box{background:rgba(18,42,32,.85);border-color:#7bc7a3}
+body.dark .fit-nombre-box label,body.dark .fit-nombre-box input{color:#f0f7f3}
+body.dark .fit-nombre-box input{background:#10261c}
+
+/* ===== MODO RÁPIDO MÍNIMO: una pantalla, sin extras ===== */
+body.fit-modo-rapido .fit5-grid,
+body.fit-modo-rapido #routineTodayCard,
+body.fit-modo-rapido #savedRoutinesDetails,
+body.fit-modo-rapido #fitnessRegisterDetails,
+body.fit-modo-rapido #masHerramientasDetails,
+body.fit-modo-rapido #fitnessProgresoDetails,
+body.fit-modo-rapido #fitHoyHead{display:none!important}
+.fit-rapida-gif{height:min(42vh,340px);display:flex;align-items:center;justify-content:center;background:#f2f7f4;border-radius:12px;border:1px solid var(--b);overflow:hidden;margin:6px 0}
+.fit-rapida-gif .fit-demo-stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.fit-rapida-gif svg,.fit-rapida-gif img,.fit-rapida-gif canvas{max-width:100%;max-height:100%;object-fit:contain}
+.fit-rapida-gif .fit-demo-imggrande{max-height:100%}
+.fit-peso-compacto{padding:8px}
+.fit-peso-compacto .fit-peso-grid{gap:8px}
+.fit-cambiar-btn{width:100%;margin-top:8px;min-height:44px;font-size:14px}
+.fit-rapida-alts summary{font-size:12.5px;font-weight:800;color:#0d6043;cursor:pointer;padding:4px 0}
+@media(max-width:768px){
+  .fit-card-ej-rapida{padding:10px;margin-bottom:8px}
+  .fit-rapida-nav{padding-bottom:4px}
+}
+
+
 /* ===== ⚡ MODO RÁPIDO FITNESS (un ejercicio por pantalla, móvil) ===== */
 .fit-modo-bar{display:flex;align-items:center;gap:8px;margin:8px 0 10px;flex-wrap:wrap}
 .fit-modo-bar .muted{flex:1;min-width:60px}
@@ -621,7 +662,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.198.0';
+  window.HM_APP_VERSION='1.199.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -1116,6 +1157,9 @@ if(!state.uiSettings.mode)state.uiSettings.mode='personal';
 state.trash=state.trash||[];
 state.workLog=state.workLog||[];
 state.workoutLog=state.workoutLog||[];state.savedRoutines=state.savedRoutines||[];
+// Copia de seguridad en memoria de las rutinas guardadas locales: si la
+// sincronización o la hidratación las vacía, se recuperan (sin duplicar).
+try{window._rutinasLocalBoot=(state.savedRoutines||[]).filter(function(r){return r&&!r.deleted;});window._ppBootT0=Date.now();}catch(e){}
 state.fitnessDailyResults=state.fitnessDailyResults||[]; // v1.187: veredictos objetivo vs resultado (complementa workoutLog)
 state.fitnessToday=state.fitnessToday||null;
 state.activeWorkout=state.activeWorkout||null;
@@ -1613,7 +1657,12 @@ function showTab(i,b){
     // RenderRutinaHook: la rutina de hoy SIEMPRE se pinta al abrir Fitness
     // (en versiones con y sin bindAll). Idempotente y sin mover el scroll.
     setTimeout(function(){try{if(typeof quickFitnessToday==='function')quickFitnessToday();}catch(e){}},90);
-    setTimeout(function(){try{if(typeof renderRoutineToday==='function')renderRoutineToday();}catch(e){}},120);}
+    setTimeout(function(){try{if(typeof renderRoutineToday==='function')renderRoutineToday();}catch(e){}},120);
+  }
+  // Tarjetas y cuadros: el editor se inserta junto a Apariencia en Perfil
+  if(t==='👤 Perfil'){setTimeout(function(){try{if(typeof f3TarjetasEditorInsertar==='function')f3TarjetasEditorInsertar();}catch(e){}},80);}
+  if(t==='🍽️ Recetas'){setTimeout(function(){try{f3CalcAlimMount();}catch(e){}},80);}
+  if(t==='⚖️ Peso'){setTimeout(function(){try{if(typeof f3CalcPesoCalc==='function')f3CalcPesoCalc();}catch(e){}},80);}
   // Peso: la sección es una cáscara que renderPesoInterno rellena; garantiza
   // que NUNCA quede vacía al mostrarse (ni tras un render que la reconstruya).
   if(t==='⚖️ Peso'){setTimeout(function(){try{if(typeof renderPesoInterno==='function')renderPesoInterno();}catch(e){}},60);}
@@ -10181,6 +10230,7 @@ function secRecetas(){
   return `
 <style id="recetas2Css">${RECETAS2_CSS}</style>
 <div class="recetas2">
+  ${(typeof f3CalcAlimHTML==='function')?f3CalcAlimHTML():''}
   <div class="r2-search">
     <div id="miCocinaBox">${cpRenderMiCocina()}</div>
     ${secArmaLicuado()}
@@ -18391,7 +18441,8 @@ function getDailyMode(){
   else if(ef==='fuerte'){fitAdj=1.10;fitLabel='🔴 +10% crecer músculo';}
   else if(ef==='normal'){fitAdj=1.05;fitLabel='🟡 +5% día normal';}
   else if(ef==='suave'||ef==='auto'){fitAdj=1.0;fitLabel='';}
-  var kcalGoal=Math.round(baseKcal*fitAdj),proteinGoal=Math.round(baseProt*fitAdj);
+  // Meta manual desde la Calculadora de alimentación (si existe): gana sobre el cálculo base.
+  var kcalGoal=Math.round((+((state.profile&&state.profile.objetivoKcal)||baseKcal))*fitAdj),proteinGoal=Math.round(baseProt*fitAdj);
   let food=getTodayDiaryTotals(),walkToday=(state.walks||[]).find(x=>x.d===today),lastWalk=(state.walks||[]).slice(-1)[0]||{};
   let steps=+(walkToday||lastWalk).steps||22000,well=(state.wellnessLog||[])[0]||{},spentToday=(state.expenses||[]).filter(x=>String(x.d||x.date||'').startsWith(today)).reduce((a,x)=>a+(+x.total||0),0);
   let workoutsWeek=(state.workoutLog||[]).filter(x=>String(x.date||'')>=new Date(Date.now()-7*86400000).toISOString().slice(0,10)).length;
@@ -20572,6 +20623,7 @@ function secPerfil(){
   return secHero('👤','Perfil y ajustes','Desde aquí llegas a todo lo que se configura.')
   + centroAjustes()
   + estadoApp()
+  + ((typeof f3DiagnosticoHTML==='function')?'<details class="settings-clean-details acc" id="ajDiag" ontoggle="accordion(this)">'+f3DiagnosticoHTML()+'</details>':'')
   + `<div class="card" id="perfilDatos">
     <h3 style="margin-top:0">Tus datos</h3>
     <div class="grid">
@@ -21414,7 +21466,7 @@ function secEjercicio(){
     </div>
     <div class="fit5-side">
       <button class="fit5-tile" onclick="openCreateRoutine()"><span class="fit5-tile-icon">🛠️</span><span><b>Crear rutina</b><span>arma tu plan semanal</span></span></button>
-      <button class="fit5-tile" onclick="renderSimpleFitnessProgress()"><span class="fit5-tile-icon">📊</span><span><b>Progreso</b><span>estadísticas y récords</span></span></button>
+      <button class="fit5-tile" onclick="f3ProgresoToggle()"><span class="fit5-tile-icon">📊</span><span><b>Progreso</b><span>estadísticas y récords</span></span></button>
       <button class="fit5-tile" onclick="showSavedRoutines()"><span class="fit5-tile-icon">📁</span><span><b>Rutinas guardadas</b><span>tus plantillas</span></span></button>
     </div>
   </div>
@@ -21431,6 +21483,12 @@ function secEjercicio(){
     <div class="fit-clean-details-body">
       <p class="muted" style="margin-top:0">Guarda cualquier rutina con "💾 Guardar esta rutina" y aquí la vuelves a usar cuando quieras.</p>
       <div id="savedRoutinesOut"></div>
+    </div>
+  </details>
+  <details id="fitnessProgresoDetails" class="fit-clean-details" ontoggle="fitAcordeonPrincipal(this)">
+    <summary>📊 Progreso</summary>
+    <div class="fit-clean-details-body">
+      <div id="fitnessProgresoOut"></div>
     </div>
   </details>
   <details id="fitnessRegisterDetails" class="fit-clean-details" style="border:2px solid #9dd5b4;background:#f7fff9" ontoggle="fitAcordeonPrincipal(this)">
@@ -21601,6 +21659,7 @@ function pesoHTML(){
     +'</div>'
     +(dupes.length?'<div class="fitp-dup"><details><summary>⚠️ '+dupes.length+' fecha(s) con registros duplicados (históricos, sin tocar)</summary>'+dupes.map(function(d){return '<div>'+d+' × '+mapa[d]+'</div>';}).join('')+'</details></div>':'')
     +'<div class="fit3-card"><b style="font-size:14px;color:#12352a">📜 Historial</b><div id="weightOut"></div></div>'
+    +((typeof f3CalcPesoHTML==='function')?f3CalcPesoHTML():'')
     +'<div class="fit3-card" id="wFormCard" style="display:none">'
     +'<b style="font-size:14px;color:#12352a">'+(hoyW?'✏️ Editar peso':'✏️ Registrar peso')+'</b>'
     +'<div class="fitw-form">'
@@ -26606,6 +26665,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
+function bindAll(){try{f3MobileNavInit();}catch(e){}try{f3FondoCargarVisual();}catch(e){}try{f3LogoURLCargar();}catch(e){}try{f3IdentidadAplicar();}catch(e){}try{f3EstilosV2Aplicar();}catch(e){}try{f3DistBind();}catch(e){}try{f3DistAplicar();}catch(e){}try{f3ActualizacionInit();}catch(e){}try{quickFitnessToday();}catch(e){}try{renderRoutineToday();}catch(e){}try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();try{renderPesoInterno()}catch(e){}renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList')&&!window._ticketRevisando)setGastoView('form');},10);try{hydrateCloudImages(document)}catch(e){}try{renderVeggies()}catch(e){}try{renderVegCombine()}catch(e){}try{renderHorno()}catch(e){}try{f3AvisoSitioEscritorio();}catch(e){}}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -31768,6 +31828,13 @@ function quickFitnessToday(){
   }
   if(!pack.checked||pack.checkedDate!==todayISO()){pack.checked={};pack.checkedDate=todayISO();}
   if(!pack.estado)pack.estado={};
+  // ⚡ MODO RÁPIDO: solo entrenar. Sin semana, resúmenes, estadísticas,
+  // progreso, feedback ni tarjetas extra — la pantalla es del ejercicio.
+  if(typeof f3ModoVista==='function'&&f3ModoVista()==='rapido'&&typeof f3TarjetaRapidaHTML==='function'){
+    out.innerHTML=f3ModoBarHTML()+'<div class="fit-list-compact" id="f3RapidaCardWrap">'+f3TarjetaRapidaHTML(f3RapidoIndice(),pack)+'</div>';
+    if(typeof f3TryRenderHoyHead==='function')f3TryRenderHoyHead();
+    return;
+  }
   // DOS MODOS: rutina de la semana (activa) vs excepción "Usar solo hoy" vs
   // generación automática (sin rutina semanal). La semanal tiene prioridad.
   var activaHoy=f3RutinaActiva();
@@ -31803,6 +31870,9 @@ function quickFitnessToday(){
       modoMsg=`<div class="ok" style="margin-bottom:10px;background:#eef6f1;border:1px solid #bfe3cd"><b>🏋️ Mi rutina de la semana:</b> <b>${safeText(pack.loadedName||f3NombreMostrar(activaHoy))}</b>${diaSemanal?' · <b>hoy: '+safeText(diaSemanal)+'</b>':''}<div class="row" style="margin-top:6px"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="showSavedRoutines()">🔄 Cambiar rutina</button></div></div>`;
     }
   }
+  // Consolidación: si ya se muestra la tarjeta compacta de "Mi semana" en el
+  // panel, se oculta el bloque semanal duplicado de abajo (misma información).
+  try{var rcD=document.getElementById('routineTodayCard');if(rcD)rcD.style.display=(tarjetaSemana)?'none':'';}catch(e){}
   out.innerHTML=`
   ${adaptMsg}
   ${semanaMsg}
@@ -32719,6 +32789,439 @@ function f3TarjetaRapidaHTML(idx,pack){
     }catch(e2){return '';}
   }
 }
+// ============================================================
+// ===== SIMPLIFICACIÓN MODO RÁPIDO + RUTINAS + DIAGNÓSTICO + TARJETAS + CALCULADORAS =====
+// ============================================================
+// Redefinición del Modo rápido: SOLO lo necesario para entrenar.
+// GIF animado grande + Peso/Reps compactos + Registrar + Cambiar + Anterior/Siguiente.
+function f3TarjetaRapidaHTML(idx,pack){
+  try{
+    var i=Math.max(0,Math.min(idx,pack.plan.length-1));
+    var x=pack.plan[i];
+    var total=pack.plan.length;
+    var s=f3SeriesEjercicio(x,pack);
+    var est=f3EstadoEjercicio(i,pack,s);
+    var estado=est.est;
+    var esPrimero=i===0,esUltimo=i===total-1;
+    var todoListo=estado==='completado';
+    // GIF / imagen grande del ejercicio
+    var eDemo=(typeof exBuscar==='function')?exBuscar(x.name):null;
+    var keyDemo=(typeof exNormal==='function')?exNormal(x.name):String(x.name);
+    var fotoPropia=state.exFotosPropias&&state.exFotosPropias[keyDemo];
+    var idDemo=(typeof f3IdPorNombre==='function')?f3IdPorNombre(x.name):null;
+    var fotoReal=(idDemo&&typeof exTieneFoto==='function'&&exTieneFoto(idDemo)&&typeof exFoto==='function')?exFoto(idDemo,0):null;
+    var gifHTML='';
+    if(eDemo&&typeof exAnimacionHTML==='function'){gifHTML=exAnimacionHTML(x.name,'fitDemo_'+i);}
+    else if(fotoPropia||fotoReal){gifHTML='<div class="fit-demo-imggrande"><img src="'+(fotoPropia||fotoReal)+'" alt="'+safeText(x.name)+'" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:10px"></div>';}
+    else{gifHTML='<div class="fit-demo-imggrande"><div style="text-align:center;padding:16px"><div style="font-size:40px">🏋️</div><div style="font-weight:900;margin-top:6px;font-size:15px">'+safeText(x.name)+'</div></div></div>';}
+    var h=[];
+    h.push('<div class="fit-card-ej fit-card-ej-rapida fit-ej-abierta'+(todoListo?' done':'')+'" id="fitCard_'+i+'">');
+    h.push('<div class="fit-rapida-pos">Ejercicio '+(i+1)+' de '+total+' · '+safeText(x.name)+(estado==='completado'?' ✓':'')+(estado==='progreso'?' · '+est.n+'/'+est.goal:'')+'</div>');
+    h.push('<div class="fit-rapida-gif" id="fitDemo_'+i+'"><div class="fit-demo-stage" id="fitDemoStage_'+i+'" data-exnombre="'+safeText(x.name)+'">'+gifHTML+'</div></div>');
+    h.push(f3PesoCompactoHTML(i,x,pack));
+    h.push('<button class="btn primary fit-peso-btn" onclick="f3RegistrarSerieActual('+i+')">💾 Registrar</button>');
+    h.push('<div class="fit-rapida-nav">'
+      +'<button class="btn fit-nav-btn" '+(esPrimero?'disabled':'')+' onclick="f3RapidoMover(-1)" aria-label="Ejercicio anterior">← Anterior</button>'
+      +(esUltimo
+        ?'<button class="btn primary fit-nav-btn" onclick="f3RapidoFinalizar()">🏁 Finalizar rutina</button>'
+        :'<button class="btn fit-nav-btn'+(todoListo?' fit-nav-listo':'')+'" onclick="f3RapidoMover(1)" aria-label="Siguiente ejercicio">Siguiente →</button>')
+      +'</div>');
+    h.push('<button class="btn fit-nav-btn fit-cambiar-btn" onclick="f3CambiarEjercicio('+i+',true)">🔁 Cambiar ejercicio</button>');
+    h.push('<details id="fitAlts_'+i+'" class="fit-rapida-alts"><summary style="font-size:12.5px">Alternativas</summary>'
+      +'<div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0">'
+      +'<button class="btn" style="font-size:12px;padding:6px 10px" onclick="swapToFirstAlt('+i+')">🚫 Está ocupado</button>'
+      +'<button class="btn" style="font-size:12px;padding:6px 10px" onclick="dislikeExercise(\''+String(x.name).replace(/'/g,"\\'")+'\')">👎 No me gusta</button>'
+      +'</div><div id="altsRow_'+i+'">'+(typeof f3AltsHTML==='function'?f3AltsHTML(i,x):'')+'</div></details>');
+    h.push('</div>');
+    // GIF en movimiento automáticamente (sin reiniciar si ya corre)
+    setTimeout(function(){
+      try{
+        var box='fitDemo_'+i;
+        var e2=(typeof exBuscar==='function')?exBuscar(x.name):null;
+        if(e2&&typeof exAnimar==='function'&&!(typeof _exTimers!=='undefined'&&_exTimers&&_exTimers[box])){
+          try{exAnimar(box,e2.id,900);}catch(e2){}
+        }
+      }catch(e3){}
+    },120);
+    return h.join('');
+  }catch(e){
+    try{
+      var i0=Math.max(0,Math.min(idx,(pack&&pack.plan||[]).length-1));
+      return '<div class="fit-card-ej fit-ej-abierta" id="fitCard_'+i0+'"><div class="warn"><b>⚠️ No se pudo mostrar este ejercicio.</b><button class="btn" style="margin-top:6px" onclick="f3ModoVistaSet(\'info\')">Ver Modo informativo</button></div></div>';
+    }catch(e2){return '';}
+  }
+}
+// Campos compactos (solo Peso y Reps; el detalle vive en el Modo informativo)
+function f3PesoCompactoHTML(i,x,pack){
+  try{
+    var esPC=(typeof f3EsPesoCorporal==='function')?f3EsPesoCorporal(x):false;
+    var b=(state.uiSettings&&state.uiSettings.fitBorrador&&state.uiSettings.fitBorrador[i])||{};
+    var last=lastWorkoutForExercise(x.name);
+    var sugR=null;try{var mr=String(x.sets||'3').match(/\d+/);sugR=sugerenciaSesion(x.name,x.reps,mr?+mr[0]:3);}catch(e){}
+    var pesoIni=(b.w!=null&&b.w!=='')?b.w:(sugR&&sugR.lastWeight?(''+sugR.lastWeight):(last&&last.weight?(''+last.weight):''));
+    var repsIni=(b.r!=null&&b.r!=='')?b.r:(sugR&&sugR.targetReps&&sugR.targetReps.length?(''+sugR.targetReps[0]):(last&&last.reps&&String(last.reps)!=='no registradas'?(''+last.reps):''));
+    var unidad=U.pesoUnidad();
+    return '<div class="fit-peso-box fit-peso-compacto">'
+      +'<div class="fit-peso-grid">'
+      +'<div><label for="rlogW_'+i+'">Peso ('+unidad+')'+(esPC?' · 0=solo cuerpo':'')+'</label><input id="rlogW_'+i+'" type="number" inputmode="decimal" placeholder="'+(esPC?'0':'Ej. 45')+'" value="'+pesoIni+'" oninput="f3RapidoGuardarBorrador('+i+',this)"></div>'
+      +'<div><label for="rlogR_'+i+'">Reps</label><input id="rlogR_'+i+'" inputmode="numeric" placeholder="'+safeText(String(x.reps||'10'))+'" value="'+repsIni+'" oninput="f3RapidoGuardarBorrador('+i+',this)"></div>'
+      +'</div></div>';
+  }catch(e){return '';}
+}
+// ===== RUTINAS GUARDADAS: recuperación y estado de carga =====
+// La hidratación/sync puede llegar DESPUÉS del primer render: nunca mostrar
+// "no hay rutinas" antes de tiempo, y si un proceso vacía el arreglo, se
+// recuperan las rutinas locales que estaban al arrancar (sin duplicar).
+function f3RutinasGuardarLocal(){
+  try{
+    var vivos=(state.savedRoutines||[]).filter(function(r){return r&&!r.deleted;});
+    if(vivos.length&&window._rutinasLocalBoot){window._rutinasLocalBoot=vivos;return;}
+    if((!state.savedRoutines||!state.savedRoutines.length)&&window._rutinasLocalBoot&&window._rutinasLocalBoot.length){
+      state.savedRoutines=window._rutinasLocalBoot.slice();
+      try{save();}catch(e){}
+    }
+  }catch(e){}
+}
+function f3RutinasCargando(){
+  try{
+    return !!window._csBusy||(window._ppBootT0&&Date.now()-window._ppBootT0<3500);
+  }catch(e){return false;}
+}
+// ===== DIAGNÓSTICO (Más → Ajustes) =====
+function f3DiagnosticoHTML(){
+  try{
+    var sesion=!!(typeof getCloudSession==='function'&&getCloudSession());
+    var sincro=state.lastSync?('✓ Sincronizado · última: '+safeText(state.lastSync)):(sesion?'Esperando sincronización…':'Sin cuenta: solo este dispositivo');
+    var puente=(typeof ppWorkerOn==='function')?(ppWorkerOn()?'ACTIVADO':'apagado'):'—';
+    return '<summary>🩺 Diagnóstico</summary><div class="card">'
+      +'<div class="list" style="gap:6px">'
+      +'<div class="item"><b>🌉 Puente Cloudflare</b><div class="muted" style="font-size:12px">'+puente+'</div><button class="btn" style="font-size:12px;padding:6px 10px;margin-top:6px" onclick="ppToggleWorker()">Activar / desactivar puente</button></div>'
+      +'<div class="item"><b>📶 Conexión</b><div class="muted" style="font-size:12px" id="diagConexion">'+(navigator.onLine?'En línea':'Sin conexión')+'</div><button class="btn" style="font-size:12px;padding:6px 10px;margin-top:6px" onclick="f3DiagProbarConexion()">Comprobar conexión</button></div>'
+      +'<div class="item"><b>☁️ Sincronización</b><div class="muted" style="font-size:12px">'+sincro+(state.offlineChanges?' · '+state.offlineChanges+' cambio(s) pendientes':'')+'</div></div>'
+      +'<div class="item"><b>📦 Versión instalada</b><div class="muted" style="font-size:12px">v'+(typeof HM_APP_VERSION!=='undefined'?HM_APP_VERSION:'—')+'</div></div>'
+      +'<div class="item"><b>🔄 Actualizar</b><div class="muted" style="font-size:12px">Comprueba si existe una versión nueva de la app</div><button class="btn" style="font-size:12px;padding:6px 10px;margin-top:6px" onclick="checkForAppUpdate()">Buscar actualización</button><div id="updateCheckStatus"></div></div>'
+      +'</div></div>';
+  }catch(e){return '';}
+}
+function f3DiagProbarConexion(){
+  var el=document.getElementById('diagConexion');
+  if(el)el.textContent='Comprobando…';
+  fetch('https://gorumbo.github.io/mi-proyecto-personal/version.json',{cache:'no-store'}).then(function(r){
+    var el2=document.getElementById('diagConexion');
+    if(el2)el2.textContent=r.ok?('✓ En línea · versión disponible: '+((typeof PP_UPDATE!=='undefined'&&PP_UPDATE.ultima)?PP_UPDATE.ultima:'—')):'Sin conexión (no se pudo llegar al servidor)';
+  }).catch(function(){
+    var el2=document.getElementById('diagConexion');
+    if(el2)el2.textContent='Sin conexión (no se pudo llegar al servidor)';
+  });
+}
+// ===== TARJETAS Y CUADROS (Apariencia) =====
+function f3TarjetasCfg(){
+  try{
+    state.uiSettings=state.uiSettings||{};
+    state.uiSettings.tarjetas=state.uiSettings.tarjetas||{};
+    var t=state.uiSettings.tarjetas;
+    if(typeof t.color!=='string'||!t.color)t.color='#ffffff';
+    if(t.alfa==null)t.alfa=100;
+    if(t.blur==null)t.blur=0;
+    if(typeof t.borde!=='string'||!t.borde)t.borde='';
+    if(t.sombra==null)t.sombra=40;
+    return t;
+  }catch(e){return {color:'#ffffff',alfa:100,blur:0,borde:'',sombra:40};}
+}
+function f3TarjetasAplicar(){
+  try{
+    var t=f3TarjetasCfg();
+    var a=Math.max(0,Math.min(100,+t.alfa||100))/100;
+    var hex=/^#[0-9a-f]{6}$/i.test(t.color)?t.color:'#ffffff';
+    var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    var bg='rgba('+r+','+g+','+b+','+a+')';
+    // Contraste garantizado: con mucha transparencia se refuerzan borde y sombra
+    var borde=(t.borde&&/^#[0-9a-f]{6}$/i.test(t.borde))?t.borde:(a<0.55?'rgba(21,112,79,.35)':'rgba(217,227,219,.6)');
+    var sombraInt=Math.max(0,Math.min(100,+t.sombra||0))/100;
+    var sombra=(sombraInt===0)?'none':('0 '+(1+2*sombraInt)+'px '+(4+10*sombraInt)+'px rgba(23,35,30,'+(0.05+0.2*sombraInt)+')');
+    var blur=Math.max(0,Math.min(24,+t.blur||0));
+    // Héroe (tarjeta verde de la rutina): original verde, personalizada usa
+    // el color de las tarjetas con texto legible según la luminosidad.
+    var esOriginal=(t.color==='#ffffff'&&t.alfa===100&&t.blur===0&&!t.borde&&(+t.sombra===40));
+    var lum=(0.2126*r+0.7152*g+0.0722*b)/255;
+    var heroBG=esOriginal?'linear-gradient(135deg,rgba(21,112,79,.94),rgba(26,150,96,.94))':bg;
+    var heroText=esOriginal?'#ffffff':(lum>0.55?'#17231e':'#ffffff');
+    var d=document.documentElement;
+    try{d.style.setProperty('--tarj-bg',bg);d.style.setProperty('--tarj-borde',borde);d.style.setProperty('--tarj-sombra',sombra);d.style.setProperty('--tarj-blur',blur>0?('blur('+blur+'px)'):'none');d.style.setProperty('--tarj-hero',heroBG);d.style.setProperty('--tarj-hero-text',heroText);}catch(e){}
+  }catch(e){}
+}
+function f3TarjetasEditorHTML(){
+  try{
+    var t=f3TarjetasCfg();
+    return '<div class="mini" style="margin-top:6px">Cambia cómo se ven todas las tarjetas y cuadros. La transparencia afecta solo al fondo: el texto y los botones conservan su opacidad.</div>'
+      +'<div class="grid" style="gap:8px;margin-top:8px">'
+      +'<div><label>Color de las tarjetas</label><input type="color" id="tarjColor" value="'+safeText(t.color)+'" oninput="f3TarjetasSet(\'color\',this.value)"></div>'
+      +'<div><label>Transparencia <b id="tarjAlfaV">'+t.alfa+'%</b></label><input type="range" id="tarjAlfa" min="35" max="100" value="'+t.alfa+'" oninput="f3TarjetasSet(\'alfa\',this.value)"></div>'
+      +'<div><label>Desenfoque del fondo <b id="tarjBlurV">'+t.blur+'px</b></label><input type="range" id="tarjBlur" min="0" max="24" value="'+t.blur+'" oninput="f3TarjetasSet(\'blur\',this.value)"></div>'
+      +'<div><label>Color del borde (vacío = automático)</label><input type="color" id="tarjBorde" value="'+safeText(t.borde||'#000000')+'" oninput="f3TarjetasSet(\'borde\',this.value)"></div>'
+      +'<div><label>Intensidad de la sombra <b id="tarjSombraV">'+t.sombra+'%</b></label><input type="range" id="tarjSombra" min="0" max="100" value="'+t.sombra+'" oninput="f3TarjetasSet(\'sombra\',this.value)"></div>'
+      +'</div>'
+      +'<button class="btn" style="width:100%;margin-top:8px" onclick="f3TarjetasRestaurar()">↩ Restaurar diseño original</button>';
+  }catch(e){return '';}
+}
+function f3TarjetasSet(campo,valor){
+  try{
+    var t=f3TarjetasCfg();
+    t[campo]=valor;
+    if(campo==='alfa'||campo==='blur'||campo==='sombra')t[campo]=Math.max(0,Math.min(100,+valor||0));
+    if(campo==='alfa'){var el=document.getElementById('tarjAlfaV');if(el)el.textContent=t.alfa+'%';}
+    if(campo==='blur'){var el2=document.getElementById('tarjBlurV');if(el2)el2.textContent=t.blur+'px';}
+    if(campo==='sombra'){var el3=document.getElementById('tarjSombraV');if(el3)el3.textContent=t.sombra+'%';}
+    save();
+    f3TarjetasAplicar();
+  }catch(e){}
+}
+function f3TarjetasRestaurar(){
+  try{
+    state.uiSettings.tarjetas={color:'#ffffff',alfa:100,blur:0,borde:'',sombra:40};
+    save();
+    f3TarjetasAplicar();
+    var d=document.getElementById('ajTarjetas');
+    if(d&&d.querySelector('.card')){try{d.querySelector('.card').innerHTML=f3TarjetasEditorHTML();}catch(e){}}
+  }catch(e){}
+}
+// Inserta el editor de Tarjetas y el Diagnóstico junto al bloque de
+// Apariencia (Perfil → Ajustes unificados). Idempotente.
+function f3TarjetasEditorInsertar(){
+  try{
+    var ap=document.getElementById('ajAp');
+    if(!ap){
+      // el bloque de Apariencia puede renderizarse tarde: reintenta un momento
+      window._tarjIntentos=(window._tarjIntentos||0)+1;
+      if(window._tarjIntentos<8){setTimeout(function(){try{f3TarjetasEditorInsertar();}catch(e){}},600);}
+      return;
+    }
+    if(!document.getElementById('ajTarjetas')){
+      var d=document.createElement('details');
+      d.id='ajTarjetas';d.className='settings-clean-details acc';
+      d.setAttribute('ontoggle','accordion(this)');
+      d.innerHTML='<summary>🎴 Tarjetas y cuadros</summary><div class="card">'+f3TarjetasEditorHTML()+'</div>';
+      ap.parentNode.insertBefore(d,ap.nextSibling);
+    }
+    if(!document.getElementById('ajDiag')){
+      var di=document.createElement('details');
+      di.id='ajDiag';di.className='settings-clean-details acc';
+      di.setAttribute('ontoggle','accordion(this)');
+      di.innerHTML=(typeof f3DiagnosticoHTML==='function')?f3DiagnosticoHTML():'';
+      ap.parentNode.insertBefore(di,ap.nextSibling);
+    }
+  }catch(e){}
+}
+// ===== CALCULADORA DE ALIMENTACIÓN (Comida) · Mifflin-St Jeor =====
+function f3CalcAlimCfg(){
+  try{
+    state.uiSettings=state.uiSettings||{};
+    if(!state.uiSettings.calcAlim)state.uiSettings.calcAlim={};
+    return state.uiSettings.calcAlim;
+  }catch(e){return {};}
+}
+function f3CalcAlimMount(){
+  try{
+    var d=document.getElementById('calcAlim');if(!d)return;
+    if(typeof f3CalcAlimCalc==='function')f3CalcAlimCalc();
+  }catch(e){}
+}
+function f3CalcAlimHTML(){
+  try{
+    var c=f3CalcAlimCfg();
+    return '<details class="fit-clean-details" id="calcAlim" ontoggle="fitAcordeonPrincipal(this);f3CalcAlimCalc()"><summary>🧮 Calculadora de alimentación</summary>'
+      +'<div class="fit-clean-details-body">'
+      +'<div class="muted" style="font-size:12px;margin:4px 0 8px">Fórmula Mifflin-St Jeor. Resultados estimados: no sustituyen a un profesional.</div>'
+      +'<div class="grid" style="gap:8px">'
+      +'<div><label>Edad</label><input id="calcAlimEdad" type="number" inputmode="numeric" min="10" max="100" value="'+safeText(c.edad||'')+'" oninput="f3CalcAlimCalc()"></div>'
+      +'<div><label>Sexo</label><select id="calcAlimSexo" onchange="f3CalcAlimCalc()"><option value="hombre"'+(c.sexo!=='mujer'?' selected':'')+'>Hombre</option><option value="mujer"'+(c.sexo==='mujer'?' selected':'')+'>Mujer</option></select></div>'
+      +'<div><label>Peso ('+U.pesoUnidad()+')</label><input id="calcAlimPeso" type="number" inputmode="decimal" min="30" max="300" value="'+safeText(c.peso||'')+'" oninput="f3CalcAlimCalc()"></div>'
+      +'<div><label>Estatura (cm)</label><input id="calcAlimEstatura" type="number" inputmode="decimal" min="100" max="250" value="'+safeText(c.estatura||'')+'" oninput="f3CalcAlimCalc()"></div>'
+      +'<div><label>Nivel de actividad</label><select id="calcAlimAct" onchange="f3CalcAlimCalc()">'
+      +[['1.2','Sedentario (poco o nada)'],['1.375','Ligero (1-3 días/semana)'],['1.55','Moderado (3-5 días/semana)'],['1.725','Alto (6-7 días/semana)'],['2.0','Trabajo físico intenso (jardinería, obra, campo)']].map(function(o){return '<option value="'+o[0]+'"'+(String(c.act||'1.55')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>'
+      +'<div><label>Objetivo</label><select id="calcAlimObj" onchange="f3CalcAlimCalc()"><option value="bajar"'+(c.obj==='bajar'?' selected':'')+'>Bajar peso</option><option value="mantener"'+(c.obj==='mantener'?' selected':'')+'>Mantener</option><option value="subir"'+(c.obj==='subir'?' selected':'')+'>Aumentar peso</option></select></div>'
+      +'<div><label>Ritmo por semana</label><select id="calcAlimRitmo" onchange="f3CalcAlimCalc()">'
+      +[['0.25','Lento (±0.25 kg/semana)'],['0.5','Moderado (±0.5 kg/semana)'],['0.75','Rápido (±0.75 kg/semana)']].map(function(o){return '<option value="'+o[0]+'"'+(String(c.ritmo||'0.5')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>'
+      +'</div>'
+      +'<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn" style="font-size:12px;padding:6px 10px" onclick="f3CalcAlimLimpiar()">🗑 Borrar datos</button><button class="btn" style="font-size:12px;padding:6px 10px" onclick="f3CalcAlimCopiar()">📋 Copiar resultado</button><button class="btn" style="font-size:12px;padding:6px 10px" onclick="f3CalcAlimAplicarMeta()">🎯 Usar como meta</button></div>'
+      +'<div id="calcAlimOut" style="margin-top:10px"></div>'
+      +'</div></details>';
+  }catch(e){return '';}
+}
+function f3CalcAlimCalc(){
+  try{
+    var out=document.getElementById('calcAlimOut');if(!out)return;
+    var c=f3CalcAlimCfg();
+    var edad=+document.getElementById('calcAlimEdad').value||0;
+    var sexo=document.getElementById('calcAlimSexo').value;
+    var peso=+document.getElementById('calcAlimPeso').value||0;
+    var estatura=+document.getElementById('calcAlimEstatura').value||0;
+    var act=+document.getElementById('calcAlimAct').value||1.55;
+    var obj=document.getElementById('calcAlimObj').value;
+    var ritmo=+document.getElementById('calcAlimRitmo').value||0.5;
+    c.edad=edad;c.sexo=sexo;c.peso=peso;c.estatura=estatura;c.act=String(act);c.obj=obj;c.ritmo=String(ritmo);
+    try{save();}catch(e){}
+    if(!edad||!peso||!estatura){out.innerHTML='<div class="warn" style="font-size:12.5px">Completa edad, peso y estatura para ver tus resultados (números positivos, sin comas en lugar de puntos).</div>';return;}
+    if(edad<10||peso<30||estatura<100){out.innerHTML='<div class="warn" style="font-size:12.5px">Revisa los datos: edad 10-100, peso 30-300, estatura 100-250 cm.</div>';return;}
+    var bmr=10*peso+6.25*estatura-5*edad+(sexo==='hombre'?5:-161);
+    var mant=bmr*act;
+    var delta=ritmo*7700/7; // ~7,700 kcal por kg de grasa
+    var rec=(obj==='bajar')?mant-delta:(obj==='subir'?mant+delta:mant);
+    var rec=Math.max(1200,Math.round(rec));
+    var prot=Math.round(peso*1.8);
+    var grasa=Math.round(rec*0.25/9);
+    var carbs=Math.round((rec-prot*4-grasa*9)/4);
+    var agua=Math.round(peso*0.035*100)/100;
+    var comidas=Math.max(1,Math.round(rec/4));
+    if(carbs<0)carbs=0;
+    out.innerHTML='<div class="ok" style="margin-top:4px"><b>Resultados (Mifflin-St Jeor):</b>'
+      +'<div class="list" style="margin-top:6px;gap:4px">'
+      +'<div class="item"><b>'+Math.round(bmr)+' kcal</b> · metabolismo basal</div>'
+      +'<div class="item"><b>'+Math.round(mant)+' kcal</b> · mantenimiento aproximado</div>'
+      +'<div class="item"><b style="color:#15704f">'+rec+' kcal</b> · recomendadas para '+obj+' (ritmo '+ritmo+' kg/semana)</div>'
+      +'<div class="item"><b>'+prot+' g</b> proteína · <b>'+grasa+' g</b> grasas · <b>'+carbs+' g</b> carbohidratos</div>'
+      +'<div class="item">🍽️ Reparte en ~'+Math.ceil(rec/500)+' comidas: '+comidas+' kcal por comida aprox.</div>'
+      +'<div class="item">💧 Agua estimada: '+agua+' L/día</div>'
+      +'</div></div>';
+  }catch(e){try{var o2=document.getElementById('calcAlimOut');if(o2)o2.innerHTML='<div class="warn" style="font-size:12.5px">Revisa los datos: no se pudo calcular.</div>';}catch(e2){}}
+}
+function f3CalcAlimLimpiar(){
+  try{
+    state.uiSettings.calcAlim={};
+    try{save();}catch(e){}
+    ['calcAlimEdad','calcAlimPeso','calcAlimEstatura'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+    f3CalcAlimCalc();
+  }catch(e){}
+}
+function f3CalcAlimCopiar(){
+  try{
+    var out=document.getElementById('calcAlimOut');
+    var txt=out?out.textContent.replace(/\s+/g,' ').trim():'';
+    if(!txt){if(typeof toastReg==='function')toastReg('Primero calcula tus resultados');return;}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){if(typeof toastReg==='function')toastReg('📋 Resultado copiado');},function(){f3CopiarFallback(txt);});}
+    else f3CopiarFallback(txt);
+  }catch(e){}
+}
+function f3CopiarFallback(txt){
+  try{
+    var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');}catch(e){}
+    ta.remove();
+    if(typeof toastReg==='function')toastReg('📋 Resultado copiado');
+  }catch(e){}
+}
+function f3CalcAlimAplicarMeta(){
+  try{
+    var out=document.getElementById('calcAlimOut');
+    if(!out||out.innerHTML.indexOf('recomendadas')<0){if(typeof toastReg==='function')toastReg('Primero calcula tus resultados');return;}
+    var m=out.textContent.match(/recomendadas para[^·]*·\s*([\d,.]+)\s*kcal/);
+    if(!m){if(typeof toastReg==='function')toastReg('No se pudo leer el resultado');return;}
+    var kcalMeta=Math.round(parseFloat(String(m[1]).replace(',','.')));
+    if(!kcalMeta||!isFinite(kcalMeta))return;
+    state.profile=state.profile||{};
+    state.profile.objetivoKcal=kcalMeta;
+    save(true);
+    if(typeof toastReg==='function')toastReg('🎯 Meta de '+kcalMeta+' kcal aplicada (se usa en tus metas diarias)');
+  }catch(e){}
+}
+// ===== CALCULADORA DE OBJETIVO (Peso) =====
+function f3CalcPesoCfg(){
+  try{
+    state.uiSettings=state.uiSettings||{};
+    if(!state.uiSettings.calcPeso)state.uiSettings.calcPeso={};
+    return state.uiSettings.calcPeso;
+  }catch(e){return {};}
+}
+function f3CalcPesoHTML(){
+  try{
+    var c=f3CalcPesoCfg();
+    var ultimo=(state.weight&&state.weight.length)?state.weight[state.weight.length-1].w:null;
+    var inicio=ultimo!=null?ultimo:(c.peso||'');
+    return '<details class="fit-clean-details" id="calcPeso"><summary>🧮 Calculadora de objetivo</summary>'
+      +'<div class="fit-clean-details-body">'
+      +'<div class="muted" style="font-size:12px;margin:4px 0 8px">El IMC es solo una referencia general, no un diagnóstico médico.</div>'
+      +'<div class="grid" style="gap:8px">'
+      +'<div><label>Peso actual ('+U.pesoUnidad()+')</label><input id="calcPesoActual" type="number" inputmode="decimal" min="20" max="400" value="'+safeText(inicio)+'" oninput="f3CalcPesoCalc()"></div>'
+      +'<div><label>Peso objetivo ('+U.pesoUnidad()+')</label><input id="calcPesoObj" type="number" inputmode="decimal" min="20" max="400" value="'+safeText(c.obj||'')+'" oninput="f3CalcPesoCalc()"></div>'
+      +'<div><label>Estatura (cm)</label><input id="calcPesoEstatura" type="number" inputmode="decimal" min="100" max="250" value="'+safeText(c.estatura||'')+'" oninput="f3CalcPesoCalc()"></div>'
+      +'<div><label>Fecha de inicio</label><input id="calcPesoInicio" type="date" value="'+safeText(c.inicio||'')+'" oninput="f3CalcPesoCalc()"></div>'
+      +'<div><label>Cambio semanal deseado ('+U.pesoUnidad()+')</label><input id="calcPesoRitmo" type="number" inputmode="decimal" min="0.1" max="3" step="0.1" value="'+safeText(c.ritmo||'0.5')+'" oninput="f3CalcPesoCalc()"></div>'
+      +'</div>'
+      +'<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn" style="font-size:12px;padding:6px 10px" onclick="f3CalcPesoLimpiar()">🗑 Borrar datos</button><button class="btn" style="font-size:12px;padding:6px 10px" onclick="f3CalcPesoCopiar()">📋 Copiar resultado</button></div>'
+      +'<div id="calcPesoOut" style="margin-top:10px"></div>'
+      +'</div></details>';
+  }catch(e){return '';}
+}
+function f3CalcPesoCalc(){
+  try{
+    var out=document.getElementById('calcPesoOut');if(!out)return;
+    var c=f3CalcPesoCfg();
+    var actual=+document.getElementById('calcPesoActual').value||0;
+    var obj=+document.getElementById('calcPesoObj').value||0;
+    var estatura=+document.getElementById('calcPesoEstatura').value||0;
+    var inicio=document.getElementById('calcPesoInicio').value||'';
+    var ritmo=+document.getElementById('calcPesoRitmo').value||0;
+    c.peso=actual;c.obj=obj;c.estatura=estatura;c.inicio=inicio;c.ritmo=String(ritmo);
+    try{save();}catch(e){}
+    if(!actual||!obj){out.innerHTML='<div class="warn" style="font-size:12.5px">Escribe tu peso actual y tu peso objetivo para ver el plan.</div>';return;}
+    if(actual<20||obj<20||(estatura&&estatura<100)||ritmo<=0){out.innerHTML='<div class="warn" style="font-size:12.5px">Revisa los datos: pesos entre 20 y 400, estatura ≥100 cm y ritmo mayor que 0.</div>';return;}
+    var dif=Math.round((obj-actual)*10)/10;
+    var kgActual=esMetrico()?actual:Math.round(actual*0.4536*10)/10;
+    var kgObj=esMetrico()?obj:Math.round(obj*0.4536*10)/10;
+    var imc=estatura?Math.round(kgActual/Math.pow(estatura/100,2)*10)/10:null;
+    var semanas=ritmo?Math.ceil(Math.abs(dif)/ritmo):null;
+    var fechaEst=null;
+    if(semanas!=null&&isFinite(semanas)){
+      var d=new Date();d.setDate(d.getDate()+semanas*7);
+      fechaEst=d.toISOString().slice(0,10);
+    }
+    // cambio real desde la fecha de inicio (registros de la app)
+    var cambioReal=null,realSemana=null;
+    if(inicio){
+      var regs=(state.weight||[]).filter(function(x){return (x.d||x.date||'')>=inicio;}).sort(function(a,b){return (a.d||'')<(b.d||'')?-1:1;});
+      if(regs.length>=2){
+        var primero=regs[0],ultimo=regs[regs.length-1];
+        var dias=Math.max(1,(new Date(ultimo.d)-new Date(primero.d))/86400000);
+        cambioReal=Math.round((ultimo.w-primero.w)*10)/10;
+        realSemana=Math.round((cambioReal/(dias/7))*10)/10;
+      }
+    }
+    var muyRapido=Math.abs(dif)>0&&ritmo>(actual*0.01+0.3);
+    var conv=esMetrico?(Math.round(actual*2.2046*10)/10+' lb'):(Math.round(actual*0.4536*10)/10+' kg');
+    out.innerHTML='<div class="ok" style="margin-top:4px">'
+      +'<div class="list" style="margin-top:6px;gap:4px">'
+      +'<div class="item">Diferencia: <b>'+(dif>0?'+':'')+dif+' '+U.pesoUnidad()+'</b> ('+(Math.round(Math.abs(dif)*10)/10)+' '+U.pesoUnidad()+' para llegar)</div>'
+      +'<div class="item">Conversión: <b>'+actual+' '+U.pesoUnidad()+' = '+conv+'</b></div>'
+      +(imc!=null?'<div class="item">IMC aproximado: <b>'+imc+'</b> <span class="muted" style="font-size:11px">(referencia general, no diagnóstico)</span></div>':'')
+      +(cambioReal!=null?'<div class="item">Cambio desde el inicio: <b>'+(cambioReal>0?'+':'')+cambioReal+' '+U.pesoUnidad()+'</b> · promedio real: <b>'+(realSemana>0?'+':'')+realSemana+'/semana</b></div>':'')
+      +(semanas!=null?'<div class="item">Tiempo estimado: <b>'+semanas+' semana'+(semanas!==1?'s':'')+'</b> · fecha estimada: <b>'+fechaEst+'</b></div>':'')
+      +(muyRapido?'<div class="warn" style="margin-top:6px;font-size:12.5px">⚠️ El ritmo seleccionado es rápido para tu peso actual. Un cambio de 0.25-0.5 kg por semana suele ser más sostenible.</div>':'')
+      +'</div></div>';
+  }catch(e){try{var o2=document.getElementById('calcPesoOut');if(o2)o2.innerHTML='<div class="warn" style="font-size:12.5px">Revisa los datos: no se pudo calcular.</div>';}catch(e2){}}
+}
+function f3CalcPesoLimpiar(){
+  try{
+    state.uiSettings.calcPeso={};
+    try{save();}catch(e){}
+    ['calcPesoActual','calcPesoObj','calcPesoEstatura','calcPesoInicio'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+    f3CalcPesoCalc();
+  }catch(e){}
+}
+function f3CalcPesoCopiar(){
+  try{
+    var out=document.getElementById('calcPesoOut');
+    var txt=out?out.textContent.replace(/\s+/g,' ').trim():'';
+    if(!txt){if(typeof toastReg==='function')toastReg('Primero calcula tus resultados');return;}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){if(typeof toastReg==='function')toastReg('📋 Resultado copiado');},function(){f3CopiarFallback(txt);});}
+    else f3CopiarFallback(txt);
+  }catch(e){}
+}
+// ===== PROGRESO PLEGABLE =====
+function f3ProgresoToggle(){
+  try{renderSimpleFitnessProgress();}catch(e){}
+  var d=document.getElementById('fitnessProgresoDetails');
+  if(d){d.open=!d.open;if(d.open&&typeof fitAcordeonPrincipal==='function')fitAcordeonPrincipal(d);}
+}
 function saveSimpleWorkout(){
   let exercise=(document.getElementById('simpleWorkoutExercise')?.value||'').trim();
   if(!exercise){alert('Escribe el ejercicio que hiciste.');return}
@@ -32744,7 +33247,7 @@ if(x.deleted)return false;var t=Date.parse(((x.localDate||x.date)||'')+'T00:00:0
 // Mejor peso por ejercicio en una lista de registros.
 function bestByExercise(logs){var m={};logs.forEach(function(x){var n=String(x.exercise||'').trim();if(!n)return;var w=+x.weight||0;if(!m[n]||w>m[n].w)m[n]={w:w,reps:x.reps,date:x.date};});return m;}
 function renderSimpleFitnessProgress(days){
-  var out=document.getElementById('simpleFitnessOut');if(!out)return;
+  var out=document.getElementById('fitnessProgresoOut')||document.getElementById('simpleFitnessOut');if(!out)return;
   days=days||window._progPeriod||7; window._progPeriod=days;
   var cur=fitPeriodLogs(days,0), prev=fitPeriodLogs(days,1);
   var curBest=bestByExercise(cur), prevBest=bestByExercise(prev);
@@ -34660,7 +35163,7 @@ function f3CampoNombreHTML(){
   }else{
     nombreCampo.valor=(typeof window!=='undefined'&&window._routineName)||'';
   }
-  return '<div style="margin:8px 0 4px"><label for="routineNameInput" style="display:block;font-size:12px;font-weight:800;margin-bottom:4px">'+safeText(nombreCampo.label)+'</label><input id="routineNameInput" type="text" placeholder="'+safeText(nombreCampo.ph)+'" value="'+safeText(nombreCampo.valor)+'" oninput="f3NombreInput(event)" onblur="f3NombreBlur(event)" onkeydown="f3NombreKey(event)" style="width:100%;max-width:340px;box-sizing:border-box;font-size:14px;padding:9px 11px;border:1.5px solid #cbd8cf;border-radius:12px;background:#fafffe"><div class="row" id="nombreConfirmRow" style="display:none;gap:6px;margin-top:5px"><button class="btn primary" style="font-size:12px;padding:6px 11px" onclick="f3NombreConfirmar()">✓ Guardar nombre</button><button class="btn" style="font-size:12px;padding:6px 11px" onclick="f3NombreCancelar()">✕ Cancelar</button></div></div>';
+  return '<div class="fit-nombre-box"><label for="routineNameInput" style="display:block;font-size:12px;font-weight:800;margin-bottom:4px;color:var(--t,#17231e)">'+safeText(nombreCampo.label)+'</label><input id="routineNameInput" type="text" placeholder="'+safeText(nombreCampo.ph)+'" value="'+safeText(nombreCampo.valor)+'" oninput="f3NombreInput(event)" onblur="f3NombreBlur(event)" onkeydown="f3NombreKey(event)" style="width:100%;max-width:340px;box-sizing:border-box;font-size:14px;padding:9px 11px;border:1.5px solid #9dd5b4;border-radius:12px;background:#f2fbf5;color:#17231e"><div class="row" id="nombreConfirmRow" style="display:none;gap:6px;margin-top:5px"><button class="btn primary" style="font-size:12px;padding:6px 11px" onclick="f3NombreConfirmar()">✓ Guardar nombre</button><button class="btn" style="font-size:12px;padding:6px 11px" onclick="f3NombreCancelar()">✕ Cancelar</button></div></div>';
 }
 
 // ----- Helpers de selección controlada (variación SIN Math.random) -----
@@ -35250,8 +35753,21 @@ function saveCurrentRoutine(opts){
 function renderSavedRoutines(){
   var el=document.getElementById('savedRoutinesOut'); if(!el)return;
   if(window._routineCfg){f3CfgRender();return;} // el editor sobrevive a renders de sync
+  // Recuperación local: nunca mostrar "no hay rutinas" si estaban al arrancar
+  if(typeof f3RutinasGuardarLocal==='function')f3RutinasGuardarLocal();
+  // Hidratación/sync en curso: mostrar estado de carga, no un vacío falso
+  if(typeof f3RutinasCargando==='function'&&f3RutinasCargando()){
+    el.innerHTML='<p class="muted" style="margin:0">⏳ Cargando rutinas…</p>';
+    setTimeout(function(){try{renderSavedRoutines();}catch(e){}},4000);
+    return;
+  }
   var list=f3RutinasActivas();
   if(!list.length){el.innerHTML='<p class="muted" style="margin:0">Aún no guardas rutinas. Crea una y toca "💾 Guardar esta rutina".</p>';return;}
+  // Contador compacto en el encabezado plegable (coincide con la lista real)
+  try{
+    var sum=document.querySelector('#savedRoutinesDetails>summary');
+    if(sum){sum.innerHTML='📁 Rutinas guardadas <span class="muted" style="font-weight:600;font-size:12px">('+list.length+')</span>';}
+  }catch(e){}
   var activa=f3RutinaActiva();
   var aviso=activa
     ?'<div class="ok" style="margin:0 0 8px;font-size:12px"><b>⭐ Rutina activa:</b> '+safeText(f3NombreMostrar(activa))+' — se carga sola cada vez que entras a Fitness.</div>'
@@ -35552,19 +36068,15 @@ function showSavedRoutines(){
   try{renderSavedRoutines();}catch(e){}
   var d=document.getElementById('savedRoutinesDetails');
   if(d){
+    // Abre el bloque EN SU LUGAR, sin saltar la pantalla a otra posición.
     d.open=true;
-    // Posicionar el bloque abierto a una altura visible, sin animación.
-    // Delta = top - objetivo (scroll DOWN si el bloque está abajo del objetivo).
-    var top=d.getBoundingClientRect().top;
-    var y=(typeof window!=='undefined'&&typeof window.scrollY==='number')?window.scrollY:0;
-    var objetivo=90;
-    try{window.scrollTo(0,y+(top-objetivo));}catch(e){}
+    try{fitAcordeonPrincipal(d);}catch(e){}
   }
 }
 // Acordeón principal de Fitness: al abrir una sección, se cierran las otras.
 function fitAcordeonPrincipal(el){
   if(!el||!el.open)return;
-  var ids=['savedRoutinesDetails','fitnessRegisterDetails','masHerramientasDetails'];
+  var ids=['savedRoutinesDetails','fitnessRegisterDetails','masHerramientasDetails','fitnessProgresoDetails'];
   ids.forEach(function(id){
     if(id!==el.id){var d=document.getElementById(id);if(d)d.open=false;}
   });
@@ -36511,7 +37023,7 @@ function f3AvisoSitioEscritorio(){
     // la navegación móvil, el fondo, la identidad y la distribución en versiones
     // más nuevas): se restauran aquí una a una y SOLO si bindAll no existe.
     if(typeof bindAll!=='function'){
-      ['f3MobileNavInit','f3FondoCargarVisual','f3LogoURLCargar','f3IdentidadAplicar','f3EstilosV2Aplicar','f3DistBind','f3DistAplicar','renderPesoInterno','f3ActualizacionInit'].forEach(function(fn){
+      ['f3MobileNavInit','f3FondoCargarVisual','f3LogoURLCargar','f3IdentidadAplicar','f3EstilosV2Aplicar','f3DistBind','f3DistAplicar','renderPesoInterno','renderSavedRoutines','f3ActualizacionInit'].forEach(function(fn){
         try{if(typeof window[fn]==='function')window[fn]();}catch(e){}
       });
     }else{
@@ -36521,6 +37033,8 @@ function f3AvisoSitioEscritorio(){
     try{f3FondoSinDestello();}catch(e){}
     try{f3PuenteSobreBarraFix();}catch(e){}
     try{f3DrawerSync();}catch(e){}
+    try{if(typeof f3TarjetasAplicar==='function')f3TarjetasAplicar();}catch(e){}
+    try{if(typeof f3RutinasGuardarLocal==='function')f3RutinasGuardarLocal();}catch(e){}
   }
   if(document.readyState!=='loading')f3DrawerBootInit();
   else document.addEventListener('DOMContentLoaded',f3DrawerBootInit);
