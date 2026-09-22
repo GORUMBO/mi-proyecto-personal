@@ -1,8 +1,27 @@
 {
-  "latest": "1.196.0",
-  "date": "2026-09-20",
+  "latest": "1.197.0",
+  "date": "2026-09-21",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.197.0",
+  "date": "2026-09-21",
+  "type": "recomendada",
+  "nuevas": [
+    "Sección Peso completa en iPhone: al tocar Peso se abre el seguimiento completo (peso actual, formulario con fecha y unidad lb/kg, botón Guardar peso, último registro, historial y progreso desde el registro anterior); si no hay registros muestra \"Todavía no has registrado tu peso\"."
+  ],
+  "cambios": [
+    "El fondo personalizado se restaura al abrir la app: la imagen se guarda como Blob en IndexedDB (nunca en localStorage) y se reconstruye su URL al arrancar, sin destello blanco y funcionando sin conexión; se conserva al cerrar, recargar o cambiar de sección.",
+    "Si existe un fondo guardado con el sistema anterior (dataURL en la configuración), se migra automáticamente a IndexedDB sin borrarlo.",
+    "El Puente Cloudflare ya no tapa los botones ni las etiquetas de la barra inferior del iPhone.",
+    "La sección Peso nunca queda en blanco: si falla la lectura de datos se muestra un error visible con botón Reintentar (los registros no se tocan)."
+  ],
+  "errores": [
+    "Corregido que la sección Peso quedara en blanco al cambiar de grupo (referencia a una función de arranque no disponible en la versión publicada).",
+    "Corregido que el fondo personalizado desapareciera al cerrar y reabrir la PWA.",
+    "Corregido que el aviso flotante Puente Cloudflare cubriera el nombre del botón Peso."
+  ]
+},
 {
   "version": "1.196.0",
   "date": "2026-09-20",

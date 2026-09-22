@@ -578,7 +578,7 @@ img,video{height:auto}
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.196.0';
+  window.HM_APP_VERSION='1.197.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -1567,7 +1567,10 @@ function showTab(i,b){
   try{if(typeof f3ModoResumenActualizar==='function')f3ModoResumenActualizar();}catch(e){}
   updateBackButton();
   if(t&&t.includes('Ejercicio')){setTimeout(drawGrafica,80);setTimeout(()=>{if(window._initHuman)window._initHuman();},150);if(typeof f3MobileNavMark==='function')f3MobileNavMark();try{if(state.fitUltimoScroll&&state.fitUltimoScrollDate===(typeof todayISO==='function'?todayISO():'')&&typeof window!=='undefined'&&window.innerWidth<=768){setTimeout(function(){try{window.scrollTo(0,state.fitUltimoScroll);}catch(e){}},140);}}catch(e){}}
-  if(_justBuilt)setTimeout(bindAll,0);
+  // Peso: la sección es una cáscara que renderPesoInterno rellena; garantiza
+  // que NUNCA quede vacía al mostrarse (ni tras un render que la reconstruya).
+  if(t==='⚖️ Peso'){setTimeout(function(){try{if(typeof renderPesoInterno==='function')renderPesoInterno();}catch(e){}},60);}
+  if(_justBuilt)setTimeout(function(){try{bindAll()}catch(e){}},0);
 }
 function hmForceTopScroll(behavior='smooth'){
   // Si hay una intención pendiente de "ir a la rutina", un scroll-a-arriba
@@ -10845,6 +10848,7 @@ function buildTabIfNeeded(i,force=false){
   // Si hay un temporizador de cocina corriendo en otra pestaña, detenerlo
   try{ if(typeof CK!=='undefined' && CK && CK.tick && !document.getElementById('ckPanel') && !document.getElementById('ckPanel_mp')){ ckParar(); } }catch(e){}
   el.innerHTML=section(tabs[i]); el.dataset.built='1';
+  try{ if(tabs[i]==='⚖️ Peso'&&typeof renderPesoInterno==='function')renderPesoInterno(); }catch(e){}
   try{ traducirBotonesDOM(el); }catch(e){}
   try{ if(tabs[i]==='👕 Ropa'){ if(typeof pintarPaletasRopa==='function')pintarPaletasRopa(); if(typeof evaluarOutfit==='function')evaluarOutfit(); if(typeof renderSavedOutfits==='function')renderSavedOutfits(); } }catch(e){}
   return true;
@@ -10882,7 +10886,7 @@ function render(){
   initNav();
   if(_tabPrevia!=null&&_tabPrevia!==_activeTab){showTab(_tabPrevia,null);} // volver a la subtab donde estaba el usuario
   buildTabIfNeeded(_activeTab||0);
-  bindAll();
+  try{bindAll();}catch(e){} // en la versión publicada bindAll puede no existir: el render NUNCA debe romperse por eso
   // 1) Re-dibujar la rutina ANTES de restaurar la posición, y restaurar TODO
   //    SÍNCRONO (misma tarea): la página recupera su alto real antes de tocar
   //    el scroll y el navegador nunca pinta el estado colapsado del rebuild
@@ -21528,7 +21532,7 @@ function pesoHTML(){
     +'<div class="fit5-hero">'
     +'<div class="fit5-hero-head"><span class="fit5-hero-icon">⚖️</span>'
     +'<div style="flex:1;min-width:0"><div class="fit5-hero-title">Peso de hoy</div>'
-    +'<div class="fit5-hero-sub">'+(last?('cambio vs anterior: '+(dPrev!=null?dPrev+' '+unit:'—')+' · 7 días: '+(d7!=null?d7+' '+unit:'—')+' · desde el inicio: '+(dIni!=null?dIni+' '+unit:'—')):'Sin registros todavía')+'</div></div>'
+    +'<div class="fit5-hero-sub">'+(last?('cambio vs anterior: '+(dPrev!=null?dPrev+' '+unit:'—')+' · 7 días: '+(d7!=null?d7+' '+unit:'—')+' · desde el inicio: '+(dIni!=null?dIni+' '+unit:'—')):'Todavía no has registrado tu peso')+'</div></div>'
     +'<div style="text-align:right"><div style="font-size:30px;font-weight:950;line-height:1">'+(last?fmtW(last.w):'—')+'</div><div style="font-size:11px;opacity:.85">'+unit+'</div></div>'
     +'</div>'
     +'<div class="fit5-hero-stats">'
@@ -21555,21 +21559,29 @@ function pesoHTML(){
     +'<div class="fitw-form">'
     +'<div><label>Fecha</label><input id="wDate" type="date" style="width:100%"></div>'
     +'<div><label>Peso ('+unit+')</label><input id="wVal" type="number" step="0.1" inputmode="decimal" placeholder="Ej. 165" style="width:100%"></div>'
-    +'<button class="btn primary" onclick="addWeight()">💾 Guardar</button>'
+    +'<button class="btn primary" onclick="addWeight()">💾 Guardar peso</button>'
     +'</div></div>';
 }
 function renderPesoInterno(){
   var root=document.getElementById('pesoRoot');if(!root)return;
-  var dV=null,vV=null,abierto=false;
-  try{var dE=document.getElementById('wDate');dV=dE?dE.value:null;}catch(e){}
-  try{var vE=document.getElementById('wVal');vV=vE?vE.value:null;}catch(e){}
-  try{var fE=document.getElementById('wFormCard');abierto=!!(fE&&fE.style.display==='block');}catch(e){}
-  root.innerHTML=pesoHTML();
-  if(abierto){var f2=document.getElementById('wFormCard');if(f2)f2.style.display='block';}
-  if(dV!=null){var d2=document.getElementById('wDate');if(d2)d2.value=dV;}
-  if(vV!=null){var v2=document.getElementById('wVal');if(v2)v2.value=vV;}
-  renderPesoChart();
-  renderWeight();
+  // Nunca una sección en blanco: si la lectura de datos falla, se muestra un
+  // error visible con Reintentar (los registros guardados NO se tocan).
+  try{
+    var dV=null,vV=null,abierto=false;
+    try{var dE=document.getElementById('wDate');dV=dE?dE.value:null;}catch(e){}
+    try{var vE=document.getElementById('wVal');vV=vE?vE.value:null;}catch(e){}
+    try{var fE=document.getElementById('wFormCard');abierto=!!(fE&&fE.style.display==='block');}catch(e){}
+    root.innerHTML=pesoHTML();
+    if(abierto){var f2=document.getElementById('wFormCard');if(f2)f2.style.display='block';}
+    if(dV!=null){var d2=document.getElementById('wDate');if(d2)d2.value=dV;}
+    if(vV!=null){var v2=document.getElementById('wVal');if(v2)v2.value=vV;}
+    renderPesoChart();
+    renderWeight();
+  }catch(err){
+    try{
+      root.innerHTML='<div class="warn"><b>⚠️ No se pudo cargar la sección de peso.</b><div class="muted" style="font-size:12px;margin-top:4px">Hubo un error al leer tus datos. Tus registros no se borraron.</div><button class="btn" style="margin-top:8px" onclick="renderPesoInterno()">Reintentar</button></div>';
+    }catch(e2){}
+  }
 }
 function renderPesoChart(){
   var out=document.getElementById('pesoChartOut');if(!out)return;
@@ -35942,7 +35954,7 @@ function f3DrawerCrear(){
     document.addEventListener('keydown',function(ev){
       if(ev.key==='Escape'&&window._edgeDrawer.abierto){ev.preventDefault();try{f3DrawerCerrar();}catch(e){}}
     });
-    window.addEventListener('resize',function(){try{f3DrawerSync();}catch(e){}});
+    window.addEventListener('resize',function(){try{f3DrawerSync();}catch(e){}try{f3PuenteSobreBarraFix();}catch(e){}});
   }catch(e){}
 }
 // Zona segura: ignora formularios, controles, videos, carruseles horizontales
@@ -36135,7 +36147,19 @@ function f3AvisoSitioEscritorio(){
 // pastilla y este menú) aunque el arranque no llame a f3MobileNavInit.
 (function(){
   function f3DrawerBootInit(){
-    try{if(typeof f3MobileNavInit==='function')f3MobileNavInit();}catch(e){}
+    // En la versión publicada el arranque no cuenta con bindAll (que inicializa
+    // la navegación móvil, el fondo, la identidad y la distribución en versiones
+    // más nuevas): se restauran aquí una a una y SOLO si bindAll no existe.
+    if(typeof bindAll!=='function'){
+      ['f3MobileNavInit','f3FondoCargarVisual','f3LogoURLCargar','f3IdentidadAplicar','f3EstilosV2Aplicar','f3DistBind','f3DistAplicar','renderPesoInterno','f3ActualizacionInit'].forEach(function(fn){
+        try{if(typeof window[fn]==='function')window[fn]();}catch(e){}
+      });
+    }else{
+      try{if(typeof f3MobileNavInit==='function')f3MobileNavInit();}catch(e){}
+    }
+    try{f3FondoMigrarLegacy();}catch(e){}
+    try{f3FondoSinDestello();}catch(e){}
+    try{f3PuenteSobreBarraFix();}catch(e){}
     try{f3DrawerSync();}catch(e){}
   }
   if(document.readyState!=='loading')f3DrawerBootInit();
@@ -36143,6 +36167,63 @@ function f3AvisoSitioEscritorio(){
   setTimeout(f3DrawerBootInit,1500); // por si el estado o los modos llegan después
   setTimeout(f3DrawerBootInit,4000);
 })();
+// Migración del fondo guardado con sistemas anteriores (dataURL o URL temporal
+// en la configuración): se convierte a Blob en IndexedDB y se limpia el campo
+// viejo. Nunca borra la imagen ni la configuración actual.
+function f3FondoMigrarLegacy(){
+  try{
+    var cfg=(typeof f3FondoCfg==='function')?f3FondoCfg():null;
+    if(!cfg||cfg.imgId||typeof openPersonalDB!=='function')return;
+    var legacy=cfg.imgData||cfg.url||null;
+    if(!legacy||typeof legacy!=='string'||legacy.indexOf('data:')!==0)return;
+    var m=legacy.match(/^data:([^;,]+);base64,(.*)$/s);
+    if(!m)return;
+    var bin=atob(m[2]),arr=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+    var blob=new Blob([arr],{type:m[1]||'image/jpeg'});
+    openPersonalDB().then(function(db){
+      try{
+        var tx=db.transaction('media','readwrite');
+        tx.objectStore('media').put(blob,'fondo_usuario');
+        tx.oncomplete=function(){
+          try{
+            cfg.imgId='fondo_usuario';delete cfg.imgData;delete cfg.url;
+            if(typeof save==='function')save();
+            if(typeof f3FondoCargarVisual==='function')f3FondoCargarVisual();
+          }catch(e){}
+        };
+      }catch(e){}
+    }).catch(function(){});
+  }catch(e){}
+}
+// Evita el destello blanco al restaurar el fondo: pinta el color base (o un
+// neutro oscuro) en la capa y el body ANTES de que la imagen llegue de IDB.
+function f3FondoSinDestello(){
+  try{
+    var cfg=(typeof f3FondoCfg==='function')?f3FondoCfg():null;
+    if(!cfg||!cfg.imgId)return;
+    if(typeof f3FondoAplicaEnModo==='function'&&!f3FondoAplicaEnModo(cfg))return;
+    var color=(cfg.baseColor&&/^#[0-9a-f]{6}$/i.test(cfg.baseColor))?cfg.baseColor:'#1b2126';
+    if(typeof f3FondoCapa==='function'){
+      var capa=f3FondoCapa();
+      capa.style.backgroundColor=color;
+    }
+    try{document.body.style.backgroundColor=color;}catch(e){}
+  }catch(e){}
+}
+// Si el Puente Cloudflare queda encima de la barra inferior móvil, se sube para
+// no tapar botones ni etiquetas. No toca posiciones personalizadas ya correctas.
+function f3PuenteSobreBarraFix(){
+  try{
+    if(window.innerWidth>768&&!/iPhone|iPod/i.test(navigator.userAgent))return;
+    var bar=document.getElementById('mobileNavBar');if(!bar)return;
+    var p=document.getElementById('ppWorkerToggleBar');if(!p)return;
+    var br=bar.getBoundingClientRect(),pr=p.getBoundingClientRect();
+    if(pr.height&&pr.bottom>br.top-6){
+      p.style.bottom=Math.max(8,(window.innerHeight-br.top)+10)+'px';
+    }
+  }catch(e){}
+}
 // ===== RESUMEN en la pantalla inicial del modo (tarjetas reales) =====
 function f3ModoResumenHTML(m){
   try{
@@ -43159,7 +43240,7 @@ function addFoodToDiary(name,kcal,prot,carb,fat,amount){
   closeAddFood();
   let tabEl=document.querySelector('.tab.active');
   if(tabEl) tabEl.innerHTML=section(tabs[_activeTab]);
-  bindAll();
+  try{bindAll();}catch(e){}
   let t=document.getElementById('saveToast');
   if(t){t.textContent='✓ '+name+' agregado';t.style.opacity='1';clearTimeout(t._tid);t._tid=setTimeout(()=>t.style.opacity='0',2000);}
 }
@@ -43299,7 +43380,7 @@ function removeDiaryItem(mealKey,idx){
   save();
   let tabEl=document.querySelector('.tab.active');
   if(tabEl) tabEl.innerHTML=section(tabs[_activeTab]);
-  bindAll();
+  try{bindAll();}catch(e){}
 }
 
 function changeDiaryDate(date){
@@ -43308,7 +43389,7 @@ function changeDiaryDate(date){
   window._diarySelectedDate = date;
   let tabEl=document.querySelector('.tab.active');
   if(tabEl) tabEl.innerHTML=section(tabs[_activeTab]);
-  bindAll();
+  try{bindAll();}catch(e){}
 }
 
 function exportDiary(){
