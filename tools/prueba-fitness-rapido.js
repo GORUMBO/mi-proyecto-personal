@@ -103,7 +103,7 @@ async function fase1() {
       modo:state.uiSettings.fitModoVista,card:!!card,pos:txt.indexOf('Ejercicio 1 de 4')>=0,
       gif:!!(card&&card.querySelector('.fit-rapida-gif')),gifStage:!!document.getElementById('fitDemoStage_0'),
       pesos:txt.indexOf('Peso (')>=0,reps:txt.indexOf('Reps')>=0,
-      registrar:txt.indexOf('Registrar')>=0,cambiar:txt.indexOf('Cambiar ejercicio')>=0,
+      registrar:txt.indexOf('Registrar')>=0,cambiar:!!(card&&card.querySelector('.fit-nav-min')),
       ant:txt.indexOf('Anterior')>=0,sig:txt.indexOf('Siguiente')>=0,
       gridOculto:disp(grid)==='none',rutinaOculta:disp(rutina)==='none',guardOculto:disp(guard)==='none',
       sinRueditas:txt.indexOf('Serie ')<0,sinEquipo:txt.indexOf('Equipo:')<0,sinCrono:txt.indexOf('Descanso')<0,sinMas:txt.indexOf('Más opciones')<0,
@@ -133,6 +133,25 @@ async function fase1() {
   const yC = await ev(`Math.round(window.scrollY)`);
   const vuelta = await ev(`(()=>{var card=document.querySelector('.fit-card-ej-rapida');var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {pos:card?card.textContent.indexOf('Ejercicio 1 de 4')>=0:false,n:logs.length};})()`);
   t('4 · Anterior/Siguiente conservan registros y posición', vuelta.pos === true && vuelta.n === 3 && yC === yA, JSON.stringify(vuelta) + ' y=' + yC);
+  // 13b · Series interactivas: tocar S1, corregir peso, S2 por separado, cambiar y volver
+  await ev(`f3SerieSeleccionar(0,0)`); await wait(800);
+  const sel = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var w=document.getElementById('rlogW_0');return {sel:c?c.textContent.indexOf('Serie S1 seleccionada')>=0:false,w:w?w.value:''};})()`);
+  t('13b · tocar S1 la selecciona y carga su peso guardado (20)', sel.sel === true && sel.w === '20', JSON.stringify(sel));
+  await ev(`(()=>{var a=document.getElementById('rlogW_0');if(a){a.value='21';a.dispatchEvent(new Event('input',{bubbles:true}));}return 1;})()`);
+  await ev(`f3SerieGuardarCorreccion(0)`); await wait(800);
+  const corr = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {n:logs.length,pesos:logs.map(function(r){return r.weight}).join(',')};})()`);
+  t('13c · corregir S1 guarda sin duplicar (siguen 3 series, S1=21)', corr.n === 3 && corr.pesos === '21,22,30', JSON.stringify(corr));
+  // S2 por separado con serie seleccionada existente → corrige S2 sin duplicar
+  await ev(`f3SerieSeleccionar(0,1)`); await wait(600);
+  await ev(`(()=>{var a=document.getElementById('rlogW_0');if(a){a.value='23';a.dispatchEvent(new Event('input',{bubbles:true}));}return 1;})()`);
+  await ev(`f3RegistrarSerieActual(0)`); await wait(800);
+  const sep = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {n:logs.length,pesos:logs.map(function(r){return r.weight}).join(',')};})()`);
+  t('13d · por separado sobre la serie seleccionada corrige sin duplicar (21,23,30)', sep.n === 3 && sep.pesos === '21,23,30', JSON.stringify(sep));
+  // cambiar de ejercicio y volver: valores y series intactos
+  await ev(`f3RapidoMover(1)`); await wait(700);
+  await ev(`f3RapidoMover(-1)`); await wait(700);
+  const v13 = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {pos:c?c.textContent.indexOf('Ejercicio 1 de 4')>=0:false,n:logs.length,chips:c?c.querySelectorAll('.fit-circle.ok').length:0};})()`);
+  t('13e · cambiar de ejercicio y volver conserva series y valores', v13.pos === true && v13.n === 3 && v13.chips === 3, JSON.stringify(v13));
   // 5 · Cambiar ejercicio solo sustituye el actual
   const antesPlan = await ev(`JSON.stringify((state.fitnessToday.plan||[]).map(function(x){return x.name;}))`);
   await ev(`(()=>{var d=document.getElementById('fitAlts_0');if(d)d.open=true;return 1;})()`); await wait(400);

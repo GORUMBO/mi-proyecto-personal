@@ -1,8 +1,23 @@
 {
-  "latest": "1.201.0",
+  "latest": "1.202.0",
   "date": "2026-09-21",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.202.0",
+  "date": "2026-09-22",
+  "type": "recomendada",
+  "nuevas": [
+    "Series interactivas en Modo rápido: tocar S1/S2/S3 selecciona la serie y carga sus valores guardados para revisarlos o corregirlos (peso, repeticiones y estado de completada), con confirmación únicamente al borrar una serie registrada.",
+    "Registrar por separado respeta la serie seleccionada (corrige sin duplicar si ya existe); Registrar completo usa los valores visibles y cada serie queda editable después.",
+    "Línea discreta con el último peso y repeticiones del ejercicio cuando existen."
+  ],
+  "cambios": [
+    "Cambio de sección inmediato en Windows: bindAll se ejecuta tras el primer frame (la sección pinta primero), el scroll al inicio es instantáneo en escritorio y las secciones pesadas (Recetas, Nevera) inyectan su HTML en el siguiente frame con un indicador de carga.",
+    "Tarjeta rápida más compacta: encabezado corto, GIF ajustado, botones Registrar completo / por separado y Anterior / Siguiente juntos con Cambiar ejercicio como botón compacto 🔁.",
+    "Contraste de textos y etiquetas reforzado sobre el fondo personalizado."
+  ]
+},
 {
   "version": "1.201.0",
   "date": "2026-09-22",

@@ -654,6 +654,12 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 .fit-rapida-botones{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .fit-rapida-botones button:disabled{opacity:.45}
 .fit-circle-lbl{font-size:10.5px;font-weight:900;color:#1f3a30}
+.fit-rapida-series .fit-circle{cursor:pointer}
+.fit-circle-sel{box-shadow:0 0 0 3px #f0a020!important}
+.fit-rapida-selrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff8f0;border:1px solid #f0d9a8;border-radius:10px;padding:7px 9px;margin:6px 0;font-size:12.5px;color:#17231e}
+.fit-rapida-chk{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#1f3a30;font-weight:800}
+.fit-nav-min{flex:0 0 46px;min-width:46px}
+.fit-rapida-ult{font-size:12px;color:#3c4f46;font-weight:700;margin:2px 0}
 .fit-peso-grid input{font-size:17px;min-height:46px;padding:10px;width:100%}
 .fit-peso-btn{width:100%;margin-top:8px;min-height:48px;font-size:16px}
 .fit-rapida-nav{display:flex;gap:8px;margin-top:10px}
@@ -685,7 +691,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.201.0';
+  window.HM_APP_VERSION='1.202.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -1691,7 +1697,14 @@ function showTab(i,b){
   // Peso: la sección es una cáscara que renderPesoInterno rellena; garantiza
   // que NUNCA quede vacía al mostrarse (ni tras un render que la reconstruya).
   if(t==='⚖️ Peso'){setTimeout(function(){try{if(typeof renderPesoInterno==='function')renderPesoInterno();}catch(e){}},60);}
-  if(_justBuilt)setTimeout(function(){try{bindAll()}catch(e){}},0);
+  // Render de datos diferido: la sección pinta PRIMERO y bindAll corre después
+  // del primer frame (el clic responde al instante en Windows y en iPhone).
+  if(_justBuilt)setTimeout(function(){
+    var run=function(){try{bindAll()}catch(e){}};
+    if(typeof window!=='undefined'&&window.requestAnimationFrame){
+      requestAnimationFrame(function(){requestAnimationFrame(run);});
+    }else{run();}
+  },0);
 }
 function hmForceTopScroll(behavior='smooth'){
   // Si hay una intención pendiente de "ir a la rutina", un scroll-a-arriba
@@ -1720,7 +1733,10 @@ function hmForceTopScroll(behavior='smooth'){
   setTimeout(()=>run('auto'),240);
 }
 function scrollActiveTabTop(){
-  setTimeout(()=>hmForceTopScroll('smooth'),60);
+  // Escritorio: scroll INSTANTÁNEO (el suave retrasa la percepción del cambio).
+  // iPhone: conserva el suave actual.
+  var modo=(typeof window!=='undefined'&&window.innerWidth>768)?'auto':'smooth';
+  setTimeout(()=>hmForceTopScroll(modo),60);
 }
 function updateBackButton(){
   let btn=document.getElementById('backTabBtn');
@@ -10969,7 +10985,17 @@ function buildTabIfNeeded(i,force=false){
   if(!force&&el.dataset.built==='1')return false;
   // Si hay un temporizador de cocina corriendo en otra pestaña, detenerlo
   try{ if(typeof CK!=='undefined' && CK && CK.tick && !document.getElementById('ckPanel') && !document.getElementById('ckPanel_mp')){ ckParar(); } }catch(e){}
-  el.innerHTML=section(tabs[i]); el.dataset.built='1';
+  var _html=section(tabs[i]);
+  // Inyección diferida SOLO en navegador real y para secciones pesadas:
+  // el clic responde al instante con el esqueleto y el contenido pinta en el
+  // siguiente frame (los arneses de node no tienen rAF y quedan síncronos).
+  if(typeof window!=='undefined'&&window.requestAnimationFrame&&_html.length>120000){
+    el.innerHTML='<div class="ppCargando"><span class="ppCargandoDot"></span><span>Cargando…</span></div>';
+    var _inject=function(){try{el.innerHTML=_html;el.dataset.built='1';}catch(e){}};
+    requestAnimationFrame(function(){requestAnimationFrame(_inject);});
+  }else{
+    el.innerHTML=_html; el.dataset.built='1';
+  }
   try{ if(tabs[i]==='⚖️ Peso'&&typeof renderPesoInterno==='function')renderPesoInterno(); }catch(e){}
   try{ traducirBotonesDOM(el); }catch(e){}
   try{ if(tabs[i]==='👕 Ropa'){ if(typeof pintarPaletasRopa==='function')pintarPaletasRopa(); if(typeof evaluarOutfit==='function')evaluarOutfit(); if(typeof renderSavedOutfits==='function')renderSavedOutfits(); } }catch(e){}
@@ -32629,6 +32655,63 @@ function f3EsPesoCorporal(x){
     return false;
   }catch(e){return false;}
 }
+// ===== SERIES INTERACTIVAS: seleccionar, corregir y borrar =====
+function f3SerieSeleccionar(i,s){
+  try{
+    var pack=state.fitnessToday;if(!pack||!pack.plan||!pack.plan[i])return;
+    var ss=f3SeriesEjercicio(pack.plan[i],pack);
+    var entry=ss.visibles[s]||null;
+    window._fitSerieSel={i:i,s:s,id:entry?entry.id:null,completa:entry?ss.esValida(entry):true,modo:entry?'corregir':'registrar'};
+    if(typeof f3AnclarTarjeta==='function')f3AnclarTarjeta(i);
+    try{quickFitnessToday();}catch(e){}
+    // cargar los valores guardados en los campos para revisarlos/corregirlos
+    // (se escribe también el borrador para que ningún re-render lo pise)
+    var cargarVal=function(){
+      try{
+        var w=document.getElementById('rlogW_'+i),r=document.getElementById('rlogR_'+i);
+        if(entry&&w)w.value=entry.weight||'';
+        if(entry&&r)r.value=(entry.reps&&entry.reps!=='—'&&entry.reps!=='no registradas')?entry.reps:'';
+        if(entry){state.uiSettings=state.uiSettings||{};state.uiSettings.fitBorrador=state.uiSettings.fitBorrador||{};state.uiSettings.fitBorrador[i]=state.uiSettings.fitBorrador[i]||{};state.uiSettings.fitBorrador[i].w=entry.weight||'';state.uiSettings.fitBorrador[i].r=(entry.reps&&entry.reps!=='—'&&entry.reps!=='no registradas')?entry.reps:'';}
+        var chk=document.getElementById('f3SerieChk');if(chk)chk.checked=!!window._fitSerieSel.completa;
+      }catch(e){}
+    };
+    setTimeout(cargarVal,60);
+    setTimeout(cargarVal,300);
+  }catch(e){}
+}
+function f3SerieGuardarCorreccion(i){
+  try{
+    var sel=window._fitSerieSel;if(!sel||sel.i!==i)return;
+    var pack=state.fitnessToday;if(!pack||!pack.plan||!pack.plan[i])return;
+    var ss=f3SeriesEjercicio(pack.plan[i],pack);
+    var entry=ss.visibles[sel.s];
+    if(!entry){if(typeof toastReg==='function')toastReg('Esa serie aún no está registrada: usa Registrar por separado.');return;}
+    var wEl=document.getElementById('rlogW_'+i);
+    var rEl=document.getElementById('rlogR_'+i);
+    var chk=document.getElementById('f3SerieChk');
+    entry.weight=+(wEl&&wEl.value)||0;
+    if(chk&&!chk.checked){entry.reps='—';} // incompleta sin perder el peso
+    else if(rEl&&String(rEl.value||'').trim()){entry.reps=String(rEl.value).trim();}
+    save(true);
+    if(typeof actualizarResultadosHoy==='function')actualizarResultadosHoy();
+    if(typeof f3AnclarTarjeta==='function')f3AnclarTarjeta(i);
+    try{quickFitnessToday();}catch(e){}
+    if(typeof toastReg==='function')toastReg('✓ Serie S'+(sel.s+1)+' corregida');
+  }catch(e){}
+}
+function f3SerieBorrar(i){
+  try{
+    var sel=window._fitSerieSel;if(!sel||sel.i!==i||!sel.id)return;
+    if(!confirm('¿Borrar esta serie registrada?'))return;
+    var pack=state.fitnessToday;if(!pack||!pack.plan||!pack.plan[i])return;
+    try{if(typeof ppTombstoneItem==='function')ppTombstoneItem(state.workoutLog||[],sel.id);}catch(e){}
+    save(true);
+    if(typeof actualizarResultadosHoy==='function')actualizarResultadosHoy();
+    window._fitSerieSel=null;
+    if(typeof f3AnclarTarjeta==='function')f3AnclarTarjeta(i);
+    try{quickFitnessToday();}catch(e){}
+  }catch(e){}
+}
 // Registrar UNA serie (la siguiente ruedita libre) con el peso y las
 // repeticiones tecleados. Permite pesos distintos por serie y nunca duplica:
 // si el ejercicio ya tiene sus series, avisa y no escribe nada.
@@ -32649,6 +32732,22 @@ function f3RegistrarSerieActual(i){
     if(!repsStr){var mr=String(x.reps||'8-12').match(/(\d+)\s*[-–]\s*(\d+)/);repsStr=mr?mr[2]:String(x.reps||'8');}
     var s=f3SeriesEjercicio(x,pack);
     var goal=f3GoalSets(pack,i);
+    // Si la serie seleccionada YA existe, "por separado" corrige esa serie
+    // (sin duplicar); si es la siguiente libre, la registra y la selecciona.
+    var selR=window._fitSerieSel;
+    if(selR&&selR.i===i&&selR.s<s.visibles.length&&selR.modo==='corregir'){
+      var eSel=s.visibles[selR.s];
+      var chkR=document.getElementById('f3SerieChk');
+      eSel.weight=weight;
+      eSel.reps=(chkR&&!chkR.checked)?'—':repsStr;
+      save(true);
+      try{if(typeof actualizarResultadosHoy==='function')actualizarResultadosHoy();}catch(e){}
+      if(wEl)wEl.value='';if(rEl)rEl.value='';
+      if(typeof f3AnclarTarjeta==='function')f3AnclarTarjeta(i);
+      try{quickFitnessToday();}catch(e){}
+      if(typeof toastReg==='function')toastReg('✓ Serie S'+(selR.s+1)+' actualizada');
+      return;
+    }
     if(s.visibles.length>=goal){if(typeof toastReg==='function')toastReg('Ya completaste las '+goal+' series de este ejercicio');return;}
     if(!pack.sessionId)pack.sessionId=Date.now();
     state.workoutLog=state.workoutLog||[];
@@ -32850,19 +32949,33 @@ function f3TarjetaRapidaHTML(idx,pack){
     var cargaCorta={bar:'Barra (peso total)',man:'Mancuernas (por mancuerna)',pc:'Peso corporal',maq:'Máquina',pol:'Polea',ban:'Banda elástica',sin:'Sin equipo'}[(carga&&carga.eq)||'sin'];
     h.push('<div class="fit-rapida-instr">'+(esTiempo?('⏱ '+goal+' series × '+safeText(x.reps||'')+' de duración'):('🏋️ '+goal+' series × '+safeText(x.reps||'')+' repeticiones'))+' · '+cargaCorta+'</div>');
     h.push('<div class="fit-rapida-gif" id="fitDemo_'+i+'"><div class="fit-demo-stage" id="fitDemoStage_'+i+'" data-exnombre="'+safeText(x.name)+'">'+gifHTML+'</div></div>');
-    h.push(f3PesoCompactoHTML(i,x,pack));
-    // Series guardadas: rueditas compactas que muestran cuáles ya se registraron
+    // Series guardadas: rueditas interactivas (tocar = seleccionar/corregir)
     var circRap='';
     for(var cj=0;cj<goal;cj++){
+      var esSel=(window._fitSerieSel&&window._fitSerieSel.i===i&&window._fitSerieSel.s===cj);
       var clR='fit-circle vacia',icR='',ttR='Serie '+(cj+1)+' (pendiente)';
       var regR=s.visibles[cj];
       if(cj<s.visibles.length){
-        if(s.esValida(regR)){clR='fit-circle ok';icR='✓';ttR='Serie '+(cj+1)+' guardada';}
-        else{clR='fit-circle inc';icR='!';ttR='Serie '+(cj+1)+' incompleta';}
+        if(s.esValida(regR)){clR='fit-circle ok';icR='✓';ttR='Serie '+(cj+1)+' guardada · toca para revisar';}
+        else{clR='fit-circle inc';icR='!';ttR='Serie '+(cj+1)+' incompleta · toca para corregir';}
       }else if(cj===s.visibles.length){clR='fit-circle ahora';ttR='Serie '+(cj+1)+' (siguiente)';}
-      circRap+='<div style="text-align:center"><button class="'+clR+'" title="'+ttR+'" style="pointer-events:none">'+icR+'</button><div class="fit-circle-lbl" style="color:#1f3a30">S'+(cj+1)+'</div></div>';
+      circRap+='<div style="text-align:center"><button class="'+clR+(esSel?' fit-circle-sel':'')+'" title="'+ttR+'" onclick="f3SerieSeleccionar('+i+','+cj+')">'+icR+'</button><div class="fit-circle-lbl" style="color:#1f3a30">S'+(cj+1)+'</div></div>';
     }
     h.push('<div class="fit-rapida-series" style="justify-content:flex-start;gap:8px">'+circRap+'</div>');
+    // Serie seleccionada: revisar, corregir o borrar (confirmación solo al borrar)
+    if(window._fitSerieSel&&window._fitSerieSel.i===i){
+      var selS=window._fitSerieSel;
+      var selEntry=selS.s<s.visibles.length?s.visibles[selS.s]:null;
+      h.push('<div class="fit-rapida-selrow"><b>Serie S'+(selS.s+1)+' seleccionada</b>'
+        +(selEntry?'<label class="fit-rapida-chk"><input type="checkbox" id="f3SerieChk" '+(selS.completa?'checked':'')+'> completada</label>':'<span class="muted" style="font-size:12px">aún sin registrar</span>')
+        +'<button class="btn primary" style="font-size:12.5px;padding:7px 10px" onclick="f3SerieGuardarCorreccion('+i+')">💾 Guardar corrección</button>'
+        +(selEntry?'<button class="btn" style="font-size:12.5px;padding:7px 10px" onclick="f3SerieBorrar('+i+')">🗑 Borrar serie</button>':'')
+        +'</div>');
+    }
+    // Último registro (línea discreta, solo si existe)
+    var lastReg=lastWorkoutForExercise(x.name);
+    if(lastReg&&lastReg.weight)h.push('<div class="fit-rapida-ult">🕘 Último: '+lastReg.weight+' '+U.pesoUnidad()+' × '+safeText(lastReg.reps||'—')+' · '+safeText((lastReg.localDate||lastReg.date||''))+'</div>');
+    h.push(f3PesoCompactoHTML(i,x,pack));
     var faltantes=Math.max(0,goal-s.visibles.length);
     h.push('<div class="fit-rapida-botones">'
       +'<button class="btn primary" onclick="logRoutineQuick('+i+')" style="flex:1;min-height:48px;font-size:14px" '+(faltantes===0?'disabled':'')+'>💾 Registrar completo ('+faltantes+' serie'+(faltantes===1?'':'s')+')</button>'
@@ -32873,8 +32986,8 @@ function f3TarjetaRapidaHTML(idx,pack){
       +(esUltimo
         ?'<button class="btn primary fit-nav-btn" onclick="f3RapidoFinalizar()">🏁 Finalizar rutina</button>'
         :'<button class="btn fit-nav-btn'+(todoListo?' fit-nav-listo':'')+'" onclick="f3RapidoMover(1)" aria-label="Siguiente ejercicio">Siguiente →</button>')
+      +'<button class="btn fit-nav-btn fit-nav-min" onclick="f3CambiarEjercicio('+i+',true)" aria-label="Cambiar ejercicio" title="Cambiar ejercicio">🔁</button>'
       +'</div>');
-    h.push('<button class="btn fit-nav-btn fit-cambiar-btn" onclick="f3CambiarEjercicio('+i+',true)">🔁 Cambiar ejercicio</button>');
     h.push('<details id="fitAlts_'+i+'" class="fit-rapida-alts"><summary style="font-size:12.5px">Alternativas</summary>'
       +'<div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0">'
       +'<button class="btn" style="font-size:12px;padding:6px 10px" onclick="swapToFirstAlt('+i+')">🚫 Está ocupado</button>'
