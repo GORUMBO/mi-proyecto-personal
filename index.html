@@ -557,6 +557,7 @@ img,video{height:auto}
 .appStatusBox{min-width:0;max-width:min(46vw,300px)}
 #syncLastLine{flex-basis:100%;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+@media(max-width:768px){main{padding-top:6px}#mobileModePill{margin:2px 10px 0;padding:5px 12px;min-height:32px}}
 /* ===== MENÚ LATERAL POR GESTOS DE BORDE (solo móvil + Modo completo) ===== */
 #edgeHandle{display:none}
 #edgeScrim{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:11520;opacity:0;pointer-events:none;visibility:hidden;transition:opacity .22s ease,visibility .22s}
@@ -601,6 +602,7 @@ body.fit-modo-rapido #fitnessRegisterDetails,
 body.fit-modo-rapido #masHerramientasDetails,
 body.fit-modo-rapido #fitnessProgresoDetails,
 body.fit-modo-rapido #fitHoyHead{display:none!important}
+body.fit-modo-rapido #mobileModePill{display:none!important}
 .fit-rapida-gif{height:min(42vh,340px);display:flex;align-items:center;justify-content:center;background:#f2f7f4;border-radius:12px;border:1px solid var(--b);overflow:hidden;margin:6px 0}
 .fit-rapida-gif .fit-demo-stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
 .fit-rapida-gif svg,.fit-rapida-gif img,.fit-rapida-gif canvas{max-width:100%;max-height:100%;object-fit:contain}
@@ -691,7 +693,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.202.0';
+  window.HM_APP_VERSION='1.203.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -32602,7 +32604,7 @@ function f3ModoBarHTML(){
     var m=f3ModoVista();
     return '<div class="fit-modo-bar" id="f3ModoBar"><span class="muted" style="font-size:12px;font-weight:800">Vista:</span>'
       +'<button class="btn'+(m==='rapido'?' primary':'')+'" style="font-size:13px;padding:8px 12px" onclick="f3ModoVistaSet(\'rapido\')" aria-pressed="'+(m==='rapido')+'">⚡ Modo rápido</button>'
-      +'<button class="btn'+(m==='info'?' primary':'')+'" style="font-size:13px;padding:8px 12px" onclick="f3ModoVistaSet(\'info\')" aria-pressed="'+(m==='info')+'">📖 Modo informativo</button></div>';
+      +'<button class="btn'+(m==='info'?' primary':'')+'" style="font-size:13px;padding:8px 12px" onclick="f3ModoVistaSet(\'info\')" aria-pressed="'+(m==='info')+'">📖 Fitness completo</button></div>';
   }catch(e){return '';}
 }
 // ===== EQUIPO REAL DEL EJERCICIO (de EX_LIB, nunca inventado del nombre) =====
@@ -32910,7 +32912,7 @@ function f3TarjetaRapidaHTML(idx,pack){
   }catch(e){
     try{
       var x0=pack&&pack.plan&&pack.plan[idx];var i0=Math.max(0,Math.min(idx,(pack.plan||[]).length-1));
-      return '<div class="fit-card-ej fit-ej-abierta" id="fitCard_'+i0+'"><div class="warn"><b>⚠️ No se pudo mostrar este ejercicio.</b><button class="btn" style="margin-top:6px" onclick="f3ModoVistaSet(\'info\')">Ver Modo informativo</button></div></div>';
+      return '<div class="fit-card-ej fit-ej-abierta" id="fitCard_'+i0+'"><div class="warn"><b>⚠️ No se pudo mostrar este ejercicio.</b><button class="btn" style="margin-top:6px" onclick="f3ModoVistaSet(\'info\')">Ver Fitness completo</button></div></div>';
     }catch(e2){return '';}
   }
 }
@@ -33008,7 +33010,7 @@ function f3TarjetaRapidaHTML(idx,pack){
   }catch(e){
     try{
       var i0=Math.max(0,Math.min(idx,(pack&&pack.plan||[]).length-1));
-      return '<div class="fit-card-ej fit-ej-abierta" id="fitCard_'+i0+'"><div class="warn"><b>⚠️ No se pudo mostrar este ejercicio.</b><button class="btn" style="margin-top:6px" onclick="f3ModoVistaSet(\'info\')">Ver Modo informativo</button></div></div>';
+      return '<div class="fit-card-ej fit-ej-abierta" id="fitCard_'+i0+'"><div class="warn"><b>⚠️ No se pudo mostrar este ejercicio.</b><button class="btn" style="margin-top:6px" onclick="f3ModoVistaSet(\'info\')">Ver Fitness completo</button></div></div>';
     }catch(e2){return '';}
   }
 }
@@ -33866,7 +33868,28 @@ function saveSimpleWorkout(){
   renderSimpleFitnessProgress();
 }
 // Suma total de reps de un registro (de "10,10,8" -> 28). Sirve para el volumen.
-function repsTotal(x){var r=String(x.reps||'');var p=r.split(/[^0-9]+/).map(function(n){return parseInt(n,10);}).filter(function(n){return !isNaN(n);});if(p.length)return p.reduce(function(a,b){return a+b;},0);return (+x.sets||1)*8;}
+// Suma de reps REALES de un registro ("10,10,8" -> 28). Rangos ("8-12"),
+// textos, fechas o identificadores NO son repeticiones: devuelven 0 y el
+// registro queda excluido del volumen (nunca se infla la cifra).
+function repsTotal(x){
+  var r=String(x&&x.reps!==undefined?x.reps:'').trim();
+  if(!r||r==='—'||r==='no registradas')return 0;
+  if(/[-–—]/.test(r))return 0; // rango: no es una suma de series reales
+  var p=r.split(/[^0-9]+/).filter(Boolean).map(function(n){return +n;}).filter(function(n){return n>=1&&n<=100;});
+  if(!p.length)return 0;
+  var t=p.reduce(function(a,b){return a+b;},0);
+  return (t<=300)?t:0; // valores anormalmente grandes = datos contaminados
+}
+// Entradas válidas para VOLUMEN (peso externo real × reps reales).
+// Excluye: borradas, sin peso, ejercicios de peso corporal/tiempo y reps inválidas.
+function fitVolumenLogs(logs){
+  return (logs||[]).filter(function(x){
+    if(!x||x.deleted)return false;
+    var w=+x.weight||0;if(w<=0)return false;
+    try{if(typeof f3EsPesoCorporal==='function'&&f3EsPesoCorporal({name:x.exercise})&&!x.pesoAdicional)return false;}catch(e){}
+    return repsTotal(x)>0;
+  });
+}
 // Registros dentro de una ventana de [days] días. offset=1 => el periodo anterior (para comparar).
 function fitPeriodLogs(days,offset){offset=offset||0;var endMs=Date.now()-offset*days*86400000;var startMs=endMs-days*86400000;return (state.workoutLog||[]).filter(function(x){// v1.187.2: usar fecha LOCAL (localDate) — x.date es UTC y descartaba registros de hoy (tarde/noche en zonas UTC-negativas)
 if(x.deleted)return false;var t=Date.parse(((x.localDate||x.date)||'')+'T00:00:00');return isFinite(t)&&t>=startMs&&t<=endMs;});}
@@ -33878,8 +33901,10 @@ function renderSimpleFitnessProgress(days){
   var cur=fitPeriodLogs(days,0), prev=fitPeriodLogs(days,1);
   var curBest=bestByExercise(cur), prevBest=bestByExercise(prev);
   var dias=[...new Set(cur.map(function(x){return x.localDate||x.date;}))].filter(Boolean).length;
-  var volCur=cur.reduce(function(a,x){return a+(+x.weight||0)*repsTotal(x);},0);
-  var volPrev=prev.reduce(function(a,x){return a+(+x.weight||0)*repsTotal(x);},0);
+  var volOK=(typeof fitVolumenLogs==='function')?fitVolumenLogs(cur):cur.filter(function(x){return !x.deleted&&(+x.weight||0)>0&&repsTotal(x)>0;});
+  var volOKp=(typeof fitVolumenLogs==='function')?fitVolumenLogs(prev):[];
+  var volCur=volOK.reduce(function(a,x){return a+(+x.weight||0)*repsTotal(x);},0);
+  var volPrev=volOKp.reduce(function(a,x){return a+(+x.weight||0)*repsTotal(x);},0);
   var volD=Math.round(volCur-volPrev);
   var names=Object.keys(curBest).sort();
   var withWeight=names.filter(function(n){return curBest[n].w>0;});
@@ -33892,7 +33917,7 @@ function renderSimpleFitnessProgress(days){
   var label=days===7?'Semana':days===14?'2 semanas':'Mes';
   var periodo=days===7?'esta semana':days===14?'estas 2 semanas':'este mes';
   var btns=[[7,'Semana'],[14,'2 semanas'],[30,'Mes']].map(function(o){return '<button class="btn'+(days===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 12px" onclick="renderSimpleFitnessProgress('+o[0]+')">'+o[1]+'</button>';}).join('');
-  var volTxt=(volD>0?'↑ +'+volD.toLocaleString():(volD<0?'↓ '+Math.abs(volD).toLocaleString():'igual'))+' vs '+(days===7?'la semana pasada':days===14?'las 2 semanas previas':'el mes pasado');
+  var volTxt=(!volOK.length&&!volOKp.length)?'Sin datos suficientes':((!volOKp.length?'Sin datos previos':(volD>0?'↑ +'+volD.toLocaleString():(volD<0?'↓ '+Math.abs(volD).toLocaleString():'igual')))+' vs '+(days===7?'la semana pasada':days===14?'las 2 semanas previas':'el mes pasado'));
   // === DASHBOARD UNIFICADO ===
   var dm=getDailyMode();
   var pesoActual='—', pesoTendencia='';
@@ -33912,8 +33937,8 @@ function renderSimpleFitnessProgress(days){
 
   // PRs
   var allBest=bestByExercise(fitPeriodLogs(30,0));
-  var prs=Object.keys(allBest).filter(function(n){return allBest[n].w>0;}).sort(function(a,b){return allBest[b].w-allBest[a].w;}).slice(0,3);
-  var prHTML=prs.length?prs.map(function(n){return '<div style="display:flex;justify-content:space-between;gap:6px"><span style="font-size:13px;font-weight:700">⭐ '+safeText(n)+'</span><span style="font-weight:900;color:#15704f;white-space:nowrap">'+allBest[n].w+' lb</span></div>';}).join(''):'<span class="muted" style="font-size:12px">Registra ejercicios con peso para ver récords</span>';
+  var prs=Object.keys(allBest).filter(function(n){var ok=false;try{ok=(allBest[n].w>0)&&(!(typeof f3EsPesoCorporal==='function'&&f3EsPesoCorporal({name:n}))||(fitVolumenLogs&&fitVolumenLogs([{exercise:n,weight:allBest[n].w,reps:'10'}]).length>0));}catch(e){ok=allBest[n].w>0;}return ok;}).sort(function(a,b){return allBest[b].w-allBest[a].w;}).slice(0,3);
+  var prHTML=prs.length?prs.map(function(n){return '<div style="display:flex;justify-content:space-between;gap:6px"><span style="font-size:13px;font-weight:700">⭐ '+safeText(n)+'</span><span style="font-weight:900;color:#15704f;white-space:nowrap">'+allBest[n].w.toLocaleString()+' '+U.pesoUnidad()+'</span></div>';}).join(''):'<span class="muted" style="font-size:12px">Sin datos suficientes</span>';
 
   out.innerHTML='<div class="fit-clean-result"><h3 style="margin-top:0">📊 Progreso · '+label+'</h3>'
     +'<div class="row" style="gap:6px;margin-bottom:10px">'+btns+'</div>'
@@ -33923,7 +33948,7 @@ function renderSimpleFitnessProgress(days){
     +'<div style="text-align:center"><div style="font-size:11px;font-weight:800;color:var(--m)">⚖️ Peso</div><div style="font-size:20px;font-weight:900;color:#15704f">'+pesoActual+'</div>'+(pesoTendencia?'<div style="font-size:11px;color:'+(pesoTendencia.includes('↑')?'#15704f':'#b03030')+'">'+pesoTendencia+'</div>':'')+'</div>'
     +'<div style="text-align:center"><div style="font-size:11px;font-weight:800;color:var(--m)">💪 Hoy</div><div style="font-size:20px;font-weight:900;color:#15704f">'+(todayTotal?todayDone+'/'+todayTotal:'—')+'</div><div style="font-size:11px;color:var(--m)">ejercicios</div></div>'
     +'<div style="text-align:center"><div style="font-size:11px;font-weight:800;color:var(--m)">🍽️ Kcal</div><div style="font-size:20px;font-weight:900;color:'+(foodPct>=100?'#15704f':'#b8860b')+'">'+foodPct+'%</div><div style="font-size:11px;color:var(--m)">'+Math.round(dm.food.k)+'/'+dm.kcalGoal+'</div></div>'
-    +'<div style="text-align:center"><div style="font-size:11px;font-weight:800;color:var(--m)">🏋️ Volumen</div><div style="font-size:20px;font-weight:900;color:#15704f">'+(volCur>=1000?Math.round(volCur/1000)+'k':Math.round(volCur))+'</div><div style="font-size:11px;color:var(--m)">lb '+periodo+'</div></div>'
+    +'<div style="text-align:center"><div style="font-size:11px;font-weight:800;color:var(--m)">🏋️ Volumen</div><div style="font-size:16px;font-weight:900;color:#15704f">'+(volOK.length?volCur.toLocaleString()+' lb':'Sin datos suficientes')+'</div><div style="font-size:11px;color:var(--m)">'+(volOK.length?(periodo+' · '+volTxt):'')+'</div></div>'
     +'</div>'
     +(prs.length?'<div style="margin-top:10px;padding-top:8px;border-top:1px solid #d9e3db">'+prHTML+'</div>':'')
     +'</div>'
@@ -37028,7 +37053,7 @@ function f3MobileNavRender(){
       var fn=f3ModoDestFn(dest);
       if(!fn)return;
       var tc=nav.tabs[dest]||{};
-      h+='<div class="mnav-item" role="button" tabindex="0" aria-current="false" style="'+f3NavEstiloBoton(tc)+'" data-mnavdest="'+safeText(dest)+'" onclick="'+fn+'"><span class="mnav-ico">'+safeText(tc.emoji||b.icono||'•')+'</span><span>'+safeText(tc.nombre||b.txt||dest)+'</span></div>';
+      h+='<div class="mnav-item" role="button" tabindex="0" aria-current="false" style="'+f3NavEstiloBoton(tc)+'" data-mnavdest="'+safeText(dest)+'" onclick="f3MnavTap(\''+dest+'\')"><span class="mnav-ico">'+safeText(tc.emoji||b.icono||'•')+'</span><span>'+safeText(tc.nombre||b.txt||dest)+'</span></div>';
     });
     // botones personalizados visibles en iPhone, antes de Más
     (f3AparienciaV2().botonesExtra||[]).forEach(function(bx){
@@ -37036,7 +37061,7 @@ function f3MobileNavRender(){
       h+='<div class="mnav-item" role="button" tabindex="0" aria-current="false" style="'+f3BotonExtraHTML(bx,true)+'" onclick="f3BotonExtraEjecutar(\''+bx.id+'\')"><span class="mnav-ico">'+safeText(bx.emoji)+'</span><span>'+safeText(bx.nombre)+'</span></div>';
     });
     if(!nav.mas||nav.mas.visible!==false){
-      h+='<div class="mnav-item" role="button" tabindex="0" aria-current="false" data-mnav="mas" onclick="f3MobileMasToggle()"><span class="mnav-ico">'+safeText((nav.mas&&nav.mas.emoji)||'☰')+'</span><span>'+safeText((nav.mas&&nav.mas.nombre)||'Más')+'</span></div>';
+      h+='<div class="mnav-item" role="button" tabindex="0" aria-current="false" data-mnav="mas" onclick="f3MnavTap(\'__mas__\')"><span class="mnav-ico">'+safeText((nav.mas&&nav.mas.emoji)||'☰')+'</span><span>'+safeText((nav.mas&&nav.mas.nombre)||'Más')+'</span></div>';
     }
     bar.innerHTML=h+'<div id="mobileMasMenu" class="mnav-mas" style="display:none"></div>';
     f3MobileNavMark();
@@ -37092,6 +37117,44 @@ function f3MobileNavMark(){
       it.classList.toggle('mnav-activo',activo);
       it.setAttribute('aria-current',activo?'page':'false');
     });
+  }catch(e){}
+}
+// ===== TOQUE SIMPLE/DOBLE EN LA BARRA INFERIOR =====
+// Un toque en la sección YA activa: sube al inicio. Dos toques seguidos:
+// baja al final. Otra sección: se abre normal desde arriba. Sin botón flotante.
+function f3MnavTap(dest){
+  try{
+    var ahora=Date.now();
+    var prev=window._mnavTap;
+    var esMas=dest==='__mas__';
+    var activo=esMas?false:(tabs[_activeTab]===dest);
+    if(!activo&&!esMas){
+      // otra sección: abrir normal (inmediato, sin esperas)
+      if(typeof f3ModoNavTab==='function')f3ModoNavTab(dest);
+      return;
+    }
+    if(prev&&prev.dest===dest&&(ahora-prev.t<400)){
+      // DOBLE toque: cancelar el sencillo y bajar al final
+      if(prev.timer)clearTimeout(prev.timer);
+      window._mnavTap=null;
+      requestAnimationFrame(function(){requestAnimationFrame(function(){
+        try{window.scrollTo(0,document.documentElement.scrollHeight);}catch(e){}
+      });});
+      return;
+    }
+    if(prev&&prev.timer)clearTimeout(prev.timer);
+    var single=function(){
+      window._mnavTap=null;
+      if(esMas){
+        try{if(typeof f3MobileMasToggle==='function')f3MobileMasToggle();}catch(e){}
+        return;
+      }
+      // toque simple en la sección activa: subir al inicio
+      requestAnimationFrame(function(){requestAnimationFrame(function(){
+        try{window.scrollTo(0,0);}catch(e){}
+      });});
+    };
+    window._mnavTap={dest:dest,t:ahora,timer:setTimeout(single,380)};
   }catch(e){}
 }
 // ===== HOJA INFERIOR (selector y otros) =====

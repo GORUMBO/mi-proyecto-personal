@@ -133,6 +133,44 @@ async function fase1() {
   const yC = await ev(`Math.round(window.scrollY)`);
   const vuelta = await ev(`(()=>{var card=document.querySelector('.fit-card-ej-rapida');var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {pos:card?card.textContent.indexOf('Ejercicio 1 de 4')>=0:false,n:logs.length};})()`);
   t('4 · Anterior/Siguiente conservan registros y posición', vuelta.pos === true && vuelta.n === 3 && yC === yA, JSON.stringify(vuelta) + ' y=' + yC);
+
+  // 20 · Barra inferior: misma altura, pegada al borde, sin tapar contenido
+  const bar20 = await ev(`(()=>{var items=[...document.querySelectorAll('#mobileNavBar .mnav-item')];var tops=items.map(function(x){return Math.round(x.getBoundingClientRect().top);});var bar=document.getElementById('mobileNavBar').getBoundingClientRect();var uniq=[...new Set(tops)];return {tops:uniq.length,barBottom:Math.round(bar.bottom),vh:window.innerHeight,iguales:uniq.length===1};})()`);
+  t('20 · barra: botones a la misma altura y pegada al borde inferior', bar20.iguales === true && bar20.barBottom === bar20.vh, JSON.stringify(bar20));
+  // 21 · Gap superior pequeño (encabezado → contenido)
+  await ev(`window.scrollTo(0,0);`); await wait(1200);
+  const gap21 = await ev(`(()=>{var h=document.querySelector('header').getBoundingClientRect();var c=document.getElementById('fitHoyCard');var cr=c?c.getBoundingClientRect():null;return {gap:cr?Math.round(cr.top-h.bottom):-1};})()`);
+  t('21 · el contenido empieza poco después del encabezado (≤60px)', gap21.gap >= 0 && gap21.gap <= 60, JSON.stringify(gap21));
+  // 22 · Tap simple (activa → arriba) y doble toque (abajo)
+  await ev(`window.scrollTo(0,400);`); await wait(300);
+  await ev(`f3MnavTap('💪 Ejercicio')`); await wait(1700);
+  const y22a = await ev(`Math.round(window.scrollY)`);
+  t('22a · un toque en la sección activa sube al inicio', y22a === 0, 'y=' + y22a);
+  await ev(`f3MnavTap('💪 Ejercicio');`); await wait(120);
+  await ev(`f3MnavTap('💪 Ejercicio')`); await wait(1200);
+  const y22b = await ev(`Math.round(window.scrollY)`);
+  const maxY = await ev(`Math.round(document.documentElement.scrollHeight-window.innerHeight)`);
+  t('22b · doble toque baja al final de la sección', Math.abs(y22b - maxY) <= 4, 'y=' + y22b + ' max=' + maxY);
+  // 23 · Selector: Fitness completo + cambio de modo sigue funcionando
+  await ev(`f3ModoVistaSet('info')`); await wait(700);
+  const ren23 = await ev(`(()=>{var b=document.getElementById('f3ModoBar');return {txt:b?b.textContent:'',modo:state.uiSettings.fitModoVista};})()`);
+  t('23 · selector dice "Fitness completo" y el cambio funciona', ren23.txt.indexOf('Fitness completo') >= 0 && ren23.txt.indexOf('Modo rápido') >= 0 && ren23.modo === 'info', JSON.stringify(ren23));
+  await ev(`f3ModoVistaSet('rapido')`); await wait(700);
+  // 24 · Volumen: excluye datos contaminados y muestra Sin datos suficientes
+  await ev(`(()=>{window.__logsPrev=(state.workoutLog||[]).slice();return 1;})()`);
+  await ev(`(()=>{var h=(typeof todayLocal==='function')?todayLocal():(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);var ok=[{id:'v1',date:h,localDate:h,sessionId:999,exercise:'Press banca cont',weight:40,sets:1,reps:'10,10',note:'x'},{id:'v2',date:h,localDate:h,sessionId:999,exercise:'Press banca cont',weight:60,sets:1,reps:'60100',note:'cont'},{id:'v3',date:h,localDate:h,sessionId:999,exercise:'Press banca cont',weight:60,sets:1,reps:'8-12',note:'rango'},{id:'v4',date:h,localDate:h,sessionId:999,exercise:'Lagartijas',weight:0,sets:1,reps:'15',note:'pc'},{id:'v5',date:h,localDate:h,sessionId:999,exercise:'Press banca cont',weight:50,sets:1,reps:'12',note:'x'},{id:'v6',date:h,localDate:h,sessionId:999,exercise:'Press banca cont',weight:99,sets:1,reps:'9',note:'x',deleted:true}];state.workoutLog=ok;save(true);return 1;})()`);
+  await ev(`renderSimpleFitnessProgress(7)`); await wait(400);
+  const vol24 = await ev(`(()=>{var out=document.getElementById('fitnessProgresoOut')||document.getElementById('simpleFitnessOut');var txt=out?out.textContent:'';console.log('DBGVOL:',txt.slice(0,500));return {tiene1400:txt.indexOf('1,400 lb')>=0,txt:txt.slice(0,90)};})()`);
+  t('24 · volumen = 1,400 lb (40×20+50×12) sin contaminación ni "K"', vol24.tiene1400 === true, JSON.stringify(vol24));
+  await ev(`(()=>{state.workoutLog=[];save(true);renderSimpleFitnessProgress(7);return 1;})()`); await wait(300);
+  const vac24 = await ev(`(()=>{var out=document.getElementById('fitnessProgresoOut')||document.getElementById('simpleFitnessOut');return (out?out.textContent:'').indexOf('Sin datos suficientes')>=0;})()`);
+  t('24b · sin registros válidos muestra "Sin datos suficientes"', vac24 === true, 'vac=' + vac24);
+  await ev(`(()=>{state.workoutLog=window.__logsPrev;save(true);return 1;})()`);
+  // 25 · Editor Crear mi modo: contraste
+  await ev(`f3ModoEditorAbrir(null)`); await wait(500);
+  const ed25 = await ev(`(()=>{var p=document.getElementById('modoEditorPanel');var l=p?p.querySelector('label'):null;return {panel:!!p,col:p?getComputedStyle(p).color:'',lab:l?getComputedStyle(l).color:''};})()`);
+  t('25 · Crear mi modo: panel y etiquetas con color oscuro legible', ed25.panel === true && ed25.col.indexOf('255, 255, 255') < 0 && ed25.lab.indexOf('255, 255, 255') < 0, JSON.stringify(ed25));
+  await ev(`f3ModoEditorCerrar()`); await wait(300);
   // 13b · Series interactivas: tocar S1, corregir peso, S2 por separado, cambiar y volver
   await ev(`f3SerieSeleccionar(0,0)`); await wait(800);
   const sel = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var w=document.getElementById('rlogW_0');return {sel:c?c.textContent.indexOf('Serie S1 seleccionada')>=0:false,w:w?w.value:''};})()`);
@@ -307,6 +345,8 @@ async function fase1() {
   await ev(`f3RegGuardar()`); await wait(700);
   const guardada = await ev(`(()=>{var hoy=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);var d=state.diary&&state.diary[hoy];var all=d?(d.breakfast||[]).concat(d.lunch||[]).concat(d.dinner||[]).concat(d.snacks||[]):[];var car=all.filter(function(x){return String(x.name||'').indexOf('Carne molida')>=0;});var br=all.filter(function(x){return String(x.name||'').indexOf('Brócoli')>=0;});var ac=all.filter(function(x){return String(x.name||'').indexOf('Aceite')>=0;});return {n:car.length+br.length+ac.length,carK:car[0]?car[0].kcal:0,brK:br[0]?br[0].kcal:0,acK:ac[0]?ac[0].kcal:0};})()`);
   t('18h · la comida se guarda en el diario (3 alimentos, 542+35+124)', guardada.n === 3 && guardada.carK === 542 && guardada.brK === 35 && guardada.acK === 124, JSON.stringify(guardada));
+  await ev(`openTab('💪 Ejercicio')`); await wait(1600);
+  await ev(`window.scrollTo(0,0);`); await wait(600);
   await ev(`f3ModoVistaSet('rapido')`); await wait(800);
   await cerrarGracioso(ws, child);
   console.log('   app cerrada; perfil: ' + profile);

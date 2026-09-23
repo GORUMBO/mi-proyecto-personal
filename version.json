@@ -1,8 +1,23 @@
 {
-  "latest": "1.202.0",
+  "latest": "1.203.0",
   "date": "2026-09-21",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.203.0",
+  "date": "2026-09-23",
+  "type": "recomendada",
+  "nuevas": [
+    "Barra inferior: un toque en la sección activa sube al inicio y dos toques seguidos bajan al final (sin botón flotante); otra sección abre normal desde arriba.",
+    "Selector de vista renombrado: Fitness completo (antes Modo informativo) junto a Modo rápido.",
+    "Progreso: el volumen de entrenamiento ahora solo suma peso real × repeticiones reales de series válidas (rangos, textos y valores contaminados se excluyen) y muestra Sin datos suficientes cuando no hay datos."
+  ],
+  "cambios": [
+    "Corregido el cálculo que inflaba el volumen (146,060,124 lb y valores como 60100 lb): la suma de reps ya no interpreta rangos ni identificadores como repeticiones.",
+    "Barra inferior estable (misma altura en todas las pantallas, pegada al borde seguro) y menos espacio vacío entre el encabezado y el contenido.",
+    "Contraste de textos y pasos en Crear mi modo."
+  ]
+},
 {
   "version": "1.202.0",
   "date": "2026-09-22",
