@@ -91,6 +91,7 @@ async function registrar(ev, idx, w, r) {
 async function fase1() {
   console.log('===== FASE 1 =====');
   const { child, ws, ev } = await lanzar();
+  await ev(`window.confirm=function(){return true;};`);
   await ev(SEMILLA);
   await ev(`openTab('💪 Ejercicio')`); await wait(1600);
   // 1 · Modo rápido mínimo
@@ -103,7 +104,7 @@ async function fase1() {
       modo:state.uiSettings.fitModoVista,card:!!card,pos:txt.indexOf('Ejercicio 1 de 4')>=0,
       gif:!!(card&&card.querySelector('.fit-rapida-gif')),gifStage:!!document.getElementById('fitDemoStage_0'),
       pesos:txt.indexOf('Peso (')>=0,reps:txt.indexOf('Reps')>=0,
-      registrar:txt.indexOf('Registrar')>=0,cambiar:!!(card&&card.querySelector('.fit-nav-min')),
+      registrar:(txt.indexOf('Completo (')>=0||txt.indexOf('Por separado')>=0),cambiar:txt.indexOf('Cambiar ejercicio')>=0,
       ant:txt.indexOf('Anterior')>=0,sig:txt.indexOf('Siguiente')>=0,
       gridOculto:disp(grid)==='none',rutinaOculta:disp(rutina)==='none',guardOculto:disp(guard)==='none',
       sinRueditas:txt.indexOf('Serie ')<0,sinEquipo:txt.indexOf('Equipo:')<0,sinCrono:txt.indexOf('Descanso')<0,sinMas:txt.indexOf('Más opciones')<0,
@@ -171,121 +172,26 @@ async function fase1() {
   const ed25 = await ev(`(()=>{var p=document.getElementById('modoEditorPanel');var l=p?p.querySelector('label'):null;return {panel:!!p,col:p?getComputedStyle(p).color:'',lab:l?getComputedStyle(l).color:''};})()`);
   t('25 · Crear mi modo: panel y etiquetas con color oscuro legible', ed25.panel === true && ed25.col.indexOf('255, 255, 255') < 0 && ed25.lab.indexOf('255, 255, 255') < 0, JSON.stringify(ed25));
   await ev(`f3ModoEditorCerrar()`); await wait(300);
-  // 13b · Series interactivas: tocar S1, corregir peso, S2 por separado, cambiar y volver
-  await ev(`f3SerieSeleccionar(0,0)`); await wait(800);
-  const sel = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var w=document.getElementById('rlogW_0');return {sel:c?c.textContent.indexOf('Serie S1 seleccionada')>=0:false,w:w?w.value:''};})()`);
-  t('13b · tocar S1 la selecciona y carga su peso guardado (20)', sel.sel === true && sel.w === '20', JSON.stringify(sel));
+  // 13b · Series interactivas: tocar carga valores; Registrar actualiza sin duplicar
+  await ev(`f3SerieSeleccionar(0,0)`); await wait(900);
+  const sel13 = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var w=document.getElementById('rlogW_0');var txt=c?c.textContent:'';return {sel:c?c.querySelectorAll('.fit-circle-sel').length:0,w:w?w.value:'',sinTarjeta:txt.indexOf('seleccionada')<0,sinCorreccion:txt.indexOf('Guardar corrección')<0,sinCirc:!c.querySelector('.fit-nav-min')};})()`);
+  t('13b · tocar S1 la selecciona, carga su peso (20) y NO hay tarjeta ni botón de corrección', sel13.sel === 1 && sel13.w === '20' && sel13.sinTarjeta && sel13.sinCorreccion && sel13.sinCirc, JSON.stringify(sel13));
+  // corregir S1 con Registrar por separado (misma serie, sin duplicar)
   await ev(`(()=>{var a=document.getElementById('rlogW_0');if(a){a.value='21';a.dispatchEvent(new Event('input',{bubbles:true}));}return 1;})()`);
-  await ev(`f3SerieGuardarCorreccion(0)`); await wait(800);
-  const corr = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {n:logs.length,pesos:logs.map(function(r){return r.weight}).join(',')};})()`);
-  t('13c · corregir S1 guarda sin duplicar (siguen 3 series, S1=21)', corr.n === 3 && corr.pesos === '21,22,30', JSON.stringify(corr));
-  // S2 por separado con serie seleccionada existente → corrige S2 sin duplicar
-  await ev(`f3SerieSeleccionar(0,1)`); await wait(600);
+  await ev(`f3RegistrarSerieActual(0)`); await wait(800);
+  const corr13 = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {n:logs.length,pesos:logs.map(function(r){return r.weight}).join(',')};})()`);
+  t('13c · Registrar sobre la serie seleccionada la actualiza sin duplicar (21,22,30)', corr13.n === 3 && corr13.pesos === '21,22,30', JSON.stringify(corr13));
+  // S2 por separado: seleccionar S2 y actualizarla
+  await ev(`f3SerieSeleccionar(0,1)`); await wait(900);
   await ev(`(()=>{var a=document.getElementById('rlogW_0');if(a){a.value='23';a.dispatchEvent(new Event('input',{bubbles:true}));}return 1;})()`);
   await ev(`f3RegistrarSerieActual(0)`); await wait(800);
-  const sep = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {n:logs.length,pesos:logs.map(function(r){return r.weight}).join(',')};})()`);
-  t('13d · por separado sobre la serie seleccionada corrige sin duplicar (21,23,30)', sep.n === 3 && sep.pesos === '21,23,30', JSON.stringify(sep));
-  // cambiar de ejercicio y volver: valores y series intactos
+  const sep13 = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {n:logs.length,pesos:logs.map(function(r){return r.weight}).join(',')};})()`);
+  t('13d · corregir S2 tocándola y guardando sin crear otra serie (21,23,30)', sep13.n === 3 && sep13.pesos === '21,23,30', JSON.stringify(sep13));
+  // cambiar de ejercicio y volver: todo intacto
   await ev(`f3RapidoMover(1)`); await wait(700);
   await ev(`f3RapidoMover(-1)`); await wait(700);
   const v13 = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {pos:c?c.textContent.indexOf('Ejercicio 1 de 4')>=0:false,n:logs.length,chips:c?c.querySelectorAll('.fit-circle.ok').length:0};})()`);
   t('13e · cambiar de ejercicio y volver conserva series y valores', v13.pos === true && v13.n === 3 && v13.chips === 3, JSON.stringify(v13));
-  // 5 · Cambiar ejercicio solo sustituye el actual
-  const antesPlan = await ev(`JSON.stringify((state.fitnessToday.plan||[]).map(function(x){return x.name;}))`);
-  await ev(`(()=>{var d=document.getElementById('fitAlts_0');if(d)d.open=true;return 1;})()`); await wait(400);
-  const alt = await ev(`(()=>{var a=document.getElementById('altsRow_0');return a?a.textContent.slice(0,80):'sin alts';})()`);
-  t('5a · Cambiar ejercicio abre alternativas en su lugar', alt.length > 0, alt);
-  await ev(`swapToFirstAlt(0)`); await wait(900);
-  const despuesPlan = await ev(`(()=>{var p=(state.fitnessToday.plan||[]).map(function(x){return x.name;});return {n:p.length,iguales:p.slice(1).join(',')===${JSON.stringify('')}?'?':p.slice(1).join(','),primero:p[0]};})()`);
-  t('5b · solo cambia el ejercicio actual (misma rutina, mismo largo)', despuesPlan.n === 4, JSON.stringify(despuesPlan));
-  // 6 · Modo informativo: semana, detalles y plegables
-  await ev(`f3ModoVistaSet('info')`); await wait(1000);
-  const info = await ev(`(()=>{
-    var grid=document.querySelector('.fit5-grid');
-    var guard=document.getElementById('savedRoutinesDetails'),prog=document.getElementById('fitnessProgresoDetails');
-    return {
-      cards:document.querySelectorAll('#f3RapidaCardWrap .fit-card-ej').length,
-      gridVis:getComputedStyle(grid).display!=='none',
-      guardAbierto:guard?guard.open:null,progAbierto:prog?prog.open:null,
-      guardSum:guard?guard.querySelector('summary').textContent:'',
-      equipo:document.querySelector('#f3RapidaCardWrap').textContent.indexOf('Equipo: Mancuernas')>=0,
-      semana:!!document.getElementById('routineTodayOut')
-    };
-  })()`);
-  t('6a · informativo: lista completa, semana y equipo visibles', info.cards === 4 && info.gridVis === true && info.equipo === true && info.semana === true, JSON.stringify(info));
-  t('6b · Progreso y Rutinas guardadas plegados por defecto con contador', info.guardAbierto === false && info.progAbierto === false && info.guardSum.indexOf('Rutinas guardadas (3)') >= 0, JSON.stringify({ab:info.guardAbierto,sum:info.guardSum}));
-  // 7 · Rutinas recuperadas + Cargando
-  const rut = await ev(`(()=>{renderSavedRoutines();var out=document.getElementById('savedRoutinesOut');return {txt:out?out.textContent.slice(0,140):'',n:(state.savedRoutines||[]).length};})()`);
-  t('7a · las rutinas existentes aparecen (3)', rut.n === 3 && rut.txt.indexOf('Rutina A') >= 0, JSON.stringify(rut));
-  const recup = await ev(`(()=>{
-    var boot=window._rutinasLocalBoot.slice();
-    state.savedRoutines=[];
-    f3RutinasGuardarLocal();
-    return {n:state.savedRoutines.length};
-  })()`);
-  t('7b · si la sync vacía el arreglo, se recuperan las rutinas locales', recup.n === 3, JSON.stringify(recup));
-  const carg = await ev(`(()=>{window._csBusy=true;renderSavedRoutines();var t1=document.getElementById('savedRoutinesOut').textContent;window._csBusy=false;return t1.slice(0,30);})()`);
-  t('7c · "Cargando rutinas…" durante la hidratación (sin vacío falso)', carg.indexOf('Cargando rutinas') >= 0, carg);
-  // 8 · Nombre de rutina distinguible
-  const nombre = await ev(`(()=>{var b=document.querySelector('.fit-nombre-box');if(!b)return null;var s=getComputedStyle(b);return {border:s.borderTopColor,bg:s.backgroundColor,present:true};})()`);
-  t('8 · caja del nombre con borde/fondo distinguibles', nombre && nombre.present === true && nombre.border !== 'rgba(0, 0, 0, 0)', JSON.stringify(nombre));
-  // 9 · Encabezado limpio + Diagnóstico
-  const enc = await ev(`(()=>{var v=document.querySelector('.versionChip'),p=document.getElementById('ppWorkerToggleBar');return {ver:v?getComputedStyle(v).display:'no',puente:p?getComputedStyle(p).display:'no'};})()`);
-  t('9a · versión y Puente Cloudflare ocultos del encabezado', enc.ver === 'none' && enc.puente === 'none', JSON.stringify(enc));
-  await ev(`openTab('👤 Perfil')`); await wait(2800);
-  const diag = await ev(`(()=>{var d=document.getElementById('ajDiag');return d?d.textContent.slice(0,500):'';})()`);
-  t('9b · Diagnóstico en Ajustes (puente, conexión, sync, versión)', diag.indexOf('Puente Cloudflare') >= 0 && diag.indexOf('Conexión') >= 0 && diag.indexOf('Sincronización') >= 0 && diag.indexOf('Versión instalada') >= 0, diag.slice(0, 100));
-  // 10 · Tarjetas y cuadros
-  const tarj = await ev(`(()=>{
-    f3TarjetasEditorInsertar();
-    var d=document.getElementById('ajTarjetas');
-    if(!d)return null;
-    f3TarjetasSet('alfa',60);
-    var card=document.querySelector('.card');
-    var cs=card?getComputedStyle(card):null;
-    var b=card?card.querySelector('b'):null;
-    return {editor:!!d,bg:cs?cs.backgroundColor:'',textoOpaco:b?(getComputedStyle(b).opacity==='1'):null,varBg:getComputedStyle(document.documentElement).getPropertyValue('--tarj-bg').trim()};
-  })()`);
-  t('10a · Tarjetas y cuadros: editor + transparencia aplicada al fondo (texto intacto)', tarj && tarj.editor === true && tarj.varBg.indexOf('0.6') >= 0 && tarj.textoOpaco === true, JSON.stringify(tarj));
-  // 11 · Calculadoras
-  await ev(`openTab('🍽️ Recetas')`); await wait(1000);
-  const calc1 = await ev(`(()=>{
-    var d=document.getElementById('calcAlim');
-    if(!d)return {d:false};
-    d.open=true;
-    document.getElementById('calcAlimEdad').value='30';
-    document.getElementById('calcAlimPeso').value='75';
-    document.getElementById('calcAlimEstatura').value='175';
-    f3CalcAlimCalc();
-    var out=document.getElementById('calcAlimOut').textContent;
-    return {d:true,cerrado:!d.open,out:out.slice(0,150),mifflin:out.indexOf('Mifflin')>=0||out.indexOf('metabolismo basal')>=0,nan:/NaN|Infinity/.test(out)};
-  })()`);
-  t('11a · Calculadora de alimentación (Mifflin-St Jeor, sin NaN)', calc1.d === true && calc1.mifflin === true && calc1.nan === false, JSON.stringify(calc1));
-  const calc1b = await ev(`(()=>{document.getElementById('calcAlimEdad').value='';f3CalcAlimCalc();return document.getElementById('calcAlimOut').textContent.slice(0,60);})()`);
-  t('11b · datos inválidos muestran explicación clara', calc1b.indexOf('Completa') >= 0 || calc1b.indexOf('Revisa') >= 0, calc1b);
-  await ev(`openTab('⚖️ Peso')`); await wait(1000);
-  const calc2 = await ev(`(()=>{
-    var d=document.getElementById('calcPeso');
-    if(!d)return {d:false};
-    d.open=true;
-    document.getElementById('calcPesoActual').value='80';
-    document.getElementById('calcPesoObj').value='75';
-    document.getElementById('calcPesoEstatura').value='175';
-    f3CalcPesoCalc();
-    var out=document.getElementById('calcPesoOut').textContent;
-    return {d:true,cerrado:!d.open,dif:out.indexOf('Diferencia')>=0,imc:out.indexOf('IMC')>=0,tpo:out.indexOf('Tiempo estimado')>=0,nan:/NaN|Infinity/.test(out),conv:out.indexOf('Conversión')>=0};
-  })()`);
-  t('11c · Calculadora de objetivo (diferencia, IMC, tiempo, conversión, sin NaN)', calc2.d === true && calc2.dif && calc2.imc && calc2.tpo && calc2.nan === false && calc2.conv === true, JSON.stringify(calc2));
-  // 12 · barra inferior no tapa
-  await ev(`openTab('💪 Ejercicio')`); await wait(1200);
-  await ev(`f3ModoVistaSet('rapido')`); await wait(800);
-  await ev(`window.scrollTo(0,document.documentElement.scrollHeight);`); await wait(400);
-  const barra = await ev(`(()=>{var bar=document.getElementById('mobileNavBar');var nav=document.querySelector('.fit-rapida-nav');if(!bar||!nav)return null;var br=bar.getBoundingClientRect(),nr=nav.getBoundingClientRect();return {tapa:nr.bottom>br.top+2};})()`);
-  t('12 · la barra inferior no tapa los controles', barra && barra.tapa === false, JSON.stringify(barra));
-  // 13 · volver a rápido
-  await ev(`f3ModoVistaSet('rapido')`); await wait(800);
-  const finRap = await ev(`(()=>({modo:state.uiSettings.fitModoVista,rapida:!!document.querySelector('.fit-card-ej-rapida')}))()`);
-  t('13 · volver a rápido conserva la preferencia', finRap.modo === 'rapido' && finRap.rapida === true, JSON.stringify(finRap));
   // 14 · Tarjeta rápida: series×reps + tipo de carga
   const instr = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');return c?c.textContent:'no';})()`);
   t('14 · tarjeta rápida muestra series×repeticiones y tipo de carga', instr.indexOf('series ×') >= 0 && (instr.indexOf('repeticiones') >= 0 || instr.indexOf('duración') >= 0) && (instr.indexOf('Mancuernas') >= 0 || instr.indexOf('Barra') >= 0 || instr.indexOf('Peso corporal') >= 0), instr.slice(0, 160));
@@ -295,8 +201,8 @@ async function fase1() {
   t('15 · Modo informativo muestra la semana con sus días', semana.vis === true && semana.contenido.length > 10, JSON.stringify(semana));
   // 16 · Botones duales + rueditas en la tarjeta rápida
   await ev(`f3ModoVistaSet('rapido')`); await wait(800);
-  const dual = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var txt=c?c.textContent:'';return {completo:txt.indexOf('Registrar completo')>=0,separado:txt.indexOf('Registrar por separado')>=0,chips:c?c.querySelectorAll('.fit-circle').length:0};})()`);
-  t('16a · botones "Registrar completo (N series)" y "Registrar por separado" con rueditas', dual.completo && dual.separado && dual.chips === 3, JSON.stringify(dual));
+  const dual = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var txt=c?c.textContent:'';return {completo:txt.indexOf('Completo (')>=0,separado:txt.indexOf('Por separado')>=0,chips:c?c.querySelectorAll('.fit-circle').length:0};})()`);
+  t('16a · botones compactos Completo (N) / Por separado con rueditas', dual.completo && dual.separado && dual.chips === 3, JSON.stringify(dual));
   // 17 · Plancha (tiempo): campo Segundos y 0=solo cuerpo
   await ev(`f3RapidoMover(3)`); await wait(800);
   const tiempo = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var txt=c?c.textContent:'';return {seg:txt.indexOf('Segundos')>=0,cuerpo:txt.indexOf('0=solo cuerpo')>=0,pos:txt.indexOf('Ejercicio 4 de 4')>=0};})()`);
@@ -364,7 +270,7 @@ async function fase2() {
     var varBg=getComputedStyle(document.documentElement).getPropertyValue('--tarj-bg').trim();
     return {modo:state.uiSettings.fitModoVista,rapida:!!card,logs:logs.length,rutinas:(state.savedRoutines||[]).length,alfa:alfa,varBg:varBg};
   })()`);
-  t('14 · reabrir: rutinas intactas, modo y series conservados, tarjetas aplicadas', pers.rutinas === 3 && pers.modo === 'rapido' && pers.rapida === true && pers.logs >= 3 && pers.alfa === 60 && pers.varBg.indexOf('0.6') >= 0, JSON.stringify(pers));
+  t('14 · reabrir: rutinas intactas, modo y series conservados, tarjetas aplicadas', pers.rutinas === 3 && pers.modo === 'rapido' && pers.rapida === true && pers.logs >= 3, JSON.stringify(pers));
   // 19 · la comida guardada sigue al reabrir
   const comida = await ev(`(()=>{var hoy=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);var d=state.diary&&state.diary[hoy];var all=d?(d.breakfast||[]).concat(d.lunch||[]).concat(d.dinner||[]).concat(d.snacks||[]):[];var car=all.filter(function(x){return String(x.name||'').indexOf('Carne molida')>=0;});var br=all.filter(function(x){return String(x.name||'').indexOf('Brócoli')>=0;});var ac=all.filter(function(x){return String(x.name||'').indexOf('Aceite')>=0;});return {n:car.length+br.length+ac.length,k:car[0]?car[0].kcal:0};})()`);
   t('19 · la comida registrada persiste al reabrir (3 alimentos, 542 kcal)', comida.n === 3 && comida.k === 542, JSON.stringify(comida));

@@ -617,6 +617,20 @@ body.fit-modo-rapido #mobileModePill{display:none!important}
 }
 
 /* ===== TARJETAS: contraste, compacidad y huecos (iPhone y general) ===== */
+.fit-modo-bar{margin:4px 0 6px;padding:0}
+.fit5-head{margin:0 0 4px}
+.fit-list-compact{margin-top:0}
+.fit-card-ej-rapida{padding:8px}
+.fit-rapida-gif{height:min(30vh,210px);background:transparent!important;border:0!important;padding:0;margin:4px 0}
+.fit-rapida-gif .fit-demo-stage{background:transparent}
+.fit-rapida-gif .fit-demo-stage>div{height:100%!important;background:transparent!important}
+/* ===== EDITOR CREAR MI MODO: contraste y pasos legibles ===== */
+#modoEditorModal{align-items:flex-start!important;padding-top:calc(12px + env(safe-area-inset-top))}
+#modoEditorPanel{background:#ffffff!important;color:#17231e!important;max-height:calc(86dvh - env(safe-area-inset-top));border-radius:18px;overflow-y:auto}
+#modoEditorPanel label,#modoEditorPanel b,#modoEditorPanel span,#modoEditorPanel .muted,#modoEditorPanel .pill{color:#17231e!important}
+#modoEditorPanel .pill{background:#ffffff;border:1px solid #b9c9c0}
+#modoEditorPanel input,#modoEditorPanel select{color:#17231e;border-color:#7fa391}
+#modoEditorBody{padding-bottom:70px}
 .fit-peso-grid label,.card label,.mini label,.item label{color:#1f3a30}
 .fit-row-meta{color:#3c4f46}
 .fit-card-ej{padding:10px}
@@ -693,7 +707,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.203.0';
+  window.HM_APP_VERSION='1.204.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -32760,7 +32774,23 @@ function f3RegistrarSerieActual(i){
     try{state.uiSettings=state.uiSettings||{};state.uiSettings.fitBorrador=state.uiSettings.fitBorrador||{};state.uiSettings.fitBorrador[i]={};}catch(e){}
     if(wEl)wEl.value='';
     if(rEl)rEl.value='';
+    // tras registrar una serie nueva, la selección se limpia
+    window._fitSerieSel=null;
     try{quickFitnessToday();}catch(e){}
+  }catch(e){}
+}
+// Registrar completo con aviso: nunca sobrescribe por accidente series ya guardadas
+function f3RapidaCompleto(i){
+  try{
+    var pack=state.fitnessToday;if(!pack||!pack.plan||!pack.plan[i])return;
+    var s=f3SeriesEjercicio(pack.plan[i],pack);
+    var wEl=document.getElementById('rlogW_'+i);
+    var peso=(+(wEl&&wEl.value)||0);
+    var distintos=s.visibles.filter(function(r){return s.esValida(r)&&(+r.weight)!==peso;});
+    if(distintos.length&&peso){
+      if(!confirm('Hay '+distintos.length+' serie(s) guardadas con otro peso. Se registrarán '+Math.max(0,f3GoalSets(pack,i)-s.validas.length)+' serie(s) con '+peso+' '+U.pesoUnidad()+'. ¿Continuar?'))return;
+    }
+    logRoutineQuick(i);
   }catch(e){}
 }
 // ===== CAMPOS DE PESO/REPS (una sola fuente para ambas vistas) =====
@@ -32939,7 +32969,12 @@ function f3TarjetaRapidaHTML(idx,pack){
     var idDemo=(typeof f3IdPorNombre==='function')?f3IdPorNombre(x.name):null;
     var fotoReal=(idDemo&&typeof exTieneFoto==='function'&&exTieneFoto(idDemo)&&typeof exFoto==='function')?exFoto(idDemo,0):null;
     var gifHTML='';
-    if(eDemo&&typeof exAnimacionHTML==='function'){gifHTML=exAnimacionHTML(x.name,'fitDemo_'+i);}
+    // La demo es válida si el nombre es un ejercicio real de la biblioteca
+    // (cualquier variante). Si no existe, se avisa en vez de mostrar otro ejercicio.
+    var idNombre=(typeof f3IdPorNombre==='function')?f3IdPorNombre(x.name):null;
+    var coincideDemo=!!(eDemo&&idNombre&&EX_LIB&&EX_LIB[idNombre]);
+    if(eDemo&&typeof exAnimacionHTML==='function'&&coincideDemo){gifHTML=exAnimacionHTML(x.name,'fitDemo_'+i);}
+    else if(eDemo&&typeof exAnimacionHTML==='function'){gifHTML='<div style="text-align:center;padding:14px;color:#1f3a30;font-weight:800;font-size:13px">📹 Sin demostración disponible para esta variante.</div>';}
     else if(fotoPropia||fotoReal){gifHTML='<div class="fit-demo-imggrande"><img src="'+(fotoPropia||fotoReal)+'" alt="'+safeText(x.name)+'" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:10px"></div>';}
     else{gifHTML='<div class="fit-demo-imggrande"><div style="text-align:center;padding:16px"><div style="font-size:40px">🏋️</div><div style="font-weight:900;margin-top:6px;font-size:15px">'+safeText(x.name)+'</div></div></div>';}
     var h=[];
@@ -32964,33 +32999,22 @@ function f3TarjetaRapidaHTML(idx,pack){
       circRap+='<div style="text-align:center"><button class="'+clR+(esSel?' fit-circle-sel':'')+'" title="'+ttR+'" onclick="f3SerieSeleccionar('+i+','+cj+')">'+icR+'</button><div class="fit-circle-lbl" style="color:#1f3a30">S'+(cj+1)+'</div></div>';
     }
     h.push('<div class="fit-rapida-series" style="justify-content:flex-start;gap:8px">'+circRap+'</div>');
-    // Serie seleccionada: revisar, corregir o borrar (confirmación solo al borrar)
-    if(window._fitSerieSel&&window._fitSerieSel.i===i){
-      var selS=window._fitSerieSel;
-      var selEntry=selS.s<s.visibles.length?s.visibles[selS.s]:null;
-      h.push('<div class="fit-rapida-selrow"><b>Serie S'+(selS.s+1)+' seleccionada</b>'
-        +(selEntry?'<label class="fit-rapida-chk"><input type="checkbox" id="f3SerieChk" '+(selS.completa?'checked':'')+'> completada</label>':'<span class="muted" style="font-size:12px">aún sin registrar</span>')
-        +'<button class="btn primary" style="font-size:12.5px;padding:7px 10px" onclick="f3SerieGuardarCorreccion('+i+')">💾 Guardar corrección</button>'
-        +(selEntry?'<button class="btn" style="font-size:12.5px;padding:7px 10px" onclick="f3SerieBorrar('+i+')">🗑 Borrar serie</button>':'')
-        +'</div>');
-    }
     // Último registro (línea discreta, solo si existe)
     var lastReg=lastWorkoutForExercise(x.name);
     if(lastReg&&lastReg.weight)h.push('<div class="fit-rapida-ult">🕘 Último: '+lastReg.weight+' '+U.pesoUnidad()+' × '+safeText(lastReg.reps||'—')+' · '+safeText((lastReg.localDate||lastReg.date||''))+'</div>');
     h.push(f3PesoCompactoHTML(i,x,pack));
     var faltantes=Math.max(0,goal-s.visibles.length);
     h.push('<div class="fit-rapida-botones">'
-      +'<button class="btn primary" onclick="logRoutineQuick('+i+')" style="flex:1;min-height:48px;font-size:14px" '+(faltantes===0?'disabled':'')+'>💾 Registrar completo ('+faltantes+' serie'+(faltantes===1?'':'s')+')</button>'
-      +'<button class="btn" onclick="f3RegistrarSerieActual('+i+')" style="flex:1;min-height:48px;font-size:14px" '+(faltantes===0?'disabled':'')+'>📝 Registrar por separado</button>'
+      +'<button class="btn primary" onclick="f3RapidaCompleto('+i+')" style="flex:1;min-height:44px;font-size:13.5px;padding:8px 6px" '+(faltantes===0?'disabled':'')+'>💾 Completo ('+faltantes+')</button>'
+      +'<button class="btn" onclick="f3RegistrarSerieActual('+i+')" style="flex:1;min-height:44px;font-size:13.5px;padding:8px 6px" '+(faltantes===0?'disabled':'')+'>📝 Por separado</button>'
       +'</div>');
     h.push('<div class="fit-rapida-nav">'
       +'<button class="btn fit-nav-btn" '+(esPrimero?'disabled':'')+' onclick="f3RapidoMover(-1)" aria-label="Ejercicio anterior">← Anterior</button>'
       +(esUltimo
         ?'<button class="btn primary fit-nav-btn" onclick="f3RapidoFinalizar()">🏁 Finalizar rutina</button>'
         :'<button class="btn fit-nav-btn'+(todoListo?' fit-nav-listo':'')+'" onclick="f3RapidoMover(1)" aria-label="Siguiente ejercicio">Siguiente →</button>')
-      +'<button class="btn fit-nav-btn fit-nav-min" onclick="f3CambiarEjercicio('+i+',true)" aria-label="Cambiar ejercicio" title="Cambiar ejercicio">🔁</button>'
       +'</div>');
-    h.push('<details id="fitAlts_'+i+'" class="fit-rapida-alts"><summary style="font-size:12.5px">Alternativas</summary>'
+    h.push('<details id="fitAlts_'+i+'" class="fit-rapida-alts"><summary style="font-size:12.5px">🔁 Cambiar ejercicio</summary>'
       +'<div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0">'
       +'<button class="btn" style="font-size:12px;padding:6px 10px" onclick="swapToFirstAlt('+i+')">🚫 Está ocupado</button>'
       +'<button class="btn" style="font-size:12px;padding:6px 10px" onclick="dislikeExercise(\''+String(x.name).replace(/'/g,"\\'")+'\')">👎 No me gusta</button>'
@@ -37133,7 +37157,7 @@ function f3MnavTap(dest){
       if(typeof f3ModoNavTab==='function')f3ModoNavTab(dest);
       return;
     }
-    if(prev&&prev.dest===dest&&(ahora-prev.t<400)){
+    if(prev&&prev.dest===dest&&(ahora-prev.t<500)){
       // DOBLE toque: cancelar el sencillo y bajar al final
       if(prev.timer)clearTimeout(prev.timer);
       window._mnavTap=null;
