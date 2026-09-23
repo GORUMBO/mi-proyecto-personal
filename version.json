@@ -1,8 +1,23 @@
 {
-  "latest": "1.199.0",
+  "latest": "1.200.0",
   "date": "2026-09-21",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.200.0",
+  "date": "2026-09-22",
+  "type": "recomendada",
+  "nuevas": [
+    "Registro de comida por pasos en el Contador: categorías (proteínas, verduras, cereales, frutas, grasas/salsas, bebidas), búsqueda, cantidades con unidad (g, pieza, taza, cucharada), Saltar, resumen editable con nombre y nota, y guardado en el diario del día.",
+    "Estados de preparación (crudo/cocido) para alimentos clave con datos reales por 100 g (USDA/Mifflin): las calorías y macros se recalculan al instante al cambiar cantidad o estado; si un alimento no tiene datos para una preparación se avisa y se permite completarlos sin inventar.",
+    "Tarjeta rápida de Fitness con la instrucción del ejercicio: series × repeticiones (o duración) y tipo de carga (peso corporal, mancuernas por mancuerna, barra total, máquina, polea, banda o sin equipo).",
+    "Modo informativo con la pantalla de la semana (días y rutinas asignadas) siempre visible y sin tarjetas duplicadas."
+  ],
+  "cambios": [
+    "Tarjetas de toda la app más compactas: contenido ajustado al ancho, etiquetas con mejor contraste sobre fondos claros o transparentes, menos espacios vacíos y botones táctiles sin quedar ocultos tras la barra inferior.",
+    "La transparencia elegida por el usuario en Tarjetas y cuadros se mantiene al cerrar y abrir la app."
+  ]
+},
 {
   "version": "1.199.0",
   "date": "2026-09-22",

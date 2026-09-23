@@ -226,6 +226,34 @@ async function fase1() {
   await ev(`f3ModoVistaSet('rapido')`); await wait(800);
   const finRap = await ev(`(()=>({modo:state.uiSettings.fitModoVista,rapida:!!document.querySelector('.fit-card-ej-rapida')}))()`);
   t('13 · volver a rápido conserva la preferencia', finRap.modo === 'rapido' && finRap.rapida === true, JSON.stringify(finRap));
+  // 14 · Tarjeta rápida: series×reps + tipo de carga
+  const instr = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');return c?c.textContent:'no';})()`);
+  t('14 · tarjeta rápida muestra series×repeticiones y tipo de carga', instr.indexOf('series ×') >= 0 && (instr.indexOf('repeticiones') >= 0 || instr.indexOf('duración') >= 0) && (instr.indexOf('Mancuernas') >= 0 || instr.indexOf('Barra') >= 0 || instr.indexOf('Peso corporal') >= 0), instr.slice(0, 160));
+  // 15 · Modo informativo: pantalla de la semana visible
+  await ev(`f3ModoVistaSet('info')`); await wait(1000);
+  const semana = await ev(`(()=>{var rc=document.getElementById('routineTodayCard');var ro=document.getElementById('routineTodayOut');return {vis:rc?getComputedStyle(rc).display!=='none':false,contenido:ro?ro.textContent.slice(0,80):''};})()`);
+  t('15 · Modo informativo muestra la semana con sus días', semana.vis === true && semana.contenido.length > 10, JSON.stringify(semana));
+  // 16 · Registro de comida por pasos: categorías, estado crudo/cocido y guardado
+  await ev(`openTab('🍱 Contador')`); await wait(1200);
+  const btnReg = await ev(`!!document.getElementById('regComidaBtn')`);
+  t('16a · botón "Registrar comida (por pasos)" en el Contador', btnReg === true);
+  await ev(`f3RegComidaAbrir()`); await wait(400);
+  const paso0 = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,300):'';})()`);
+  t('16b · paso 1: categorías con alimentos', paso0.indexOf('Carnes y otras proteínas') >= 0 && paso0.indexOf('Cereales, arroz, pan y tortillas') >= 0, paso0.slice(0, 80));
+  await ev(`f3RegElegirCat('cereal')`); await wait(300);
+  await ev(`f3RegAgregar('Arroz cocido 1 taza')`); await wait(300);
+  const arroz = await ev(`(()=>{var b=document.getElementById('regComidaBody');var i=(window._regComida.items||[]).find(function(x){return x.n==='Arroz cocido 1 taza';});return {txt:b?b.textContent.slice(0,300):'',it:i};})()`);
+  t('16c · Arroz agregado con datos crudo (365 kcal/100g)', arroz.it && arroz.txt.indexOf('365 kcal') >= 0, arroz.txt.slice(0, 120));
+  await ev(`f3RegSetEstado('Arroz cocido 1 taza','cocido')`); await wait(300);
+  const cocido = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,300):'';})()`);
+  t('16d · cambiar a cocido recalcula (130 kcal/100g)', cocido.indexOf('130 kcal') >= 0, cocido.slice(0, 120));
+  await ev(`f3RegPaso(1)`); await wait(300);
+  const resumen = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,300):'';})()`);
+  t('16e · resumen con totales (100g cocido = 130 kcal)', resumen.indexOf('Totales') >= 0 && resumen.indexOf('130 kcal') >= 0, resumen.slice(0, 140));
+  await ev(`f3RegGuardar()`); await wait(700);
+  const guardada = await ev(`(()=>{var hoy=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);var d=state.diary&&state.diary[hoy];var all=d?(d.breakfast||[]).concat(d.lunch||[]).concat(d.dinner||[]).concat(d.snacks||[]):[];var ar=all.filter(function(x){return String(x.name||'').indexOf('Arroz')>=0;});return {n:ar.length,kcal:ar[0]?ar[0].kcal:null,estado:ar[0]?ar[0].estado:null};})()`);
+  t('16f · la comida se guarda en el diario con kcal y estado', guardada.n >= 1 && guardada.kcal === 130 && guardada.estado === 'cocido', JSON.stringify(guardada));
+  await ev(`f3ModoVistaSet('rapido')`); await wait(800);
   await cerrarGracioso(ws, child);
   console.log('   app cerrada; perfil: ' + profile);
 }
@@ -243,6 +271,9 @@ async function fase2() {
     return {modo:state.uiSettings.fitModoVista,rapida:!!card,logs:logs.length,rutinas:(state.savedRoutines||[]).length,alfa:alfa,varBg:varBg};
   })()`);
   t('14 · reabrir: rutinas intactas, modo y series conservados, tarjetas aplicadas', pers.rutinas === 3 && pers.modo === 'rapido' && pers.rapida === true && pers.logs >= 3 && pers.alfa === 60 && pers.varBg.indexOf('0.6') >= 0, JSON.stringify(pers));
+  // 17 · la comida guardada sigue al reabrir
+  const comida = await ev(`(()=>{var hoy=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);var d=state.diary&&state.diary[hoy];var all=d?(d.breakfast||[]).concat(d.lunch||[]).concat(d.dinner||[]).concat(d.snacks||[]):[];var ar=all.filter(function(x){return String(x.name||'').indexOf('Arroz')>=0;});return {n:ar.length,kcal:ar[0]?ar[0].kcal:null};})()`);
+  t('17 · la comida registrada persiste al reabrir', comida.n >= 1 && comida.kcal === 130, JSON.stringify(comida));
   const fatales = ws.consola.filter(c => /EXCEPCIÓN:/.test(c));
   t('15 · sin errores en consola', fatales.length === 0, fatales.slice(0, 2).join(' | ').slice(0, 200));
   await cerrarGracioso(ws, child);
