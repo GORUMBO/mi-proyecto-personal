@@ -1,8 +1,23 @@
 {
-  "latest": "1.200.0",
+  "latest": "1.201.0",
   "date": "2026-09-21",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.201.0",
+  "date": "2026-09-22",
+  "type": "recomendada",
+  "nuevas": [
+    "Tarjeta rápida de Fitness: botones Registrar completo (indica cuántas series guardará) y Registrar por separado (una serie a la vez), con rueditas S1-Sn que muestran las series ya guardadas; ejercicios de tiempo usan campo Segundos y peso corporal conserva 0 = solo cuerpo.",
+    "Registrar por pasos (comida): pantalla intro con Empezar, 5 preguntas una a una (proteína, verduras, acompañamiento, aceite/grasas, extras/bebida) con buscador global, opciones frecuentes, detalle por alimento (preparación cruda/cocida, cantidad con unidad y aporte instantáneo) y resumen chico con el total.",
+    "Pantalla final del plato con cada ingrediente (preparación, cantidad y aporte), total en kcal y macros en gramos, editar/quitar ingredientes, nombre, nota y guardado en el diario existente."
+  ],
+  "cambios": [
+    "Datos reales por preparación ampliados (brócoli, espinaca, zanahoria, cebolla, calabacita, pimiento, lechuga, jitomate, aceite, mantequilla) y conversiones de cucharadita/cucharada/taza/pieza; sin datos se avisa y se permite completarlos sin inventar.",
+    "Contraste de textos y etiquetas junto al GIF (nunca gris claro sobre blanco).",
+    "La comida guardada por pasos aparece en el mismo historial del diario y puede editarse después."
+  ]
+},
 {
   "version": "1.200.0",
   "date": "2026-09-22",

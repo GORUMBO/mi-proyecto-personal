@@ -70,7 +70,8 @@ const SEMILLA = `(function(){
   state.fitnessToday={date:hoy,ctx:{},adaptedOnlyToday:false,oneOff:false,plan:[
     {name:'Press plano con mancuernas',muscle:'pecho',sets:3,reps:'8-12',rest:90,alts:['Press inclinado con mancuernas','Fondos']},
     {name:'Peso muerto rumano',muscle:'femoral',sets:3,reps:'8-12',rest:100,alts:['Peso muerto rumano con mancuernas']},
-    {name:'Lagartijas (push ups)',muscle:'pecho',sets:2,reps:'10-15',rest:60,alts:['Fondos']}
+    {name:'Lagartijas (push ups)',muscle:'pecho',sets:2,reps:'10-15',rest:60,alts:['Fondos']},
+    {name:'Plancha lateral',muscle:'core',sets:2,reps:'20-30s',rest:60,clase:'tiempo'}
   ],checked:{},checkedDate:hoy,estado:{},sessionId:Date.now()};
   state.savedRoutines=[
     {id:'r1',name:'Rutina A',plan:[{name:'Sentadilla',muscle:'pierna',sets:3,reps:'8-12',rest:120}],dias:[{di:-1,n:'Base',exs:[{name:'Sentadilla',muscle:'pierna',sets:3,reps:'8-12',rest:120}]}]},
@@ -99,7 +100,7 @@ async function fase1() {
     var grid=document.querySelector('.fit5-grid'),rutina=document.getElementById('routineTodayCard'),guard=document.getElementById('savedRoutinesDetails');
     var disp=function(el){return el?getComputedStyle(el).display:'no-el';};
     return {
-      modo:state.uiSettings.fitModoVista,card:!!card,pos:txt.indexOf('Ejercicio 1 de 3')>=0,
+      modo:state.uiSettings.fitModoVista,card:!!card,pos:txt.indexOf('Ejercicio 1 de 4')>=0,
       gif:!!(card&&card.querySelector('.fit-rapida-gif')),gifStage:!!document.getElementById('fitDemoStage_0'),
       pesos:txt.indexOf('Peso (')>=0,reps:txt.indexOf('Reps')>=0,
       registrar:txt.indexOf('Registrar')>=0,cambiar:txt.indexOf('Cambiar ejercicio')>=0,
@@ -120,15 +121,17 @@ async function fase1() {
   const yA = await ev(`Math.round(window.scrollY)`);
   await registrar(ev, 0, 20, 10);
   await registrar(ev, 0, 22, 10);
-  await registrar(ev, 0, 25, 8);
+  await ev(`(()=>{var a=document.getElementById('rlogW_0');var b=document.getElementById('rlogR_0');if(a){a.value='30';a.dispatchEvent(new Event('input',{bubbles:true}));}if(b){b.value='10';b.dispatchEvent(new Event('input',{bubbles:true}));}return 1;})()`);
+  await ev(`logRoutineQuick(0)`); await wait(700);
   const yB = await ev(`Math.round(window.scrollY)`);
   const series = await ev(`(()=>{var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {n:logs.length,pesos:logs.map(function(r){return r.weight}).join(',')};})()`);
-  t('3 · Registrar guarda 3 series (20/22/25) sin mover la pantalla', series.n === 3 && series.pesos === '20,22,25' && yA === yB, JSON.stringify(series) + ' y=' + yA + '→' + yB);
+  t('3 · Registrar: 2 por separado + completo (20/22/30) sin mover la pantalla', series.n === 3 && series.pesos === '20,22,30' && yA === yB, JSON.stringify(series) + ' y=' + yA + '→' + yB);
+  console.log('   [debug card]', await ev(`(function(){var src=f3TarjetaRapidaHTML.toString();var m=src.indexOf('catch(e)');var src2=src.slice(0,m)+'catch(e){window.__cardErr=e;'+src.slice(m+9);var f=(0,eval)('('+src2+')');window.__cardErr=null;f(0,state.fitnessToday);return window.__cardErr?('ERR: '+window.__cardErr.message):'ok';})()`));
   // 4 · Anterior/Siguiente sin perder registros ni posición
   await ev(`f3RapidoMover(1)`); await wait(800);
   await ev(`f3RapidoMover(-1)`); await wait(800);
   const yC = await ev(`Math.round(window.scrollY)`);
-  const vuelta = await ev(`(()=>{var card=document.querySelector('.fit-card-ej-rapida');var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {pos:card?card.textContent.indexOf('Ejercicio 1 de 3')>=0:false,n:logs.length};})()`);
+  const vuelta = await ev(`(()=>{var card=document.querySelector('.fit-card-ej-rapida');var pack=state.fitnessToday;var logs=(state.workoutLog||[]).filter(function(r){return r.sessionId===pack.sessionId&&r.exercise==='Press plano con mancuernas'&&!r.deleted;});return {pos:card?card.textContent.indexOf('Ejercicio 1 de 4')>=0:false,n:logs.length};})()`);
   t('4 · Anterior/Siguiente conservan registros y posición', vuelta.pos === true && vuelta.n === 3 && yC === yA, JSON.stringify(vuelta) + ' y=' + yC);
   // 5 · Cambiar ejercicio solo sustituye el actual
   const antesPlan = await ev(`JSON.stringify((state.fitnessToday.plan||[]).map(function(x){return x.name;}))`);
@@ -137,7 +140,7 @@ async function fase1() {
   t('5a · Cambiar ejercicio abre alternativas en su lugar', alt.length > 0, alt);
   await ev(`swapToFirstAlt(0)`); await wait(900);
   const despuesPlan = await ev(`(()=>{var p=(state.fitnessToday.plan||[]).map(function(x){return x.name;});return {n:p.length,iguales:p.slice(1).join(',')===${JSON.stringify('')}?'?':p.slice(1).join(','),primero:p[0]};})()`);
-  t('5b · solo cambia el ejercicio actual (misma rutina, mismo largo)', despuesPlan.n === 3, JSON.stringify(despuesPlan));
+  t('5b · solo cambia el ejercicio actual (misma rutina, mismo largo)', despuesPlan.n === 4, JSON.stringify(despuesPlan));
   // 6 · Modo informativo: semana, detalles y plegables
   await ev(`f3ModoVistaSet('info')`); await wait(1000);
   const info = await ev(`(()=>{
@@ -152,7 +155,7 @@ async function fase1() {
       semana:!!document.getElementById('routineTodayOut')
     };
   })()`);
-  t('6a · informativo: lista completa, semana y equipo visibles', info.cards === 3 && info.gridVis === true && info.equipo === true && info.semana === true, JSON.stringify(info));
+  t('6a · informativo: lista completa, semana y equipo visibles', info.cards === 4 && info.gridVis === true && info.equipo === true && info.semana === true, JSON.stringify(info));
   t('6b · Progreso y Rutinas guardadas plegados por defecto con contador', info.guardAbierto === false && info.progAbierto === false && info.guardSum.indexOf('Rutinas guardadas (3)') >= 0, JSON.stringify({ab:info.guardAbierto,sum:info.guardSum}));
   // 7 · Rutinas recuperadas + Cargando
   const rut = await ev(`(()=>{renderSavedRoutines();var out=document.getElementById('savedRoutinesOut');return {txt:out?out.textContent.slice(0,140):'',n:(state.savedRoutines||[]).length};})()`);
@@ -233,26 +236,58 @@ async function fase1() {
   await ev(`f3ModoVistaSet('info')`); await wait(1000);
   const semana = await ev(`(()=>{var rc=document.getElementById('routineTodayCard');var ro=document.getElementById('routineTodayOut');return {vis:rc?getComputedStyle(rc).display!=='none':false,contenido:ro?ro.textContent.slice(0,80):''};})()`);
   t('15 · Modo informativo muestra la semana con sus días', semana.vis === true && semana.contenido.length > 10, JSON.stringify(semana));
-  // 16 · Registro de comida por pasos: categorías, estado crudo/cocido y guardado
+  // 16 · Botones duales + rueditas en la tarjeta rápida
+  await ev(`f3ModoVistaSet('rapido')`); await wait(800);
+  const dual = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var txt=c?c.textContent:'';return {completo:txt.indexOf('Registrar completo')>=0,separado:txt.indexOf('Registrar por separado')>=0,chips:c?c.querySelectorAll('.fit-circle').length:0};})()`);
+  t('16a · botones "Registrar completo (N series)" y "Registrar por separado" con rueditas', dual.completo && dual.separado && dual.chips === 3, JSON.stringify(dual));
+  // 17 · Plancha (tiempo): campo Segundos y 0=solo cuerpo
+  await ev(`f3RapidoMover(3)`); await wait(800);
+  const tiempo = await ev(`(()=>{var c=document.querySelector('.fit-card-ej-rapida');var txt=c?c.textContent:'';return {seg:txt.indexOf('Segundos')>=0,cuerpo:txt.indexOf('0=solo cuerpo')>=0,pos:txt.indexOf('Ejercicio 4 de 4')>=0};})()`);
+  t('17 · ejercicio de tiempo: campo "Segundos" y 0=solo cuerpo', tiempo.seg === true && tiempo.cuerpo === true && tiempo.pos === true, JSON.stringify(tiempo));
+  await ev(`f3RapidoMover(-3)`); await wait(800);
+  // 18 · Registro por pasos: intro, preguntas, detalle y guardado (ejemplo del usuario)
   await ev(`openTab('🍱 Contador')`); await wait(1200);
   const btnReg = await ev(`!!document.getElementById('regComidaBtn')`);
-  t('16a · botón "Registrar comida (por pasos)" en el Contador', btnReg === true);
+  t('18a · botón "Registrar comida (por pasos)" en el Contador', btnReg === true);
   await ev(`f3RegComidaAbrir()`); await wait(400);
-  const paso0 = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,300):'';})()`);
-  t('16b · paso 1: categorías con alimentos', paso0.indexOf('Carnes y otras proteínas') >= 0 && paso0.indexOf('Cereales, arroz, pan y tortillas') >= 0, paso0.slice(0, 80));
-  await ev(`f3RegElegirCat('cereal')`); await wait(300);
-  await ev(`f3RegAgregar('Arroz cocido 1 taza')`); await wait(300);
-  const arroz = await ev(`(()=>{var b=document.getElementById('regComidaBody');var i=(window._regComida.items||[]).find(function(x){return x.n==='Arroz cocido 1 taza';});return {txt:b?b.textContent.slice(0,300):'',it:i};})()`);
-  t('16c · Arroz agregado con datos crudo (365 kcal/100g)', arroz.it && arroz.txt.indexOf('365 kcal') >= 0, arroz.txt.slice(0, 120));
-  await ev(`f3RegSetEstado('Arroz cocido 1 taza','cocido')`); await wait(300);
-  const cocido = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,300):'';})()`);
-  t('16d · cambiar a cocido recalcula (130 kcal/100g)', cocido.indexOf('130 kcal') >= 0, cocido.slice(0, 120));
-  await ev(`f3RegPaso(1)`); await wait(300);
-  const resumen = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,300):'';})()`);
-  t('16e · resumen con totales (100g cocido = 130 kcal)', resumen.indexOf('Totales') >= 0 && resumen.indexOf('130 kcal') >= 0, resumen.slice(0, 140));
+  const intro = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,200):'';})()`);
+  t('18b · intro "Vamos a registrar tu comida por pasos" + Empezar', intro.indexOf('Vamos a registrar tu comida por pasos') >= 0 && intro.indexOf('Empezar') >= 0, intro.slice(0, 100));
+  await ev(`f3RegEmpezar()`); await wait(300);
+  const p1 = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,200):'';})()`);
+  t('18c · paso 1 pregunta por la proteína con buscador', p1.indexOf('¿Qué carne o proteína utilizaste?') >= 0, p1.slice(0, 100));
+  // carne molida: buscar, detalle cocida 200 g, aporte, agregar
+  await ev(`f3RegBuscar('carne molida')`); await wait(300);
+  await ev(`f3RegAbrirDetalle('Carne molida 100g')`); await wait(300);
+  await ev(`f3RegDetSet('estado','cocido')`); await wait(200);
+  await ev(`f3RegDetSet('cant',200)`); await wait(200);
+  const carne = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,300):'';})()`);
+  t('18d · carne molida cocida 200 g muestra su aporte (542 kcal)', carne.indexOf('Aporte de 200 g') >= 0 && carne.indexOf('542 kcal') >= 0, carne.slice(0, 160));
+  await ev(`f3RegAgregarAlPlato()`); await wait(300);
+  // brócoli cocido 100 g
+  await ev(`f3RegNav(1)`); await wait(200);
+  await ev(`f3RegBuscar('brócoli')`); await wait(300);
+  await ev(`f3RegAbrirDetalle('Brócoli 100g')`); await wait(300);
+  await ev(`f3RegDetSet('estado','cocido')`); await wait(200);
+  await ev(`f3RegDetSet('cant',100)`); await wait(200);
+  const broc = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,300):'';})()`);
+  t('18e · brócoli cocido 100 g muestra su aporte (35 kcal)', broc.indexOf('35 kcal') >= 0, broc.slice(0, 160));
+  await ev(`f3RegAgregarAlPlato()`); await wait(300);
+  // aceite 1 cucharada
+  await ev(`f3RegNav(2)`); await wait(200);
+  await ev(`f3RegBuscar('aceite')`); await wait(300);
+  await ev(`f3RegAbrirDetalle('Aceite oliva 1 cda')`); await wait(300);
+  await ev(`f3RegDetSet('cant',1)`); await wait(200);
+  await ev(`f3RegDetSet('unidad','cda')`); await wait(200);
+  const aceite = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,300):'';})()`);
+  t('18f · 1 cucharada de aceite muestra su aporte (124 kcal)', aceite.indexOf('124 kcal') >= 0, aceite.slice(0, 160));
+  await ev(`f3RegAgregarAlPlato()`); await wait(300);
+  // plato final: totales + guardar
+  await ev(`f3RegNav(1)`); await wait(200); await ev(`f3RegNav(1)`); await wait(300);
+  const plato = await ev(`(()=>{var b=document.getElementById('regComidaBody');return b?b.textContent.slice(0,900):'';})()`);
+  t('18g · plato final con ingredientes y total (701 kcal)', plato.indexOf('200 g de Carne molida') >= 0 && plato.indexOf('Total del plato') >= 0 && plato.indexOf('701 kcal') >= 0, plato.slice(0, 220));
   await ev(`f3RegGuardar()`); await wait(700);
-  const guardada = await ev(`(()=>{var hoy=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);var d=state.diary&&state.diary[hoy];var all=d?(d.breakfast||[]).concat(d.lunch||[]).concat(d.dinner||[]).concat(d.snacks||[]):[];var ar=all.filter(function(x){return String(x.name||'').indexOf('Arroz')>=0;});return {n:ar.length,kcal:ar[0]?ar[0].kcal:null,estado:ar[0]?ar[0].estado:null};})()`);
-  t('16f · la comida se guarda en el diario con kcal y estado', guardada.n >= 1 && guardada.kcal === 130 && guardada.estado === 'cocido', JSON.stringify(guardada));
+  const guardada = await ev(`(()=>{var hoy=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);var d=state.diary&&state.diary[hoy];var all=d?(d.breakfast||[]).concat(d.lunch||[]).concat(d.dinner||[]).concat(d.snacks||[]):[];var car=all.filter(function(x){return String(x.name||'').indexOf('Carne molida')>=0;});var br=all.filter(function(x){return String(x.name||'').indexOf('Brócoli')>=0;});var ac=all.filter(function(x){return String(x.name||'').indexOf('Aceite')>=0;});return {n:car.length+br.length+ac.length,carK:car[0]?car[0].kcal:0,brK:br[0]?br[0].kcal:0,acK:ac[0]?ac[0].kcal:0};})()`);
+  t('18h · la comida se guarda en el diario (3 alimentos, 542+35+124)', guardada.n === 3 && guardada.carK === 542 && guardada.brK === 35 && guardada.acK === 124, JSON.stringify(guardada));
   await ev(`f3ModoVistaSet('rapido')`); await wait(800);
   await cerrarGracioso(ws, child);
   console.log('   app cerrada; perfil: ' + profile);
@@ -271,9 +306,9 @@ async function fase2() {
     return {modo:state.uiSettings.fitModoVista,rapida:!!card,logs:logs.length,rutinas:(state.savedRoutines||[]).length,alfa:alfa,varBg:varBg};
   })()`);
   t('14 · reabrir: rutinas intactas, modo y series conservados, tarjetas aplicadas', pers.rutinas === 3 && pers.modo === 'rapido' && pers.rapida === true && pers.logs >= 3 && pers.alfa === 60 && pers.varBg.indexOf('0.6') >= 0, JSON.stringify(pers));
-  // 17 · la comida guardada sigue al reabrir
-  const comida = await ev(`(()=>{var hoy=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);var d=state.diary&&state.diary[hoy];var all=d?(d.breakfast||[]).concat(d.lunch||[]).concat(d.dinner||[]).concat(d.snacks||[]):[];var ar=all.filter(function(x){return String(x.name||'').indexOf('Arroz')>=0;});return {n:ar.length,kcal:ar[0]?ar[0].kcal:null};})()`);
-  t('17 · la comida registrada persiste al reabrir', comida.n >= 1 && comida.kcal === 130, JSON.stringify(comida));
+  // 19 · la comida guardada sigue al reabrir
+  const comida = await ev(`(()=>{var hoy=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);var d=state.diary&&state.diary[hoy];var all=d?(d.breakfast||[]).concat(d.lunch||[]).concat(d.dinner||[]).concat(d.snacks||[]):[];var car=all.filter(function(x){return String(x.name||'').indexOf('Carne molida')>=0;});var br=all.filter(function(x){return String(x.name||'').indexOf('Brócoli')>=0;});var ac=all.filter(function(x){return String(x.name||'').indexOf('Aceite')>=0;});return {n:car.length+br.length+ac.length,k:car[0]?car[0].kcal:0};})()`);
+  t('19 · la comida registrada persiste al reabrir (3 alimentos, 542 kcal)', comida.n === 3 && comida.k === 542, JSON.stringify(comida));
   const fatales = ws.consola.filter(c => /EXCEPCIÓN:/.test(c));
   t('15 · sin errores en consola', fatales.length === 0, fatales.slice(0, 2).join(' | ').slice(0, 200));
   await cerrarGracioso(ws, child);
