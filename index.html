@@ -623,7 +623,7 @@ body.fit-modo-rapido #mobileModePill{display:none!important}
 .fit-card-ej-rapida{padding:8px}
 .fit-rapida-gif{background:transparent!important;border:0!important;padding:0;margin:4px 0}
 .fit-rapida-gif .fit-demo-stage{background:transparent}
-.fit-rapida-gif .fit-demo-stage>div{height:100%!important;background:transparent!important}
+.fit-rapida-gif .fit-demo-stage>div{background:transparent!important}
 /* ===== EDITOR CREAR MI MODO: contraste y pasos legibles ===== */
 #modoEditorModal{align-items:flex-start!important;padding-top:calc(12px + env(safe-area-inset-top))}
 #modoEditorPanel{background:#ffffff!important;color:#17231e!important;max-height:calc(86dvh - env(safe-area-inset-top));border-radius:18px;overflow-y:auto}
@@ -636,9 +636,17 @@ body.fit-modo-rapido #mobileModePill{display:none!important}
 .fit-card-ej{padding:10px}
 .fit-rapida-instr{font-size:13px;font-weight:800;color:#0d6043;margin:4px 0;line-height:1.4}
 .fit-equipo-chip{display:inline-block;background:#eaf9f0;border:1px solid #9dd5b4;border-radius:999px;padding:4px 11px;font-size:12.5px;font-weight:900;color:#15704f}
-/* La demo es 3:2 (fotos de free-exercise-db): la caja adopta esa proporción y la
-   imagen la llena por completo, sin huecos ni altura fija que empuje el resto. */
-.fit-rapida-gif .fit-demo-stage{height:auto;aspect-ratio:3/2;width:min(100%,640px)}
+/* El stage es COLUMNA: primero la caja de la demo (4:3, la imagen la llena con cover
+   y se ve GRANDE) y debajo las pills diminutas de músculo/equipo (nunca al lado:
+   en fila aplastaban la caja a la mitad y las pills se veían como círculos). */
+.fit-rapida-gif .fit-demo-stage{width:100%;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.fit-rapida-gif .fit-demo-stage>div{height:auto;background:transparent!important}
+.fit-rapida-gif .fit-demo-stage>div:first-child{height:auto!important;width:min(100%,560px);aspect-ratio:4/3;border-radius:14px;overflow:hidden;border:2px solid #cfe6d8;background:#f4fbf6!important}
+.fit-rapida-gif .fit-demo-stage img[id$="_0"],.fit-rapida-gif .fit-demo-stage img[id$="_1"]{object-fit:cover!important}
+.fit-rapida-gif .fit-demo-stage .pill{font-size:10px!important;padding:1px 7px!important;margin-top:5px}
+.fit-rapida-gif .fit-demo-stage>.muted{font-size:10px!important;margin-top:2px}
+.fit-rapida-gif .fit-demo-imggrande{max-height:none!important;min-height:0!important;height:100%!important}
+.fit-rapida-gif .fit-demo-imggrande img{max-height:none!important}
 .fit-peso-box{padding:8px}
 .fit-rapida-nav button{min-height:46px}
 @media(max-width:768px){
@@ -710,7 +718,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.205.1';
+  window.HM_APP_VERSION='1.205.2';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');

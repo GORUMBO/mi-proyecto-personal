@@ -1,8 +1,21 @@
 {
-  "latest": "1.205.1",
+  "latest": "1.205.2",
   "date": "2026-10-10",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.205.2",
+  "date": "2026-10-10",
+  "type": "recomendada",
+  "nuevas": [
+    "Modo rápido en móvil: la demostración ahora ocupa TODO el ancho de la tarjeta (caja 4:3, imagen ampliada sin recortar lo importante) — antes la caja quedaba aplastada a la mitad con dos pills redondas al lado.",
+    "Las pills de músculo y equipo (p.ej. 💪 pecho · 🏋️ barbell) quedan diminutas debajo de la demostración."
+  ],
+  "cambios": [
+    "El escenario de la demo es una columna: primero la imagen grande y debajo los datos pequeños (nunca al lado).",
+    "En escritorio la demostración crece hasta 680×510 px."
+  ]
+},
 {
   "version": "1.205.1",
   "date": "2026-10-10",
