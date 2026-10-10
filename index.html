@@ -603,7 +603,7 @@ body.fit-modo-rapido #masHerramientasDetails,
 body.fit-modo-rapido #fitnessProgresoDetails,
 body.fit-modo-rapido #fitHoyHead{display:none!important}
 body.fit-modo-rapido #mobileModePill{display:none!important}
-.fit-rapida-gif{height:min(52vh,460px);display:flex;align-items:center;justify-content:center;background:#f2f7f4;border-radius:12px;border:1px solid var(--b);overflow:hidden;margin:6px 0}
+.fit-rapida-gif{display:flex;align-items:center;justify-content:center;background:#f2f7f4;border-radius:12px;border:1px solid var(--b);overflow:hidden;margin:6px 0;max-width:680px}
 .fit-rapida-gif .fit-demo-stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
 .fit-rapida-gif svg,.fit-rapida-gif img,.fit-rapida-gif canvas{max-width:100%;max-height:100%;object-fit:contain}
 .fit-rapida-gif .fit-demo-imggrande{max-height:100%}
@@ -621,7 +621,7 @@ body.fit-modo-rapido #mobileModePill{display:none!important}
 .fit5-head{margin:0 0 4px}
 .fit-list-compact{margin-top:0}
 .fit-card-ej-rapida{padding:8px}
-.fit-rapida-gif{height:min(46vh,350px);background:transparent!important;border:0!important;padding:0;margin:4px 0}
+.fit-rapida-gif{background:transparent!important;border:0!important;padding:0;margin:4px 0}
 .fit-rapida-gif .fit-demo-stage{background:transparent}
 .fit-rapida-gif .fit-demo-stage>div{height:100%!important;background:transparent!important}
 /* ===== EDITOR CREAR MI MODO: contraste y pasos legibles ===== */
@@ -636,7 +636,9 @@ body.fit-modo-rapido #mobileModePill{display:none!important}
 .fit-card-ej{padding:10px}
 .fit-rapida-instr{font-size:13px;font-weight:800;color:#0d6043;margin:4px 0;line-height:1.4}
 .fit-equipo-chip{display:inline-block;background:#eaf9f0;border:1px solid #9dd5b4;border-radius:999px;padding:4px 11px;font-size:12.5px;font-weight:900;color:#15704f}
-.fit-rapida-gif{height:min(52vh,430px)}
+/* La demo es 3:2 (fotos de free-exercise-db): la caja adopta esa proporción y la
+   imagen la llena por completo, sin huecos ni altura fija que empuje el resto. */
+.fit-rapida-gif .fit-demo-stage{height:auto;aspect-ratio:3/2;width:min(100%,640px)}
 .fit-peso-box{padding:8px}
 .fit-rapida-nav button{min-height:46px}
 @media(max-width:768px){
@@ -708,7 +710,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.205.0';
+  window.HM_APP_VERSION='1.205.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -4396,6 +4398,20 @@ function exAnimar(cajaId, id, ms){
 function exParar(cajaId){
   if(_exTimers[cajaId]){ clearInterval(_exTimers[cajaId]); delete _exTimers[cajaId]; }
 }
+/* Si la imagen remota falla, reintenta UNA vez por el CDN espejo (jsDelivr);
+   si también falla, muestra el aviso (foto 0) o simplemente la oculta (foto 1). */
+function exImgFallo(img){
+  try{
+    if(!img)return;
+    if(img.dataset.try!=='2'){
+      img.dataset.try='2';
+      img.src=String(img.src).replace('raw.githubusercontent.com/yuhonas/free-exercise-db/main','cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main');
+      return;
+    }
+    if(String(img.id||'').slice(-2)==='_0'){img.parentElement.innerHTML='<div style="padding:20px;text-align:center" class="muted">No cargó la imagen.<br>Revisa tu internet.</div>';}
+    else img.style.display='none';
+  }catch(e){}
+}
 
 function exAnimacionHTML(nombre, cajaId){
   try{
@@ -4419,10 +4435,10 @@ function exAnimacionHTML(nombre, cajaId){
     <img id="${cajaId}_0" src="${u0}" alt="inicio"
          style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:1;transition:opacity .35s"
          onload="exAnimar('${cajaId}','${e.id}')"
-         onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center\\' class=\\'muted\\'>No cargó la imagen.<br>Revisa tu internet.</div>'">
+         onerror="exImgFallo(this)">
     <img id="${cajaId}_1" src="${u1}" alt="final"
          style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .35s"
-         onerror="if(this.dataset.try!=='2'){exRespaldo(this,'${e.id}',1);}">
+         onerror="exImgFallo(this)">
     <div style="position:absolute;bottom:6px;left:6px;background:#0d6043;color:#fff;font-size:11px;
                 font-weight:900;padding:3px 8px;border-radius:999px">▶ en movimiento</div>
   </div>

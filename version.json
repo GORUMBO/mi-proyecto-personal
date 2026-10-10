@@ -1,8 +1,22 @@
 {
-  "latest": "1.205.0",
-  "date": "2026-10-09",
+  "latest": "1.205.1",
+  "date": "2026-10-10",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.205.1",
+  "date": "2026-10-10",
+  "type": "recomendada",
+  "nuevas": [
+    "Pantalla del ejercicio corregida en Modo rápido: el GIF adopta la proporción de la foto (3:2) y la llena por completo, sin huecos; en escritorio llega a 640×427 px.",
+    "Series, Peso y botones vuelven a quedar visibles en una sola pantalla en el teléfono (antes el GIF alto los empujaba fuera).",
+    "Si la foto del ejercicio falla, se reintenta al instante por un CDN espejo (jsDelivr) antes de mostrar un aviso: menos ejercicios sin GIF."
+  ],
+  "cambios": [
+    "En móvil la demostración ocupa todo el ancho disponible sin bordes vacíos alrededor.",
+    "Se eliminó una referencia muerta de respaldo de imagen (exRespaldo) sustituida por exImgFallo."
+  ]
+},
 {
   "version": "1.205.0",
   "date": "2026-10-09",
