@@ -1,8 +1,22 @@
 {
-  "latest": "1.204.0",
-  "date": "2026-09-21",
+  "latest": "1.205.0",
+  "date": "2026-10-09",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.205.0",
+  "date": "2026-10-09",
+  "type": "recomendada",
+  "nuevas": [
+    "GIF de demostración mucho más grande en Modo rápido (móvil y escritorio).",
+    "9 ejercicios nuevos en la biblioteca, cada uno con su GIF: Dominadas, Dominada supina, Remo en T, Peso muerto, Arnold press, Encogimientos, Puente de glúteo, Pantorrilla sentado y Crunch inverso.",
+    "Chip de equipo en cada tarjeta (Barra · Mancuernas · Peso corporal · Máquina · Polea · Banda) y el campo Peso ahora dice el tipo de carga (p.ej. \"Peso (lb) · Barra (peso total)\" o \"mi peso corporal\")."
+  ],
+  "cambios": [
+    "Todos los ejercicios y variantes (162) tienen ahora su demostración exacta: antes varios mostraban el ejercicio equivocado o un placeholder (p.ej. Cruce de poleas o Movilidad).",
+    "Las alternativas y el historial reconocen los ejercicios nuevos sin colisiones de nombres."
+  ]
+},
 {
   "version": "1.204.0",
   "date": "2026-09-23",

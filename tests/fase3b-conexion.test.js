@@ -255,7 +255,7 @@ const alias = [
   ['Dead bug', 'dead_bug'],
   ['Curl 21s', 'curl_21s'],
   ['Patada de tríceps', 'patada_triceps'],
-  ['Peso muerto con mancuernas', 'rdl'],
+  ['Peso muerto con mancuernas', 'peso_muerto'],
   ['Jalón al pecho', 'jalon'],
   ['Curl bíceps cable/barra', 'curl'],
   ['Hip thrust ligero', 'hip_thrust'],
