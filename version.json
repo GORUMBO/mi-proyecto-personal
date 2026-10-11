@@ -1,8 +1,23 @@
 {
-  "latest": "1.205.2",
-  "date": "2026-10-10",
+  "latest": "1.205.3",
+  "date": "2026-10-11",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.205.3",
+  "date": "2026-10-11",
+  "type": "recomendada",
+  "nuevas": [
+    "Peso e historial POR EJERCICIO: cada ejercicio muestra su último peso real (p.ej. Press militar 60 kg × 12 y Curl 21s 30 kg × 8 ya no comparten historial).",
+    "El borrador de los campos ya no va por índice: al cambiar de ejercicio o reordenar la rutina no se arrastra el peso del anterior.",
+    "Unidad visible y coherente: los registros nuevos guardan su unidad (kg/lb) y se convierten al mostrarse (1 lb = 0.453592 kg); se quitaron las 'lb' fijas del texto."
+  ],
+  "cambios": [
+    "Sin historial el campo queda vacío (antes podía rellenarse con un borrador viejo de otro ejercicio).",
+    "La sesión de un ejercicio ya no se adopta de otro ejercicio distinto.",
+    "Corregir una serie actualiza peso, reps y unidad en su lugar, sin duplicar."
+  ]
+},
 {
   "version": "1.205.2",
   "date": "2026-10-10",

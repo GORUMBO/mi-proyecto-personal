@@ -88,6 +88,7 @@ vm.createContext(sandbox);
   'evaluarSesionHoy', 'actualizarResultadosHoy', 'fitResumenResultadoHoy', 'fitHistorialSesiones',
   'esPrimeraSesionEjercicio', 'f3TendenciaDificilSemanas',
   'f3NombreRutinaAuto', 'f3NombreMostrar', 'f3CampoNombreHTML',
+  'f3PesoRegistro', 'f3PesoTexto',
   'f3AltsHTML', 'f3RotarAlts',
   'f3AnclarTarjeta', 'f3AnclarEl', 'f3IrARutina', 'f3AplicarIrA', 'f3ClearIrA', 'f3InitIrAListeners',
   'hmForceTopScroll', 'scrollActiveTabTop', 'showSavedRoutines', 'loadSavedRoutine', 'f3PlanDeRutina', 'f3RutinaActiva', 'f3FitnessDesdeRutina', 'renderDescansoHTML', 'render',

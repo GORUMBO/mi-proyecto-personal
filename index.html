@@ -718,7 +718,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.205.2';
+  window.HM_APP_VERSION='1.205.3';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -14908,6 +14908,25 @@ function miRegion(){
           cambio: (+state.region.cambio) || base.cambio,
           factor: (state.region.factor!=null ? +state.region.factor : base.factor)};
 }
+// ===== PESO FITNESS: conversión y unidad de los registros de entrenamiento =====
+// 1 lb = 0.453592 kg (factor exacto). Los registros nuevos guardan su unidad
+// (weightUnit) al registrarse; al mostrarse se convierten a la unidad actual.
+// Registros viejos sin weightUnit se muestran tal cual (no se convierten: sería inventar).
+const F3_LB_A_KG=0.453592;
+function f3LbAKg(v){return (+v||0)*F3_LB_A_KG;}
+function f3KgALb(v){return (+v||0)/F3_LB_A_KG;}
+function f3PesoRegistro(r){
+  if(!r)return null;
+  var w=+r.weight||0;if(!w)return null;
+  var actual=(typeof U!=='undefined'&&U.pesoUnidad)?U.pesoUnidad():'lb';
+  if(r.weightUnit&&r.weightUnit!==actual)w=(actual==='kg')?f3LbAKg(w):f3KgALb(w);
+  return w;
+}
+function f3PesoTexto(r){
+  var w=f3PesoRegistro(r);
+  if(w==null)return '';
+  return (Math.round(w*100)/100)+' '+U.pesoUnidad();
+}
 function esMetrico(){ return miRegion().sistema === 'metrico'; }
 
 function setRegion(id){
@@ -14928,11 +14947,11 @@ function setFactor(v){ state.region.factor = Math.max(0.05, +v||1); save(); try{
 /* ---------- CONVERSORES ---------- */
 const U = {
   // Peso corporal: guardamos SIEMPRE en lb por dentro
-  peso(lb){ lb=+lb||0; return esMetrico() ? (lb*0.4536).toFixed(1)+' kg' : lb.toFixed(1)+' lb'; },
-  delta(lb){ lb=+lb||0; let v = esMetrico() ? lb*0.4536 : lb; return v.toFixed(1)+' '+(esMetrico()?'kg':'lb'); },
-  pesoNum(lb){ return esMetrico() ? +(lb*0.4536).toFixed(1) : +(+lb).toFixed(1); },
+  peso(lb){ lb=+lb||0; return esMetrico() ? (lb*F3_LB_A_KG).toFixed(1)+' kg' : lb.toFixed(1)+' lb'; },
+  delta(lb){ lb=+lb||0; let v = esMetrico() ? lb*F3_LB_A_KG : lb; return v.toFixed(1)+' '+(esMetrico()?'kg':'lb'); },
+  pesoNum(lb){ return esMetrico() ? +(lb*F3_LB_A_KG).toFixed(1) : +(+lb).toFixed(1); },
   pesoUnidad(){ return esMetrico() ? 'kg' : 'lb'; },
-  aLb(v){ v=+v||0; return esMetrico() ? v/0.4536 : v; },   // lo que teclea el usuario -> lb interno
+  aLb(v){ v=+v||0; return esMetrico() ? v/F3_LB_A_KG : v; },   // lo que teclea el usuario -> lb interno
 
   // Distancia: guardamos en millas
   dist(mi){ mi=+mi||0; return esMetrico() ? Math.round(mi*1.609).toLocaleString()+' km' : Math.round(mi).toLocaleString()+' mi'; },
@@ -31859,8 +31878,10 @@ function f3SesionVisibleHoy(log,hoy,exerciseKey,sidPack){
   var hoySeries=(log||[]).filter(function(r){return !r.deleted&&(r.localDate||r.date||'')===hoy&&esVisible(r);});
   var sid=sidPack||null;
   if(!hoySeries.some(function(r){return r.sessionId===sid&&String(r.exercise||'').toLowerCase().trim()===exerciseKey;})){
+    // Adopta la sesión de los registros de HOY del MISMO ejercicio (nunca de
+    // otro ejercicio: mezclar sesiones entre ejercicios mostraba series ajenas).
     var porEjercicio=hoySeries.filter(function(r){return String(r.exercise||'').toLowerCase().trim()===exerciseKey;});
-    var ultima=(porEjercicio.length?porEjercicio:hoySeries).slice(-1)[0];
+    var ultima=porEjercicio.slice(-1)[0];
     if(ultima&&ultima.sessionId!=null)sid=ultima.sessionId;
   }
   var misma=function(r){return r.sessionId===sid||(sidPack==null&&r.sessionId==null);};
@@ -32118,12 +32139,13 @@ function logRoutineQuick(i){
   if(!pack.sessionId){pack.sessionId=sessionId;}
   if(!Array.isArray(state.workoutLog))state.workoutLog=[];
   // Guarda contra doble click: solo contar series VÁLIDAS (mismo criterio que el template)
-  var yaRegistradas=(state.workoutLog||[]).filter(function(r){var v=(r.reps||'');return !r.deleted && r.sessionId===sessionId && r.exercise===x.name && r.weight>0 && v!=='—' && v!=='no registradas';}).length;
+  var yaRegistradas=(state.workoutLog||[]).filter(function(r){var v=(r.reps||'');return !r.deleted && r.sessionId===sessionId && r.exercise===x.name && (r.weight>0||esPC) && v!=='—' && v!=='no registradas';}).length;
   if(yaRegistradas>=goal){ console.log('[QUICK] Ya completo, ignorando doble click'); return; }
   var seriesFaltantes=goal-yaRegistradas;
   // Crear UNA entrada por serie (todas con el mismo peso/reps)
+  var notaBase='Rutina · '+(x.muscle||'')+(esPC&&!weight?' · Peso corporal':'');
   for(var s=0;s<seriesFaltantes;s++){
-    state.workoutLog.push({id:ppUUID(),date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:weight,sets:1,reps:repsStr,note:'Rutina · '+(x.muscle||'')+' · Serie '+(yaRegistradas+s+1)});
+    state.workoutLog.push({id:ppUUID(),date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:weight,weightUnit:U.pesoUnidad(),sets:1,reps:repsStr,note:notaBase+' · Serie '+(yaRegistradas+s+1)});
   }
   console.log('[QUICK] creadas '+seriesFaltantes+' series de '+goal+' para '+x.name);
   if(!pack.checked)pack.checked={}; pack.checked[i]=true; pack.checkedDate=todayISO();
@@ -32166,6 +32188,7 @@ function saveWorkoutEntryEdit(id,btn){
   var wrapper=btn.parentNode;
   var inputs=wrapper.querySelectorAll('input');
   entry.weight=+inputs[0].value||0;
+  entry.weightUnit=U.pesoUnidad();
   entry.reps=inputs[1].value.trim()||'—';
   save(true);
   actualizarResultadosHoy(); // v1.187: recalcular veredicto tras editar una serie
@@ -32415,7 +32438,7 @@ function f3TarjetaEjercicioHTML(i,x,pack){
     }
     // Datos de las series de hoy (peso × reps reales)
     var chipsSeries=s.visibles.map(function(r){
-      return '<span style="display:inline-block;background:#fff;border:1px solid '+(s.esValida(r)?'#9dd5b4':'#e6b9b9')+';border-radius:6px;padding:2px 7px;margin:0 4px 4px 0;font-size:12px;white-space:nowrap"><b>'+(r.weight?r.weight+' '+U.pesoUnidad()+' × ':'')+safeText(r.reps||'—')+'</b></span>';
+      return '<span style="display:inline-block;background:#fff;border:1px solid '+(s.esValida(r)?'#9dd5b4':'#e6b9b9')+';border-radius:6px;padding:2px 7px;margin:0 4px 4px 0;font-size:12px;white-space:nowrap"><b>'+(r.weight?f3PesoTexto(r)+' × ':'')+safeText(r.reps||'—')+'</b></span>';
     }).join('');
     // Demo (animación real del ejercicio o fallback claro)
     var eDemo=(typeof exBuscarDemo==='function')?exBuscarDemo(x.name):((typeof exBuscar==='function')?exBuscar(x.name):null);
@@ -32474,7 +32497,7 @@ function f3TarjetaEjercicioHTML(i,x,pack){
         var fechaP=fechaUlt.split('-');
         var mesesN=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
         var fechaBonitaUlt=(fechaP.length===3)?(parseInt(fechaP[2],10)+' '+mesesN[(parseInt(fechaP[1],10)-1)||0]):fechaUlt;
-        var seriesResumen=sesionAnterior.map(function(r){return (r.weight?r.weight+' '+U.pesoUnidad()+' × ':'')+safeText(r.reps||'—');}).join(' · ');
+        var seriesResumen=sesionAnterior.map(function(r){return (r.weight?f3PesoTexto(r)+' × ':'')+safeText(r.reps||'—');}).join(' · ');
         lastHTML='<div style="margin-top:4px;font-size:11px;color:var(--m)">🕘 Última vez · <b>'+fechaBonitaUlt+'</b></div>'
           +'<div style="font-size:11px;margin-top:1px">'+seriesResumen+'</div>';
         if(sugR&&sugR.targetReps&&sugR.targetReps.length){
@@ -32516,7 +32539,7 @@ function f3TarjetaEjercicioHTML(i,x,pack){
     if(oldRegs.length){
       regHTML+='<details style="margin-top:3px;font-size:11px"><summary style="color:var(--m);cursor:pointer">▶ Historial anterior ('+oldRegs.length+')</summary>'
         +'<div style="font-size:11px;margin-top:3px;max-height:120px;overflow-y:auto">'
-        +oldRegs.slice().reverse().map(function(r){return '<div style="padding:1px 0"><b>'+(r.weight?r.weight+' '+U.pesoUnidad()+' × ':'')+safeText(r.reps||'—')+'</b> <span class="muted">'+safeText(r.date||'')+'</span></div>';}).join('')
+        +oldRegs.slice().reverse().map(function(r){return '<div style="padding:1px 0"><b>'+(r.weight?f3PesoTexto(r)+' × ':'')+safeText(r.reps||'—')+'</b> <span class="muted">'+safeText(r.date||'')+'</span></div>';}).join('')
         +'</div></details>';
     }
     var alts=(typeof f3AltsHTML==='function')?f3AltsHTML(i,x):'';
@@ -32737,7 +32760,7 @@ function f3SerieSeleccionar(i,s){
         var w=document.getElementById('rlogW_'+i),r=document.getElementById('rlogR_'+i);
         if(entry&&w)w.value=entry.weight||'';
         if(entry&&r)r.value=(entry.reps&&entry.reps!=='—'&&entry.reps!=='no registradas')?entry.reps:'';
-        if(entry){state.uiSettings=state.uiSettings||{};state.uiSettings.fitBorrador=state.uiSettings.fitBorrador||{};state.uiSettings.fitBorrador[i]=state.uiSettings.fitBorrador[i]||{};state.uiSettings.fitBorrador[i].w=entry.weight||'';state.uiSettings.fitBorrador[i].r=(entry.reps&&entry.reps!=='—'&&entry.reps!=='no registradas')?entry.reps:'';}
+        if(entry){state.uiSettings=state.uiSettings||{};state.uiSettings.fitBorrador=state.uiSettings.fitBorrador||{};var keyBorSel=(typeof exNormal==='function')?exNormal(pack.plan[i].name):String(pack.plan[i].name||'').toLowerCase().trim();state.uiSettings.fitBorrador[keyBorSel]=state.uiSettings.fitBorrador[keyBorSel]||{};state.uiSettings.fitBorrador[keyBorSel].w=entry.weight||'';state.uiSettings.fitBorrador[keyBorSel].r=(entry.reps&&entry.reps!=='—'&&entry.reps!=='no registradas')?entry.reps:'';}
         var chk=document.getElementById('f3SerieChk');if(chk)chk.checked=!!window._fitSerieSel.completa;
       }catch(e){}
     };
@@ -32801,10 +32824,11 @@ function f3RegistrarSerieActual(i){
     // Si la serie seleccionada YA existe, "por separado" corrige esa serie
     // (sin duplicar); si es la siguiente libre, la registra y la selecciona.
     var selR=window._fitSerieSel;
-    if(selR&&selR.i===i&&selR.s<s.visibles.length&&selR.modo==='corregir'){
+    if(selR&&selR.i===i&&selR.s<s.visibles.length){
       var eSel=s.visibles[selR.s];
       var chkR=document.getElementById('f3SerieChk');
       eSel.weight=weight;
+      eSel.weightUnit=U.pesoUnidad();
       eSel.reps=(chkR&&!chkR.checked)?'—':repsStr;
       save(true);
       try{if(typeof actualizarResultadosHoy==='function')actualizarResultadosHoy();}catch(e){}
@@ -32817,11 +32841,11 @@ function f3RegistrarSerieActual(i){
     if(s.visibles.length>=goal){if(typeof toastReg==='function')toastReg('Ya completaste las '+goal+' series de este ejercicio');return;}
     if(!pack.sessionId)pack.sessionId=Date.now();
     state.workoutLog=state.workoutLog||[];
-    state.workoutLog.push({id:((typeof ppUUID==='function')?ppUUID():Date.now()),date:todayISO(),localDate:(typeof todayLocal==='function')?todayLocal():todayISO(),sessionId:pack.sessionId,exercise:x.name,weight:weight,sets:1,reps:repsStr,note:'Rutina · '+(x.muscle||'')+(esPC&&!weight?' · Peso corporal':'')+' · Serie '+(s.visibles.length+1)});
+    state.workoutLog.push({id:((typeof ppUUID==='function')?ppUUID():Date.now()),date:todayISO(),localDate:(typeof todayLocal==='function')?todayLocal():todayISO(),sessionId:pack.sessionId,exercise:x.name,weight:weight,weightUnit:U.pesoUnidad(),sets:1,reps:repsStr,note:'Rutina · '+(x.muscle||'')+(esPC&&!weight?' · Peso corporal':'')+' · Serie '+(s.visibles.length+1)});
     pack.checked=pack.checked||{};pack.checkedDate=todayISO();
     save(true);
     try{if(typeof actualizarResultadosHoy==='function')actualizarResultadosHoy();}catch(e){}
-    try{state.uiSettings=state.uiSettings||{};state.uiSettings.fitBorrador=state.uiSettings.fitBorrador||{};state.uiSettings.fitBorrador[i]={};}catch(e){}
+    try{state.uiSettings=state.uiSettings||{};state.uiSettings.fitBorrador=state.uiSettings.fitBorrador||{};var keyBorReg=(typeof exNormal==='function')?exNormal(x.name):String(x.name||'').toLowerCase().trim();state.uiSettings.fitBorrador[keyBorReg]={};}catch(e){}
     if(wEl)wEl.value='';
     if(rEl)rEl.value='';
     // tras registrar una serie nueva, la selección se limpia
@@ -32850,14 +32874,16 @@ function f3PesoInputsHTML(i,x,pack){
     try{var mr=String(x.sets||'3').match(/\d+/);sugR=sugerenciaSesion(x.name,x.reps,mr?+mr[0]:3);}catch(e){}
     var last=lastWorkoutForExercise(x.name);
     var esPC=f3EsPesoCorporal(x);
-    var b=(state.uiSettings&&state.uiSettings.fitBorrador&&state.uiSettings.fitBorrador[i])||{};
-    var pesoIni=(b.w!=null&&b.w!=='')?b.w:(sugR&&sugR.lastWeight?(''+sugR.lastWeight):(last&&last.weight?(''+last.weight):''));
+    // Borrador POR EJERCICIO (nombre normalizado), nunca por índice.
+    var keyBor=(typeof exNormal==='function')?exNormal(x.name):String(x.name||'').toLowerCase().trim();
+    var b=(state.uiSettings&&state.uiSettings.fitBorrador&&state.uiSettings.fitBorrador[keyBor])||{};
+    var pesoIni=(b.w!=null&&b.w!=='')?b.w:(sugR&&sugR.lastWeight?(''+sugR.lastWeight):(last&&last.weight?(''+f3PesoRegistro(last)):''));
     var repsIni=(b.r!=null&&b.r!=='')?b.r:(sugR&&sugR.targetReps&&sugR.targetReps.length?(''+sugR.targetReps[0]):(last&&last.reps&&String(last.reps)!=='no registradas'?(''+last.reps):''));
     var unidad=U.pesoUnidad();
     var eqInfo=f3EquipoLinea(x);
     var eqLinea=eqInfo.linea;
     var eqPeso={bar:' · Barra (peso total)',man:' · Mancuernas (por mancuerna)',maq:' · Máquina',pol:' · Polea',ban:' · Banda elástica',pc:''}[eqInfo.eq]||'';
-    var ultTxt=(last&&last.weight)?(' · Último: '+last.weight+' '+unidad+' × '+safeText(last.reps||'—')):(esPC?' · Último: peso corporal':'');
+    var ultTxt=(last&&last.weight)?(' · Último: '+f3PesoTexto(last)+' × '+safeText(last.reps||'—')):(esPC?' · Último: peso corporal':'');
     return '<div class="fit-peso-box">'
       +'<div class="fit-peso-linea">'+eqLinea+ultTxt+'</div>'
       +'<div class="fit-peso-grid">'
@@ -32872,9 +32898,18 @@ function f3RapidoGuardarBorrador(i,inp){
   try{
     state.uiSettings=state.uiSettings||{};
     state.uiSettings.fitBorrador=state.uiSettings.fitBorrador||{};
-    state.uiSettings.fitBorrador[i]=state.uiSettings.fitBorrador[i]||{};
-    if(inp&&inp.id&&inp.id.indexOf('rlogW_')===0)state.uiSettings.fitBorrador[i].w=inp.value;
-    else state.uiSettings.fitBorrador[i].r=inp.value;
+    // El borrador vive POR EJERCICIO (nombre), nunca por índice: si el plan
+    // cambia de orden o el ejercicio se reemplaza, el borrador del anterior
+    // no debe aparecer en el nuevo.
+    var keyBor='';
+    try{
+      var pack=state.fitnessToday;
+      if(pack&&pack.plan&&pack.plan[i])keyBor=(typeof exNormal==='function')?exNormal(pack.plan[i].name):String(pack.plan[i].name||'').toLowerCase().trim();
+    }catch(e){}
+    if(!keyBor)return;
+    state.uiSettings.fitBorrador[keyBor]=state.uiSettings.fitBorrador[keyBor]||{};
+    if(inp&&inp.id&&inp.id.indexOf('rlogW_')===0)state.uiSettings.fitBorrador[keyBor].w=inp.value;
+    else state.uiSettings.fitBorrador[keyBor].r=inp.value;
     try{save();}catch(e){}
   }catch(e){}
 }
@@ -32948,7 +32983,7 @@ function f3TarjetaRapidaHTML(idx,pack){
       circles+='<div style="text-align:center"><button class="'+claseC+'" title="'+titC+'" onclick="'+onclickC+'">'+icoC+'</button><div class="fit-circle-lbl">S'+(cj+1)+'</div></div>';
     }
     var chipsSeries=s.visibles.map(function(r){
-      return '<span style="display:inline-block;background:#fff;border:1px solid '+(s.esValida(r)?'#9dd5b4':'#e6b9b6')+';border-radius:6px;padding:2px 7px;margin:0 4px 4px 0;font-size:12px;white-space:nowrap"><b>'+(r.weight?r.weight+' '+U.pesoUnidad()+' × ':'')+safeText(r.reps||'—')+'</b></span>';
+      return '<span style="display:inline-block;background:#fff;border:1px solid '+(s.esValida(r)?'#9dd5b4':'#e6b9b6')+';border-radius:6px;padding:2px 7px;margin:0 4px 4px 0;font-size:12px;white-space:nowrap"><b>'+(r.weight?f3PesoTexto(r)+' × ':'')+safeText(r.reps||'—')+'</b></span>';
     }).join('');
     var eq=f3EquipoLinea(x);
     var last=lastWorkoutForExercise(x.name);
@@ -32962,7 +32997,7 @@ function f3TarjetaRapidaHTML(idx,pack){
     h.push('<div class="fit-row-meta" style="font-size:13px">💪 '+safeText(x.muscle)+' · '+goal+' series × '+safeText(x.reps)+' · descanso '+restSeg+'s</div>');
     h.push('<div class="fit-rapida-equipo">'+eq.linea+'</div>');
     if(eq.tec)h.push('<div class="fit-rapida-tec">💡 Técnica: '+safeText(eq.tec)+'</div>');
-    if(last&&last.weight)h.push('<div class="fit-rapida-ult">🕘 Último registro: <b>'+last.weight+' '+U.pesoUnidad()+' × '+safeText(last.reps||'—')+'</b> · '+safeText((last.localDate||last.date||''))+'</div>');
+    if(last&&last.weight)h.push('<div class="fit-rapida-ult">🕘 Último registro: <b>'+f3PesoTexto(last)+' × '+safeText(last.reps||'—')+'</b> · '+safeText((last.localDate||last.date||''))+'</div>');
     h.push('<div class="fit-rapida-series">'+circles+'</div>');
     if(chipsSeries)h.push('<div class="fit-rapida-chips">'+chipsSeries+'</div>');
     h.push(f3PesoInputsHTML(i,x,pack));
@@ -33055,7 +33090,7 @@ function f3TarjetaRapidaHTML(idx,pack){
     h.push('<div class="fit-rapida-series" style="justify-content:flex-start;gap:8px">'+circRap+'</div>');
     // Último registro (línea discreta, solo si existe)
     var lastReg=lastWorkoutForExercise(x.name);
-    if(lastReg&&lastReg.weight)h.push('<div class="fit-rapida-ult">🕘 Último: '+lastReg.weight+' '+U.pesoUnidad()+' × '+safeText(lastReg.reps||'—')+' · '+safeText((lastReg.localDate||lastReg.date||''))+'</div>');
+    if(lastReg&&lastReg.weight)h.push('<div class="fit-rapida-ult">🕘 Último: '+f3PesoTexto(lastReg)+' × '+safeText(lastReg.reps||'—')+' · '+safeText((lastReg.localDate||lastReg.date||''))+'</div>');
     h.push(f3PesoCompactoHTML(i,x,pack));
     var faltantes=Math.max(0,goal-s.visibles.length);
     h.push('<div class="fit-rapida-botones">'
@@ -33097,10 +33132,12 @@ function f3PesoCompactoHTML(i,x,pack){
   try{
     var esPC=(typeof f3EsPesoCorporal==='function')?f3EsPesoCorporal(x):false;
     var esTiempo=(x&&x.clase==='tiempo')||/plancha|mountain|bicicleta|superman|movilidad|hollow|dead_bug/i.test(String(x.name||''));
-    var b=(state.uiSettings&&state.uiSettings.fitBorrador&&state.uiSettings.fitBorrador[i])||{};
+    // Borrador POR EJERCICIO (nombre normalizado), nunca por índice.
+    var keyBor=(typeof exNormal==='function')?exNormal(x.name):String(x.name||'').toLowerCase().trim();
+    var b=(state.uiSettings&&state.uiSettings.fitBorrador&&state.uiSettings.fitBorrador[keyBor])||{};
     var last=lastWorkoutForExercise(x.name);
     var sugR=null;try{var mr=String(x.sets||'3').match(/\d+/);sugR=sugerenciaSesion(x.name,x.reps,mr?+mr[0]:3);}catch(e){}
-    var pesoIni=(b.w!=null&&b.w!=='')?b.w:(sugR&&sugR.lastWeight?(''+sugR.lastWeight):(last&&last.weight?(''+last.weight):''));
+    var pesoIni=(b.w!=null&&b.w!=='')?b.w:(sugR&&sugR.lastWeight?(''+sugR.lastWeight):(last&&last.weight?(''+f3PesoRegistro(last)):''));
     var repsIni=(b.r!=null&&b.r!=='')?b.r:(sugR&&sugR.targetReps&&sugR.targetReps.length?(''+sugR.targetReps[0]):(last&&last.reps&&String(last.reps)!=='no registradas'?(''+last.reps):''));
     var unidad=U.pesoUnidad();
     // Equipo real del ejercicio junto al campo Peso (barra / mancuernas / mi peso…)
@@ -42240,7 +42277,7 @@ function logRoutineExercise(i, btn){
   var key=x.name;
   pack.seriesCount[key]=(pack.seriesCount[key]||0)+1;
   var serieNum=pack.seriesCount[key];
-  state.workoutLog.push({id:ppUUID(),date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:w,sets:x.sets||0,reps:reps,note:'Rutina · '+(x.muscle||'')+' · Serie '+serieNum});
+  state.workoutLog.push({id:ppUUID(),date:todayISO(),localDate:todayLocal(),sessionId:sessionId,exercise:x.name,weight:w,weightUnit:U.pesoUnidad(),sets:x.sets||0,reps:reps,note:'Rutina · '+(x.muscle||'')+' · Serie '+serieNum});
   console.log('[REG] DESPUES DEL PUSH — workoutLog='+state.workoutLog.length+' serie='+serieNum);
   // v1.187.9 (diagnóstico temporal): deja el ID del registro en la cadena para
   // seguirlo extremo a extremo (iPhone → Supabase → Windows).
@@ -42343,9 +42380,9 @@ function lastWorkoutForExercise(name){return workoutHistoryForExercise(name)[0]|
 function nextWeightAdviceForExercise(name,feel,weight,reps){
   let w=+weight||0, f=String(feel||'Normal').toLowerCase();
   if(f.includes('dolor'))return 'Próxima vez baja peso o cambia ejercicio.';
-  if(f.includes('fácil')&&w)return 'Próxima vez prueba subir 5 lb si la técnica estuvo limpia.';
-  if(f.includes('pesado'))return 'Próxima vez repite el mismo peso o baja 5 lb.';
-  return w?'Próxima vez repite '+w+' lb y busca una repetición más.':'Próxima vez registra el peso para comparar.';
+  if(f.includes('fácil')&&w)return 'Próxima vez prueba subir 5 '+U.pesoUnidad()+' si la técnica estuvo limpia.';
+  if(f.includes('pesado'))return 'Próxima vez repite el mismo peso o baja 5 '+U.pesoUnidad()+'.';
+  return w?'Próxima vez repite '+w+' '+U.pesoUnidad()+' y busca una repetición más.':'Próxima vez registra el peso para comparar.';
 }
 function fillLastGuidedWeight(){
   let aw=state.activeWorkout;if(!aw)return;
@@ -42356,7 +42393,7 @@ function fillLastGuidedWeight(){
   let w=document.getElementById('guidedWeight'),r=document.getElementById('guidedReps');
   if(w)w.value=last.weight||'';
   if(r)r.value=last.reps||'';
-  if(out)out.innerHTML='<div class="ok">Peso anterior cargado: '+(last.weight?U.peso(last.weight):'sin peso')+' · '+safeText(last.reps||'')+'</div>';
+  if(out)out.innerHTML='<div class="ok">Peso anterior cargado: '+(last.weight?f3PesoTexto(last):'sin peso')+' · '+safeText(last.reps||'')+'</div>';
 }
 function showGuidedExerciseProgress(){
   let aw=state.activeWorkout;if(!aw)return;
@@ -42364,7 +42401,7 @@ function showGuidedExerciseProgress(){
   let logs=workoutHistoryForExercise(x.name).slice(0,6);
   let out=document.getElementById('guidedExtraOut');if(!out)return;
   if(!logs.length){out.innerHTML='<div class="warn" style="margin-top:8px">Aún no tienes historial de '+safeText(x.name)+'. Guarda hoy para empezar.</div>';return}
-  out.innerHTML='<div class="action-result"><b>Progreso de '+safeText(x.name)+'</b>'+logs.map(l=>'<div class="item" style="margin-top:6px"><b>'+safeText(l.date)+'</b> · '+(l.weight?l.weight+' lb':'sin peso')+' · '+safeText(l.reps||'')+' · '+safeText(l.note||'')+'</div>').join('')+'</div>';
+  out.innerHTML='<div class="action-result"><b>Progreso de '+safeText(x.name)+'</b>'+logs.map(l=>'<div class="item" style="margin-top:6px"><b>'+safeText(l.date)+'</b> · '+(l.weight?f3PesoTexto(l):'sin peso')+' · '+safeText(l.reps||'')+' · '+safeText(l.note||'')+'</div>').join('')+'</div>';
 }
 
 function keepScroll(fn){
@@ -42486,7 +42523,7 @@ function saveGuidedWorkoutStep(){
   // La serie queda visible en "Mi rutina de hoy" y sobrevive cualquier refresh.
   var sid=(state.fitnessToday&&state.fitnessToday.sessionId)||aw.sessionId||null;
   if(!sid){sid=Date.now();if(state.fitnessToday)state.fitnessToday.sessionId=sid;}
-  state.workoutLog.push({date:todayISO(),localDate:(typeof todayLocal==='function'?todayLocal():todayISO()),sessionId:sid,exercise:x.name,weight,sets:+x.sets||1,reps,note,id:ppUUID()});
+  state.workoutLog.push({date:todayISO(),localDate:(typeof todayLocal==='function'?todayLocal():todayISO()),sessionId:sid,exercise:x.name,weight,weightUnit:U.pesoUnidad(),sets:+x.sets||1,reps,note,id:ppUUID()});
   aw.doneSteps=aw.doneSteps||{};
   aw.doneSteps[stepIndex]={name:x.name,weight,reps,feel,at:new Date().toISOString()};
   aw.done=Object.values(aw.doneSteps);
