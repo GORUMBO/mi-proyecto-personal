@@ -1,5 +1,9 @@
-const CACHE='mi-proyecto-v1-205-3';
-const FILES=['./','./index.html'];
+const CACHE='mi-proyecto-v1-205-4';
+const FILES=['./','./index.html',
+ './assets/cocina/tm6.jpg',
+ './assets/cocina/horno.jpg',
+ './assets/cocina/airfryer.jpg',
+ './assets/cocina/sarten.jpg'];
 
 // Descarga con límite de tiempo. Sin esto, un corte de red a media descarga
 // dejaba al service worker NUEVO eternamente en 'installing': nunca llegaba a

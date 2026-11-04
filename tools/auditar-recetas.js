@@ -166,8 +166,10 @@ function makeSandbox(base) {
     if (/^\s*\.forEach\(r=>add\(/.test(after)) leg++;
     else if (/^\s*\.forEach\(addFull\)/.test(after)) full++;
   }
-  console.log('[fuentes] bloques add legacy: ' + leg + ' (esperado 29) · addFull: ' + full + ' (esperado 5) · consts: ' + JSON.stringify(consts));
+  if(require.main===module)console.log('[fuentes] bloques add legacy: ' + leg + ' (esperado 29) · addFull: ' + full + ' (esperado 5) · consts: ' + JSON.stringify(consts));
 })();
+module.exports = { buildBaseRecipes, extractFunc };
+if (require.main !== module) return; // requerido como módulo (tests): solo exporta el constructor
 const { base } = buildBaseRecipes();
 const sb = makeSandbox(base);
 const report = {

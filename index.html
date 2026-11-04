@@ -718,7 +718,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.205.3';
+  window.HM_APP_VERSION='1.205.4';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -1162,7 +1162,7 @@ body.pp-edit .pp-grab .ppAsa{cursor:grab}
 </div>
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const tabs=['🏠 Inicio','👤 Perfil','🍽️ Recetas','🥗 Nevera','💪 Ejercicio','⚖️ Peso','🚶 Caminata','🍱 Contador','💳 Gastos','💰 Presupuesto','🛒 Precios','🚗 Vehículos','🏡 Casa','🌺 Ahorro','👕 Ropa','🧴 Piel','❤️ Ligar','📊 Base datos','🧤 Trabajo','🤖 Thermomix TM5','🎯 Metas','🌎 Región','💸 Remesas','🗣️ Inglés','🔧 Aparatos'];
+const tabs=['🏠 Inicio','👤 Perfil','🍽️ Recetas','🥗 Nevera','💪 Ejercicio','⚖️ Peso','🚶 Caminata','🍱 Contador','💳 Gastos','💰 Presupuesto','🛒 Precios','🚗 Vehículos','🏡 Casa','🌺 Ahorro','👕 Ropa','🧴 Piel','❤️ Ligar','📊 Base datos','🧤 Trabajo','🤖 Thermomix TM6','🎯 Metas','🌎 Región','💸 Remesas','🗣️ Inglés','🔧 Aparatos'];
 const safeStorage={
   get(key){try{return window.localStorage?localStorage.getItem(key):null}catch(e){return null}},
   set(key,value){try{if(!window.localStorage)return false;localStorage.setItem(key,value);return true}catch(e){return false}}
@@ -1411,7 +1411,7 @@ function kcal(n){return Math.round(n)+' kcal'}
 
 const GROUPS = [
   {id:'inicio',  label:'🏠 Inicio',  tabs:['🏠 Inicio','🎯 Metas']},
-  {id:'comer',   label:'🍽️ Comer',   tabs:['🍱 Contador','🍽️ Recetas','🥗 Nevera','🔧 Aparatos','🤖 Thermomix TM5']},
+  {id:'comer',   label:'🍽️ Comer',   tabs:['🍱 Contador','🍽️ Recetas','🥗 Nevera','🔧 Aparatos','🤖 Thermomix TM6']},
     {id:'cuerpo',  label:'💪 Fitness',  tabs:['💪 Ejercicio','🚶 Caminata','⚖️ Peso']},
   {id:'dinero',  label:'💳 Dinero',  tabs:['💳 Gastos','💰 Presupuesto','🛒 Precios','🌺 Ahorro','💸 Remesas']},
   {id:'vida',    label:'🌴 Día a día', tabs:['🧤 Trabajo','🚗 Vehículos','🏡 Casa','🗣️ Inglés','👕 Ropa','🧴 Piel','❤️ Ligar']},
@@ -1446,7 +1446,7 @@ function tabAllowed(tabName){
   // Pestañas que dependen de tener el aparato. Si lo apagaste en "Mi cocina",
   // la pestaña se esconde. Se recupera prendiendo el aparato otra vez.
   if(typeof _aparatoEncendido==='function'){
-    var TABS_APARATO={'🤖 Thermomix TM5':'thermomix'};
+    var TABS_APARATO={'🤖 Thermomix TM6':'thermomix'};
     var ap=TABS_APARATO[tabName];
     if(ap && !_aparatoEncendido(ap)) return false;
   }
@@ -1516,7 +1516,7 @@ const NAV_EN = {
     '📊 Base datos':'📊 Data',
     '🧭 Centro':'🧭 Center',
     '🧤 Trabajo':'🧤 Work',
-    '🤖 Thermomix TM5':'🤖 Thermomix TM5',
+    '🤖 Thermomix TM6':'🤖 Thermomix TM6',
     '🎯 Metas':'🎯 Goals',
     '🧽 Limpieza':'🧽 Cleaning',
     '🥣 Salsas':'🥣 Sauces',
@@ -4515,8 +4515,8 @@ const mauiSavings=[
 ];
 function secThermomixTM5(){ return _secThermoBase() + trucosRender(TRUCOS_TM5) + deshidratarRender(); }
 function _secThermoBase(){return `
-<h2>🤖 Thermomix TM5: aprender a utilizarla</h2>
-<p class="muted">Guía práctica desde cero. Abre únicamente el tema que necesites. Las recetas adaptadas siguen dentro de Recetas.</p>
+<h2>🤖 Thermomix TM6: aprender a utilizarla</h2>
+<p class="muted">Guía práctica desde cero — aplica igual a TM5 y TM6 (velocidades y temperaturas). Abre únicamente el tema que necesites. Las recetas con modo Thermomix siguen dentro de Recetas.</p>
 
 <div class="card" style="border:2px solid #8b73bf;background:#faf8ff">
   <h3 style="margin-top:0;color:#5d3b9c">⚡ Tabla rápida: velocidad, temperatura y tiempo</h3>
@@ -4717,7 +4717,7 @@ function openAllThermomixRecipes(){
 function openThermomixGuide(){
   showGroup('salud');
   setTimeout(()=>{
-    let index=tabs.indexOf('🤖 Thermomix TM5');
+    let index=tabs.indexOf('🤖 Thermomix TM6');
     showTab(index,document.getElementById('stab_'+index));
     document.getElementById('tab_'+index)?.scrollIntoView({behavior:'smooth',block:'start'});
   },30);
@@ -5244,7 +5244,7 @@ const KITCHEN_METHODS={
   horno:{label:'Horno',icon:'♨️'},
   microondas:{label:'Microondas',icon:'📟'},
   licuadora:{label:'Licuadora',icon:'🥤'},
-  thermomix:{label:'Thermomix TM5',icon:'🤖'},
+  thermomix:{label:'Thermomix TM6',icon:'🤖'},
   instantpot:{label:'Instant Pot',icon:'🍲'},
   airfryer:{label:'Air Fryer',icon:'🌀'},
   vaporera:{label:'Vaporera de huevos',icon:'🥚'},
@@ -5281,6 +5281,70 @@ function recipeMethods(r){
   return list;
 }
 function enabledRecipeMethods(r){return recipeMethods(r).filter(x=>methodEnabled(x.key));}
+
+/* ============ 🍳 HUB VISUAL DE MODOS DE COCINA (tarjetas con foto) ============
+   Un SOLO sistema de modos: las tarjetas reutilizan las estaciones de Mi
+   cocina (on/off), el filtro _recMethod de Recetas y la navegación openTab.
+   Las fotos son recursos locales (assets/cocina/*.jpg) — se cambian
+   sobrescribiendo el archivo o editando el campo img aquí.
+   ========================================================================= */
+const COCINA_MODOS=[
+ {id:'tm6',     nombre:'Thermomix TM6', desc:'Guía de uso y recetas con modo Thermomix.', img:'assets/cocina/tm6.jpg',     emoji:'🤖', color:'#8b73bf', accion:'tab',    tab:'🤖 Thermomix TM6', estacion:'thermomix'},
+ {id:'horno',   nombre:'Horno',         desc:'Temperaturas y tiempos verificados para hornear.', img:'assets/cocina/horno.jpg', emoji:'🔥', color:'#e07b39', accion:'metodo', metodo:'horno',          estacion:'horno'},
+ {id:'airfryer',nombre:'Air Fryer',     desc:'Crujiente y rápido, con mucho menos aceite.',    img:'assets/cocina/airfryer.jpg', emoji:'💨', color:'#2a9d8f', accion:'metodo', metodo:'airfryer',       estacion:'airfryer'},
+ {id:'sarten',  nombre:'Sartén',        desc:'Dorar, saltear y cocinar al fuego sin complicarte.', img:'assets/cocina/sarten.jpg', emoji:'🍳', color:'#d97706', accion:'metodo', metodo:'sarten',      estacion:'estufa'}
+];
+// ¿La receta es compatible con el equipo? MISMA regla que usa el filtro de
+// Recetas (renderRecipes) para que el número de la tarjeta coincida SIEMPRE
+// con lo que muestra la lista.
+function recetaEsDelMetodo(r,m){
+  if(m==='horno')return String(r.method||'').toLowerCase().indexOf('horno')>=0;
+  if(m==='airfryer')return /air\s?fryer|freidora de aire/.test(String(r.method||'').toLowerCase());
+  if(m==='sarten'){
+    var texto=(String(r.method||'')+' '+(r.steps||[]).join(' ')).toLowerCase();
+    return methodKeyOf(r.method)==='estufa'&&/sart[ée]n|comal/.test(texto);
+  }
+  return false;
+}
+function cocinaModoRecetas(m){return baseRecipes.filter(function(r){return recetaEsDelMetodo(r,m);});}
+function cocinaModoApagado(m){return !!(m.estacion&&typeof _aparatoEncendido==='function'&&!_aparatoEncendido(m.estacion));}
+function cocinaHubHTML(){
+  return '<div class="cocina-hub">'+COCINA_MODOS.map(function(m){
+    var apagado=cocinaModoApagado(m);
+    var chip=(m.accion==='tab')?'Guía completa':(cocinaModoRecetas(m.metodo).length+' recetas');
+    var sub=apagado?'Apagado en Mi cocina · toca para encenderlo':m.desc;
+    return '<div class="cocina-card'+(apagado?' off':'')+'" role="button" tabindex="0" onclick="abrirCocinaModo(\''+m.id+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){abrirCocinaModo(\''+m.id+'\')}">'
+      +'<div class="cocina-img" style="background:linear-gradient(160deg,'+m.color+',#12352a)">'
+      +'<span class="cocina-emoji">'+m.emoji+'</span>'
+      +'<img src="'+m.img+'" alt="'+safeText(m.nombre)+'" loading="lazy" onerror="this.remove()">'
+      +'<span class="cocina-chip">'+(apagado?'⏻ Apagado':chip)+'</span>'
+      +'<div class="cocina-overlay"><b>'+safeText(m.nombre)+'</b></div>'
+      +'</div>'
+      +'<div class="cocina-body"><span class="cocina-desc">'+safeText(sub)+'</span></div>'
+      +'</div>';
+  }).join('')+'</div>';
+}
+// Abre el modo reutilizando la navegación existente (openTab + setRecipeMethod).
+function abrirCocinaModo(id){
+  var m=COCINA_MODOS.find(function(x){return x.id===id;});if(!m)return;
+  if(cocinaModoApagado(m)){
+    // El aparato está apagado en Mi cocina: abrimos Recetas y desplegamos el
+    // panel para encenderlo (un solo sistema de modos; nada de encender por detrás).
+    openTab('🍽️ Recetas');
+    setTimeout(function(){
+      var el=document.getElementById('panelCocina');
+      if(el&&el.closest('details')){el.closest('details').open=true;el.scrollIntoView({behavior:'smooth',block:'center'});}
+    },120);
+    return;
+  }
+  if(m.accion==='tab'){openTab(m.tab);return;}
+  openTab('🍽️ Recetas');
+  setTimeout(function(){
+    setRecipeMethod(m.metodo); // filtro existente de Recetas (mismo sistema)
+    var lst=document.getElementById('recipes');
+    if(lst)lst.scrollIntoView({behavior:'smooth',block:'start'});
+  },90);
+}
 
 /* ============ 🍪 GALLETAS Y SNACKS AL HORNO (v61) ============
    Para un jardinero que quema 4,000 kcal: portátiles, calóricas,
@@ -6761,6 +6825,21 @@ body.dark .recetas2 .recipe-card{background:#223029}
 .r2-stat{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--t);background:var(--g2);border-radius:8px;padding:5px 9px;font-variant-numeric:tabular-nums}
 .recetas2 .recipe-body{border-top:1px solid var(--b);padding:12px 14px 14px;margin-top:12px}
 .recetas2 .cat-summary{border-radius:12px}
+/* Hub visual de modos de cocina (tarjetas con foto grande) */
+.cocina-hub{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:2px 0 14px}
+.cocina-card{border:1px solid var(--b);border-radius:18px;overflow:hidden;background:var(--tarj-bg,#fff);border-color:var(--tarj-borde,var(--b));box-shadow:0 2px 10px #00000010;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.cocina-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px #0000001f}
+.cocina-card:focus-visible{outline:3px solid var(--g)}
+.cocina-card.off{opacity:.6}
+.cocina-img{position:relative;aspect-ratio:4/3;overflow:hidden;background:#2f4137}
+.cocina-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cocina-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:64px;filter:drop-shadow(0 4px 10px #00000055)}
+.cocina-chip{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.95);color:#12352a;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:900}
+.cocina-overlay{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.72));color:#fff}
+.cocina-overlay b{font-size:17px;display:block;text-shadow:0 1px 3px #00000088}
+.cocina-body{padding:10px 12px 12px}
+.cocina-desc{font-size:12.5px;color:var(--m);line-height:1.4;display:block}
+@media(min-width:960px){.cocina-hub{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:560px){.recetas2 .recipe-grid{grid-template-columns:1fr}}
 `;
 function recCostBracket(c){c=+c||0;return c<1.2?'bajo':(c<=2.2?'medio':'alto');}
@@ -6863,7 +6942,7 @@ function buySupplementOther(i){
   if(b==null)return;
   _saveBoughtSupplement(i,b);
 }
-// ===== Guía de verduras cocidas: tiempos para olla y Thermomix TM5, con cantidad ajustable =====
+// ===== Guía de verduras cocidas: tiempos para olla y Thermomix TM6, con cantidad ajustable =====
 const VEGGIES=[
  {n:'Papa',corte:'en cubos',olla:'15-18',vapor:'20',tm5:'Varoma 30 min, vel cuchara (o 100°C 18 min)',tip:'Entera tarda ~30 min; en cubos rinde más rápido.'},
  {n:'Camote',corte:'en cubos',olla:'15',vapor:'20',tm5:'Varoma 25 min',tip:'Queda dulce; buena energía para el trabajo.'},
@@ -6930,15 +7009,15 @@ function renderVeggies(){
       return '<div class="mini"><b>'+foodEmoji(v.n)+' '+safeText(v.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(v.corte)+'</span>'
         +'<div style="font-size:13px;margin-top:4px">🫕 <b>Olla (hervir):</b> '+ollaTxt+'</div>'
         +'<div style="font-size:13px">♨️ <b>Vapor:</b> '+vaporTxt+'</div>'
-        +'<div style="font-size:13px">🤖 <b>Thermomix TM5:</b> '+safeText(tm)+'</div>'
+        +'<div style="font-size:13px">🤖 <b>Thermomix TM6:</b> '+safeText(tm)+'</div>'
         +(v.tip?'<div class="muted" style="font-size:12px;margin-top:2px">💡 '+safeText(v.tip)+'</div>':'')
         +'</div>';
     }).join('')+'</div>'):'<p class="muted">No encontré esa verdura. Prueba otro nombre.</p>');
 }
 function verdurasCocidasHTML(){
-  return '<details><summary>🥦 Verduras cocidas — tiempos (olla y Thermomix TM5)</summary>'
+  return '<details><summary>🥦 Verduras cocidas — tiempos (olla y Thermomix TM6)</summary>'
     +'<div class="card">'
-    +'<p class="muted" style="margin-top:0">Cuánto tarda cada verdura en quedar cocida, en olla y en la Thermomix TM5. Elige la cantidad y busca la verdura.</p>'
+    +'<p class="muted" style="margin-top:0">Cuánto tarda cada verdura en quedar cocida, en olla y en la Thermomix TM6. Elige la cantidad y busca la verdura.</p>'
     +'<input id="vegSearch" placeholder="Busca una verdura (papa, brócoli, chayote...)" oninput="renderVeggies()" style="width:100%">'
     +'<div class="row" style="gap:6px;margin-top:8px;align-items:center"><span class="muted" style="font-size:12px">Cantidad:</span>'
     +['poca','normal','mucha'].map(function(x){return '<button class="btn'+(x==='normal'?' primary':'')+'" id="vegQ_'+x+'" onclick="setVegQty(\''+x+'\')">'+({poca:'Poca',normal:'Normal',mucha:'Mucha'})[x]+'</button>';}).join('')
@@ -6968,7 +7047,7 @@ function renderVegCombine(){
     var maxT=sel.length?sel[0].t:0;
     var pasos=sel.map(function(x,i){return i===0?('Pon primero <b>'+safeText(x.n)+'</b> (tarda '+x.t+' min).'):('Cuando falten <b>'+x.t+' min</b>, agrega <b>'+safeText(x.n)+'</b>.');});
     plan='<div class="ok" style="margin-top:8px;font-size:13px"><b>🫕 En olla (~'+maxT+' min en total):</b><br>Hierve el agua con sal y ve agregando por tiempos:<ol style="margin:6px 0 0;padding-left:18px">'+pasos.map(function(p){return '<li>'+p+'</li>';}).join('')+'</ol></div>'
-      +'<div class="mini" style="margin-top:8px;font-size:12px">🤖 <b>Thermomix TM5:</b> pon todas en el Varoma, Varoma '+maxT+' min, vel 1. Las que tardan menos, ponlas en la bandeja de arriba (se cocinan un poco menos).</div>';
+      +'<div class="mini" style="margin-top:8px;font-size:12px">🤖 <b>Thermomix TM6:</b> pon todas en el Varoma, Varoma '+maxT+' min, vel 1. Las que tardan menos, ponlas en la bandeja de arriba (se cocinan un poco menos).</div>';
   }else{
     plan='<div class="muted" style="font-size:12px;margin-top:6px">Elige al menos 2 verduras para ver el plan.</div>';
   }
@@ -7042,7 +7121,7 @@ function hornoHTML(){
     +'<div id="hornoOut" style="margin-top:10px"></div>'
     +'</div></details>';
 }
-// ===== Thermomix TM5: funciones y trucos (moler, pulverizar, picar, batir, amasar) =====
+// ===== Thermomix TM6: funciones y trucos (moler, pulverizar, picar, batir, amasar) =====
 const TM5_FUNCS=[
  {c:'Moler / pulverizar',n:'Harina de avena',s:'10 seg · vel 10',tip:'Avena seca → harina para hotcakes o pan.'},
  {c:'Moler / pulverizar',n:'Harina de arroz o maíz',s:'1 min · vel 10',tip:'Grano crudo → harina fina.'},
@@ -7074,7 +7153,7 @@ function thermomixFuncHTML(){
       return '<div class="mini"><b>'+safeText(f.n)+'</b><div style="font-size:13px;margin-top:2px">🤖 <b>'+safeText(f.s)+'</b></div>'+(f.tip?'<div class="muted" style="font-size:12px;margin-top:2px">💡 '+safeText(f.tip)+'</div>':'')+'</div>';
     }).join('')+'</div></div>';
   }).join('');
-  return '<details><summary>🤖 Thermomix TM5 — funciones y trucos (moler, especias, avena...)</summary><div class="card"><p class="muted" style="margin-top:0">Saca más provecho de tu TM5: moler, pulverizar, picar, batir y amasar. Ajustes aproximados; ajústalos al gusto.</p>'+body+'</div></details>';
+  return '<details><summary>🤖 Thermomix TM6 — funciones y trucos (moler, especias, avena...)</summary><div class="card"><p class="muted" style="margin-top:0">Saca más provecho de tu Thermomix: moler, pulverizar, picar, batir y amasar. Ajustes aproximados; ajústalos al gusto.</p>'+body+'</div></details>';
 }
 
 /* ============ 🧂 SAZONAR CARNES ============
@@ -10337,6 +10416,7 @@ function secRecetas(){
   return `
 <style id="recetas2Css">${RECETAS2_CSS}</style>
 <div class="recetas2">
+  ${cocinaHubHTML()}
   ${(typeof f3CalcAlimHTML==='function')?f3CalcAlimHTML():''}
   <div class="r2-search">
     <div id="miCocinaBox">${cpRenderMiCocina()}</div>
@@ -11164,7 +11244,7 @@ const AREA_BLUEPRINTS={
   '🏡 Casa':{name:'Casa',personal:'Tareas y pendientes.',pro:'Mantenimiento, compras, documentos y fechas.',now:'Solo muestra lo que toca esta semana.',actions:[['Tarea rápida','openTab("🏡 Casa")'],['Lista casa','smartSectionAction("ajustes","casa")']]},
   '👕 Ropa':{name:'Ropa',personal:'Trabajo, gym, lavar y preparar.',pro:'Inventario, compras, tallas y cuidado.',now:'Que no falte ropa de trabajo limpia.',actions:[['Preparar ropa','openTab("👕 Ropa")'],['Trabajo mañana','smartSectionAction("trabajo","preparar")']]},
   '🧴 Piel':{name:'Piel',personal:'Foto/nota rápida y rutina simple.',pro:'Historial, síntomas, productos y comparación.',now:'Registra qué usaste y cómo amaneció tu piel.',actions:[['Rutina simple','openTab("🧴 Piel")'],['Guardar nota','smartSectionAction("ajustes","piel")']]},
-  '🤖 Thermomix TM5':{name:'Thermomix / cocina',personal:'Recetas rápidas y pasos fáciles.',pro:'Temperaturas, tiempos, costos y preparación avanzada.',now:'Usa personal para cocinar; profesional para aprender.',actions:[['Receta rápida','openTab("🤖 Thermomix TM5")'],['Plan comida','smartSectionAction("comida","plan")']]}
+  '🤖 Thermomix TM6':{name:'Thermomix / cocina',personal:'Recetas rápidas y pasos fáciles.',pro:'Temperaturas, tiempos, costos y preparación avanzada.',now:'Usa personal para cocinar; profesional para aprender.',actions:[['Receta rápida','openTab("🤖 Thermomix TM6")'],['Plan comida','smartSectionAction("comida","plan")']]}
 };
 
 function smartActionTarget(){return document.getElementById('areaModeOut_'+(_activeTab||0))||document.getElementById('smartHomeOut')}
@@ -12208,7 +12288,7 @@ Responde SOLO con JSON válido, sin markdown, sin backticks:
 const CP_ESTACIONES_DEF = [
   {id:'estufa',    nombre:'Estufa',            icono:'🔥', slots:3, on:true},
   {id:'horno',     nombre:'Horno (2 parrillas)',icono:'🔲', slots:2, on:true, nota:'Chico — charolas pequeñas'},
-  {id:'thermomix', nombre:'Thermomix TM5',     icono:'🤖', slots:1, on:true},
+  {id:'thermomix', nombre:'Thermomix TM6',     icono:'🤖', slots:1, on:true},
   {id:'arrocera',  nombre:'Arrocera',          icono:'🍚', slots:1, on:true},
   {id:'airfryer',  nombre:'Air fryer',         icono:'💨', slots:1, on:true},
   {id:'presion',   nombre:'Olla de presión',   icono:'⏲️', slots:1, on:true},
@@ -12242,6 +12322,8 @@ function toggleEstacion(id){
   _sincronizarCocinaConFiltro();
   save(); renderRecipes && renderRecipes();
   let z=document.getElementById('miCocinaBox'); if(z) z.innerHTML=cpRenderMiCocina();
+  // Hub visual: actualizar SOLO las tarjetas (mismo alto, sin mover scroll).
+  try{var hub=document.querySelector('.cocina-hub');if(hub)hub.outerHTML=cocinaHubHTML();}catch(e){}
 }
 
 // Copia el estado on/off de las estaciones a state.kitchenTools (la llave que
@@ -13020,7 +13102,7 @@ function cpVerMealPrep(){
 
 const LIMPIEZA = [
   {
-    id:'thermomix', icono:'🤖', nombre:'Thermomix TM5', freq:'diario', cada:'Después de cada uso',
+    id:'thermomix', icono:'🤖', nombre:'Thermomix TM6', freq:'diario', cada:'Después de cada uso',
     usar:['Jabón de trastes suave (Dawn)','Agua caliente','Esponja suave o el cepillo del vaso'],
     evitar:['Esponja de metal o fibra verde dura — raya el acero','Cloro / blanqueador','Meter la BASE al agua (lleva electrónica)','Lavavajillas para la base o la tapa con junta'],
     pasos:[
@@ -16331,7 +16413,7 @@ function secIngles(){
    ========================================================= */
 
 const TRUCOS_TM5 = {
-  ic:'🤖', n:'Thermomix TM5',
+  ic:'🤖', n:'Thermomix TM6',
   intro:'No es una licuadora cara. Es 12 aparatos en uno — si sabes las velocidades.',
   claves:[
     {t:'La velocidad manda, no el tiempo', d:'Vel 1-3 = revolver. Vel 4-6 = picar. Vel 7-10 = licuar. **Vel 10 = pulverizar (moler seco)**. Si te sale mal, casi siempre es la velocidad, no el tiempo.'},
@@ -17226,7 +17308,7 @@ function autoPlegar(html, abrirPrimeras, mantenerAbiertos){
 const PLEGAR = {
   '💳 Gastos':     {abrir:1, dejar:[]},
   '🥗 Nevera':     {abrir:1, dejar:[]},
-  '🤖 Thermomix TM5':{abrir:1, dejar:[]},
+  '🤖 Thermomix TM6':{abrir:1, dejar:[]},
   '🧴 Piel':       {abrir:1, dejar:[]},
   '🍽️ Recetas':   {abrir:2, dejar:[]}
 };
@@ -17275,7 +17357,7 @@ const MAPA = [
     sub:'',
     nodos:[
       {ic:'🔧', n:'Aparatos', d:'trucos de cada uno', tab:'🔧 Aparatos', falta:()=>false},
-      {ic:'🤖', n:'Thermomix', d:'', tab:'🤖 Thermomix TM5', falta:()=>false},
+      {ic:'🤖', n:'Thermomix', d:'', tab:'🤖 Thermomix TM6', falta:()=>false},
       {ic:'🧽', n:'Limpieza', d:'', tab:'🧽 Limpieza', falta:()=>false}
     ],
     alimenta:''
@@ -18558,7 +18640,7 @@ function secJuegoLigar(){
   </div>`;
 }
 
-function _sectionBase(t){let fn=({'🏠 Inicio':secInicio,'👤 Perfil':secPerfil,'🍽️ Recetas':secRecetas,'🥗 Nevera':secNevera,'💪 Ejercicio':secEjercicio,'⚖️ Peso':secPeso,'🚶 Caminata':secCaminata,'🍱 Contador':secContador,'💳 Gastos':secGastos,'💰 Presupuesto':secPresupuesto,'🛒 Precios':secPrecios,'🚗 Vehículos':secVehiculos,'🏡 Casa':secCasa,'🌺 Ahorro':secAhorro,'👕 Ropa':secRopa,'🧴 Piel':secPiel,'❤️ Ligar':secLigar,'📊 Base datos':secBase,'🧭 Centro':secCentro,'🧤 Trabajo':secWorkMode,'🤖 Thermomix TM5':secThermomixTM5,'🎯 Metas':secMetas,'🧽 Limpieza':secLimpieza,'🥣 Salsas':secBases,'🌎 Región':secRegion,'💸 Remesas':secRemesas,'🗣️ Inglés':secIngles,'🔧 Aparatos':secHerramientas,'💪 Proteína':secProteina})[t];return wrapAreaSection(t,fn?fn():'')}
+function _sectionBase(t){let fn=({'🏠 Inicio':secInicio,'👤 Perfil':secPerfil,'🍽️ Recetas':secRecetas,'🥗 Nevera':secNevera,'💪 Ejercicio':secEjercicio,'⚖️ Peso':secPeso,'🚶 Caminata':secCaminata,'🍱 Contador':secContador,'💳 Gastos':secGastos,'💰 Presupuesto':secPresupuesto,'🛒 Precios':secPrecios,'🚗 Vehículos':secVehiculos,'🏡 Casa':secCasa,'🌺 Ahorro':secAhorro,'👕 Ropa':secRopa,'🧴 Piel':secPiel,'❤️ Ligar':secLigar,'📊 Base datos':secBase,'🧭 Centro':secCentro,'🧤 Trabajo':secWorkMode,'🤖 Thermomix TM6':secThermomixTM5,'🎯 Metas':secMetas,'🧽 Limpieza':secLimpieza,'🥣 Salsas':secBases,'🌎 Región':secRegion,'💸 Remesas':secRemesas,'🗣️ Inglés':secIngles,'🔧 Aparatos':secHerramientas,'💪 Proteína':secProteina})[t];return wrapAreaSection(t,fn?fn():'')}
 function todayISO(){return new Date().toISOString().slice(0,10)}
 function todayLocal(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getTodayDiaryTotals(){
@@ -23760,7 +23842,7 @@ function icono(nombre, emoji, clase){
 // Mapa: etiqueta de grupo/pestaña (en español) -> nombre de archivo de icono.
 var ICON_MAP = {
   '🏠 Inicio':'inicio','🍽️ Comer':'comer','💪 Fitness':'fitness','💳 Dinero':'dinero','🌴 Día a día':'dia-a-dia','⚙️ Ajustes':'ajustes',
-  '🎯 Metas':'metas','🍱 Contador':'contador','🍽️ Recetas':'recetas','🥗 Nevera':'nevera','🔧 Aparatos':'aparatos','🤖 Thermomix TM5':'thermomix',
+  '🎯 Metas':'metas','🍱 Contador':'contador','🍽️ Recetas':'recetas','🥗 Nevera':'nevera','🔧 Aparatos':'aparatos','🤖 Thermomix TM6':'thermomix',
   '💪 Ejercicio':'ejercicio','🚶 Caminata':'caminata','⚖️ Peso':'peso','💳 Gastos':'gastos','💰 Presupuesto':'presupuesto','🛒 Precios':'precios',
   '🌺 Ahorro':'ahorro','💸 Remesas':'remesas','🧤 Trabajo':'trabajo','🚗 Vehículos':'vehiculos','🏡 Casa':'casa','🗣️ Inglés':'ingles',
   '👕 Ropa':'ropa','🧴 Piel':'piel','❤️ Ligar':'ligar','👤 Perfil':'perfil','🌎 Región':'region','📊 Base datos':'base-datos'
@@ -27006,7 +27088,7 @@ function renderThermomixPlan(recipe){
   let plan=getThermomixPlan(recipe);
   let external=plan.some(step=>step.setting==='FUERA DEL VASO');
   return `<div class="card" style="background:#f5f1ff;border-color:#b9a4e6;padding:10px">
-    <div style="font-weight:900;color:#5d3b9c;margin-bottom:6px">🤖 Secuencia completa en Thermomix TM5 <span class="trust-badge trust-check">ORIENTATIVA</span></div>
+    <div style="font-weight:900;color:#5d3b9c;margin-bottom:6px">🤖 Secuencia completa en Thermomix TM6 <span class="trust-badge trust-check">ORIENTATIVA</span></div>
     <div class="muted" style="font-size:12px;margin-bottom:8px">${external?'Esta receta combina Thermomix con estufa, comal u horno. Los pasos externos están marcados claramente.':'Toda la mezcla o cocción principal puede hacerse en el vaso.'} Usa las cantidades base indicadas arriba; abre “Personalizar platillo” si necesitas recalcular porciones.</div>
     <ol style="margin:0;padding-left:20px">${plan.map(step=>`<li style="margin:7px 0;padding-bottom:7px;border-bottom:1px solid #e6ddf7"><b>${step.title}:</b> <span style="display:inline-block;background:${step.setting==='FUERA DEL VASO'?'#ffe0dc':step.setting==='MANUAL'?'#fff1c9':'#e7ddff'};border-radius:99px;padding:2px 7px;font-size:11px;font-weight:900">${step.setting}</span><br>${step.text}</li>`).join('')}</ol>
     <div class="warn" style="margin-top:8px;font-size:12px"><b>Seguridad:</b> comprueba que carnes recalentadas lleguen a 74°C. No excedas la capacidad máxima del vaso y usa el cestillo en lugar del cubilete cuando necesites liberar vapor.</div>
@@ -27513,7 +27595,7 @@ function recetaModoAgrupado(tab,chip,s,sort,m,pf){
   return tab==='todas' && !chip && !s && (sort||'none')==='none' && m==='todas' && pf==='todas';
 }
 function recetaFiltroDesc(f,m,pf,s,tab,chip){
-  if(m!=='todas')return (m==='thermomix'?'Thermomix':m);
+  if(m!=='todas')return (m==='thermomix'?'Thermomix':(m==='sarten'?'Sartén':(m==='airfryer'?'Air fryer':m)));
   if(pf==='favoritas')return 'Favoritas';
   if(pf!=='todas')return pf;
   if(f!=='todas')return f;
@@ -30470,7 +30552,7 @@ function renderRecipes(){
   let pf=window._portableFormat||'todas';
   let arr=baseRecipes.filter(r=>{
     if(f!='todas'&&r.type!=f) return false;
-    if(m!='todas'&&m!=='thermomix'){let mLow=r.method.toLowerCase();let tLow=r.type.toLowerCase();let direct=['comida','snack','fruta','agua','hotcake','avena','pan','aderezo'].includes(m)&&tLow===m;let match=direct||(m==='carne'&&r.tags.toLowerCase().includes('carne cocida'))||mLow.includes(m.replace('licuadora','licuad'))||(m=='cafe'&&tLow=='cafe')||(m=='salsa'&&tLow=='salsa')||(m=='licuadora'&&(tLow=='licuado'||mLow.includes('licuad')));if(!match)return false;}
+    if(m!='todas'){let match;if(m==='thermomix'){match=recipeMethods(r).some(function(x){return x.key==='thermomix';});}else{let mLow=r.method.toLowerCase();let tLow=r.type.toLowerCase();let direct=['comida','snack','fruta','agua','hotcake','avena','pan','aderezo'].includes(m)&&tLow===m;match=direct||(m==='carne'&&r.tags.toLowerCase().includes('carne cocida'))||mLow.includes(m.replace('licuadora','licuad'))||(m=='cafe'&&tLow=='cafe')||(m=='salsa'&&tLow=='salsa')||(m=='licuadora'&&(tLow=='licuado'||mLow.includes('licuad')))||((m==='airfryer'||m==='sarten')&&recetaEsDelMetodo(r,m));}if(!match)return false;}
     let searchable=(r.name+' '+r.tags+' '+r.method+' '+r.ingredients+' '+r.steps.join(' ')).toLowerCase();
     if(s&&!searchable.includes(s)) return false;
     if(pf==='favoritas'&&!isRecipeFav(baseRecipes.indexOf(r)))return false;
@@ -30512,7 +30594,7 @@ function renderRecipes(){
   // filtrado como si fuera el total (bug de las "25 recetas").
   var _grouped=recetaModoAgrupado(_tab,_chip,s,(($("#recSort")?.value)||'none'),m,pf); if(!_grouped){ arr=arr.slice((_recipePage-1)*RECIPE_PAGE_SIZE,_recipePage*RECIPE_PAGE_SIZE); }
   let label=document.getElementById('recMethodLabel');
-  const mLabels={todas:'Todas las recetas',estufa:'🔥 Recetas en estufa',thermomix:'🤖 Todas las recetas adaptadas a Thermomix TM5',horno:'🫕 Recetas al horno',licuadora:'🥤 Licuados para subir peso',cafe:'☕ Cafés mexicanos',salsa:'🌶️ Salsas mexicanas',comida:'🍲 Comidas completas',snack:'🥜 Snacks económicos y calóricos',carne:'🥩 Recetas con carne ya cocida',fruta:'🍓 Frutas con más calorías',agua:'🧊 Aguas frescas económicas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes calóricos',aderezo:'🥗 Aderezos caseros y comprados'};
+  const mLabels={todas:'Todas las recetas',estufa:'🔥 Recetas en estufa',thermomix:'🤖 Recetas con modo Thermomix',horno:'🫕 Recetas al horno',sarten:'🍳 Recetas en sartén',airfryer:'💨 Recetas en air fryer',licuadora:'🥤 Licuados para subir peso',cafe:'☕ Cafés mexicanos',salsa:'🌶️ Salsas mexicanas',comida:'🍲 Comidas completas',snack:'🥜 Snacks económicos y calóricos',carne:'🥩 Recetas con carne ya cocida',fruta:'🍓 Frutas con más calorías',agua:'🧊 Aguas frescas económicas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes calóricos',aderezo:'🥗 Aderezos caseros y comprados'};
   if(label){
     // Indicador claro: filtro activo vs total global (nunca confundir uno con otro).
     var _filtroDesc=recetaFiltroDesc(f,m,pf,s,_tab,_chip);
@@ -30649,7 +30731,7 @@ function renderRecipes(){
         ${sauce?`<div class="card" style="background:#fff5ed;border-color:#f2b27d;padding:10px;margin-bottom:12px"><b style="color:#a64200">🌶️ Salsa completa para este platillo</b><br><span>${sauce}. No necesitas adivinar qué salsa usar.</span><br><button class="btn primary" style="margin-top:7px" onclick="openLinkedRecipe('${sauce.replace(/'/g,"\\'")}')">Ver ingredientes y cómo hacerla</button></div>`:''}
 
         <details ${m==='thermomix'?'open':''} style="margin-bottom:12px">
-          <summary>🤖 Preparar receta completa en Thermomix TM5</summary>
+          <summary>🤖 Preparar receta completa en Thermomix TM6</summary>
           ${renderThermomixPlan(r)}
         </details>
 
@@ -37105,7 +37187,7 @@ var MIS_MODOS_FIJOS=[
   {id:'completo',icono:'🏠',txt:'Modo completo',fn:"f3ModoActivar('completo')"},
   {id:'ajustes',icono:'🔧',txt:'Ajustes',fn:"openTab('👤 Perfil')"}
 ];
-var MIS_MODOS_TABS=['🏠 Inicio','🍱 Contador','🍽️ Recetas','🥗 Nevera','💪 Ejercicio','⚖️ Peso','🚶 Caminata','💳 Gastos','💰 Presupuesto','🛒 Precios','🌺 Ahorro','💸 Remesas','🧤 Trabajo','🚗 Vehículos','🏡 Casa','👕 Ropa','🧴 Piel','❤️ Ligar','👤 Perfil','🌎 Región','📊 Base datos','🎯 Metas','🗣️ Inglés','🔧 Aparatos','🤖 Thermomix TM5'];
+var MIS_MODOS_TABS=['🏠 Inicio','🍱 Contador','🍽️ Recetas','🥗 Nevera','💪 Ejercicio','⚖️ Peso','🚶 Caminata','💳 Gastos','💰 Presupuesto','🛒 Precios','🌺 Ahorro','💸 Remesas','🧤 Trabajo','🚗 Vehículos','🏡 Casa','👕 Ropa','🧴 Piel','❤️ Ligar','👤 Perfil','🌎 Región','📊 Base datos','🎯 Metas','🗣️ Inglés','🔧 Aparatos','🤖 Thermomix TM6'];
 var MIS_MODOS_ACCIONES=[{id:'🏋️ Rutina',txt:'Rutina',fn:'quickStartRoutine()'}];
 var MIS_MODOS_RESUMEN=[{id:'entrenamiento',txt:'🏋️ Entrenamiento de hoy'},{id:'calorias',txt:'🔥 Calorías'},{id:'pasos',txt:'🚶 Pasos'},{id:'peso',txt:'⚖️ Peso'},{id:'gastos',txt:'💳 Gastos'},{id:'presupuesto',txt:'💰 Presupuesto'},{id:'tareas',txt:'📝 Tareas'},{id:'recetas',txt:'🍽️ Recetas'},{id:'progreso',txt:'📈 Progreso'}];
 var MIS_MODOS_COLORES=['#15704f','#0d6043','#b8860b','#b42318','#1e5a8a','#7a4fb0','#0e7c86'];
@@ -39199,7 +39281,7 @@ var F3_NAV_DEFAULTS={
     '💰 Presupuesto':{e:'💰',n:'Presupuesto'},'🛒 Precios':{e:'🛒',n:'Precios'},'🚗 Vehículos':{e:'🚗',n:'Vehículos'},
     '🏡 Casa':{e:'🏡',n:'Casa'},'🌺 Ahorro':{e:'🌺',n:'Ahorro'},'👕 Ropa':{e:'👕',n:'Ropa'},
     '🧴 Piel':{e:'🧴',n:'Piel'},'❤️ Ligar':{e:'❤️',n:'Ligar'},'📊 Base datos':{e:'📊',n:'Base datos'},
-    '🧤 Trabajo':{e:'🧤',n:'Trabajo'},'🤖 Thermomix TM5':{e:'🤖',n:'Thermomix TM5'},'🎯 Metas':{e:'🎯',n:'Metas'},
+    '🧤 Trabajo':{e:'🧤',n:'Trabajo'},'🤖 Thermomix TM6':{e:'🤖',n:'Thermomix TM6'},'🎯 Metas':{e:'🎯',n:'Metas'},
     '🌎 Región':{e:'🌎',n:'Región'},'💸 Remesas':{e:'💸',n:'Remesas'},'🗣️ Inglés':{e:'🗣️',n:'Inglés'},'🔧 Aparatos':{e:'🔧',n:'Aparatos'}
   },
   mas:{e:'☰',n:'Más'}

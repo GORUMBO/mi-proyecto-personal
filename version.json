@@ -1,21 +1,21 @@
 {
-  "latest": "1.205.3",
-  "date": "2026-10-11",
+  "latest": "1.205.4",
+  "date": "2026-11-03",
   "minVersion": "1.0.0",
   "history": [
 {
-  "version": "1.205.3",
-  "date": "2026-10-11",
+  "version": "1.205.4",
+  "date": "2026-11-03",
   "type": "recomendada",
   "nuevas": [
-    "Peso e historial POR EJERCICIO: cada ejercicio muestra su último peso real (p.ej. Press militar 60 kg × 12 y Curl 21s 30 kg × 8 ya no comparten historial).",
-    "El borrador de los campos ya no va por índice: al cambiar de ejercicio o reordenar la rutina no se arrastra el peso del anterior.",
-    "Unidad visible y coherente: los registros nuevos guardan su unidad (kg/lb) y se convierten al mostrarse (1 lb = 0.453592 kg); se quitaron las 'lb' fijas del texto."
+    "Hub visual de modos de cocina en Recetas: 4 tarjetas grandes con fotografía (Thermomix TM6, Horno, Air Fryer y Sartén) que abren cada modo con su lista de recetas compatibles.",
+    "Cada tarjeta muestra cuántas recetas verificadas tiene su equipo; si el aparato está apagado en Mi cocina, la tarjeta lo indica y lleva al panel para encenderlo.",
+    "Nuevos filtros en Recetas: recetas en sartén y recetas en air fryer (misma regla de compatibilidad que las tarjetas).",
+    "Las fotos son recursos locales (assets/cocina) y funcionan sin internet; se cambian sobrescribiendo el archivo."
   ],
   "cambios": [
-    "Sin historial el campo queda vacío (antes podía rellenarse con un borrador viejo de otro ejercicio).",
-    "La sesión de un ejercicio ya no se adopta de otro ejercicio distinto.",
-    "Corregir una serie actualiza peso, reps y unidad en su lugar, sin duplicar."
+    "Recetas muestra arriba el hub de modos (antes entraba directo a la calculadora y la lista).",
+    "El service worker precachea las 4 fotos para el modo sin conexión."
   ]
 },
 {
