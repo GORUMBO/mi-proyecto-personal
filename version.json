@@ -1,8 +1,23 @@
 {
-  "latest": "1.205.4",
-  "date": "2026-11-03",
+  "latest": "1.206.0",
+  "date": "2026-11-08",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.206.0",
+  "date": "2026-11-08",
+  "type": "recomendada",
+  "nuevas": [
+    "Mis guías TM6: guías propias de cocina dentro de Thermomix TM6, con categorías y subcategorías (salsas, adobos, moles, guisados, técnicas), parámetros por paso (velocidad, temperatura, resultado esperado), advertencias, consejos, errores y soluciones, variantes y accesorios.",
+    "Biblioteca de accesorios TM6: fotos por accesorio y fotos por paso en tus guías (compresión automática, almacén único por hash).",
+    "Fotos del catálogo de comidas: fotos locales con créditos en tarjetas y detalle de recetas, en guías de verduras y horno, Nevera, calculadora y constructor de comidas; filtro \u00abCon foto\u00bb en Recetas.",
+    "Las fotos propias de las guías ahora viajan en la sincronización: un dispositivo nuevo recibe las guías completas, con fotos."
+  ],
+  "cambios": [
+    "El merge de la nube une guiasMedia como mapa por hash (antes un dispositivo nuevo recibía las guías sin sus fotos).",
+    "Las 6 guías de muestra (3 salsas + 3 adobos) se crearon y verificaron con sincronización real Windows - iPhone, incluyendo uso sin conexión."
+  ]
+},
 {
   "version": "1.205.4",
   "date": "2026-11-03",

@@ -718,7 +718,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.205.4';
+  window.HM_APP_VERSION='1.206.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -1175,7 +1175,7 @@ try{state=JSON.parse(_storedStateRaw||'{}')||{}}catch(e){state={}}
 function f3ExpirarViendoBoot(){try{if(typeof state!=='undefined'&&state&&state.fitSemanaViendo)state.fitSemanaViendo.date='2000-01-01';}catch(e){}}
 try{f3ExpirarViendoBoot();}catch(e){}
 console.log('[LOAD] state cargado de localStorage · workoutLog: '+(state.workoutLog||[]).length+' · lastModified: '+(state.lastModified||'—'));
-state.profile=state.profile||{peso:150,altura:170,edad:30,sexo:'hombre',actividad:'muy alta',objetivo:'ganar músculo'};state.meals=state.meals||[];state.weight=state.weight||[];state.walks=state.walks||[];state.expenses=state.expenses||[];state.expenseTemplates=state.expenseTemplates||[];state.expenseSettings=state.expenseSettings||{monthlyIncome:0,foodLimit:700,gasLimit:450,funLimit:150,cashLimit:120};state.receiptTextHistory=state.receiptTextHistory||[];state.listaCompra=state.listaCompra||[];state.budget=Array.isArray(state.budget)?state.budget:[];state.routines=state.routines||[];state.prices=state.prices||[];state.myProducts=state.myProducts||[];state.vehicles=state.vehicles||[];state.tasks=state.tasks||[];state.clothes=state.clothes||[];
+state.profile=state.profile||{peso:150,altura:170,edad:30,sexo:'hombre',actividad:'muy alta',objetivo:'ganar músculo'};state.meals=state.meals||[];state.weight=state.weight||[];state.walks=state.walks||[];state.expenses=state.expenses||[];state.expenseTemplates=state.expenseTemplates||[];state.expenseSettings=state.expenseSettings||{monthlyIncome:0,foodLimit:700,gasLimit:450,funLimit:150,cashLimit:120};state.receiptTextHistory=state.receiptTextHistory||[];state.listaCompra=state.listaCompra||[];state.budget=Array.isArray(state.budget)?state.budget:[];state.routines=state.routines||[];state.prices=state.prices||[];state.myProducts=state.myProducts||[];state.guiasMedia=state.guiasMedia||{};state.misGuiasTM6=state.misGuiasTM6||[];state.tm6Accesorios=state.tm6Accesorios||[];state.vehicles=state.vehicles||[];state.tasks=state.tasks||[];state.clothes=state.clothes||[];
 state.dating=state.dating||{profile:{name:'Ruben',goal:'conocer',style:'natural',language:'es'},history:[],plans:[]};
 state.dating.profile=state.dating.profile||{name:'Ruben',goal:'conocer',style:'natural',language:'es'};
 state.dating.history=state.dating.history||[];
@@ -4518,6 +4518,9 @@ function _secThermoBase(){return `
 <h2>🤖 Thermomix TM6: aprender a utilizarla</h2>
 <p class="muted">Guía práctica desde cero — aplica igual a TM5 y TM6 (velocidades y temperaturas). Abre únicamente el tema que necesites. Las recetas con modo Thermomix siguen dentro de Recetas.</p>
 
+${misGuiasTM6HTML()}
+${tm6BibliotecaHTML()}
+
 <div class="card" style="border:2px solid #8b73bf;background:#faf8ff">
   <h3 style="margin-top:0;color:#5d3b9c">⚡ Tabla rápida: velocidad, temperatura y tiempo</h3>
   <p class="muted" style="margin:2px 0 10px">Lo que más usas, de un vistazo. Toca un renglón para ver el truco.</p>
@@ -5344,6 +5347,590 @@ function abrirCocinaModo(id){
     var lst=document.getElementById('recipes');
     if(lst)lst.scrollIntoView({behavior:'smooth',block:'start'});
   },90);
+}
+
+/* ============ 📷 FOTOS DE RECETAS (catálogo visual) ============
+   Mapa por NOMBRE EXACTO de receta → foto local del platillo.
+   Se aplica UNA sola vez sobre baseRecipes (solo agrega campos
+   foto/fotoFuente/fotoIlustrativa: no altera pasos, cantidades,
+   filtros ni modos). Las fotos viven en assets/recetas (offline,
+   créditos en assets/recetas/CREDITOS.md y dentro del detalle).
+   Si la imagen no existe, la tarjeta queda como antes (sin foto).
+   Para agregar más fotos al catálogo: agregar la entrada aquí y el
+   archivo en assets/recetas. ilustrativa:true = imagen genérica
+   claramente marcada (nunca presentarla como foto real del platillo).
+   ================================================================= */
+const RECETA_FOTOS={
+ 'Chilaquiles con huevo':{img:'assets/recetas/chilaquiles.jpg',fuente:'Carlos t · CC BY-SA 3.0 · Wikimedia Commons'},
+ 'Huevos rancheros (porción grande · 400 kcal)':{img:'assets/recetas/huevos-rancheros.jpg',fuente:'Daderot · CC0 · Wikimedia Commons'},
+ 'Molletes caseros':{img:'assets/recetas/molletes.jpg',fuente:'Locker233 · CC BY-SA 4.0 · Wikimedia Commons'},
+ 'Quesadillas de pollo':{img:'assets/recetas/quesadillas-pollo.jpg',fuente:'Mike Saechang · CC BY-SA 2.0 · Wikimedia Commons'},
+ 'Enchiladas económicas':{img:'assets/recetas/enchiladas.jpg',fuente:'Dahyana Yasada R. R. · CC BY-SA 4.0 · Wikimedia Commons'},
+ 'Pozole rápido de pollo':{img:'assets/recetas/pozole.jpg',fuente:'El Nuevo Doge · CC0 · Wikimedia Commons'},
+ 'Sopa de fideo con pollo':{img:'assets/recetas/sopa-fideo.jpg',fuente:'Wotancito · CC BY-SA 4.0 · Wikimedia Commons'},
+ 'Guacamole clásico':{img:'assets/recetas/guacamole.jpg',fuente:'Nikodem Nijaki · CC BY-SA 3.0 · Wikimedia Commons'},
+ 'Hotcakes de avena y plátano':{img:'assets/recetas/hotcakes.jpg',fuente:'Midori · CC BY 3.0 · Wikimedia Commons'},
+ 'Agua de Jamaica con piloncillo':{img:'assets/recetas/agua-jamaica.jpg',fuente:'claralieu · CC BY 2.0 · Wikimedia Commons'},
+ 'Flan napolitano casero':{img:'assets/recetas/flan.jpg',fuente:'Cary Bass · CC BY-SA 2.5 · Wikimedia Commons'},
+ 'Elote en vaso (esquite)':{img:'assets/recetas/elote-esquite.jpg',fuente:'Jj saezdeo · CC BY-SA 4.0 · Wikimedia Commons'}
+};
+function recetaFotosAplicar(){
+  if(window._recetaFotosAplicadas)return;
+  try{
+    Object.keys(RECETA_FOTOS).forEach(function(nombre){
+      var r=baseRecipes.find(function(x){return x.name===nombre;});
+      if(!r)return; // la receta ya no existe: no inventar nada
+      var f=RECETA_FOTOS[nombre];
+      r.foto=f.img; r.fotoFuente=f.fuente||''; r.fotoIlustrativa=!!f.ilustrativa;
+    });
+  }catch(e){}
+  window._recetaFotosAplicadas=true;
+}
+
+/* ============ 🥕 FOTOS DE ALIMENTOS (catálogo visual de Comer) ============
+   Mapa por clave normalizada → foto local del alimento (assets/alimentos).
+   Se usa en la guía de verduras, la guía al horno y la Nevera; donde no hay
+   foto confiable se conserva el emoji actual (getFoodIcon). Las fotos son
+   recursos locales (offline) con créditos en assets/alimentos/CREDITOS.md
+   y en el desplegable «📷 Créditos de las fotos» de la app.
+   ======================================================================== */
+const ALIMENTO_FOTOS={
+'aceite':{img:'assets/alimentos/aceite.jpg',fuente:'margenauer from Pixabay · CC0 · Wikimedia Commons'},
+'acelga':{img:'assets/alimentos/acelga.jpg',fuente:'Neelix at English Wikipedia · Public domain · Wikimedia Commons'},
+'aguacate':{img:'assets/alimentos/aguacate.jpg',fuente:'Ivar Leidus · CC BY-SA 4.0 · Wikimedia Commons'},
+'ajo':{img:'assets/alimentos/ajo.jpg',fuente:'Ivar Leidus · CC BY-SA 4.0 · Wikimedia Commons'},
+'arandano':{img:'assets/alimentos/arandano.jpg',fuente:'Evan-Amos · CC0 · Wikimedia Commons'},
+'arroz':{img:'assets/alimentos/arroz.jpg',fuente:'Douglas Perkins · CC0 · Wikimedia Commons'},
+'atun':{img:'assets/alimentos/atun.jpg',fuente:'R. Home · Public domain · Wikimedia Commons'},
+'avena':{img:'assets/alimentos/avena.jpg',fuente:'en:user:Hankwang · Public domain · Wikimedia Commons'},
+'azucar':{img:'assets/alimentos/azucar.jpg',fuente:'Gaurav Dhwaj Khadka · CC BY-SA 4.0 · Wikimedia Commons'},
+'betabel':{img:'assets/alimentos/betabel.jpg',fuente:'Kiwima · CC BY-SA 4.0 · Wikimedia Commons'},
+'bistec':{img:'assets/alimentos/bistec.jpg',fuente:'Andy Li · CC0 · Wikimedia Commons'},
+'brocoli':{img:'assets/alimentos/brocoli.jpg',fuente:'U.S. Department of Agriculture · Public domain · Wikimedia Commons'},
+'brotes soya':{img:'assets/alimentos/brotes-soya.jpg',fuente:'Fumikas Sagisavas · CC0 · Wikimedia Commons'},
+'cacao':{img:'assets/alimentos/cacao.jpg',fuente:'thecakeschool · CC0 · Wikimedia Commons'},
+'calabacita':{img:'assets/alimentos/calabacita.jpg',fuente:'Le Grande Farmer\'s Market · CC BY 2.0 · Wikimedia Commons'},
+'calabaza':{img:'assets/alimentos/calabaza.jpg',fuente:'A Thinking Stomach · CC BY 3.0 · Wikimedia Commons'},
+'camaron':{img:'assets/alimentos/camaron.jpg',fuente:'Unknown authorUnknown author · Public domain · Wikimedia Commons'},
+'camote':{img:'assets/alimentos/camote.jpg',fuente:'Alabama Extension · CC0 · Wikimedia Commons'},
+'carne molida':{img:'assets/alimentos/carne-molida.jpg',fuente:'? · Public domain · Wikimedia Commons'},
+'cebolla':{img:'assets/alimentos/cebolla.jpg',fuente:'Obuezie · CC BY-SA 4.0 · Wikimedia Commons'},
+'cerdo':{img:'assets/alimentos/cerdo.jpg',fuente:'Dudva · CC0 · Wikimedia Commons'},
+'cereal':{img:'assets/alimentos/cereal.jpg',fuente:'Evan-Amos · Public domain · Wikimedia Commons'},
+'champinones':{img:'assets/alimentos/champinones.jpg',fuente:'Syced · CC0 · Wikimedia Commons'},
+'chayote':{img:'assets/alimentos/chayote.jpg',fuente:'Jeangagnon · CC BY-SA 4.0 · Wikimedia Commons'},
+'chicharos':{img:'assets/alimentos/chicharos.jpg',fuente:'Renee Comet (photographer) AV Number: AV-9400-4164 · Public domain · Wikimedia Commons'},
+'chile guajillo':{img:'assets/alimentos/guajillo.jpg',fuente:'ZooFari · Public domain · Wikimedia Commons'},
+'chile jalapeno':{img:'assets/alimentos/jalapeno.jpg',fuente:'? · CC BY-SA 3.0 · Wikimedia Commons'},
+'chile morita':{img:'assets/alimentos/morita.jpg',fuente:'Armando Olivo Martín del Campo · CC BY-SA 4.0 · Wikimedia Commons'},
+'chile pasilla':{img:'assets/alimentos/pasilla.jpg',fuente:'User:Carstor · CC BY-SA 2.5 · Wikimedia Commons'},
+'chile serrano':{img:'assets/alimentos/serrano.jpg',fuente:'NellieBly · CC BY-SA 3.0 · Wikimedia Commons'},
+'chipotle seco':{img:'assets/alimentos/chipotle.jpg',fuente:'User:Carstor · CC BY-SA 2.5 · Wikimedia Commons'},
+'cilantro':{img:'assets/alimentos/cilantro.jpg',fuente:'Thamizhpparithi Maari · CC BY-SA 3.0 · Wikimedia Commons'},
+'coliflor':{img:'assets/alimentos/coliflor.jpg',fuente:'Rjcastillo · CC BY-SA 4.0 · Wikimedia Commons'},
+'crema':{img:'assets/alimentos/crema.jpg',fuente:'jules · CC BY 2.0 · Wikimedia Commons'},
+'durazno':{img:'assets/alimentos/durazno.jpg',fuente:'Prianxi · CC BY-SA 4.0 · Wikimedia Commons'},
+'ejotes':{img:'assets/alimentos/ejotes.jpg',fuente:'Christopher Franz · CC BY-SA 4.0 · Wikimedia Commons'},
+'elote':{img:'assets/alimentos/elote.jpg',fuente:'Nutrition, Food Safety &amp; Health · CC0 · Wikimedia Commons'},
+'esparragos':{img:'assets/alimentos/esparragos.jpg',fuente:'Nutrition, Food Safety &amp; Health · CC0 · Wikimedia Commons'},
+'espinaca':{img:'assets/alimentos/espinaca.jpg',fuente:'Nillerdk · CC BY 3.0 · Wikimedia Commons'},
+'fideo':{img:'assets/alimentos/fideo.jpg',fuente:'Gaurav Dhwaj Khadka · CC BY-SA 4.0 · Wikimedia Commons'},
+'frambuesa':{img:'assets/alimentos/frambuesa.jpg',fuente:'Ivar Leidus · CC BY-SA 4.0 · Wikimedia Commons'},
+'fresa':{img:'assets/alimentos/fresa.jpg',fuente:'Ivar Leidus · CC BY-SA 4.0 · Wikimedia Commons'},
+'frijol':{img:'assets/alimentos/frijol.jpg',fuente:'Taoheedah · CC BY-SA 4.0 · Wikimedia Commons'},
+'frijoles':{img:'assets/alimentos/frijol.jpg',fuente:'Taoheedah · CC BY-SA 4.0 · Wikimedia Commons'},
+'frijoles negros':{img:'assets/alimentos/frijoles-negros.jpg',fuente:'Ranjithkumar Murugesan · CC0 · Wikimedia Commons'},
+'garbanzos':{img:'assets/alimentos/garbanzos.jpg',fuente:'Fumikas Sagisavas · CC0 · Wikimedia Commons'},
+'huevo':{img:'assets/alimentos/huevo.jpg',fuente:'Evan-Amos · Public domain · Wikimedia Commons'},
+'huevos':{img:'assets/alimentos/huevo.jpg',fuente:'Evan-Amos · Public domain · Wikimedia Commons'},
+'jamon':{img:'assets/alimentos/jamon.jpg',fuente:'Michael Coté from Austin, Texas, Texas · CC BY 2.0 · Wikimedia Commons'},
+'jicama':{img:'assets/alimentos/jicama.jpg',fuente:'David E Mead · CC0 · Wikimedia Commons'},
+'jitomate':{img:'assets/alimentos/jitomate.jpg',fuente:'fir0002  flagstaffotos [at] gmail.com Canon 20D + Sigma 15 · GFDL 1.2 · Wikimedia Commons'},
+'kale':{img:'assets/alimentos/kale.jpg',fuente:'Evan-Amos · Public domain · Wikimedia Commons'},
+'kiwi':{img:'assets/alimentos/kiwi.jpg',fuente:'Iwai-Dialax · CC BY 4.0 · Wikimedia Commons'},
+'leche':{img:'assets/alimentos/leche.jpg',fuente:'Illarion Kalashnikov · CC BY-SA 4.0 · Wikimedia Commons'},
+'leche entera':{img:'assets/alimentos/leche.jpg',fuente:'Illarion Kalashnikov · CC BY-SA 4.0 · Wikimedia Commons'},
+'leches usa':{img:'assets/alimentos/leche.jpg',fuente:'Illarion Kalashnikov · CC BY-SA 4.0 · Wikimedia Commons'},
+'lechuga':{img:'assets/alimentos/lechuga.jpg',fuente:'GT1976 · CC BY-SA 4.0 · Wikimedia Commons'},
+'lentejas':{img:'assets/alimentos/lentejas.jpg',fuente:'Fumikas Sagisavas · CC0 · Wikimedia Commons'},
+'lima':{img:'assets/alimentos/lima.jpg',fuente:'Evan-Amos · CC0 · Wikimedia Commons'},
+'limon':{img:'assets/alimentos/limon.jpg',fuente:'André Karwath aka Aka · CC BY-SA 2.5 · Wikimedia Commons'},
+'lomo cerdo':{img:'assets/alimentos/lomo-cerdo.jpg',fuente:'Timothy Vollmer · CC BY 2.0 · Wikimedia Commons'},
+'maiz':{img:'assets/alimentos/elote.jpg',fuente:'Nutrition, Food Safety &amp; Health · CC0 · Wikimedia Commons'},
+'mango':{img:'assets/alimentos/mango.jpg',fuente:'Ivar Leidus · CC BY-SA 4.0 · Wikimedia Commons'},
+'mangonada':{img:'assets/alimentos/mangonada.jpg',fuente:'LittleT889 · CC BY-SA 4.0 · Wikimedia Commons'},
+'mantequilla':{img:'assets/alimentos/mantequilla.jpg',fuente:'Estabiano · CC0 · Wikimedia Commons'},
+'manzana':{img:'assets/alimentos/manzana.jpg',fuente:'Abhijit Tembhekar from Mumbai, India · CC BY 2.0 · Wikimedia Commons'},
+'maracuya':{img:'assets/alimentos/maracuya.jpg',fuente:'Challiyan at Malayalam Wikipedia · CC BY 3.0 · Wikimedia Commons'},
+'mayonesa':{img:'assets/alimentos/mayonesa.jpg',fuente:'Syced · CC0 · Wikimedia Commons'},
+'melon':{img:'assets/alimentos/melon.jpg',fuente:'Jeffery Martin · CC0 · Wikimedia Commons'},
+'miel':{img:'assets/alimentos/miel.jpg',fuente:'Shixart1985 · CC BY 2.0 · Wikimedia Commons'},
+'naranja':{img:'assets/alimentos/naranja.jpg',fuente:'Evan-Amos · CC BY-SA 3.0 · Wikimedia Commons'},
+'nopal':{img:'assets/alimentos/nopal.jpg',fuente:'Pilyorlo · CC BY-SA 4.0 · Wikimedia Commons'},
+'palomitas':{img:'assets/alimentos/palomitas.jpg',fuente:'Oredgieno · CC BY-SA 4.0 · Wikimedia Commons'},
+'pan':{img:'assets/alimentos/pan.jpg',fuente:'Jerry "Woody" from Edmonton, Canada · CC BY-SA 2.0 · Wikimedia Commons'},
+'papa':{img:'assets/alimentos/papa.jpg',fuente:'huber.edith · CC BY 2.0 · Wikimedia Commons'},
+'papas':{img:'assets/alimentos/papa.jpg',fuente:'huber.edith · CC BY 2.0 · Wikimedia Commons'},
+'papaya':{img:'assets/alimentos/papaya.jpg',fuente:'Another one of my pictures: This photograph was taken by · CC BY-SA 4.0 · Wikimedia Commons'},
+'pasta':{img:'assets/alimentos/pasta.jpg',fuente:'Luca Nebuloni from Milan, Italy · CC BY 2.0 · Wikimedia Commons'},
+'pechuga pollo':{img:'assets/alimentos/pechuga-pollo.jpg',fuente:'kakyusei · CC0 · Wikimedia Commons'},
+'pepino':{img:'assets/alimentos/pepino.jpg',fuente:'Maathavan · CC BY-SA 3.0 · Wikimedia Commons'},
+'pera':{img:'assets/alimentos/pera.jpg',fuente:'Augustus Binu : flickr · CC BY-SA 3.0 · Wikimedia Commons'},
+'pimiento':{img:'assets/alimentos/pimiento.jpg',fuente:'Edward Weston · Public domain · Wikimedia Commons'},
+'pimiento morron':{img:'assets/alimentos/pimiento.jpg',fuente:'Edward Weston · Public domain · Wikimedia Commons'},
+'pina':{img:'assets/alimentos/pina.jpg',fuente:'Wilfredor · CC0 · Wikimedia Commons'},
+'platano':{img:'assets/alimentos/platano.jpg',fuente:'Krzysztof Golik · CC BY-SA 4.0 · Wikimedia Commons'},
+'pollo':{img:'assets/alimentos/pollo.jpg',fuente:'Sakurai Midori · CC BY 3.0 · Wikimedia Commons'},
+'pollo rostizado':{img:'assets/alimentos/pollo.jpg',fuente:'Sakurai Midori · CC BY 3.0 · Wikimedia Commons'},
+'salchicha':{img:'assets/alimentos/salchicha.jpg',fuente:'Andy Li · CC0 · Wikimedia Commons'},
+'salmon':{img:'assets/alimentos/salmon.jpg',fuente:'Timothy Knepp · Public domain · Wikimedia Commons'},
+'sandia':{img:'assets/alimentos/sandia.jpg',fuente:'Rare Grace · CC BY-SA 4.0 · Wikimedia Commons'},
+'taro':{img:'assets/alimentos/taro.jpg',fuente:'စာကလေး SarKaLay · CC0 · Wikimedia Commons'},
+'tilapia':{img:'assets/alimentos/tilapia.jpg',fuente:'Niall Crotty · CC BY-SA 2.5 · Wikimedia Commons'},
+'tocino':{img:'assets/alimentos/tocino.jpg',fuente:'preston.rhea · CC BY-SA 2.0 · Wikimedia Commons'},
+'tomate verde':{img:'assets/alimentos/tomatillo.jpg',fuente:'Frank Vincentz · CC BY-SA 3.0 · Wikimedia Commons'},
+'tortilla':{img:'assets/alimentos/tortilla.jpg',fuente:'Vigilantcosmicpenguin · CC BY 4.0 · Wikimedia Commons'},
+'totopos':{img:'assets/alimentos/totopos.jpg',fuente:'Kurt Kaiser · CC0 · Wikimedia Commons'},
+'uvas':{img:'assets/alimentos/uvas.jpg',fuente:'fir0002  flagstaffotos [at] gmail.com Canon 20D + Tamron 2 · GFDL 1.2 · Wikimedia Commons'},
+'yogurt':{img:'assets/alimentos/yogurt.jpg',fuente:'RaffiKojian · CC BY 4.0 · Wikimedia Commons'},
+'yogurt alto proteina':{img:'assets/alimentos/yogurt.jpg',fuente:'RaffiKojian · CC BY 4.0 · Wikimedia Commons'},
+'yogurt griego':{img:'assets/alimentos/yogurt.jpg',fuente:'RaffiKojian · CC BY 4.0 · Wikimedia Commons'},
+'yogurt natural':{img:'assets/alimentos/yogurt.jpg',fuente:'RaffiKojian · CC BY 4.0 · Wikimedia Commons'},
+'yogurt regular':{img:'assets/alimentos/yogurt.jpg',fuente:'RaffiKojian · CC BY 4.0 · Wikimedia Commons'},
+'yogurt vainilla':{img:'assets/alimentos/yogurt.jpg',fuente:'RaffiKojian · CC BY 4.0 · Wikimedia Commons'},
+'zanahoria':{img:'assets/alimentos/zanahoria.jpg',fuente:'MartinThoma · CC0 · Wikimedia Commons'},
+};
+function alimentoKey(nombre){
+  return String(nombre||'').toLowerCase()
+    .replace(/á|à|ä/g,'a').replace(/é|è|ë/g,'e').replace(/í|ì|ï/g,'i')
+    .replace(/ó|ò|ö/g,'o').replace(/ú|ù|ü/g,'u').replace(/ñ/g,'n')
+    .replace(/\([^)]*\)/g,' ')                          // 'Papa (en gajos)' → 'papa '
+    .replace(/\b\d+(\.\d+)?%?\b/g,' ')                  // cantidades: 100g, 2%, 1/2…
+    .replace(/\b(de|la|el|los|las|en|un|una|y|con|sin|taza|tazas|pieza|piezas|rebanada|rebanadas|oz|ml|kg|gr|g)\b/g,' ')
+    .replace(/[^a-z0-9]+/g,' ').trim();
+}
+function alimentoFoto(nombre){
+  var k=alimentoKey(nombre);
+  if(ALIMENTO_FOTOS[k])return ALIMENTO_FOTOS[k];
+  // sinónimos: 'queso cheddar' → 'queso', 'pollo rostizado' → 'pollo', etc.
+  var palabras=k.split(' ');
+  for(var i=0;i<palabras.length;i++){
+    var k2=palabras.slice(0,palabras.length-i).join(' ');
+    if(k2&&ALIMENTO_FOTOS[k2])return ALIMENTO_FOTOS[k2];
+  }
+  return null;
+}
+function alimentoFotoHTML(nombre,tam){
+  var f=alimentoFoto(nombre);
+  var emoji=typeof getFoodIcon==='function'?getFoodIcon(nombre):'🍽️';
+  if(!f)return '<span class="alim-foto alim-'+tam+'"><span class="alim-emoji">'+emoji+'</span></span>';
+  return '<span class="alim-foto alim-'+tam+'"><span class="alim-emoji">'+emoji+'</span>'
+    +'<img src="'+f.img+'" alt="'+safeText(nombre)+'" loading="lazy" onerror="this.remove()"></span>';
+}
+/* ============ 🌶️ CON TAJÍN (guía + recetas, reutiliza el catálogo) ============
+   Las preparaciones usan el MISMO sistema de recetas (baseRecipes): porciones
+   ajustables, buscador, filtros y calculadora. k/p = TOTAL de la receta (la
+   app divide entre porciones). kcal calculadas con la base foods[] de la app
+   más estimaciones marcadas "aprox." (chamoy ≈ 20 kcal por cda, típica de
+   etiqueta). Nada de datos exactos inventados.
+   ========================================================================= */
+
+function alimentosCreditosHTML(){
+  var vistos={},lineas=[];
+  Object.keys(ALIMENTO_FOTOS).forEach(function(k){
+    var f=ALIMENTO_FOTOS[k];
+    var clave=f.fuente||'';
+    if(!clave||vistos[clave])return; vistos[clave]=1;
+    lineas.push('<div style="font-size:12px;color:var(--m);padding:2px 0">📷 '+safeText(f.credito||f.fuente)+'</div>');
+  });
+  if(!lineas.length)return '';
+  return '<details style="margin-top:10px"><summary style="font-size:13px;font-weight:800;cursor:pointer">📷 Créditos de las fotografías</summary>'
+    +'<div class="mini" style="margin-top:6px">'+lineas.join('')+'</div></details>';
+}
+/* ============ 🌶️ GUÍA CON TAJÍN (dos grupos, mismo sistema de tarjetas) ============ */
+/* ============ 📝 MIS GUÍAS TM6 (capa de usuario, sincronizada) ============
+   Creadas y editadas desde Windows con el MISMO modal del editor de guías
+   existente (guiasEditorAbrir). Viajan en state por el sync de siempre
+   (Supabase + Worker, unión por id/updated_at) y aparecen igual en el
+   iPhone dentro de Cocina → Thermomix TM6. La foto se comprime con el
+   patrón de resizeSkinImage; editar actualiza la MISMA guía (nunca duplica).
+   ======================================================================== */
+/* ============ HELPERS DE IMAGEN COMPARTIDOS ============
+   Compresión/hash de fotos propias y modal del editor.
+   Usados por Mis guías TM6 (fotos por paso y biblioteca de
+   accesorios). Autocontenidos: sin dependencia de las guías
+   visuales de sublimación.
+   ===================================================== */
+function gvHash(str){str=String(str||'');var h=5381,i=str.length;while(i){h=(h*33)^str.charCodeAt(--i);}return (h>>>0).toString(36)+'-'+str.length.toString(36);}
+function gvCompressImage(file,maxW){
+  return new Promise(function(res,rej){
+    try{
+      var r=new FileReader();
+      r.onload=function(){
+        var img=new Image();
+        img.onload=function(){
+          var w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+          var k=Math.min(1,maxW/Math.max(w,h));
+          var c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);
+          var ctx=c.getContext('2d');ctx.drawImage(img,0,0,c.width,c.height);
+          res(c.toDataURL('image/jpeg',0.72));
+        };
+        img.onerror=function(){rej(new Error('imagen no legible'))};
+        img.src=r.result;
+      };
+      r.onerror=function(){rej(new Error('lectura fallida'))};
+      r.readAsDataURL(file);
+    }catch(e){rej(e)}
+  });
+}
+function guiasEditorAbrir(html){
+  var d=document.getElementById('guiaEditor');
+  if(!d){d=document.createElement('div');d.id='guiaEditor';d.style.cssText='position:fixed;inset:0;z-index:13100;background:var(--pp-overlay);overflow-y:auto;-webkit-overflow-scrolling:touch';document.body.appendChild(d);}
+  window._gvPrevOverflow2=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  d.innerHTML='<div style="max-width:640px;margin:12px auto;background:var(--pp-modal);color:var(--pp-modal-text);border:1.5px solid var(--pp-modal-borde);border-radius:14px;padding:14px">'+html+'</div>';
+}
+function misGuiasTM6(){ return (state.misGuiasTM6||[]).filter(function(g){return g&&!g.deleted;}); }
+function guiaTM6PorId(id){ return misGuiasTM6().find(function(g){return String(g.id)===String(id);}); }
+function guiaTM6Nueva(){ window._tm6Edit=null; guiaTM6EditorRender(); }
+function guiaTM6Editar(id){ window._tm6Edit=String(id); guiaTM6EditorRender(); }
+function tm6PasoNorm(p){ if(typeof p==='string')return {t:p,f:'',v:'',r:''}; return Object.assign({t:'',f:'',v:'',r:''},p||{}); }
+function tm6PasoTexto(p){ var n=tm6PasoNorm(p); return n.t; }
+/* Categorías y subcategorías de la biblioteca TM6 (organización, sin cambiar el modelo base) */
+const TM6_GUIA_CATEGORIAS=[
+ {k:'salsas',   n:'🌶️ Salsas mexicanas', subs:[{k:'molcajeteada',n:'Molcajeteadas'},{k:'taquera',n:'Taqueras'},{k:'cremosa',n:'Cremosas'},{k:'tatemada',n:'Tatemadas'},{k:'especial',n:'Especiales'}]},
+ {k:'adobos',   n:'🧄 Adobos y marinados', subs:[{k:'tradicionales',n:'Tradicionales'},{k:'tacos',n:'Para tacos'},{k:'carnes',n:'Para carnes'},{k:'regionales',n:'Regionales'},{k:'especiales',n:'Especiales'}]},
+ {k:'moles',    n:'🍫 Moles y pipianes', subs:[]},
+ {k:'guisados', n:'🍲 Guisados y platillos mexicanos', subs:[]},
+ {k:'tecnicas', n:'⚙️ Guías técnicas de Thermomix TM6', subs:[]}
+];
+function tm6CategoriaNombre(k){ var c=TM6_GUIA_CATEGORIAS.find(function(x){return x.k===k;}); return c?c.n:k; }
+function tm6SubcategoriaNombre(cat,sub){ var c=TM6_GUIA_CATEGORIAS.find(function(x){return x.k===cat;}); var s=c&&c.subs.find(function(x){return x.k===sub;}); return s?s.n:sub; }
+function tm6GuiaNorm(g){ // campos opcionales con valores por defecto honestos (nada inventado)
+  return Object.assign({categoria:'',subcategoria:'',prepPrevia:'',advertencias:[],consejos:[],variantes:[],erroresComunes:[],accesorios:[],verificado:'pendiente'},g||{});
+}
+function tm6PasosLeer(){
+  (window._tm6Pasos||[]).forEach(function(p,i){
+    p.t=String((document.getElementById('tm6gP_t_'+i)||{}).value||'');
+    p.v=String((document.getElementById('tm6gP_v_'+i)||{}).value||'').trim();
+    p.r=String((document.getElementById('tm6gP_r_'+i)||{}).value||'').trim();
+  });
+}
+function tm6PasosRender(){
+  var d=document.getElementById('tm6PasosRows'); if(!d)return;
+  d.innerHTML=(window._tm6Pasos||[]).map(tm6PasoRowHTML).join('');
+}
+function tm6PasoRowHTML(p,i){
+  var src=p.f?((state.guiasMedia||{})[p.f]||''):'';
+  var opciones='<option value="">📚 De la biblioteca…</option>'+(state.tm6Accesorios||[]).filter(function(a){return (state.guiasMedia||{})[a.hash];}).map(function(a){return '<option value="'+safeText(a.hash)+'"'+(p.f===a.hash?' selected':'')+'>'+safeText(TM6_ACCESORIOS_DEF.find(function(x){return x.k===a.k;})?TM6_ACCESORIOS_DEF.find(function(x){return x.k===a.k;}).n:a.k)+'</option>';}).join('');
+  return '<div class="mini" style="margin-top:8px;background:#fff">'
+   +'<b style="font-size:13px">Paso '+(i+1)+'</b>'
+   +'<textarea id="tm6gP_t_'+i+'" rows="2" placeholder="Cocina: 100°C, 15 min, vel cuchara" style="margin-top:4px">'+safeText(p.t)+'</textarea>'
+   +'<input id="tm6gP_r_'+i+'" placeholder="Resultado esperado: textura, color o señal de listo (ej. espesa y sin grumos)" value="'+safeText(p.r)+'" style="margin-top:4px;font-size:12.5px">'
+   +'<div class="row" style="gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap">'
+   +'<input id="tm6gP_v_'+i+'" placeholder="Video del paso (URL, opcional)" value="'+safeText(p.v)+'" style="flex:1;min-width:150px">'
+   +'<select id="tm6gP_b_'+i+'" style="max-width:150px;font-size:12px" onchange="tm6PasoDeBiblioteca('+i+',this.value)">'+opciones+'</select>'
+   +(src?'<img src="'+src+'" alt="foto del paso" style="width:40px;height:40px;object-fit:cover;border-radius:8px">':'')
+   +'<label class="btn" style="min-height:36px;font-size:12px;display:inline-flex;align-items:center;gap:4px">📷 Subir<input type="file" accept="image/*" style="display:none" data-pasoi="'+i+'" onchange="tm6PasoFotoChange(this)"></label>'
+   +'<button class="btn" style="min-height:36px;font-size:12px" onclick="tm6PasoQuitar('+i+')">✕</button>'
+   +'</div></div>';
+}
+function tm6PasoAgregar(){
+  tm6PasosLeer();
+  window._tm6Pasos=window._tm6Pasos||[];
+  window._tm6Pasos.push({t:'',f:'',v:''});
+  tm6PasosRender();
+}
+function tm6PasoQuitar(i){
+  tm6PasosLeer();
+  window._tm6Pasos.splice(i,1);
+  tm6PasosRender();
+}
+function tm6PasoDeBiblioteca(i,hash){
+  tm6PasosLeer();
+  (window._tm6Pasos||[])[i].f=hash||'';
+  tm6PasosRender();
+}
+function tm6PasoFotoChange(input){
+  var f=input.files&&input.files[0]; if(!f)return;
+  var i=+input.getAttribute('data-pasoi');
+  try{
+    gvCompressImage(f,1000).then(function(dataUrl){
+      var hash=gvHash(dataUrl);
+      state.guiasMedia=state.guiasMedia||{};
+      state.guiasMedia[hash]=dataUrl; // mismo almacén con dedupe por hash
+      tm6PasosLeer();
+      (window._tm6Pasos||[])[i].f=hash;
+      tm6PasosRender();
+    }).catch(function(){alert('No se pudo leer la imagen.');});
+  }catch(e){ alert('No se pudo procesar la foto.'); }
+}
+function guiaTM6EditorRender(){
+  var e=window._tm6Edit;
+  var g=e?guiaTM6PorId(e):null;
+  var gN=tm6GuiaNorm(g||{});
+  var pasos=g?(g.pasos||[]).map(tm6PasoNorm):[{t:'',f:'',v:'',r:''}];
+  window._tm6Pasos=pasos;
+  window._tm6Accs=gN.accesorios||[];
+  var subs=(TM6_GUIA_CATEGORIAS.find(function(c){return c.k===gN.categoria;})||{}).subs||[];
+  var subOpts=subs.map(function(s){return '<option value="'+s.k+'"'+(gN.subcategoria===s.k?' selected':'')+'>'+safeText(s.n)+'</option>';}).join('');
+  var accChips=TM6_ACCESORIOS_DEF.map(function(a){
+    var on=(window._tm6Accs||[]).indexOf(a.k)>=0;
+    return '<button type="button" class="btn'+(on?' primary':'')+'" style="font-size:12px;padding:6px 10px;min-height:34px" onclick="tm6AccToggle(\''+a.k+'\')">'+(on?'✓ ':'')+safeText(a.n)+'</button>';
+  }).join('');
+  var html='<div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:17px">'+(g?'✏️ Editar guía TM6':'➕ Nueva guía TM6')+'</b>'
+    +'<button class="btn" style="min-height:44px" onclick="document.getElementById(\'guiaEditor\').remove();document.body.style.overflow=\'\'">✕</button></div>'
+    +'<div class="grid" style="margin-top:10px">'
+    +'<input id="tm6gNombre" placeholder="Nombre (ej. Crema de elote TM6)" value="'+safeText(g?g.nombre:'')+'">'
+    +'<input id="tm6gTiempo" type="number" placeholder="Tiempo total (min)" value="'+(g?g.tiempo:'')+'">'
+    +'<input id="tm6gKcal" type="number" placeholder="kcal aprox. (opcional)" value="'+(g?g.kcal:'')+'">'
+    +'</div>'
+    +'<div class="grid" style="margin-top:8px">'
+    +'<div><label style="font-weight:800;font-size:13px">Categoría</label><select id="tm6gCat" onchange="tm6CatChange()">'
+    +'<option value=""'+(gN.categoria?'':' selected')+'>Sin categoría</option>'
+    +TM6_GUIA_CATEGORIAS.map(function(c){return '<option value="'+c.k+'"'+(gN.categoria===c.k?' selected':'')+'>'+safeText(c.n)+'</option>';}).join('')
+    +'</select></div>'
+    +'<div id="tm6gSubWrap"><label style="font-weight:800;font-size:13px">Subcategoría (opcional)</label><select id="tm6gSub"><option value=""'+(gN.subcategoria?'':' selected')+'>—</option>'+subOpts+'</select></div>'
+    +'</div>'
+    +'<div class="row" style="gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap"><b style="font-size:13px">Estado:</b>'
+    +'<button type="button" class="btn" style="min-height:36px;font-size:12px" data-verif="'+safeText(gN.verificado==='verificado'?'verificado':'pendiente')+'" onclick="tm6VerificadoToggle()">'+(gN.verificado==='verificado'?'✅ Verificado (parámetros comprobados)':'🧪 Pendiente de prueba')+'</button>'
+    +'<span class="muted" style="font-size:11.5px">Marca verificado SOLO cuando hayas cocinado la receta y comprobado los parámetros.</span></div>'
+    +'<label style="font-weight:800;font-size:13px;margin-top:10px;display:block">👩‍🍳 Preparación previa (remojar, desvenar, marinar…)</label>'
+    +'<textarea id="tm6gPrep" rows="2" placeholder="Ej. Remoja los chiles en agua caliente 15 min y escúrrelos.">'+safeText(gN.prepPrevia)+'</textarea>'
+    +'<label style="font-weight:800;font-size:13px;margin-top:10px;display:block">Ingredientes y cantidades (uno por línea: 100 g · arroz)</label>'
+    +'<textarea id="tm6gIng" rows="4" placeholder="1 taza de arroz&#10;2 tazas de agua&#10;1 cdita de sal">'+safeText(g?((g.ingredientes||[]).join('\n')):'')+'</textarea>'
+    +'<label style="font-weight:800;font-size:13px;margin-top:10px;display:block">Pasos con parámetros TM6 — cada paso con foto, video y resultado esperado</label>'
+    +'<div id="tm6PasosRows">'+pasos.map(tm6PasoRowHTML).join('')+'</div>'
+    +'<button class="btn" style="margin-top:8px" onclick="tm6PasoAgregar()">➕ Añadir paso</button>'
+    +'<div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap"><b style="font-size:13px;align-self:center">📷 Accesorios usados:</b>'+accChips+'</div>'
+    +'<label style="font-weight:800;font-size:13px;margin-top:10px;display:block">⚠️ Advertencias (una por línea)</label>'
+    +'<textarea id="tm6gAdv" rows="2" placeholder="No pases de velocidad 4 con la mariposa puesta.">'+safeText((gN.advertencias||[]).join('\n'))+'</textarea>'
+    +'<label style="font-weight:800;font-size:13px;margin-top:8px;display:block">💡 Consejos (una por línea)</label>'
+    +'<textarea id="tm6gConsejos" rows="2" placeholder="Si queda muy espesa, agrega 50 ml de caldo.">'+safeText((gN.consejos||[]).join('\n'))+'</textarea>'
+    +'<label style="font-weight:800;font-size:13px;margin-top:8px;display:block">🛠️ Errores comunes y soluciones (uno por línea: Error | Solución)</label>'
+    +'<textarea id="tm6gErrores" rows="3" placeholder="Salsa aguada | Cocina 5 min más a 100°C sin cubilete&#10;Sabor ácido | Agrega 1 cdita de azúcar">'+safeText((gN.erroresComunes||[]).map(function(x){return x.e+' | '+x.s;}).join('\n'))+'</textarea>'
+    +'<label style="font-weight:800;font-size:13px;margin-top:8px;display:block">🔄 Variantes (una por línea)</label>'
+    +'<textarea id="tm6gVariantes" rows="2" placeholder="Con chile habanero en vez de serrano para más picor.">'+safeText((gN.variantes||[]).join('\n'))+'</textarea>'
+    +'<label style="font-weight:800;font-size:13px;margin-top:12px;display:block">Fotografía principal de la guía</label>'
+    +'<div class="row" style="gap:8px;align-items:center"><input type="file" id="tm6gFoto" accept="image/*">'+(g&&g.foto?'<span class="muted" style="font-size:12px">✓ foto actual</span>':'')+'</div>'
+    +'<input id="tm6gVideo" placeholder="Video de la guía (URL, opcional)" value="'+safeText(g?g.videoUrl:'')+'" style="margin-top:8px">'
+    +'<button class="btn primary" style="width:100%;min-height:46px;margin-top:14px" onclick="guiaTM6Guardar()">💾 Guardar y sincronizar</button>';
+  guiasEditorAbrir(html); // MISMO modal del editor de guías existente
+}
+function tm6CatChange(){
+  var cat=(document.getElementById('tm6gCat')||{}).value||'';
+  var subs=(TM6_GUIA_CATEGORIAS.find(function(c){return c.k===cat;})||{}).subs||[];
+  var w=document.getElementById('tm6gSubWrap');
+  if(w)w.innerHTML='<label style="font-weight:800;font-size:13px">Subcategoría (opcional)</label><select id="tm6gSub"><option value="">—</option>'+subs.map(function(s){return '<option value="'+s.k+'">'+safeText(s.n)+'</option>';}).join('')+'</select>';
+}
+function tm6VerificadoToggle(){
+  var b=document.querySelector('#guiaEditor button[onclick="tm6VerificadoToggle()"]');
+  if(b){
+    if(b.textContent.indexOf('✅')===0){ b.textContent='🧪 Pendiente de prueba'; b.setAttribute('data-verif','pendiente'); }
+    else{ b.textContent='✅ Verificado (parámetros comprobados)'; b.setAttribute('data-verif','verificado'); }
+  }
+}
+function tm6AccToggle(k){
+  window._tm6Accs=window._tm6Accs||[];
+  var i=window._tm6Accs.indexOf(k);
+  if(i>=0)window._tm6Accs.splice(i,1); else window._tm6Accs.push(k);
+  var b=[...document.querySelectorAll('#guiaEditor button')].find(function(x){return x.onclick&&String(x.onclick).includes("tm6AccToggle('"+k+"')");});
+  if(b){b.classList.toggle('primary');b.textContent=(b.classList.contains('primary')?'✓ ':'')+b.textContent.replace(/^✓ /,'');}
+}
+async function guiaTM6Guardar(){
+  var nombre=String(((document.getElementById('tm6gNombre')||{}).value)||'').trim();
+  if(!nombre){alert('Escribe el nombre de la guía.');return;}
+  var ingredientes=String((document.getElementById('tm6gIng')||{}).value||'').split('\n').map(function(x){return x.trim();}).filter(Boolean);
+  tm6PasosLeer();
+  var pasos=(window._tm6Pasos||[]).map(function(p){return {t:String(p.t||'').trim(),f:p.f||'',v:p.v||'',r:p.r||''};}).filter(function(p){return p.t;});
+  if(!pasos.length){alert('Escribe al menos un paso.');return;}
+  var lineas=function(id){return String((document.getElementById(id)||{}).value||'').split('\n').map(function(x){return x.trim();}).filter(Boolean);};
+  var errores=lineas('tm6gErrores').map(function(l){var m=l.split('|');return {e:(m[0]||'').trim(),s:(m[1]||'').trim()};}).filter(function(x){return x.e;});
+  var verifBtn=document.querySelector('#guiaEditor button[data-verif]');
+  var verificado=(verifBtn&&verifBtn.getAttribute('data-verif'))||(guiaTM6PorId(window._tm6Edit)?(guiaTM6PorId(window._tm6Edit).verificado||'pendiente'):'pendiente');
+  var datos={
+    categoria:(document.getElementById('tm6gCat')||{}).value||'',
+    subcategoria:(document.getElementById('tm6gSub')||{}).value||'',
+    prepPrevia:String((document.getElementById('tm6gPrep')||{}).value||'').trim(),
+    advertencias:lineas('tm6gAdv'),consejos:lineas('tm6gConsejos'),
+    erroresComunes:errores,variantes:lineas('tm6gVariantes'),
+    accesorios:window._tm6Accs||[],verificado:verificado
+  };
+  var e=window._tm6Edit;
+  var g=e?guiaTM6PorId(e):null;
+  var foto=g?g.foto:'';
+  var fEl=document.getElementById('tm6gFoto');
+  if(fEl&&fEl.files&&fEl.files[0]){
+    try{ foto=await gvCompressImage(fEl.files[0],1000); var hf=gvHash(foto); state.guiasMedia=state.guiasMedia||{}; state.guiasMedia[hf]=foto; }catch(err){ alert('No se pudo procesar la foto.'); return; }
+  }
+  var ahora=new Date().toISOString();
+  if(g){
+    g.nombre=nombre; g.ingredientes=ingredientes; g.pasos=pasos; g.foto=foto;
+    g.tiempo=+((document.getElementById('tm6gTiempo')||{}).value)||0;
+    g.kcal=+((document.getElementById('tm6gKcal')||{}).value)||0;
+    g.videoUrl=String((document.getElementById('tm6gVideo')||{}).value||'').trim();
+    Object.assign(g,datos);
+    g.updated_at=ahora; // MISMA guía: editar nunca duplica
+  }else{
+    state.misGuiasTM6=state.misGuiasTM6||[];
+    state.misGuiasTM6.push(Object.assign({id:ppUUID(),nombre:nombre,ingredientes:ingredientes,pasos:pasos,foto:foto,
+      tiempo:+((document.getElementById('tm6gTiempo')||{}).value)||0,
+      kcal:+((document.getElementById('tm6gKcal')||{}).value)||0,
+      videoUrl:String((document.getElementById('tm6gVideo')||{}).value||'').trim(),
+      updated_at:ahora},datos));
+  }
+  save(); renderMisGuiasTM6();
+  try{ if(typeof cloudSave==='function') cloudSave(true); }catch(err){}
+  var d=document.getElementById('guiaEditor'); if(d)d.remove(); document.body.style.overflow='';
+}
+function guiaTM6Borrar(id){
+  if(!confirm('¿Borrar esta guía? Se quita también en el celular al sincronizar.'))return;
+  var g=guiaTM6PorId(id); if(!g)return;
+  g.deleted=true; g.updated_at=new Date().toISOString();
+  save(); renderMisGuiasTM6();
+  try{ if(typeof cloudSave==='function') cloudSave(true); }catch(err){}
+}
+function renderMisGuiasTM6(){
+  var el=document.getElementById('misGuiasTM6Out'); if(!el)return;
+  var q=String((document.getElementById('tm6gSearch')||{}).value||'').toLowerCase();
+  var cat=window._tm6FiltroCat||'';
+  var sub=window._tm6FiltroSub||'';
+  var guias=misGuiasTM6().map(tm6GuiaNorm).slice().sort(function(a,b){return String(b.updated_at||'').localeCompare(String(a.updated_at||''));});
+  guias=guias.filter(function(g){
+    if(cat&&g.categoria!==cat)return false;
+    if(sub&&g.subcategoria!==sub)return false;
+    if(q){
+      var busqueda=(g.nombre+' '+(g.ingredientes||[]).join(' ')+' '+tm6CategoriaNombre(g.categoria)+' '+tm6SubcategoriaNombre(g.categoria,g.subcategoria)).toLowerCase();
+      if(busqueda.indexOf(q)<0)return false;
+    }
+    return true;
+  });
+  var chips='<div class="row" style="gap:6px;margin:8px 0;flex-wrap:wrap">'
+    +'<button class="btn'+(cat===''?' primary':'')+'" style="font-size:12px;padding:6px 10px;min-height:34px" onclick="tm6FiltroCat(\'\')">Todas</button>'
+    +TM6_GUIA_CATEGORIAS.map(function(c){
+      return '<button class="btn'+(cat===c.k?' primary':'')+'" style="font-size:12px;padding:6px 10px;min-height:34px" onclick="tm6FiltroCat(\''+c.k+'\')">'+safeText(c.n)+'</button>';
+    }).join('')+'</div>';
+  var subs=(TM6_GUIA_CATEGORIAS.find(function(c){return c.k===cat;})||{}).subs||[];
+  if(subs.length){
+    chips+='<div class="row" style="gap:6px;margin:0 0 8px;flex-wrap:wrap">'
+      +subs.map(function(s){return '<button class="btn'+(sub===s.k?' primary':'')+'" style="font-size:11.5px;padding:5px 8px;min-height:30px" onclick="tm6FiltroSub(\''+s.k+'\')">'+safeText(s.n)+'</button>';}).join('')+'</div>';
+  }
+  var buscador='<input id="tm6gSearch" placeholder="🔍 Buscar por nombre, ingrediente o categoría" value="'+safeText(q)+'" oninput="renderMisGuiasTM6()" style="margin-top:8px">';
+  if(!guias.length){el.innerHTML=buscador+chips+'<p class="muted" style="margin-top:8px">No hay guías con ese filtro. Crea una con "➕ Nueva guía TM6": se sincroniza sola con tu iPhone.</p>';return;}
+  el.innerHTML=buscador+chips+'<div class="list" style="margin-top:6px">'+guias.map(function(g){
+    var cTM5=null;
+    try{ cTM5=(typeof recetaClasificarTM5==='function')?recetaClasificarTM5({method:'TM5',steps:(g.pasos||[]).map(tm6PasoTexto)}):null; }catch(e){}
+    var badge=(g.verificado==='verificado')
+      ?'<span style="background:#eaf9f0;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800">✅ Verificado</span>'
+      :'<span style="background:#fff8f0;border:1px solid #f0d9a8;color:#8a5a2a;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800">🧪 Pendiente de prueba</span>';
+    var catTxt=g.categoria?(tm6CategoriaNombre(g.categoria)+(g.subcategoria?' · '+tm6SubcategoriaNombre(g.categoria,g.subcategoria):'')):'';
+    var accs=(g.accesorios||[]).map(function(k){
+      var a=TM6_ACCESORIOS_DEF.find(function(x){return x.k===k;});
+      var src=tm6AccesorioSrc(k);
+      return '<span style="display:inline-flex;align-items:center;gap:5px;background:#f3eefb;border:1px solid #d9cdf0;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#5d3b9c">'+(src?'<img src="'+src+'" alt="" style="width:18px;height:18px;object-fit:cover;border-radius:5px">':'')+safeText(a?a.n:k)+'</span>';
+    }).join('');
+    return '<details class="card" style="margin:8px 0"><summary style="font-weight:800">'+safeText(g.nombre)
+      +' <span class="muted" style="font-size:12px">· '+(g.tiempo?g.tiempo+' min':'—')+(g.kcal?' · ~'+g.kcal+' kcal':'')+'</span> '+badge+'</summary>'
+      +(catTxt?'<div class="muted" style="font-size:12px;margin-top:6px">'+safeText(catTxt)+'</div>':'')
+      +(g.foto?'<div style="margin-top:8px;border-radius:12px;overflow:hidden"><img src="'+g.foto+'" alt="'+safeText(g.nombre)+'" style="width:100%;max-height:240px;object-fit:cover;display:block"></div>':'')
+      +(cTM5?'<div style="margin-top:8px;font-size:13px;font-weight:800;color:#12352a">'+cTM5.nivel+' '+safeText(typeof recetaTM5TextoCorto==='function'?recetaTM5TextoCorto(cTM5):'')+'</div>':'')
+      +(g.prepPrevia?'<div style="margin-top:8px;background:#fff8f0;border:1px solid #f0d9a8;border-radius:10px;padding:8px 10px"><b style="font-size:13px">👩‍🍳 Antes de empezar</b><div style="font-size:13px;margin-top:3px">'+safeText(g.prepPrevia)+'</div></div>':'')
+      +'<div style="margin-top:8px"><b style="font-size:13px">🧺 Ingredientes</b><ul style="margin:4px 0 0;padding-left:18px;font-size:13.5px">'+g.ingredientes.map(function(x){return '<li>'+safeText(x)+'</li>';}).join('')+'</ul></div>'
+      +(accs?'<div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">'+accs+'</div>':'')
+      +'<div style="margin-top:8px"><b style="font-size:13px">🤖 Pasos TM6</b><ol style="margin:4px 0 0;padding-left:18px;font-size:13.5px">'+(g.pasos||[]).map(function(p){
+        var n=tm6PasoNorm(p);
+        var src=n.f?((state.guiasMedia||{})[n.f]||''):'';
+        return '<li style="margin:6px 0">'+safeText(n.t)
+          +(n.r?'<div style="margin-top:3px;font-size:12.5px;color:#0d6043;font-weight:700">✓ Resultado esperado: '+safeText(n.r)+'</div>':'')
+          +(src?'<div style="margin-top:6px"><img src="'+src+'" alt="foto del paso" style="max-width:100%;max-height:220px;object-fit:cover;display:block;border-radius:10px"></div>':'')
+          +(n.v?'<div style="margin-top:4px"><button class="btn" style="font-size:11px;padding:5px 10px;min-height:32px" onclick="window.open(\''+safeText(n.v)+'\',\'_blank\')">▶ Video de este paso</button></div>':'')
+          +'</li>';
+      }).join('')+'</ol></div>'
+      +((g.advertencias||[]).length?'<div class="warn" style="margin-top:8px;font-size:12.5px"><b>⚠️ Advertencias:</b><ul style="margin:4px 0 0;padding-left:18px">'+g.advertencias.map(function(x){return '<li>'+safeText(x)+'</li>';}).join('')+'</ul></div>':'')
+      +((g.consejos||[]).length?'<div class="mini" style="margin-top:8px;font-size:13px"><b>💡 Consejos:</b><ul style="margin:4px 0 0;padding-left:18px">'+g.consejos.map(function(x){return '<li>'+safeText(x)+'</li>';}).join('')+'</ul></div>':'')
+      +((g.erroresComunes||[]).length?'<div class="mini" style="margin-top:8px;font-size:13px;background:#fdf6f0"><b>🛠️ Errores y soluciones:</b><ul style="margin:4px 0 0;padding-left:18px">'+g.erroresComunes.map(function(x){return '<li><b>'+safeText(x.e)+'</b> → '+safeText(x.s)+'</li>';}).join('')+'</ul></div>':'')
+      +((g.variantes||[]).length?'<div class="mini" style="margin-top:8px;font-size:13px"><b>🔄 Variantes:</b><ul style="margin:4px 0 0;padding-left:18px">'+g.variantes.map(function(x){return '<li>'+safeText(x)+'</li>';}).join('')+'</ul></div>':'')
+      +(g.videoUrl?'<div style="margin-top:8px"><button class="btn" style="font-size:12px" onclick="window.open(\''+safeText(g.videoUrl)+'\',\'_blank\')">▶ Ver video</button></div>':'')
+      +'<div class="row" style="margin-top:10px;gap:6px"><button class="btn" style="font-size:12px" onclick="guiaTM6Editar(\''+g.id+'\')">✏️ Editar</button>'
+      +'<button class="btn" style="font-size:12px" onclick="guiaTM6Borrar(\''+g.id+'\')">🗑️ Borrar</button>'
+      +'<span class="muted" style="font-size:11px;align-self:center">☁️ Se sincroniza con tu iPhone</span></div>'
+      +'</details>';
+  }).join('')+'</div>';
+}
+function tm6FiltroCat(c){ window._tm6FiltroCat=c; window._tm6FiltroSub=''; renderMisGuiasTM6(); }
+function tm6FiltroSub(s){ window._tm6FiltroSub=s; renderMisGuiasTM6(); }
+function misGuiasTM6HTML(){
+  return '<div class="card" style="border:2px solid #8b73bf;background:#faf8ff">'
+    +'<div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0;color:#5d3b9c">📝 Mis guías TM6</h3>'
+    +'<button class="btn primary" style="min-height:44px" onclick="guiaTM6Nueva()">➕ Nueva guía TM6</button></div>'
+    +'<p class="muted" style="margin:6px 0 0;font-size:13px">Crea aquí tus recetas con parámetros TM6 (velocidad, temperatura y tiempo por paso). Se guardan en este dispositivo y se sincronizan con tu iPhone por el canal de siempre: sin volver a escribirlas.</p>'
+    +'<div id="misGuiasTM6Out"></div>'
+    +'</div>';
+}
+/* ============ 📷 BIBLIOTECA DE FOTOS DE ACCESORIOS TM6 ============
+   Reutilizable: cada accesorio guarda UN hash en state.guiasMedia
+   (dedupe por hash, el MISMO almacén del sistema de guías). Así las
+   fotos no se suben dos veces y viajan con el sync de siempre.
+   No se usan imágenes incorrectas: solo fotos propias + 2 de
+   referencia CC de la máquina completa (assets/tm6/CREDITOS.md).
+   ================================================================= */
+const TM6_ACCESORIOS_DEF=[
+ {k:'vaso',n:'Vaso mezclador'},{k:'cuchillas',n:'Cuchillas'},{k:'tapa',n:'Tapa y bocal'},
+ {k:'cubilete',n:'Cubilete'},{k:'cestillo',n:'Cestillo'},{k:'mariposa',n:'Mariposa'},
+ {k:'varoma',n:'Varoma'},{k:'espatula',n:'Espátula'},{k:'selector',n:'Selector'}
+];
+function tm6Accesorio(k){ return (state.tm6Accesorios||[]).find(function(a){return a&&a.k===k;}); }
+function tm6AccesorioSrc(k){ var a=tm6Accesorio(k); return a?((state.guiasMedia||{})[a.hash]||''):''; }
+function tm6AccesorioElegir(k){
+  var input=document.createElement('input');
+  input.type='file'; input.accept='image/*';
+  input.onchange=function(){
+    var f=input.files&&input.files[0]; if(!f)return;
+    try{ gvCompressImage(f,1000).then(function(dataUrl){
+      var hash=gvHash(dataUrl);
+      state.guiasMedia=state.guiasMedia||{};
+      state.guiasMedia[hash]=dataUrl;
+      state.tm6Accesorios=state.tm6Accesorios||[];
+      var a=tm6Accesorio(k);
+      if(a){ a.hash=hash; a.updated_at=new Date().toISOString(); }
+      else{ state.tm6Accesorios.push({k:k,hash:hash,updated_at:new Date().toISOString()}); }
+      save(); renderTM6Biblioteca();
+      try{ if(typeof cloudSave==='function') cloudSave(true); }catch(e){}
+    }).catch(function(){alert('No se pudo leer la imagen.');}); }
+    catch(e){ alert('No se pudo procesar la foto.'); }
+  };
+  input.click();
+}
+function tm6AccesorioQuitar(k){
+  if(!confirm('¿Quitar la foto de este accesorio de la biblioteca?'))return;
+  state.tm6Accesorios=(state.tm6Accesorios||[]).filter(function(a){return a.k!==k;});
+  save(); renderTM6Biblioteca();
+  try{ if(typeof cloudSave==='function') cloudSave(true); }catch(e){}
+}
+function renderTM6Biblioteca(){
+  var el=document.getElementById('tm6BibliotecaOut'); if(!el)return;
+  el.innerHTML='<div class="grid" style="margin-top:8px">'+TM6_ACCESORIOS_DEF.map(function(a){
+    var src=tm6AccesorioSrc(a.k);
+    var vis=src?'<img src="'+src+'" alt="'+safeText(a.n)+'" style="width:100%;height:88px;object-fit:cover;border-radius:10px;display:block">'
+      :'<div style="width:100%;height:88px;border:2px dashed #cbb9e8;border-radius:10px;display:grid;place-items:center;color:#8a7bb0;font-size:11px;text-align:center;padding:6px">➕ Añade tu foto</div>';
+    return '<div class="mini" style="text-align:center;padding:8px">'+vis
+      +'<b style="font-size:12.5px;display:block;margin-top:6px">'+safeText(a.n)+'</b>'
+      +'<div class="row" style="gap:4px;justify-content:center;margin-top:6px">'
+      +'<button class="btn" style="font-size:11px;padding:5px 9px;min-height:34px" onclick="tm6AccesorioElegir(\''+a.k+'\')">📷 '+(src?'Cambiar':'Subir')+'</button>'
+      +(src?'<button class="btn" style="font-size:11px;padding:5px 9px;min-height:34px" onclick="tm6AccesorioQuitar(\''+a.k+'\')">✕</button>':'')
+      +'</div></div>';
+  }).join('')+'</div>'
+  +'<div class="muted" style="font-size:11px;margin-top:8px">Fotos de referencia (CC, máquina completa): <b>TM6 Vorwerk</b> y <b>Thermomix 2014</b> — en <span style="font-family:monospace">assets/tm6/</span> con sus créditos. Las fotos de accesorios son tuyas: súbelas una vez y reutilízalas en tus guías.</div>';
+}
+function tm6BibliotecaHTML(){
+  return '<div class="card" style="border:2px solid #8b73bf;background:#faf8ff;margin-top:12px">'
+    +'<div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0;color:#5d3b9c">📷 Biblioteca de fotos de accesorios</h3>'
+    +'<div class="row" style="gap:6px">'
+    +'<a class="btn" style="min-height:40px;font-size:12px" href="assets/tm6/tm6-vorwerk.jpg" target="_blank" rel="noopener">Referencia TM6</a>'
+    +'<a class="btn" style="min-height:40px;font-size:12px" href="assets/tm6/thermomix-2014.jpg" target="_blank" rel="noopener">Referencia 2014</a></div></div>'
+    +'<p class="muted" style="margin:6px 0 0;font-size:13px">Sube UNA foto por accesorio y reutilízala en tus guías (cada paso puede tomarla de aquí). Se sincroniza con tu iPhone igual que las guías.</p>'
+    +'<div id="tm6BibliotecaOut"></div>'
+    +'</div>';
 }
 
 /* ============ 🍪 GALLETAS Y SNACKS AL HORNO (v61) ============
@@ -6825,6 +7412,37 @@ body.dark .recetas2 .recipe-card{background:#223029}
 .r2-stat{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--t);background:var(--g2);border-radius:8px;padding:5px 9px;font-variant-numeric:tabular-nums}
 .recetas2 .recipe-body{border-top:1px solid var(--b);padding:12px 14px 14px;margin-top:12px}
 .recetas2 .cat-summary{border-radius:12px}
+/* 📷 Fotos del catálogo de recetas (tarjetas visuales) */
+.r2-foto{position:relative;aspect-ratio:16/10;max-height:220px;overflow:hidden;background:var(--g2);border-radius:12px;margin-bottom:13px}
+.r2-foto img{width:100%;height:100%;object-fit:cover;display:block}
+.r2-foto-badge{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.62);color:#fff;font-size:10.5px;font-weight:800;border-radius:999px;padding:3px 9px}
+.r-det-foto{position:relative;border-radius:14px;overflow:hidden;margin-bottom:12px;background:var(--g2)}
+.r-det-foto img{width:100%;max-height:280px;object-fit:cover;display:block}
+.r-det-credito{font-size:11px;color:#5a6a63;padding:6px 10px 8px;background:rgba(255,255,255,.85)}
+body.dark .r-det-credito{background:#223029;color:#b9c9c0}
+/* Contraste y separación de las tarjetas del catálogo (colores explícitos:
+   no dependen de los tokens personalizables del tema) */
+.recetas2 .r2-name{color:#12352a;line-height:1.3}
+body.dark .recetas2 .r2-name{color:#e9f3ee}
+.recetas2 .r2-cat{color:#0d6043;background:#dff0e6;padding:3px 10px;margin-top:6px}
+body.dark .recetas2 .r2-cat{color:#8fd3b4;background:#2b4236}
+.recetas2 .r2-desc{color:#44534b;line-height:1.55;margin:10px 0 13px}
+body.dark .recetas2 .r2-desc{color:#c3d3cb}
+.recetas2 .r2-hd{gap:12px}
+.recetas2 .r2-stats{gap:7px}
+.recetas2 .r2-stat{color:#12352a;background:#eef4f0;border:1px solid #e2eae4;padding:6px 10px;gap:5px}
+body.dark .recetas2 .r2-stat{color:#d9e7e0;background:#2b3a33;border-color:#35473e}
+/* 🥕 Fotos de alimentos (guías y Nevera) */
+.alim-foto{position:relative;display:inline-flex;flex:none;overflow:hidden;border-radius:10px;background:var(--g2);vertical-align:middle}
+.alim-foto .alim-emoji{display:grid;place-items:center;width:100%;height:100%}
+.alim-foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.alim-s{width:30px;height:30px}.alim-s .alim-emoji{font-size:15px}
+.alim-m{width:40px;height:40px}.alim-m .alim-emoji{font-size:20px}
+.alim-l{width:72px;height:72px;border-radius:14px}.alim-l .alim-emoji{font-size:34px}
+.alim-card{display:flex;gap:12px;align-items:flex-start}
+.calc-food-icon .alim-m{width:32px;height:32px;border-radius:8px}
+/* proporción uniforme y sin deformación: la foto SIEMPRE llena su caja
+   cuadrada con object-fit:cover (nunca se estira) */
 /* Hub visual de modos de cocina (tarjetas con foto grande) */
 .cocina-hub{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:2px 0 14px}
 .cocina-card{border:1px solid var(--b);border-radius:18px;overflow:hidden;background:var(--tarj-bg,#fff);border-color:var(--tarj-borde,var(--b));box-shadow:0 2px 10px #00000010;cursor:pointer;transition:transform .15s,box-shadow .15s}
@@ -7006,12 +7624,13 @@ function renderVeggies(){
       var tm=String(v.tm5||''); if(/varoma/i.test(tm)&&!/°C/.test(tm))tm=tm.replace(/[Vv]aroma/,'Varoma (vapor ~115°C)'); if(!/vel/i.test(tm))tm+=', vel 1';
       var ollaTxt=(v.olla==='—')?'no aplica (mejor al horno)':(safeText(v.olla)+' min'+((addMin&&parseVegMin(v.olla))?(' (+'+addMin+')'):''));
       var vaporTxt=(v.vapor==='—')?'no aplica':(safeText(v.vapor)+' min');
-      return '<div class="mini"><b>'+foodEmoji(v.n)+' '+safeText(v.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(v.corte)+'</span>'
+      return '<div class="mini alim-card">'+alimentoFotoHTML(v.n,'l')
+        +'<div style="min-width:0;flex:1"><b>'+safeText(v.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(v.corte)+'</span>'
         +'<div style="font-size:13px;margin-top:4px">🫕 <b>Olla (hervir):</b> '+ollaTxt+'</div>'
         +'<div style="font-size:13px">♨️ <b>Vapor:</b> '+vaporTxt+'</div>'
         +'<div style="font-size:13px">🤖 <b>Thermomix TM6:</b> '+safeText(tm)+'</div>'
         +(v.tip?'<div class="muted" style="font-size:12px;margin-top:2px">💡 '+safeText(v.tip)+'</div>':'')
-        +'</div>';
+        +'</div></div>';
     }).join('')+'</div>'):'<p class="muted">No encontré esa verdura. Prueba otro nombre.</p>');
 }
 function verdurasCocidasHTML(){
@@ -7023,6 +7642,7 @@ function verdurasCocidasHTML(){
     +['poca','normal','mucha'].map(function(x){return '<button class="btn'+(x==='normal'?' primary':'')+'" id="vegQ_'+x+'" onclick="setVegQty(\''+x+'\')">'+({poca:'Poca',normal:'Normal',mucha:'Mucha'})[x]+'</button>';}).join('')
     +'</div>'
     +'<div id="veggiesOut" style="margin-top:10px"></div>'
+    +alimentosCreditosHTML()
     +'<details style="margin-top:10px"><summary>🧺 Combinar varias verduras</summary><div class="card"><p class="muted" style="margin-top:0;font-size:12px">Elige 2 o más y te digo el orden para agregarlas y que queden cocidas al mismo tiempo (sin que unas queden crudas y otras batidas).</p><div id="vegCombineOut"></div></div></details>'
     +'</div></details>';
 }
@@ -7039,7 +7659,7 @@ function vegPickToggle(name){var i=_vegPicked.indexOf(name);if(i>=0)_vegPicked.s
 function renderVegCombine(){
   var el=document.getElementById('vegCombineOut'); if(!el)return;
   var _s=el.closest('.tab'); if(_s&&!_s.classList.contains('active')&&el.children.length)return;
-  var chips=VEGGIES.map(function(v){var on=_vegPicked.indexOf(v.n)>=0;return '<button class="btn'+(on?' primary':'')+'" style="font-size:12px;padding:6px 9px;margin:2px" onclick="vegPickToggle(\''+v.n.replace(/'/g,"\\'")+'\')">'+safeText(v.n)+'</button>';}).join('');
+  var chips=VEGGIES.map(function(v){var on=_vegPicked.indexOf(v.n)>=0;return '<button class="btn'+(on?' primary':'')+'" style="font-size:12px;padding:6px 9px;margin:2px;display:inline-flex;align-items:center;gap:6px" onclick="vegPickToggle(\''+v.n.replace(/'/g,"\\'")+'\')">'+alimentoFotoHTML(v.n,'s')+'<span>'+safeText(v.n)+'</span></button>';}).join('');
   var plan;
   if(_vegPicked.length>=2){
     var sel=VEGGIES.filter(function(v){return _vegPicked.indexOf(v.n)>=0;}).map(function(v){return {n:v.n,t:parseVegMin(v.olla)};}).filter(function(x){return x.t>0;});
@@ -7105,10 +7725,11 @@ function renderHorno(){
   var q=((document.getElementById('hornoSearch')||{}).value||'').toLowerCase();
   var list=OVEN.filter(function(o){return (_hornoCat==='Todas'||o.cat===_hornoCat)&&(!q||o.n.toLowerCase().indexOf(q)>=0);});
   el.innerHTML=list.length?('<div class="grid">'+list.map(function(o){
-    return '<div class="mini"><b>'+foodEmoji(o.n)+' '+safeText(o.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(o.cat)+'</span>'
+    return '<div class="mini alim-card">'+alimentoFotoHTML(o.n,'l')
+      +'<div style="min-width:0;flex:1"><b>'+safeText(o.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(o.cat)+'</span>'
       +'<div style="font-size:13px;margin-top:4px">🌡️ <b>'+safeText(o.temp)+'</b> · ⏱️ <b>'+safeText(o.min)+' min</b></div>'
       +(o.tip?'<div class="muted" style="font-size:12px;margin-top:2px">💡 '+safeText(o.tip)+'</div>':'')
-      +'</div>';
+      +'</div></div>';
   }).join('')+'</div>'):'<p class="muted">Nada con ese nombre.</p>';
 }
 function hornoHTML(){
@@ -7119,6 +7740,7 @@ function hornoHTML(){
     +'<input id="hornoSearch" placeholder="Busca (pollo, papa, totopos...)" oninput="renderHorno()" style="width:100%">'
     +'<div id="hornoCatRow" class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'+cats.map(function(c){return '<button class="btn'+(c==='Todas'?' primary':'')+'" data-c="'+c+'" style="font-size:12px;padding:6px 9px" onclick="setHornoCat(\''+c+'\')">'+c+'</button>';}).join('')+'</div>'
     +'<div id="hornoOut" style="margin-top:10px"></div>'
+    +alimentosCreditosHTML()
     +'</div></details>';
 }
 // ===== Thermomix TM6: funciones y trucos (moler, pulverizar, picar, batir, amasar) =====
@@ -10451,7 +11073,7 @@ function secRecetas(){
   </div>
   <div class="r2-tabs">${[['todas','Todas'],['tipo','Tipo'],['costo','Costo'],['tiempo','Tiempo'],['objetivo','Objetivo']].map(x=>`<button class="r2-tab${_tab===x[0]?' on':''}" onclick="recSetTab('${x[0]}')">${x[1]}</button>`).join('')}</div>
   <div class="r2-chips" id="recChips">${recChipsHTML()}</div>
-  <div class="r2-favrow"><span class="r2-count" id="recMethodLabel"></span><button class="r2-fav${window._portableFormat==='favoritas'?' on':''}" onclick="toggleFavoritesFilter()">⭐ Favoritas${_favN}</button><button class="btn" style="font-size:12px;padding:6px 10px;margin-left:6px" onclick="abrirAuditoriaRecetas()">🩺 Necesitan revisión</button></div>
+  <div class="r2-favrow"><span class="r2-count" id="recMethodLabel"></span><button id="soloFotoBtn" class="r2-fav${window._soloFoto?' on':''}" onclick="toggleSoloFoto()">📷 Con foto</button><button class="r2-fav${window._portableFormat==='favoritas'?' on':''}" onclick="toggleFavoritesFilter()">⭐ Favoritas${_favN}</button><button class="btn" style="font-size:12px;padding:6px 10px;margin-left:6px" onclick="abrirAuditoriaRecetas()">🩺 Necesitan revisión</button></div>
   ${suplementosHTML()}
   <div id="recipes"></div>
 </div>
@@ -10611,7 +11233,7 @@ function buildPortableMeal(){
   out.innerHTML=`<div class="card"><div class="calc-dashboard">
     <div class="calc-stat"><b>${Math.round(total.k)}</b><span>CALORÍAS</span></div><div class="calc-stat"><b>${total.p.toFixed(1)}g</b><span>PROTEÍNA</span></div>
     <div class="calc-stat"><b>${total.c.toFixed(1)}g</b><span>CARBS</span></div><div class="calc-stat"><b>${total.g.toFixed(1)}g</b><span>GRASA</span></div><div class="calc-stat"><b>${money(total.cost)}</b><span>COSTO</span></div>
-  </div>${rows.map(x=>`<div class="item">${getFoodIcon(x.name)} <b>${safeText(x.text)}</b> · ${Math.round(x.k)} kcal · P ${x.p.toFixed(1)}g</div>`).join('')}
+  </div>${rows.map(x=>`<div class="item" style="display:flex;align-items:center;gap:9px">${alimentoFotoHTML(x.name,'m')}<div style="min-width:0"><b>${safeText(x.text)}</b> · ${Math.round(x.k)} kcal · P ${x.p.toFixed(1)}g</div></div>`).join('')}
   <div class="ok" style="margin-top:8px"><b>Preparación:</b> coloca la proteína y extras sobre la base, cierra firmemente y divide en dos mitades. Mantén frío si contiene carne, huevo o lácteos.</div></div>`;
 }
 function generateWeightGainDay(){
@@ -11145,6 +11767,8 @@ function buildTabIfNeeded(i,force=false){
   try{ if(tabs[i]==='⚖️ Peso'&&typeof renderPesoInterno==='function')renderPesoInterno(); }catch(e){}
   try{ traducirBotonesDOM(el); }catch(e){}
   try{ if(tabs[i]==='👕 Ropa'){ if(typeof pintarPaletasRopa==='function')pintarPaletasRopa(); if(typeof evaluarOutfit==='function')evaluarOutfit(); if(typeof renderSavedOutfits==='function')renderSavedOutfits(); } }catch(e){}
+  try{ if(tabs[i]==='🤖 Thermomix TM6'&&typeof renderMisGuiasTM6==='function')renderMisGuiasTM6(); }catch(e){}
+  try{ if(tabs[i]==='🤖 Thermomix TM6'&&typeof renderTM6Biblioteca==='function')renderTM6Biblioteca(); }catch(e){}
   return true;
 }
 function render(){
@@ -21415,7 +22039,7 @@ ${secConstructorComida()}
 <div class="card" style="border:2px solid #9dd5b4;background:#f7fff9">
   <h3 style="margin-top:0">Tengo esto</h3>
   <div class="row" style="gap:8px;margin-bottom:10px">
-    ${quickFoods.map(x=>`<button class="pill pick fridge-item quick-choice" data-food="${x}" onclick="quickFridgePick('${x.replace(/'/g,"\\'")}')">${getFoodIcon(x)} ${x}</button>`).join('')}
+    ${quickFoods.map(x=>`<button class="pill pick fridge-item quick-choice" data-food="${x}" onclick="quickFridgePick('${x.replace(/'/g,"\\'")}')" style="display:inline-flex;align-items:center;gap:7px">${alimentoFotoHTML(x,'s')}<span>${x}</span></button>`).join('')}
   </div>
   <div id="fridgePickedOut" class="ok" style="margin-bottom:12px">Todavía no has marcado ingredientes.</div>
   <div class="compact-actions">
@@ -21436,13 +22060,14 @@ ${secConstructorComida()}
         <details class="fridge-cat">
           <summary class="fridge-cat-head">${catIcons[cat]||'🍽️'} ${cat} <span class="fridge-cat-count">${arr.length}</span></summary>
           <div class="fridge-grid">
-            ${arr.map(x=>`<button class="pill pick fridge-item" data-food="${x}" onclick="quickFridgePick('${x.replace(/'/g,"\\'")}')">${getFoodIcon(x)} ${x}</button>`).join('')}
+            ${arr.map(x=>`<button class="pill pick fridge-item" data-food="${x}" onclick="quickFridgePick('${x.replace(/'/g,"\\'")}')" style="display:inline-flex;align-items:center;gap:7px">${alimentoFotoHTML(x,'s')}<span>${x}</span></button>`).join('')}
           </div>
         </details>`).join('')}
     </div>
   </details>
 </div>
 
+${alimentosCreditosHTML()}
 <details style="margin:10px 0"><summary>🛒 Ver despensa de supermercado (Maui)</summary>
   <div style="margin-top:6px">
     <p class="muted" style="margin-top:0">Congelados, enlatados, cereales, yogurts y leches. Valores aproximados: revisa la etiqueta y cambia la marca si ocupa.</p>
@@ -25669,8 +26294,16 @@ function _mergeArrays(a,b){
 //   guardado sin querer en un dispositivo recién instalado).
 // - Si ambos tienen valores reales distintos, gana el lado con lastModified más reciente.
 var PROFILE_DEFAULTS={edad:30,peso:150,altura:170,objetivo:'ganar músculo',actividad:'muy alta',pasosDia:18000};
-function _mergeProfile(a,b,lt,rt){
-  a=(a&&typeof a==='object')?a:{}; b=(b&&typeof b==='object')?b:{};
+// Unión de mapas (objetos llave→valor) para el merge: local gana en llaves
+// repetidas. Seguro para guiasMedia porque las llaves son hashes del
+// contenido (misma llave = misma imagen).
+function _mergeMapa(l,g){
+  var out={},k;
+  if(l)for(k in l){if(l[k])out[k]=l[k];}
+  if(g)for(k in g){if(g[k]&&!out[k])out[k]=g[k];}
+  return out;
+}
+function _mergeProfile(a,b,lt,rt){  a=(a&&typeof a==='object')?a:{}; b=(b&&typeof b==='object')?b:{};
   var out={};
   new Set([...Object.keys(a),...Object.keys(b)]).forEach(function(k){
     var va=a[k],vb=b[k];
@@ -25711,6 +26344,15 @@ function mergeCloudStates(local,remote){
   // vacío o un valor por defecto guardado por un registro inicial en un
   // dispositivo recién instalado NUNCA pisa el valor real del otro lado.
   base.profile=_mergeProfile(local.profile,remote.profile,lt,rt);
+  // v1.206: guiasMedia es un MAPA (hash→dataURL), no un array: sin esta unión
+  // las fotos propias se perdían en el merge (un lado pisaba al otro) y no
+  // viajaban a otros dispositivos. La llave es el hash del contenido: dos
+  // entradas con la misma llave tienen SIEMPRE la misma imagen (gvHash),
+  // así que la unión no puede sobrescribir fotos válidas distintas ni
+  // restaurar referencias borradas (los borrados son de la REFERENCIA en
+  // la guía, no del almacén). La fila es por usuario (RLS): nunca mezcla
+  // datos de usuarios diferentes.
+  base.guiasMedia=_mergeMapa(local.guiasMedia,remote.guiasMedia);
 
   // ---- v57: fusiones PROFUNDAS (si no, se pierden datos entre iPhone y Windows) ----
 
@@ -27396,6 +28038,7 @@ function recetaCompletoHTML(r){
 }
 function recetaDetalleHTML(){
   var v=window._recetaVista; if(!v)return '';
+  try{recetaFotosAplicar();}catch(e){} // idempotente: asegura r.foto disponible aunque no se haya pintado la lista
   var r=baseRecipes[v.idx]; if(!r)return '';
   var porc=recetaPorciones(r);
   var factor=(v.personas&&porc)?(v.personas/porc.n):1;
@@ -27405,6 +28048,15 @@ function recetaDetalleHTML(){
   var cab='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
     +'<button class="btn" style="border-radius:999px;padding:10px 14px;min-height:44px" onclick="recetaVolverPadre()">← '+(hayPadre?'Volver':'Recetas')+'</button>'
     +'<b style="font-size:17px;color:#12352a;flex:1;line-height:1.3">'+safeText(r.name)+'</b></div>';
+  // Foto principal del platillo (no altera Rápido / Paso a paso / Completo).
+  var fotoDet='';
+  if(r.foto){
+    fotoDet='<div class="r-det-foto'+(r.fotoIlustrativa?' ilu':'')+'">'
+      +'<img src="'+r.foto+'" alt="'+safeText(r.name)+'" onerror="this.parentElement.remove()">'
+      +(r.fotoIlustrativa?'<span class="r2-foto-badge">Imagen ilustrativa</span>':'')
+      +(r.fotoFuente?'<div class="r-det-credito">📷 '+safeText(r.fotoFuente)+'</div>':'')
+      +'</div>';
+  }
   var meta='<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:12px">'
     +(r.time?chip('⏱️ '+r.time+' min','#e8f5e9'):'')
     +(porc?chip('👥 '+porc.n+(porc.unidad?(' '+porc.unidad):''),'#e0f2f1'):'')
@@ -27429,7 +28081,7 @@ function recetaDetalleHTML(){
       +'<button class="btn" style="border-radius:999px;padding:8px 20px;font-size:20px;min-height:48px" onclick="recetaPersonas(1)">+</button></div>';
   }
   var contenido=v.modo==='rapido'?recetaRapidoHTML(r,factor):(v.modo==='pasoapaso'?recetaPasoHTML(r,factor,v.paso,v):recetaCompletoHTML(r));
-  return cab+meta+recetaNutLine(r,porc)+tabs+metodoRow+tm5Badge+sel+contenido+recetaRegistroHTML(r,porc,v,factor)+recetaPrepHtml(r);
+  return cab+fotoDet+meta+recetaNutLine(r,porc)+tabs+metodoRow+tm5Badge+sel+contenido+recetaRegistroHTML(r,porc,v,factor)+recetaPrepHtml(r);
 }
 /* Nutrición por porción vs total (honesto: marcado como estimado). */
 function recetaNutLine(r,porc){
@@ -27592,9 +28244,18 @@ function recetaPasoTimer(){
 }
 /* Filtros de Recetas: agrupado SOLO con catálogo completo; descripción honesta del filtro activo. */
 function recetaModoAgrupado(tab,chip,s,sort,m,pf){
+  if(window._soloFoto)return false; // un filtro activo nunca muestra catálogo "completo"
   return tab==='todas' && !chip && !s && (sort||'none')==='none' && m==='todas' && pf==='todas';
 }
+function toggleSoloFoto(){
+  window._soloFoto=!window._soloFoto;
+  _recipePage=1;
+  var b=document.getElementById('soloFotoBtn');
+  if(b)b.classList.toggle('on',!!window._soloFoto);
+  renderRecipes();
+}
 function recetaFiltroDesc(f,m,pf,s,tab,chip){
+  if(window._soloFoto)return 'Con foto';
   if(m!=='todas')return (m==='thermomix'?'Thermomix':(m==='sarten'?'Sartén':(m==='airfryer'?'Air fryer':m)));
   if(pf==='favoritas')return 'Favoritas';
   if(pf!=='todas')return pf;
@@ -30542,6 +31203,7 @@ function secEvitar(){
 
 function renderRecipes(){
   let el=$('#recipes');if(!el)return;
+  try{recetaFotosAplicar();}catch(e){} // fotos del catálogo: campos idempotentes sobre baseRecipes
   // No re-renderizar la lista (pesada: cientos de recetas) cuando la sección Recetas no está visible.
   // Evita que bindAll trabe la app al cambiar de sección (p. ej. Salud → Fitness).
   let _secEl=el.closest('.tab'); if(_secEl && !_secEl.classList.contains('active') && el.children.length) return;
@@ -30563,6 +31225,7 @@ function renderRecipes(){
   if(state.esconderEvitar) arr=arr.filter(r=>recetaTieneEvitado(r).length===0);
   if(b=='cheap') arr=arr.filter(r=>r.cost<3);
   if(b=='20day') arr=arr.filter(r=>['desayuno','comida','cena','licuado'].includes(r.type)).slice(0,12);
+  if(window._soloFoto) arr=arr.filter(function(r){return !!r.foto;}); // 📷 catálogo visual: solo recetas con foto
   // Recetas v2: filtros de las pestañas Tipo / Costo / Tiempo
   let _tab=window._recTab||'todas', _chip=window._recChip||'';
   if(_tab==='tipo'&&_chip){
@@ -30614,16 +31277,25 @@ function renderRecipes(){
   }
   el.innerHTML=(function(){
     if(arr.length==0) return '<div class="warn">Sin recetas con esos filtros. Prueba ampliar la búsqueda.</div>';
+    var fotoHTML=r=>{
+      if(!r.foto)return '';
+      return '<div class="r2-foto'+(r.fotoIlustrativa?' ilu':'')+'">'
+        +'<img src="'+r.foto+'" alt="'+safeText(r.name)+'" loading="lazy" onerror="this.parentElement.remove()">'
+        +(r.fotoIlustrativa?'<span class="r2-foto-badge">Ilustrativa</span>':'')
+        +'</div>';
+    };
     var cardHTML=r=>{
       let icon=r.type==='licuado'?smoothieIcon(r):r.type==='desayuno'?'🍳':r.type==='cena'?'🌙':r.type==='snack'?'🥜':r.type==='bebida'||r.type==='agua'?'🧊':r.type==='salsa'?'🌶️':r.type==='fruta'?'🍓':r.type==='hotcake'?'🥞':r.type==='avena'?'🥣':r.type==='pan'?'🍞':r.type==='aderezo'?'🥗':r.type==='especia'?'🧂':r.type==='suero'?'💧':r.method.toLowerCase().includes('horno')?'♨️':r.method.toLowerCase().includes('thermomix')?'🤖':'🍲';
       return `<details class="recipe-card" data-ri="${baseRecipes.indexOf(r)}" ontoggle="recipeCardFill(this)">
       <summary class="recipe-summary">
+        ${fotoHTML(r)}
         <div class="r2-hd">
           <span class="r2-icon">${icon}</span>
           <div><div class="r2-name">${safeText(_trRN(r.name))}</div><span class="r2-cat">${mealTypeLabel(r.type)}</span>${avisoEvitarHTML(r)}</div>
         </div>
         <div class="r2-desc">${safeText(recShortDesc(r))}</div>
         <div class="r2-stats">
+          <span class="r2-stat">🍳 ${safeText(r.method)}</span>
           <span class="r2-stat">🔥 ${r.k} kcal</span>
           <span class="r2-stat">🍗 ${r.p}g prot</span>
           <span class="r2-stat">⏱️ ${r.time} min</span>
@@ -30699,7 +31371,7 @@ function renderRecipes(){
           <div class="grid" style="align-items:start">
             <div class="mini">
               <div style="font-weight:900;font-size:13px;margin-bottom:6px">🛒 INGREDIENTES APROX.</div>
-              <ul style="margin:0;padding-left:18px">${ing.map(x=>'<li style="margin:3px 0;font-size:14px">'+safeText(x)+'</li>').join('')}</ul>
+              <ul style="margin:0;padding-left:0;list-style:none">${ing.map(x=>{var f=(typeof alimentoFoto==='function')?alimentoFoto(x):null;return f?'<li style="margin:4px 0;font-size:14px;display:flex;align-items:center;gap:9px">'+alimentoFotoHTML(x,'s')+'<span>'+safeText(x)+'</span></li>':'<li style="margin:4px 0;font-size:14px">• '+safeText(x)+'</li>';}).join('')}</ul>
             </div>
             <div class="mini" style="background:#f7fff9">
               <div style="font-weight:900;font-size:13px;margin-bottom:6px">🧾 LISTA DE COMPRA</div>
@@ -31511,7 +32183,7 @@ function renderRecipeIngredientCalc(key){
   </div><div style="background:#fff;border:1px solid #dce9e0;border-radius:12px;overflow:hidden">${list.map((x,i)=>{
     let f=foods[x.foodIndex],m=getFoodMeasure(x.foodIndex),factor=x.amount/m.base;
     return `<div class="calc-row">
-      <span class="calc-food-icon">${getFoodIcon(f[0])}</span>
+      <span class="calc-food-icon">${alimentoFotoHTML(f[0],'m')}</span>
       <span><span class="calc-food-name">${safeText(f[0])}</span><select id="foodSelect_${key}_${i}" class="calc-food-select" onchange="updateRecipeIngredient(${key},${i},'food',this.value)">${foods.map((p,pi)=>`<option value="${pi}" ${pi===x.foodIndex?'selected':''}>${p[0]}</option>`).join('')}</select><small class="muted" style="display:block">${Math.round(f[1]*factor)} kcal · P ${(f[2]*factor).toFixed(1)}g · ${money(f[5]*factor)}</small></span>
       <span><span class="calc-stepper"><button onclick="bumpRecipeIngredient(${key},${i},-1)">−</button><input type="number" min=".1" value="${+x.amount.toFixed(2)}" onchange="updateRecipeIngredient(${key},${i},'amount',this.value)"><button onclick="bumpRecipeIngredient(${key},${i},1)">+</button></span><small class="muted" style="display:block;text-align:center">${m.unit}</small></span>
       <button class="btn icon-btn" title="Sustituir ingrediente" onclick="toggleIngredientSelect(${key},${i})">↔</button>

@@ -83,7 +83,7 @@ const sandbox = {
 sandbox.window = sandbox;
 vm.createContext(sandbox);
 
-['_mergeArrays', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates', 'mergeWeightLists',
+['_mergeArrays', '_mergeMapa', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates', 'mergeWeightLists',
   'normalizeWeightEntry', 'cloudStartupSync', 'initRealtimeSync', 'syncChainPush', 'renderSyncChain']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sandbox); });
 // PROFILE_DEFAULTS es una var suelta (no una function); se inyecta tal cual.

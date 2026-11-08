@@ -96,7 +96,7 @@ function makeColaSb(opts) {
     tmr.fn(); // síncrono: las fns de _doSave/cloudSave no esperan
   };
   vm.createContext(sb);
-  ['_mergeArrays', '_mergeProfile', '_mergeHabitosLog', '_mergeVehiculos', 'mergeCloudStates',
+  ['_mergeArrays', '_mergeMapa', '_mergeProfile', '_mergeHabitosLog', '_mergeVehiculos', 'mergeCloudStates',
     'ppTombstoneItem', 'ppActivos', 'ppTombstoneKey', 'ppKeyActivo', 'ppKeysActivas', 'ppDiarioActivos',
     'save', '_doSave', 'scheduleAutoSync', 'setSync', 'renderSyncUI'].forEach(function (n) {
     vm.runInContext(extractFunc(n), sb);

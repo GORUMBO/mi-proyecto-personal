@@ -42,7 +42,7 @@ const mergeSandbox = {
   PROFILE_DEFAULTS: { edad: 30, peso: 150, altura: 170, objetivo: 'ganar músculo', actividad: 'muy alta', pasosDia: 18000 }
 };
 vm.createContext(mergeSandbox);
-['_mergeProfile', 'mergeCloudStates', '_mergeArrays', '_mergeHabitosLog', '_mergeVehiculos']
+['_mergeProfile', 'mergeCloudStates', '_mergeArrays', '_mergeMapa', '_mergeHabitosLog', '_mergeVehiculos']
   .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), mergeSandbox); });
 
 t('B1 · Un campo vacío nunca pisa un valor real del otro lado', function () {
@@ -212,7 +212,7 @@ const syncSb = {
 };
 syncSb.window = syncSb;
 vm.createContext(syncSb);
-['_mergeArrays', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates',
+['_mergeArrays', '_mergeMapa', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates',
   'cloudStartupSync'].forEach(function (n) { vm.runInContext(extractFunc(HTML, n), syncSb); });
 vm.runInContext((HTML.match(/var PROFILE_DEFAULTS=\{[^}]*\};/) || ['var PROFILE_DEFAULTS={};'])[0], syncSb);
 

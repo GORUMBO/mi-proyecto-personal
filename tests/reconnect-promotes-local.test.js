@@ -153,7 +153,7 @@ function makeDevice(name, user_id, workouts, onLine) {
   };
   sb.window = sb;
   vm.createContext(sb);
-  ['_mergeArrays', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates',
+  ['_mergeArrays', '_mergeMapa', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates',
     'mergeWeightLists', 'ensureId', 'todayISO', 'cloudStartupSync', 'cloudSave',
     'mirrorGranular', 'scheduleAutoSync', 'initRealtimeSync', 'syncChainPush', 'save', '_doSave']
     .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sb); });

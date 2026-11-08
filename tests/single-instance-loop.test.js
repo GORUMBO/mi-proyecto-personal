@@ -159,7 +159,7 @@ function makeSingleInstance(user_id, renderImpl) {
   };
   sb.window = sb;
   vm.createContext(sb);
-  ['_mergeArrays', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates',
+  ['_mergeArrays', '_mergeMapa', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates',
     'mergeWeightLists', 'ensureId', 'todayISO', 'cloudStartupSync', 'cloudSave',
     'mirrorGranular', 'scheduleAutoSync', 'initRealtimeSync', 'syncChainPush', 'save', '_doSave',
     'calcMacros']

@@ -146,7 +146,7 @@ vm.createContext(snapSb);
     };
     sb.window = sb;
     vm.createContext(sb);
-    ['_mergeArrays', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates',
+    ['_mergeArrays', '_mergeMapa', '_mergeHabitosLog', '_mergeVehiculos', '_mergeProfile', 'mergeCloudStates',
       'mergeWeightLists', 'normalizeWeightEntry', 'ensureId', 'ppUUID', 'todayISO',
       'cloudSave', 'cloudStartupSync', 'mirrorGranular', 'scheduleAutoSync', 'save', '_doSave',
       'syncChainPush', 'ppRespBloqueada', 'ppWorkerOn', 'ppWorkerUrl']

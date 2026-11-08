@@ -134,7 +134,7 @@ function makeDevice(name, workouts, useWorker) {
   sb.window = sb;
   vm.createContext(sb);
   ['ppWorkerUrl', 'ppWorkerOn', 'ppToggleWorker', 'ppRespBloqueada', 'cloudRest', 'cloudSave', 'cloudStartupSync',
-    'mirrorGranular', 'ensureId', 'ppUUID', 'todayISO', 'mergeCloudStates', '_mergeArrays', '_mergeHabitosLog',
+    'mirrorGranular', 'ensureId', 'ppUUID', 'todayISO', 'mergeCloudStates', '_mergeArrays', '_mergeMapa', '_mergeHabitosLog',
     '_mergeVehiculos', '_mergeProfile', 'mergeWeightLists', 'normalizeWeightEntry', 'initRealtimeSync', 'syncChainPush']
     .forEach(function (n) { vm.runInContext(extractFunc(HTML, n), sb); });
   vm.runInContext((HTML.match(/var PROFILE_DEFAULTS=\{[^}]*\};/) || ['var PROFILE_DEFAULTS={};'])[0], sb);
