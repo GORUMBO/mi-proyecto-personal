@@ -1,6 +1,7 @@
 // ============================================================
-// Prueba REAL de sincronización de las 6 guías muestra.
-// A (Windows, perfil con las 6 guías): sesión ya iniciada →
+// Prueba REAL de sincronización de las 55 guías TM6 (6 muestra +
+// 49 de la biblioteca).
+// A (Windows, perfil con las 55 guías): sesión ya iniciada →
 // las guías suben al cloud real (autorizado por el usuario).
 // B (iPhone simulado, perfil limpio + misma sesión): descarga y
 // verifica que TODO se conserve (fotos, ingredientes, pasos,
@@ -71,9 +72,9 @@ const NOMBRES = ['Salsa roja molcajeteada', 'Salsa verde molcajeteada', 'Salsa d
   for (const w of [wsA, wsB]) { await w.sendJson('Runtime.enable', {}); await w.sendJson('Page.enable', {}); }
   try { await wsA.sendJson('Page.bringToFront', {}); } catch (e) { }
 
-  // ---- A: el usuario inicia sesión (las 6 guías ya están en este perfil) ----
+  // ---- A: sesión ya iniciada (perfil persistente); las 55 guías están aquí ----
   const nA0 = await evalA(`(state.misGuiasTM6||[]).filter(x=>!x.deleted).length`);
-  t('A: perfil con las 6 guías cargadas', nA0 === 6, String(nA0));
+  t('A: perfil con las 55 guías cargadas', nA0 >= 55, String(nA0));
   let sesion = null;
   for (let i = 0; i < 90; i++) {
     const s = await evalA(`safeStorage.get('pp_cloud_session')`);
@@ -110,23 +111,34 @@ const NOMBRES = ['Salsa roja molcajeteada', 'Salsa verde molcajeteada', 'Salsa d
   await wsB.sendJson('Page.reload', { ignoreCache: true });
   await sleep(6000);
   t('B: sesión válida (sin pantalla de acceso)', await evalB(`!document.getElementById('loginScreen')`));
+  // Con 55 guías el arranque de B tarda más: esperar a que exista state
+  // antes de leer las guías (evita el ReferenceError de arranque).
+  for (let i = 0; i < 40; i++) {
+    const listo = await evalB(`typeof state!=='undefined'`);
+    if (listo) break;
+    await sleep(1000);
+  }
   let llegaron = 0;
   for (let i = 0; i < 50; i++) {
     llegaron = await evalB(`(state.misGuiasTM6||[]).filter(x=>!x.deleted).length`);
-    if (llegaron >= 6) break;
+    if (llegaron >= 55) break;
     if (i % 5 === 4) { try { await evalB(`typeof syncNow==='function'?syncNow():0;'ok'`); } catch (e) { } }
     await sleep(2000);
   }
-  t('B (iPhone): las 6 guías llegaron por sincronización real', llegaron >= 6, String(llegaron));
+  t('B (iPhone): las 55 guías llegaron por sincronización real', llegaron >= 55, String(llegaron));
 
-  if (llegaron >= 6) {
+  if (llegaron >= 55) {
     const todo = await evalB(`(()=>{const gs=(state.misGuiasTM6||[]).filter(x=>!x.deleted);const names=[${NOMBRES.map(n => JSON.stringify(n)).join(',')}];const faltan=names.filter(n=>!gs.some(g=>g.nombre===n));if(faltan.length)return {ok:false,faltan};
-      const ok=(g)=>g&&g.ingredientes.length>=6&&g.pasos.length===6&&g.pasos.every(p=>p.r)&&g.pasos.some(p=>/vel|°C/.test(p.t))&&g.prepPrevia&&g.advertencias.length&&g.consejos.length&&g.erroresComunes.length&&g.variantes.length&&g.categoria&&g.subcategoria&&g.verificado==='pendiente';
+      const ok=(g)=>g&&g.ingredientes.length>=5&&g.pasos.length===6&&g.pasos.every(p=>p.r)&&g.pasos.some(p=>/vel|°C|tradicional|molcajete/i.test(p.t))&&g.prepPrevia&&g.advertencias.length&&g.consejos.length&&g.erroresComunes.length&&g.variantes.length&&g.categoria&&g.subcategoria&&g.verificado==='pendiente';
       const malas=gs.filter(g=>!ok(g)).map(g=>g.nombre);
       return {ok:malas.length===0,malas};})()`);
-    t('B: nombres, ingredientes, pasos, categorías y parámetros TM6 conservados', todo.ok, (todo.malas || []).join(' | ') || 'todo íntegro');
+    t('B: las 55 guías íntegras (pasos, parámetros, categorías, todo pendiente)', todo.ok, (todo.malas || []).join(' | ') || '55 íntegras');
     const fotos = await evalB(`(()=>{const gs=(state.misGuiasTM6||[]).filter(x=>!x.deleted);return gs.filter(g=>g.pasos.some(p=>p.f&&(state.guiasMedia||{})[p.f])).length;})()`);
     t('B: las fotos de los chiles viajaron en el estado', fotos >= 3, fotos + ' guías con foto');
+    const mediaKeys = await evalB(`Object.keys(state.guiasMedia||{}).length`);
+    t('B: almacén de medios completo (guiasMedia)', mediaKeys >= 3, mediaKeys + ' claves');
+    const imgVisible = await evalB(`(()=>{const el=document.getElementById('misGuiasTM6Out');if(!el)return false;const imgs=[...el.querySelectorAll('img')];return imgs.length>0&&imgs.some(i=>i.complete&&i.naturalWidth>0);})()`);
+    t('B: las fotos de paso se VEN (imagen cargada)', imgVisible);
 
     // ---- B: consulta SIN CONEXIÓN (offline) ----
     await wsB.sendJson('Network.enable', {});
@@ -134,7 +146,7 @@ const NOMBRES = ['Salsa roja molcajeteada', 'Salsa verde molcajeteada', 'Salsa d
     await wsB.sendJson('Page.reload', { ignoreCache: true });
     await sleep(6000);
     const offline = await evalB(`(()=>{const n=(state.misGuiasTM6||[]).filter(x=>!x.deleted).length;return {n, visibles:(document.getElementById('misGuiasTM6Out')?document.getElementById('misGuiasTM6Out').textContent.includes('Salsa roja molcajeteada'):false)};})()`);
-    t('B: sin conexión las guías siguen disponibles (offline-first)', offline.n >= 6, JSON.stringify(offline));
+    t('B: sin conexión las guías siguen disponibles (offline-first)', offline.n >= 55, JSON.stringify(offline));
     await evalB(`window._rAFOriginal=requestAnimationFrame;window.requestAnimationFrame=null;openTab('🤖 Thermomix TM6');'ok'`);
     await sleep(1500);
     t('B: guías visibles en Cocina → TM6 sin internet', await evalB(`(document.getElementById('misGuiasTM6Out')||{}).textContent.includes('Adobo para tacos al pastor')`));

@@ -1,8 +1,20 @@
 {
-  "latest": "1.206.0",
+  "latest": "1.206.1",
   "date": "2026-11-08",
   "minVersion": "1.0.0",
   "history": [
+{
+  "version": "1.206.1",
+  "date": "2026-11-08",
+  "type": "recomendada",
+  "nuevas": [
+    "Nueva subcategoría «Para cocinar» en Mis guías TM6, con 5 salsas: ranchera, roja y verde para enchiladas, roja y verde para chilaquiles.",
+    "Biblioteca TM6 con 49 guías propias (27 salsas y 22 adobos de la cocina tradicional mexicana) creadas con el editor existente; todas en revisión (pendientes de prueba práctica)."
+  ],
+  "cambios": [
+    "Las guías de la biblioteca se sincronizan completas entre dispositivos, incluidas las fotos por paso y el uso sin conexión (verificado con 55 guías)."
+  ]
+},
 {
   "version": "1.206.0",
   "date": "2026-11-08",

@@ -85,7 +85,7 @@ t('los ingredientes del detalle muestran su foto cuando existe', /alimentoFoto\(
 
 /* ---------- 2e. Categorías, verificación y guías detalladas ---------- */
 t('5 categorías de la biblioteca TM6', /TM6_GUIA_CATEGORIAS=\[/.test(HTML) && ['salsas','adobos','moles','guisados','tecnicas'].every(k => new RegExp('k:\\s*\\x27' + k + '\\x27').test(HTML)));
-t('Salsas con 5 subcategorías (molcajeteadas, taqueras, cremosas, tatemadas, especiales)', ['molcajeteada', 'taquera', 'cremosa', 'tatemada', 'especial'].every(k => new RegExp('k:\\s*\\x27' + k + '\\x27').test(HTML)));
+t('Salsas con 6 subcategorías (molcajeteadas, taqueras, cremosas, tatemadas, especiales, para cocinar)', ['molcajeteada', 'taquera', 'cremosa', 'tatemada', 'especial', 'cocinar'].every(k => new RegExp('k:\\s*\\x27' + k + '\\x27').test(HTML)));
 t('norm de guía: campos detallados con default honesto (pendiente, sin inventos)', (function () {
   const ctx3 = {};
   const norm = vm.runInNewContext('(' + extractFunc('tm6GuiaNorm') + ')', ctx3);

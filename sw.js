@@ -1,4 +1,4 @@
-const CACHE='mi-proyecto-v1-206-0';
+const CACHE='mi-proyecto-v1-206-1';
 const FILES=['./','./index.html',
  './assets/recetas/agua-jamaica.jpg',
  './assets/recetas/chilaquiles.jpg',
