@@ -718,7 +718,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.206.1';
+  window.HM_APP_VERSION='1.206.2';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -4281,11 +4281,24 @@ pecho:['Push ups','Press banca','Press mancuernas','Fondos asistidos'],espalda:[
 const EX_GROUP_LABELS={pecho:'💪 Pecho',espalda:'🔙 Espalda',hombros:'🏋️ Hombros',brazos:'💪 Brazos',pierna:'🦵 Pierna',abdomen:'🧘 Abdomen',gluteos:'🍑 Glúteos'};
 // Selector tocable de ejercicio para el registro (evita escribir): elige grupo → toca el ejercicio → llena el campo.
 function pickExGroup(g){
-  window._exGroup=g;
+  window._exGroup=g; window._exPage=0;
   document.querySelectorAll('.ex-group-btn').forEach(b=>{b.className='btn ex-group-btn'+(b.dataset.g===g?' primary':'')});
-  let list=document.getElementById('exList'); if(!list)return;
-  let items=exercises[g]||[];
-  list.innerHTML=items.map(n=>`<button type="button" class="btn ex-ex-btn" onclick="pickExercise(this,'${n.replace(/'/g,"\\'")}')">${safeText(n)}</button>`).join('')+`<button type="button" class="btn" onclick="document.getElementById('simpleWorkoutExercise').focus()">✏️ Otro…</button>`;
+  renderExercisePicker();
+}
+function renderExercisePicker(){
+  var box=document.getElementById('exList');if(!box)return;
+  if(typeof FitnessExerciseCatalog==='undefined'){box.textContent='El catálogo no se pudo cargar.';return;}
+  var q=(document.getElementById('exCatalogSearch')||{}).value||'';
+  var rows=FitnessExerciseCatalog.search(FitnessExerciseCatalog.catalog(EX_MAPA,EX_LIB),q,window._exGroup||'');
+  var page=Math.max(0,Math.min(window._exPage||0,Math.ceil(rows.length/12)-1));window._exPage=page;
+  var shown=rows.slice(page*12,page*12+12);
+  box.innerHTML='<span class="muted" style="width:100%">'+rows.length+' resultados · '+(rows.length?page*12+1:0)+'–'+Math.min(rows.length,page*12+12)+'</span>';
+  var last='';shown.forEach(function(e){
+    if(window._exGroup==='pecho'&&e.family!==last){var label=document.createElement('b');label.style.width='100%';label.textContent=e.family;box.appendChild(label);last=e.family;}
+    var btn=document.createElement('button');btn.type='button';btn.className='btn ex-ex-btn';btn.textContent=e.name;btn.onclick=function(){pickExercise(btn,e.name);};box.appendChild(btn);
+  });
+  if(!rows.length){var msg=document.createElement('span');msg.textContent='Sin coincidencias. Puedes escribir el nombre en Ejercicio.';box.appendChild(msg);}
+  [-1,1].forEach(function(delta){var btn=document.createElement('button');btn.type='button';btn.className='btn';btn.textContent=delta<0?'Anterior':'Siguiente';btn.disabled=delta<0?page===0:(page+1)*12>=rows.length;btn.onclick=function(){window._exPage=page+delta;renderExercisePicker();};box.appendChild(btn);});
 }
 function pickExercise(btn,name){
   let inp=document.getElementById('simpleWorkoutExercise'); if(inp)inp.value=name;
@@ -4327,10 +4340,11 @@ const EX_FOTOS={"Ab_Roller":["/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAsICAoIBwsKCQoNDA
 /* La foto: primero la que traigo adentro (siempre funciona, sin internet).
    Si ese ejercicio no la trae, la baja de internet. */
 function exFoto(id, k){
+  if(typeof FitnessExerciseCatalog==='undefined'||!FitnessExerciseCatalog.mediaVerified(id))return '';
   if(typeof EX_FOTOS!=='undefined' && EX_FOTOS[id]) return 'data:image/jpeg;base64,'+EX_FOTOS[id][k];
   return EX_BASE + id + '/' + k + '.jpg';
 }
-function exTieneFoto(id){ return typeof EX_FOTOS!=='undefined' && !!EX_FOTOS[id]; }
+function exTieneFoto(id){ return typeof FitnessExerciseCatalog!=='undefined' && FitnessExerciseCatalog.mediaVerified(id) && typeof EX_FOTOS!=='undefined' && !!EX_FOTOS[id]; }
 
 function exNormal(s){
   return String(s||'').toLowerCase()
@@ -4382,11 +4396,11 @@ function exDemoKeyNombre(nombre){
   }catch(e){return null;}
 }
 function exBuscarDemo(nombre){
-  try{
-    var k=exDemoKeyNombre(nombre);
-    if(k&&typeof EX_MAPA!=='undefined'&&EX_MAPA[k])return EX_MAPA[k];
-  }catch(e){}
-  return exBuscar(nombre);
+  return typeof FitnessExerciseCatalog!=='undefined'?FitnessExerciseCatalog.resolve(nombre,EX_MAPA,typeof EX_LIB!=='undefined'?EX_LIB:{}):null;
+}
+function exTextoSeguroHTML(nombre){
+  var data=typeof FitnessExerciseCatalog!=='undefined'?FitnessExerciseCatalog.instructions(nombre,typeof EX_LIB!=='undefined'?EX_LIB:{}):{setup:'',steps:['Instrucciones pendientes de revisión.'],related:[]};
+  return '<div class="mini" style="padding:14px"><b>'+safeText(nombre)+'</b>'+(data.setup?'<p>'+safeText(data.setup)+'</p>':'')+'<ol>'+data.steps.map(function(x){return '<li>'+safeText(x)+'</li>';}).join('')+'</ol><small class="muted">Demostración visual pendiente de verificación. Usa una carga controlable y detente si aparece dolor.</small>'+(data.related.length?'<details><summary>Variantes relacionadas</summary>'+data.related.map(function(x){return '<div>'+safeText(x)+'</div>';}).join('')+'</details>':'')+'</div>';
 }
 
 /* ---------- LA ANIMACIÓN (alterna las 2 fotos) ---------- */
@@ -4428,33 +4442,7 @@ function exAnimacionHTML(nombre, cajaId){
       return '<div style="position:relative;width:100%;height:230px;background:#f4fbf6;border-radius:14px;overflow:hidden;border:2px solid #cfe6d8"><img src="'+fotoP+'" alt="'+safeText(nombre)+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain"><div style="position:absolute;bottom:6px;left:6px;background:#0d6043;color:#fff;font-size:11px;font-weight:900;padding:3px 8px;border-radius:999px">🖼️ Tu imagen</div></div>';
     }
   }catch(e){}
-  let e = (typeof exBuscarDemo==='function')?exBuscarDemo(nombre):exBuscar(nombre);
-  if(!e){
-    return `<div class="mini" style="text-align:center;padding:14px">
-      <div style="font-size:28px">🤔</div>
-      <b>No tengo animación de "${safeText(nombre)}"</b>
-      <div class="muted" style="font-size:12px;margin-top:3px">Todavía. Usa los enlaces de abajo.</div>
-    </div>`;
-  }
-  let u0 = exFoto(e.id, 0);
-  let u1 = exFoto(e.id, 1);
-  return `
-  <div style="position:relative;width:100%;height:230px;background:#f4fbf6;border-radius:14px;overflow:hidden;border:2px solid #cfe6d8">
-    <img id="${cajaId}_0" src="${u0}" alt="inicio"
-         style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:1;transition:opacity .35s"
-         onload="exAnimar('${cajaId}','${e.id}')"
-         onerror="exImgFallo(this)">
-    <img id="${cajaId}_1" src="${u1}" alt="final"
-         style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .35s"
-         onerror="exImgFallo(this)">
-    <div style="position:absolute;bottom:6px;left:6px;background:#0d6043;color:#fff;font-size:11px;
-                font-weight:900;padding:3px 8px;border-radius:999px">▶ en movimiento</div>
-  </div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px">
-    ${e.m.map(m=>`<span class="pill" style="font-size:11px">💪 ${safeText(m)}</span>`).join('')}
-    <span class="pill" style="font-size:11px">🏋️ ${safeText(e.eq)}</span>
-  </div>
-  <div class="muted" style="font-size:11px;margin-top:4px">${safeText(e.en)}</div>`;
+  return exTextoSeguroHTML(nombre);
 }
 
 function exImgLink(e){return 'https://www.bing.com/images/search?q='+encodeURIComponent(e+' ejercicio gym');}
@@ -22341,6 +22329,7 @@ function secEjercicio(){
       <div style="margin-bottom:8px">
         <label style="font-weight:800;font-size:13px;margin-bottom:4px">¿Qué músculo trabajaste?</label>
         <div class="row" style="gap:5px;flex-wrap:wrap">${Object.keys(exercises).map(g=>`<button type="button" class="btn ex-group-btn" data-g="${g}" onclick="pickExGroup('${g}')" style="font-size:12px;padding:7px 10px">${EX_GROUP_LABELS[g]||g}</button>`).join('')}</div>
+        <div class="row" style="gap:6px;margin-top:6px"><input id="exCatalogSearch" aria-label="Buscar ejercicios por nombre o alias" placeholder="Busca: press acostado, dumbbell bench press…" oninput="window._exPage=0;renderExercisePicker()" style="flex:1;min-width:180px"><button type="button" class="btn" onclick="pickExGroup('')">Todos</button><button type="button" class="btn" onclick="var n=document.getElementById('simpleWorkoutExercise').value;if(n)exerciseHelp(n)">Ver técnica</button></div>
         <div id="exList" class="row" style="gap:5px;flex-wrap:wrap;margin-top:6px"></div>
       </div>
       <div class="grid" style="gap:8px">
@@ -32622,9 +32611,9 @@ function revealFullRoutine(){
    localDate sigue siendo hoy → es la MISMA sesión y no debe regenerarse. */
 function f3MismaFechaLocal(ft,ctxDate,fechaLocal){
   if(!ft)return false;
-  if(ft.date===ctxDate)return true;
   var fL=fechaLocal||((typeof todayLocal==='function')?todayLocal():ctxDate);
-  return !!(ft.localDate&&ft.localDate===fL);
+  // La fecha local explícita manda: UTC puede seguir igual después de medianoche local.
+  return ft.localDate ? ft.localDate===fL : ft.date===ctxDate;
 }
 function f3SesionVisibleHoy(log,hoy,exerciseKey,sidPack){
   var esValida=function(r){var v=(r.reps||'');var ok=v!=='—'&&v!=='no registradas'&&v!==''&&!/^\d+[-–]\d+$/.test(v);return +r.weight>0&&ok;};
@@ -32650,7 +32639,7 @@ function quickFitnessToday(){
   // de forma síncrona; el fallback de _yQ de ESTE render no debe pisarlo.
   var _presQ=(typeof window!=='undefined')?!!window._renderPreservando:false;
   var _activaGuard=(typeof f3RutinaActiva==='function')?f3RutinaActiva():null;
-  if(!state.fitnessToday||state.fitnessToday.date!==todayISO()){
+  if(!f3MismaFechaLocal(state.fitnessToday,todayISO(),todayLocal())){
     // SIN rutina semanal (ni constructor de semana): NUNCA generar un
     // entrenamiento automáticamente. El usuario elige (Crear rutina /
     // Elegir guardada / Generar entrenamiento para hoy) — estado 4.
@@ -32669,7 +32658,7 @@ function quickFitnessToday(){
   // descanso pero el estado guardado todavía trae el plan de respaldo viejo
   // (escrito por una versión anterior), se normaliza a descanso real (0
   // ejercicios). Solo cuando NO se está viendo otro día ni hay excepción.
-  if(state.fitnessToday&&state.fitnessToday.date===todayISO()&&!state.fitnessToday.oneOff&&!state.fitnessToday.descanso&&(state.fitnessToday.plan||[]).length){
+  if(f3MismaFechaLocal(state.fitnessToday,todayISO(),todayLocal())&&!state.fitnessToday.oneOff&&!state.fitnessToday.descanso&&(state.fitnessToday.plan||[]).length){
     try{
       var _activaSanado=(typeof f3RutinaActiva==='function')?f3RutinaActiva():null;
       var _viendoSanado=(typeof f3DiaSemanaViendo==='function')?f3DiaSemanaViendo():null;
@@ -32703,7 +32692,7 @@ function quickFitnessToday(){
   }
   // Dia de descanso elegido: el panel muestra el descanso, nunca la rutina anterior.
   // La tarjeta de la semana acompaña para que nombre/día/semana sigan a la vista.
-  if(state.fitnessToday&&state.fitnessToday.date===todayISO()&&state.fitnessToday.descanso){
+  if(f3MismaFechaLocal(state.fitnessToday,todayISO(),todayLocal())&&state.fitnessToday.descanso){
     var outD=document.getElementById('simpleFitnessOut');
     if(outD)outD.innerHTML=((typeof f3TarjetaSemanaHTML==='function')?f3TarjetaSemanaHTML():'')+(typeof renderDescansoHTML==='function'?renderDescansoHTML(state.fitnessToday.descansoNombre||''):'');
     if(typeof f3TryRenderHoyHead==='function')f3TryRenderHoyHead();
@@ -32711,14 +32700,14 @@ function quickFitnessToday(){
   }
   // NO llamar renderFitnessCoach aquí — duplica IDs con la vista de abajo y logRoutineExercise lee los inputs equivocados.
   let out=document.getElementById('simpleFitnessOut');if(!out)return;
-  let pack=state.fitnessToday&&state.fitnessToday.date===todayISO()?state.fitnessToday:null;
+  let pack=f3MismaFechaLocal(state.fitnessToday,todayISO(),todayLocal())?state.fitnessToday:null;
   if(!pack){
     // (4) SIN rutina semanal: estado claro, sin generación automática.
     out.innerHTML='<div class="mini" style="padding:14px"><b style="font-size:14px">ℹ️ No tienes una rutina semanal activa.</b><p class="muted" style="font-size:12px;margin:6px 0 8px">Elige qué hacer hoy — no se genera ningún entrenamiento sin tu confirmación.</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn" style="font-size:12px;padding:7px 11px" onclick="openCreateRoutine()">🛠️ Crear rutina</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="showSavedRoutines()">📁 Elegir rutina guardada</button><button class="btn primary" style="font-size:12px;padding:7px 11px" onclick="f3GenerarHoyConfirmar()">⚡ Generar entrenamiento para hoy</button></div></div>';
     if(typeof f3TryRenderHoyHead==='function')f3TryRenderHoyHead();
     return;
   }
-  if(!pack.checked||pack.checkedDate!==todayISO()){pack.checked={};pack.checkedDate=todayISO();}
+  if(!pack.checked||!f3MismaFechaLocal({date:pack.checkedDate,localDate:pack.localDate},todayISO(),todayLocal())){pack.checked={};pack.checkedDate=todayISO();}
   if(!pack.estado)pack.estado={};
   // ⚡ MODO RÁPIDO: solo entrenar. Sin semana, resúmenes, estadísticas,
   // progreso, feedback ni tarjetas extra — la pantalla es del ejercicio.
@@ -33713,6 +33702,19 @@ function f3RapidaDemo(i){
     box.style.display='block';
   }catch(e){}
 }
+function f3BuscarVarianteRapida(i,delta){
+  var box=document.getElementById('fitCatalogResults_'+i),input=document.getElementById('fitCatalogSearch_'+i);
+  if(!box||!input||typeof FitnessExerciseCatalog==='undefined')return;
+  var rows=FitnessExerciseCatalog.search(FitnessExerciseCatalog.catalog(EX_MAPA,EX_LIB),input.value,'');
+  var page=delta?Math.max(0,Math.min((+box.dataset.page||0)+delta,Math.ceil(rows.length/12)-1)):0;
+  box.dataset.page=page;box.innerHTML='';
+  var info=document.createElement('small');info.textContent=rows.length+' resultados';box.appendChild(info);
+  rows.slice(page*12,page*12+12).forEach(function(e){
+    var btn=document.createElement('button');btn.type='button';btn.className='btn';btn.textContent=e.name;
+    btn.onclick=function(){replaceFitnessExercise(i,e.name);quickFitnessToday();};box.appendChild(btn);
+  });
+  [-1,1].forEach(function(d){var btn=document.createElement('button');btn.type='button';btn.className='btn';btn.textContent=d<0?'Anterior':'Siguiente';btn.disabled=d<0?page===0:(page+1)*12>=rows.length;btn.onclick=function(){f3BuscarVarianteRapida(i,d);};box.appendChild(btn);});
+}
 function f3TarjetaRapidaHTML(idx,pack){
   try{
     var i=Math.max(0,Math.min(idx,pack.plan.length-1));
@@ -33792,6 +33794,19 @@ function f3TarjetaRapidaHTML(idx,pack){
 // ============================================================
 // Redefinición del Modo rápido: SOLO lo necesario para entrenar.
 // GIF animado grande + Peso/Reps compactos + Registrar + Cambiar + Anterior/Siguiente.
+function f3BuscarVarianteRapida(i,delta){
+  var box=document.getElementById('fitCatalogResults_'+i),input=document.getElementById('fitCatalogSearch_'+i);
+  if(!box||!input||typeof FitnessExerciseCatalog==='undefined')return;
+  var rows=FitnessExerciseCatalog.search(FitnessExerciseCatalog.catalog(EX_MAPA,EX_LIB),input.value,'');
+  var page=delta?Math.max(0,Math.min((+box.dataset.page||0)+delta,Math.ceil(rows.length/12)-1)):0;
+  box.dataset.page=page;box.innerHTML='';
+  var info=document.createElement('small');info.textContent=rows.length+' resultados';box.appendChild(info);
+  rows.slice(page*12,page*12+12).forEach(function(e){
+    var btn=document.createElement('button');btn.type='button';btn.className='btn';btn.textContent=e.name;
+    btn.onclick=function(){replaceFitnessExercise(i,e.name);quickFitnessToday();};box.appendChild(btn);
+  });
+  [-1,1].forEach(function(d){var btn=document.createElement('button');btn.type='button';btn.className='btn';btn.textContent=d<0?'Anterior':'Siguiente';btn.disabled=d<0?page===0:(page+1)*12>=rows.length;btn.onclick=function(){f3BuscarVarianteRapida(i,d);};box.appendChild(btn);});
+}
 function f3TarjetaRapidaHTML(idx,pack){
   try{
     var i=Math.max(0,Math.min(idx,pack.plan.length-1));
@@ -33820,6 +33835,7 @@ function f3TarjetaRapidaHTML(idx,pack){
     else{gifHTML='<div class="fit-demo-imggrande"><div style="text-align:center;padding:16px"><div style="font-size:40px">🏋️</div><div style="font-weight:900;margin-top:6px;font-size:15px">'+safeText(x.name)+'</div></div></div>';}
     var h=[];
     h.push('<div class="fit-card-ej fit-card-ej-rapida fit-ej-abierta'+(todoListo?' done':'')+'" id="fitCard_'+i+'">');
+    h.push('<div class="muted" id="fitRapidaFecha">'+safeText(new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'}))+'</div>');
     h.push('<div class="fit-rapida-pos">Ejercicio '+(i+1)+' de '+total+' · '+safeText(x.name)+(estado==='completado'?' ✓':'')+(estado==='progreso'?' · '+est.n+'/'+est.goal:'')+'</div>');
     // Qué hacer: series × reps (o duración) + tipo de carga del ejercicio
     var esTiempo=(x&&x.clase==='tiempo')||/plancha|mountain|bicicleta|superman|movilidad|hollow|dead_bug/i.test(String(x.name||''));
@@ -33861,7 +33877,7 @@ function f3TarjetaRapidaHTML(idx,pack){
       +'<div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0">'
       +'<button class="btn" style="font-size:12px;padding:6px 10px" onclick="swapToFirstAlt('+i+')">🚫 Está ocupado</button>'
       +'<button class="btn" style="font-size:12px;padding:6px 10px" onclick="dislikeExercise(\''+String(x.name).replace(/'/g,"\\'")+'\')">👎 No me gusta</button>'
-      +'</div><div id="altsRow_'+i+'">'+(typeof f3AltsHTML==='function'?f3AltsHTML(i,x):'')+'</div></details>');
+      +'</div><div id="altsRow_'+i+'">'+(typeof f3AltsHTML==='function'?f3AltsHTML(i,x):'')+'</div><label for="fitCatalogSearch_'+i+'">Buscar ejercicio o variante</label><input id="fitCatalogSearch_'+i+'" placeholder="Nombre en español o inglés" oninput="f3BuscarVarianteRapida('+i+',0)"><div id="fitCatalogResults_'+i+'" class="row" style="gap:6px;flex-wrap:wrap"></div></details>');
     h.push('</div>');
     // GIF en movimiento automáticamente (sin reiniciar si ya corre)
     setTimeout(function(){
@@ -42267,7 +42283,7 @@ function f3RenderHoyHead(){
   try{
     var head=document.getElementById('fitHoyHead');
     if(!head)return;
-    var pack=state.fitnessToday&&state.fitnessToday.date===todayISO()?state.fitnessToday:null;
+    var pack=f3MismaFechaLocal(state.fitnessToday,todayISO(),todayLocal())?state.fitnessToday:null;
     var activa=(typeof f3RutinaActiva==='function')?f3RutinaActiva():null;
     var hoyW=(typeof todayWeekdayIndex==='function')?todayWeekdayIndex():-1;
     var html='';
@@ -42896,7 +42912,7 @@ function createFitnessToday(){
   // Excepción "solo hoy" del MISMO día: se conserva tal cual; la rutina de
   // la semana NO la pisa. Al cambiar la fecha, el reinicio de abajo vuelve
   // a cargar la semanal automáticamente.
-  var oneOffHoy=!!(state.fitnessToday&&state.fitnessToday.oneOff&&state.fitnessToday.date===ctx.date);
+  var oneOffHoy=!!(state.fitnessToday&&state.fitnessToday.oneOff&&f3MismaFechaLocal(state.fitnessToday,ctx.date,todayLocal()));
   if(oneOffHoy&&state.fitnessToday.plan&&state.fitnessToday.plan.length){plan=state.fitnessToday.plan;}
   else if(tr&&!tr.rest&&tr.plan&&tr.plan.length){plan=tr.plan;fromSemana=true;ctx.focus=tr.dayName;}
   else if(PActiva){
@@ -42908,7 +42924,7 @@ function createFitnessToday(){
     // NO regeneran el plan ni desenlazan la identidad: la rutina cargada sigue
     // siendo ella (sus ejercicios y su nombre). El desenlace solo ocurre cuando
     // NO hay rutina enlazada (plan nuevo generado o cambio de día).
-    var enlaceHoy=!!(state.fitnessToday&&state.fitnessToday.loadedRoutineId&&state.fitnessToday.date===ctx.date&&(state.savedRoutines||[]).some(function(r){return r.id===state.fitnessToday.loadedRoutineId&&!r.deleted;}));
+    var enlaceHoy=!!(state.fitnessToday&&state.fitnessToday.loadedRoutineId&&f3MismaFechaLocal(state.fitnessToday,ctx.date,todayLocal())&&(state.savedRoutines||[]).some(function(r){return r.id===state.fitnessToday.loadedRoutineId&&!r.deleted;}));
     if(enlaceHoy){
       plan=(state.fitnessToday&&state.fitnessToday.plan)||buildFitnessTodayPlan(ctx);
     }else{
@@ -42931,10 +42947,10 @@ function createFitnessToday(){
   var esDescanso=!!(PActiva&&PActiva.rest)&&!oneOffHoy;
   if(!f3MismaFechaLocal(state.fitnessToday,ctx.date,fechaLocal)){state.fitnessToday={sessionId:Date.now()};}
   else{state.fitnessToday.sessionId=state.fitnessToday.sessionId||Date.now();}
-  state.fitnessToday.date=ctx.date; state.fitnessToday.localDate=fechaLocal; state.fitnessToday.ctx=ctx; state.fitnessToday.plan=esDescanso?[]:plan;
+  state.fitnessToday.date=state.fitnessToday.date||ctx.date; state.fitnessToday.localDate=state.fitnessToday.localDate||fechaLocal; state.fitnessToday.ctx=ctx; state.fitnessToday.plan=esDescanso?[]:plan;
   state.fitnessToday.descanso=esDescanso;
   state.fitnessToday.descansoNombre=esDescanso?((typeof weekdayNames!=='undefined'&&hoyW>=0)?weekdayNames[hoyW]:''):'';
-  state.fitnessToday.createdAt=new Date().toISOString(); state.fitnessToday.fromSemana=fromSemana;
+  state.fitnessToday.createdAt=state.fitnessToday.createdAt||new Date().toISOString(); state.fitnessToday.fromSemana=fromSemana;
   state.fitnessToday.semanaDayName=fromSemana?tr.dayName:null;
   state.fitnessToday.semanaDia=(fromSemana&&tr&&tr.diaIdx!=null)?tr.diaIdx:null;
   // El enlace de identidad de la rutina activa se aplica DESPUÉS del reinicio
@@ -42956,11 +42972,11 @@ function createFitnessToday(){
 }
 function renderFitnessCoach(){
   let out=document.getElementById('fitnessCoachOut');if(!out)return;
-  let pack=state.fitnessToday&&state.fitnessToday.date===todayISO()?state.fitnessToday:null;
+  let pack=f3MismaFechaLocal(state.fitnessToday,todayISO(),todayLocal())?state.fitnessToday:null;
   if(!pack){out.innerHTML='<div class="mini" style="margin-top:10px">Todavía no hay rutina de hoy. Toca "Crear rutina de hoy".</div>';return}
   let ctx=pack.ctx,plan=pack.plan||[];
   // Estado de "hecho" por ejercicio (checklist)
-  if(!pack.checked||pack.checkedDate!==todayISO()){pack.checked={};pack.checkedDate=todayISO();}
+  if(!pack.checked||!f3MismaFechaLocal({date:pack.checkedDate,localDate:pack.localDate},todayISO(),todayLocal())){pack.checked={};pack.checkedDate=todayISO();}
   if(!pack.estado)pack.estado={};
   let hechos=plan.filter((x,i)=>pack.checked[i]).length;
   let pct=plan.length?Math.round(hechos/plan.length*100):0;
@@ -43120,7 +43136,7 @@ function replaceFitnessExercise(index,name){
 }
 function startFitnessGuided(){
   syncSimpleFitnessInputs();
-  if(!state.fitnessToday||state.fitnessToday.date!==todayISO())createFitnessToday();
+  if(!f3MismaFechaLocal(state.fitnessToday,todayISO(),todayLocal()))createFitnessToday();
   state.activeWorkout={date:todayISO(),step:0,done:[],plan:(state.fitnessToday.plan||[]),startedAt:new Date().toISOString()};
   save();
   renderGuidedWorkout();
@@ -46247,4 +46263,5 @@ var v4124OldSecCentro = (typeof secCentro==='function') ? secCentro : null;
 })();
 </script>
 
+<script src="./assets/fitness-exercise-catalog.js"></script>
 </body></html>

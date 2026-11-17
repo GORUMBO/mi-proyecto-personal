@@ -1,250 +1,261 @@
 {
-  "latest": "1.206.1",
-  "date": "2026-11-08",
+  "latest": "1.206.2",
+  "date": "2026-11-16",
   "minVersion": "1.0.0",
   "history": [
-{
-  "version": "1.206.1",
-  "date": "2026-11-08",
-  "type": "recomendada",
-  "nuevas": [
-    "Nueva subcategoría «Para cocinar» en Mis guías TM6, con 5 salsas: ranchera, roja y verde para enchiladas, roja y verde para chilaquiles.",
-    "Biblioteca TM6 con 49 guías propias (27 salsas y 22 adobos de la cocina tradicional mexicana) creadas con el editor existente; todas en revisión (pendientes de prueba práctica)."
-  ],
-  "cambios": [
-    "Las guías de la biblioteca se sincronizan completas entre dispositivos, incluidas las fotos por paso y el uso sin conexión (verificado con 55 guías)."
-  ]
-},
-{
-  "version": "1.206.0",
-  "date": "2026-11-08",
-  "type": "recomendada",
-  "nuevas": [
-    "Mis guías TM6: guías propias de cocina dentro de Thermomix TM6, con categorías y subcategorías (salsas, adobos, moles, guisados, técnicas), parámetros por paso (velocidad, temperatura, resultado esperado), advertencias, consejos, errores y soluciones, variantes y accesorios.",
-    "Biblioteca de accesorios TM6: fotos por accesorio y fotos por paso en tus guías (compresión automática, almacén único por hash).",
-    "Fotos del catálogo de comidas: fotos locales con créditos en tarjetas y detalle de recetas, en guías de verduras y horno, Nevera, calculadora y constructor de comidas; filtro \u00abCon foto\u00bb en Recetas.",
-    "Las fotos propias de las guías ahora viajan en la sincronización: un dispositivo nuevo recibe las guías completas, con fotos."
-  ],
-  "cambios": [
-    "El merge de la nube une guiasMedia como mapa por hash (antes un dispositivo nuevo recibía las guías sin sus fotos).",
-    "Las 6 guías de muestra (3 salsas + 3 adobos) se crearon y verificaron con sincronización real Windows - iPhone, incluyendo uso sin conexión."
-  ]
-},
-{
-  "version": "1.205.4",
-  "date": "2026-11-03",
-  "type": "recomendada",
-  "nuevas": [
-    "Hub visual de modos de cocina en Recetas: 4 tarjetas grandes con fotografía (Thermomix TM6, Horno, Air Fryer y Sartén) que abren cada modo con su lista de recetas compatibles.",
-    "Cada tarjeta muestra cuántas recetas verificadas tiene su equipo; si el aparato está apagado en Mi cocina, la tarjeta lo indica y lleva al panel para encenderlo.",
-    "Nuevos filtros en Recetas: recetas en sartén y recetas en air fryer (misma regla de compatibilidad que las tarjetas).",
-    "Las fotos son recursos locales (assets/cocina) y funcionan sin internet; se cambian sobrescribiendo el archivo."
-  ],
-  "cambios": [
-    "Recetas muestra arriba el hub de modos (antes entraba directo a la calculadora y la lista).",
-    "El service worker precachea las 4 fotos para el modo sin conexión."
-  ]
-},
-{
-  "version": "1.205.2",
-  "date": "2026-10-10",
-  "type": "recomendada",
-  "nuevas": [
-    "Modo rápido en móvil: la demostración ahora ocupa TODO el ancho de la tarjeta (caja 4:3, imagen ampliada sin recortar lo importante) — antes la caja quedaba aplastada a la mitad con dos pills redondas al lado.",
-    "Las pills de músculo y equipo (p.ej. 💪 pecho · 🏋️ barbell) quedan diminutas debajo de la demostración."
-  ],
-  "cambios": [
-    "El escenario de la demo es una columna: primero la imagen grande y debajo los datos pequeños (nunca al lado).",
-    "En escritorio la demostración crece hasta 680×510 px."
-  ]
-},
-{
-  "version": "1.205.1",
-  "date": "2026-10-10",
-  "type": "recomendada",
-  "nuevas": [
-    "Pantalla del ejercicio corregida en Modo rápido: el GIF adopta la proporción de la foto (3:2) y la llena por completo, sin huecos; en escritorio llega a 640×427 px.",
-    "Series, Peso y botones vuelven a quedar visibles en una sola pantalla en el teléfono (antes el GIF alto los empujaba fuera).",
-    "Si la foto del ejercicio falla, se reintenta al instante por un CDN espejo (jsDelivr) antes de mostrar un aviso: menos ejercicios sin GIF."
-  ],
-  "cambios": [
-    "En móvil la demostración ocupa todo el ancho disponible sin bordes vacíos alrededor.",
-    "Se eliminó una referencia muerta de respaldo de imagen (exRespaldo) sustituida por exImgFallo."
-  ]
-},
-{
-  "version": "1.205.0",
-  "date": "2026-10-09",
-  "type": "recomendada",
-  "nuevas": [
-    "GIF de demostración mucho más grande en Modo rápido (móvil y escritorio).",
-    "9 ejercicios nuevos en la biblioteca, cada uno con su GIF: Dominadas, Dominada supina, Remo en T, Peso muerto, Arnold press, Encogimientos, Puente de glúteo, Pantorrilla sentado y Crunch inverso.",
-    "Chip de equipo en cada tarjeta (Barra · Mancuernas · Peso corporal · Máquina · Polea · Banda) y el campo Peso ahora dice el tipo de carga (p.ej. \"Peso (lb) · Barra (peso total)\" o \"mi peso corporal\")."
-  ],
-  "cambios": [
-    "Todos los ejercicios y variantes (162) tienen ahora su demostración exacta: antes varios mostraban el ejercicio equivocado o un placeholder (p.ej. Cruce de poleas o Movilidad).",
-    "Las alternativas y el historial reconocen los ejercicios nuevos sin colisiones de nombres."
-  ]
-},
-{
-  "version": "1.204.0",
-  "date": "2026-09-23",
-  "type": "recomendada",
-  "nuevas": [
-    "Modo rápido de una sola vista: GIF compacto, S1/S2/S3, Peso, Reps y acciones visibles sin desplazarse; sin tarjeta \"Serie seleccionada\" ni botón \"Guardar corrección\" (tocar una serie carga sus valores y Registrar la actualiza o la crea, sin duplicar).",
-    "Demostración honesta: si el ejercicio no tiene demo para su variante, se indica en lugar de mostrar otro ejercicio.",
-    "Crear mi modo abre arriba, legible sobre cualquier fondo y desplazable con el teclado abierto."
-  ],
-  "cambios": [
-    "Menos espacio vacío entre el encabezado y el contenido en todas las secciones.",
-    "Registrar completo avisa antes de usar un peso distinto al de series ya guardadas.",
-    "Botones de registro compactos (Completo (N) / Por separado) y solo Anterior/Siguiente para recorrer los ejercicios."
-  ]
-},
-{
-  "version": "1.203.0",
-  "date": "2026-09-23",
-  "type": "recomendada",
-  "nuevas": [
-    "Barra inferior: un toque en la sección activa sube al inicio y dos toques seguidos bajan al final (sin botón flotante); otra sección abre normal desde arriba.",
-    "Selector de vista renombrado: Fitness completo (antes Modo informativo) junto a Modo rápido.",
-    "Progreso: el volumen de entrenamiento ahora solo suma peso real × repeticiones reales de series válidas (rangos, textos y valores contaminados se excluyen) y muestra Sin datos suficientes cuando no hay datos."
-  ],
-  "cambios": [
-    "Corregido el cálculo que inflaba el volumen (146,060,124 lb y valores como 60100 lb): la suma de reps ya no interpreta rangos ni identificadores como repeticiones.",
-    "Barra inferior estable (misma altura en todas las pantallas, pegada al borde seguro) y menos espacio vacío entre el encabezado y el contenido.",
-    "Contraste de textos y pasos en Crear mi modo."
-  ]
-},
-{
-  "version": "1.202.0",
-  "date": "2026-09-22",
-  "type": "recomendada",
-  "nuevas": [
-    "Series interactivas en Modo rápido: tocar S1/S2/S3 selecciona la serie y carga sus valores guardados para revisarlos o corregirlos (peso, repeticiones y estado de completada), con confirmación únicamente al borrar una serie registrada.",
-    "Registrar por separado respeta la serie seleccionada (corrige sin duplicar si ya existe); Registrar completo usa los valores visibles y cada serie queda editable después.",
-    "Línea discreta con el último peso y repeticiones del ejercicio cuando existen."
-  ],
-  "cambios": [
-    "Cambio de sección inmediato en Windows: bindAll se ejecuta tras el primer frame (la sección pinta primero), el scroll al inicio es instantáneo en escritorio y las secciones pesadas (Recetas, Nevera) inyectan su HTML en el siguiente frame con un indicador de carga.",
-    "Tarjeta rápida más compacta: encabezado corto, GIF ajustado, botones Registrar completo / por separado y Anterior / Siguiente juntos con Cambiar ejercicio como botón compacto 🔁.",
-    "Contraste de textos y etiquetas reforzado sobre el fondo personalizado."
-  ]
-},
-{
-  "version": "1.201.0",
-  "date": "2026-09-22",
-  "type": "recomendada",
-  "nuevas": [
-    "Tarjeta rápida de Fitness: botones Registrar completo (indica cuántas series guardará) y Registrar por separado (una serie a la vez), con rueditas S1-Sn que muestran las series ya guardadas; ejercicios de tiempo usan campo Segundos y peso corporal conserva 0 = solo cuerpo.",
-    "Registrar por pasos (comida): pantalla intro con Empezar, 5 preguntas una a una (proteína, verduras, acompañamiento, aceite/grasas, extras/bebida) con buscador global, opciones frecuentes, detalle por alimento (preparación cruda/cocida, cantidad con unidad y aporte instantáneo) y resumen chico con el total.",
-    "Pantalla final del plato con cada ingrediente (preparación, cantidad y aporte), total en kcal y macros en gramos, editar/quitar ingredientes, nombre, nota y guardado en el diario existente."
-  ],
-  "cambios": [
-    "Datos reales por preparación ampliados (brócoli, espinaca, zanahoria, cebolla, calabacita, pimiento, lechuga, jitomate, aceite, mantequilla) y conversiones de cucharadita/cucharada/taza/pieza; sin datos se avisa y se permite completarlos sin inventar.",
-    "Contraste de textos y etiquetas junto al GIF (nunca gris claro sobre blanco).",
-    "La comida guardada por pasos aparece en el mismo historial del diario y puede editarse después."
-  ]
-},
-{
-  "version": "1.200.0",
-  "date": "2026-09-22",
-  "type": "recomendada",
-  "nuevas": [
-    "Registro de comida por pasos en el Contador: categorías (proteínas, verduras, cereales, frutas, grasas/salsas, bebidas), búsqueda, cantidades con unidad (g, pieza, taza, cucharada), Saltar, resumen editable con nombre y nota, y guardado en el diario del día.",
-    "Estados de preparación (crudo/cocido) para alimentos clave con datos reales por 100 g (USDA/Mifflin): las calorías y macros se recalculan al instante al cambiar cantidad o estado; si un alimento no tiene datos para una preparación se avisa y se permite completarlos sin inventar.",
-    "Tarjeta rápida de Fitness con la instrucción del ejercicio: series × repeticiones (o duración) y tipo de carga (peso corporal, mancuernas por mancuerna, barra total, máquina, polea, banda o sin equipo).",
-    "Modo informativo con la pantalla de la semana (días y rutinas asignadas) siempre visible y sin tarjetas duplicadas."
-  ],
-  "cambios": [
-    "Tarjetas de toda la app más compactas: contenido ajustado al ancho, etiquetas con mejor contraste sobre fondos claros o transparentes, menos espacios vacíos y botones táctiles sin quedar ocultos tras la barra inferior.",
-    "La transparencia elegida por el usuario en Tarjetas y cuadros se mantiene al cerrar y abrir la app."
-  ]
-},
-{
-  "version": "1.199.0",
-  "date": "2026-09-22",
-  "type": "recomendada",
-  "nuevas": [
-    "Modo rápido mínimo en iPhone: solo el GIF animado grande del ejercicio, Peso y Repeticiones compactos, Registrar, Cambiar ejercicio y Anterior/Siguiente; sin semana, estadísticas, progreso ni tarjetas extra.",
-    "Fitness completo (informativo) consolidado: Mi semana una sola vez, Progreso y Rutinas guardadas como secciones plegables cerradas por defecto con contador (p. ej. Rutinas guardadas (3)).",
-    "Diagnóstico en Ajustes: estado del Puente Cloudflare, conexión, sincronización, última sincronización, versión instalada y botones para comprobar conexión y buscar actualización.",
-    "Tarjetas y cuadros en Apariencia: color, transparencia, desenfoque, borde e intensidad de sombra para todas las tarjetas (incluida la verde de la rutina), con Restaurar diseño original; la transparencia solo afecta al fondo.",
-    "Calculadora de alimentación (Mifflin-St Jeor) en Comida y Calculadora de objetivo (diferencia, conversión, IMC de referencia y tiempo estimado) en Peso; plegadas por defecto, guardan los datos, validan entradas y permiten copiar resultados."
-  ],
-  "cambios": [
-    "El encabezado queda limpio: el número de versión y el Puente Cloudflare ya no se muestran (ahora viven en Diagnóstico).",
-    "Rutinas guardadas: se recuperan del almacenamiento local si la sincronización llega vacía, se muestra Cargando rutinas… durante la hidratación y el contador coincide con la lista real.",
-    "El nombre de la rutina tiene su propia caja con borde y fondo distinguibles (legible con fondos claros u oscuros).",
-    "Progreso y Rutinas guardadas no ocupan pantalla completa ni mandan al usuario al final de la página."
-  ],
-  "errores": [
-    "Corregido que el encabezado mostrara la versión y el control técnico del puente al usuario normal.",
-    "Corregido que la interfaz dijera que no había rutinas guardadas cuando sí las había.",
-    "Corregido que el Modo rápido obligara a hacer scroll por tarjetas y controles que no se necesitan para entrenar."
-  ]
-},
-{
-  "version": "1.198.0",
-  "date": "2026-09-21",
-  "type": "recomendada",
-  "nuevas": [
-    "Fitness en iPhone: Modo rápido de un ejercicio por pantalla (nombre, Ejercicio X de N, músculo, series y repeticiones, descanso, equipo, último registro, rueditas S1-Sn, peso y repeticiones grandes, Registrar serie, cronómetro compacto y Anterior/Siguiente) con selector ⚡ Modo rápido / 📖 Modo informativo que se recuerda.",
-    "Entrada directa a la rutina al abrir Fitness en móvil: la rutina y su selector van primero; el héroe y las herramientas quedan debajo.",
-    "Cada ejercicio muestra su equipo real desde la biblioteca (Mancuernas · peso por mancuerna, Barra · peso total, Peso corporal, Máquina, Polea, Banda elástica, Sin equipo) y su técnica.",
-    "Registrar serie ahora guarda UNA serie a la vez con el peso y las repeticiones tecleados (pesos distintos por serie); los ejercicios de peso corporal y tiempo se registran con peso 0."
-  ],
-  "cambios": [
-    "Los campos de peso y repeticiones llevan etiqueta (Peso en lb o kg, último peso usado y peso a registrar), tamaño cómodo para el dedo y ya no quedan cortados ni debajo de otros elementos.",
-    "Anterior/Siguiente reemplazan la tarjeta sin mover la pantalla; en el primer ejercicio Anterior se desactiva y en el último aparece Finalizar rutina; el usuario decide cuándo avanzar.",
-    "Al regresar a un ejercicio se conservan series, peso tecleado, repeticiones, estado, descanso y cambios de ejercicio; alternar entre modos no pierde ni duplica registros (una sola fuente de datos).",
-    "La barra inferior no tapa los controles del entrenamiento."
-  ],
-  "errores": [
-    "Corregido que el campo de peso quedara cortado o poco visible en algunas pantallas de Fitness.",
-    "Corregido que los ejercicios de peso corporal no se pudieran registrar (peso 0 se descartaba)."
-  ]
-},
-{
-  "version": "1.197.0",
-  "date": "2026-09-21",
-  "type": "recomendada",
-  "nuevas": [
-    "Sección Peso completa en iPhone: al tocar Peso se abre el seguimiento completo (peso actual, formulario con fecha y unidad lb/kg, botón Guardar peso, último registro, historial y progreso desde el registro anterior); si no hay registros muestra \"Todavía no has registrado tu peso\"."
-  ],
-  "cambios": [
-    "El fondo personalizado se restaura al abrir la app: la imagen se guarda como Blob en IndexedDB (nunca en localStorage) y se reconstruye su URL al arrancar, sin destello blanco y funcionando sin conexión; se conserva al cerrar, recargar o cambiar de sección.",
-    "Si existe un fondo guardado con el sistema anterior (dataURL en la configuración), se migra automáticamente a IndexedDB sin borrarlo.",
-    "El Puente Cloudflare ya no tapa los botones ni las etiquetas de la barra inferior del iPhone.",
-    "La sección Peso nunca queda en blanco: si falla la lectura de datos se muestra un error visible con botón Reintentar (los registros no se tocan)."
-  ],
-  "errores": [
-    "Corregido que la sección Peso quedara en blanco al cambiar de grupo (referencia a una función de arranque no disponible en la versión publicada).",
-    "Corregido que el fondo personalizado desapareciera al cerrar y reabrir la PWA.",
-    "Corregido que el aviso flotante Puente Cloudflare cubriera el nombre del botón Peso."
-  ]
-},
-{
-  "version": "1.196.0",
-  "date": "2026-09-20",
-  "type": "recomendada",
-  "nuevas": [
-    "Menú lateral por gestos en iPhone (solo Modo completo): desliza desde el borde izquierdo hacia la derecha o desde el derecho hacia la izquierda para abrir el menú de la sección actual; se cierra con el gesto contrario, tocando fuera, con ✕ o con Escape.",
-    "Pestaña ☰ visible en el borde izquierdo como alternativa a los gestos (por si Safari reserva el gesto del borde para volver atrás).",
-    "El menú muestra los minibotones de la sección actual (p. ej. en Comer: Contador, Recetas, Nevera, Aparatos) y al tocarlos abre la sección y sube hasta arriba con scroll suave.",
-    "iPhone en horizontal: la navegación móvil se mantiene a cualquier ancho (antes, a más de 768 px se activaba el diseño de escritorio).",
-    "Áreas seguras laterales (notch en horizontal) en encabezado, contenido y barra inferior, y aviso si Safari muestra la versión de escritorio de la página."
-  ],
-  "cambios": [
-    "Los gestos no roban el scroll vertical ni los carruseles, formularios, videos o componentes arrastrables (solo se confirman como gesto si son horizontales y empiezan cerca del borde).",
-    "Accesibilidad del menú: botones de al menos 44 px, aria-label, aria-expanded y aria-hidden, bloqueo del scroll de fondo, foco devuelto al abrir el menú y soporte de prefers-reduced-motion.",
-    "Sin desplazamiento horizontal en 320–430 px y textos, botones y tarjetas que se acomodan sin cortarse."
-  ],
-  "errores": [
-    "Corregido que el iPhone en horizontal mostrara el encabezado, textos, botones y tarjetas con medidas de escritorio.",
-    "Corregido que las insignias del encabezado (versión, logo y estado de sincronización) pudieran salirse del encabezado en pantallas estrechas."
-  ]
-},
+    {
+      "version": "1.206.2",
+      "date": "2026-11-16",
+      "type": "recomendada",
+      "cambios": [
+        "Búsqueda de ejercicios por nombres alternativos y variantes del catálogo desde Modo rápido.",
+        "Día y fecha local visibles en Modo rápido.",
+        "Demostraciones no verificadas sustituidas por indicaciones textuales.",
+        "La sesión conserva fecha e identificador durante el mismo día local; disponibilidad del catálogo sin conexión tras la carga inicial."
+      ]
+    },
+    {
+      "version": "1.206.1",
+      "date": "2026-11-08",
+      "type": "recomendada",
+      "nuevas": [
+        "Nueva subcategoría «Para cocinar» en Mis guías TM6, con 5 salsas: ranchera, roja y verde para enchiladas, roja y verde para chilaquiles.",
+        "Biblioteca TM6 con 49 guías propias (27 salsas y 22 adobos de la cocina tradicional mexicana) creadas con el editor existente; todas en revisión (pendientes de prueba práctica)."
+      ],
+      "cambios": [
+        "Las guías de la biblioteca se sincronizan completas entre dispositivos, incluidas las fotos por paso y el uso sin conexión (verificado con 55 guías)."
+      ]
+    },
+    {
+      "version": "1.206.0",
+      "date": "2026-11-08",
+      "type": "recomendada",
+      "nuevas": [
+        "Mis guías TM6: guías propias de cocina dentro de Thermomix TM6, con categorías y subcategorías (salsas, adobos, moles, guisados, técnicas), parámetros por paso (velocidad, temperatura, resultado esperado), advertencias, consejos, errores y soluciones, variantes y accesorios.",
+        "Biblioteca de accesorios TM6: fotos por accesorio y fotos por paso en tus guías (compresión automática, almacén único por hash).",
+        "Fotos del catálogo de comidas: fotos locales con créditos en tarjetas y detalle de recetas, en guías de verduras y horno, Nevera, calculadora y constructor de comidas; filtro «Con foto» en Recetas.",
+        "Las fotos propias de las guías ahora viajan en la sincronización: un dispositivo nuevo recibe las guías completas, con fotos."
+      ],
+      "cambios": [
+        "El merge de la nube une guiasMedia como mapa por hash (antes un dispositivo nuevo recibía las guías sin sus fotos).",
+        "Las 6 guías de muestra (3 salsas + 3 adobos) se crearon y verificaron con sincronización real Windows - iPhone, incluyendo uso sin conexión."
+      ]
+    },
+    {
+      "version": "1.205.4",
+      "date": "2026-11-03",
+      "type": "recomendada",
+      "nuevas": [
+        "Hub visual de modos de cocina en Recetas: 4 tarjetas grandes con fotografía (Thermomix TM6, Horno, Air Fryer y Sartén) que abren cada modo con su lista de recetas compatibles.",
+        "Cada tarjeta muestra cuántas recetas verificadas tiene su equipo; si el aparato está apagado en Mi cocina, la tarjeta lo indica y lleva al panel para encenderlo.",
+        "Nuevos filtros en Recetas: recetas en sartén y recetas en air fryer (misma regla de compatibilidad que las tarjetas).",
+        "Las fotos son recursos locales (assets/cocina) y funcionan sin internet; se cambian sobrescribiendo el archivo."
+      ],
+      "cambios": [
+        "Recetas muestra arriba el hub de modos (antes entraba directo a la calculadora y la lista).",
+        "El service worker precachea las 4 fotos para el modo sin conexión."
+      ]
+    },
+    {
+      "version": "1.205.2",
+      "date": "2026-10-10",
+      "type": "recomendada",
+      "nuevas": [
+        "Modo rápido en móvil: la demostración ahora ocupa TODO el ancho de la tarjeta (caja 4:3, imagen ampliada sin recortar lo importante) — antes la caja quedaba aplastada a la mitad con dos pills redondas al lado.",
+        "Las pills de músculo y equipo (p.ej. 💪 pecho · 🏋️ barbell) quedan diminutas debajo de la demostración."
+      ],
+      "cambios": [
+        "El escenario de la demo es una columna: primero la imagen grande y debajo los datos pequeños (nunca al lado).",
+        "En escritorio la demostración crece hasta 680×510 px."
+      ]
+    },
+    {
+      "version": "1.205.1",
+      "date": "2026-10-10",
+      "type": "recomendada",
+      "nuevas": [
+        "Pantalla del ejercicio corregida en Modo rápido: el GIF adopta la proporción de la foto (3:2) y la llena por completo, sin huecos; en escritorio llega a 640×427 px.",
+        "Series, Peso y botones vuelven a quedar visibles en una sola pantalla en el teléfono (antes el GIF alto los empujaba fuera).",
+        "Si la foto del ejercicio falla, se reintenta al instante por un CDN espejo (jsDelivr) antes de mostrar un aviso: menos ejercicios sin GIF."
+      ],
+      "cambios": [
+        "En móvil la demostración ocupa todo el ancho disponible sin bordes vacíos alrededor.",
+        "Se eliminó una referencia muerta de respaldo de imagen (exRespaldo) sustituida por exImgFallo."
+      ]
+    },
+    {
+      "version": "1.205.0",
+      "date": "2026-10-09",
+      "type": "recomendada",
+      "nuevas": [
+        "GIF de demostración mucho más grande en Modo rápido (móvil y escritorio).",
+        "9 ejercicios nuevos en la biblioteca, cada uno con su GIF: Dominadas, Dominada supina, Remo en T, Peso muerto, Arnold press, Encogimientos, Puente de glúteo, Pantorrilla sentado y Crunch inverso.",
+        "Chip de equipo en cada tarjeta (Barra · Mancuernas · Peso corporal · Máquina · Polea · Banda) y el campo Peso ahora dice el tipo de carga (p.ej. \"Peso (lb) · Barra (peso total)\" o \"mi peso corporal\")."
+      ],
+      "cambios": [
+        "Todos los ejercicios y variantes (162) tienen ahora su demostración exacta: antes varios mostraban el ejercicio equivocado o un placeholder (p.ej. Cruce de poleas o Movilidad).",
+        "Las alternativas y el historial reconocen los ejercicios nuevos sin colisiones de nombres."
+      ]
+    },
+    {
+      "version": "1.204.0",
+      "date": "2026-09-23",
+      "type": "recomendada",
+      "nuevas": [
+        "Modo rápido de una sola vista: GIF compacto, S1/S2/S3, Peso, Reps y acciones visibles sin desplazarse; sin tarjeta \"Serie seleccionada\" ni botón \"Guardar corrección\" (tocar una serie carga sus valores y Registrar la actualiza o la crea, sin duplicar).",
+        "Demostración honesta: si el ejercicio no tiene demo para su variante, se indica en lugar de mostrar otro ejercicio.",
+        "Crear mi modo abre arriba, legible sobre cualquier fondo y desplazable con el teclado abierto."
+      ],
+      "cambios": [
+        "Menos espacio vacío entre el encabezado y el contenido en todas las secciones.",
+        "Registrar completo avisa antes de usar un peso distinto al de series ya guardadas.",
+        "Botones de registro compactos (Completo (N) / Por separado) y solo Anterior/Siguiente para recorrer los ejercicios."
+      ]
+    },
+    {
+      "version": "1.203.0",
+      "date": "2026-09-23",
+      "type": "recomendada",
+      "nuevas": [
+        "Barra inferior: un toque en la sección activa sube al inicio y dos toques seguidos bajan al final (sin botón flotante); otra sección abre normal desde arriba.",
+        "Selector de vista renombrado: Fitness completo (antes Modo informativo) junto a Modo rápido.",
+        "Progreso: el volumen de entrenamiento ahora solo suma peso real × repeticiones reales de series válidas (rangos, textos y valores contaminados se excluyen) y muestra Sin datos suficientes cuando no hay datos."
+      ],
+      "cambios": [
+        "Corregido el cálculo que inflaba el volumen (146,060,124 lb y valores como 60100 lb): la suma de reps ya no interpreta rangos ni identificadores como repeticiones.",
+        "Barra inferior estable (misma altura en todas las pantallas, pegada al borde seguro) y menos espacio vacío entre el encabezado y el contenido.",
+        "Contraste de textos y pasos en Crear mi modo."
+      ]
+    },
+    {
+      "version": "1.202.0",
+      "date": "2026-09-22",
+      "type": "recomendada",
+      "nuevas": [
+        "Series interactivas en Modo rápido: tocar S1/S2/S3 selecciona la serie y carga sus valores guardados para revisarlos o corregirlos (peso, repeticiones y estado de completada), con confirmación únicamente al borrar una serie registrada.",
+        "Registrar por separado respeta la serie seleccionada (corrige sin duplicar si ya existe); Registrar completo usa los valores visibles y cada serie queda editable después.",
+        "Línea discreta con el último peso y repeticiones del ejercicio cuando existen."
+      ],
+      "cambios": [
+        "Cambio de sección inmediato en Windows: bindAll se ejecuta tras el primer frame (la sección pinta primero), el scroll al inicio es instantáneo en escritorio y las secciones pesadas (Recetas, Nevera) inyectan su HTML en el siguiente frame con un indicador de carga.",
+        "Tarjeta rápida más compacta: encabezado corto, GIF ajustado, botones Registrar completo / por separado y Anterior / Siguiente juntos con Cambiar ejercicio como botón compacto 🔁.",
+        "Contraste de textos y etiquetas reforzado sobre el fondo personalizado."
+      ]
+    },
+    {
+      "version": "1.201.0",
+      "date": "2026-09-22",
+      "type": "recomendada",
+      "nuevas": [
+        "Tarjeta rápida de Fitness: botones Registrar completo (indica cuántas series guardará) y Registrar por separado (una serie a la vez), con rueditas S1-Sn que muestran las series ya guardadas; ejercicios de tiempo usan campo Segundos y peso corporal conserva 0 = solo cuerpo.",
+        "Registrar por pasos (comida): pantalla intro con Empezar, 5 preguntas una a una (proteína, verduras, acompañamiento, aceite/grasas, extras/bebida) con buscador global, opciones frecuentes, detalle por alimento (preparación cruda/cocida, cantidad con unidad y aporte instantáneo) y resumen chico con el total.",
+        "Pantalla final del plato con cada ingrediente (preparación, cantidad y aporte), total en kcal y macros en gramos, editar/quitar ingredientes, nombre, nota y guardado en el diario existente."
+      ],
+      "cambios": [
+        "Datos reales por preparación ampliados (brócoli, espinaca, zanahoria, cebolla, calabacita, pimiento, lechuga, jitomate, aceite, mantequilla) y conversiones de cucharadita/cucharada/taza/pieza; sin datos se avisa y se permite completarlos sin inventar.",
+        "Contraste de textos y etiquetas junto al GIF (nunca gris claro sobre blanco).",
+        "La comida guardada por pasos aparece en el mismo historial del diario y puede editarse después."
+      ]
+    },
+    {
+      "version": "1.200.0",
+      "date": "2026-09-22",
+      "type": "recomendada",
+      "nuevas": [
+        "Registro de comida por pasos en el Contador: categorías (proteínas, verduras, cereales, frutas, grasas/salsas, bebidas), búsqueda, cantidades con unidad (g, pieza, taza, cucharada), Saltar, resumen editable con nombre y nota, y guardado en el diario del día.",
+        "Estados de preparación (crudo/cocido) para alimentos clave con datos reales por 100 g (USDA/Mifflin): las calorías y macros se recalculan al instante al cambiar cantidad o estado; si un alimento no tiene datos para una preparación se avisa y se permite completarlos sin inventar.",
+        "Tarjeta rápida de Fitness con la instrucción del ejercicio: series × repeticiones (o duración) y tipo de carga (peso corporal, mancuernas por mancuerna, barra total, máquina, polea, banda o sin equipo).",
+        "Modo informativo con la pantalla de la semana (días y rutinas asignadas) siempre visible y sin tarjetas duplicadas."
+      ],
+      "cambios": [
+        "Tarjetas de toda la app más compactas: contenido ajustado al ancho, etiquetas con mejor contraste sobre fondos claros o transparentes, menos espacios vacíos y botones táctiles sin quedar ocultos tras la barra inferior.",
+        "La transparencia elegida por el usuario en Tarjetas y cuadros se mantiene al cerrar y abrir la app."
+      ]
+    },
+    {
+      "version": "1.199.0",
+      "date": "2026-09-22",
+      "type": "recomendada",
+      "nuevas": [
+        "Modo rápido mínimo en iPhone: solo el GIF animado grande del ejercicio, Peso y Repeticiones compactos, Registrar, Cambiar ejercicio y Anterior/Siguiente; sin semana, estadísticas, progreso ni tarjetas extra.",
+        "Fitness completo (informativo) consolidado: Mi semana una sola vez, Progreso y Rutinas guardadas como secciones plegables cerradas por defecto con contador (p. ej. Rutinas guardadas (3)).",
+        "Diagnóstico en Ajustes: estado del Puente Cloudflare, conexión, sincronización, última sincronización, versión instalada y botones para comprobar conexión y buscar actualización.",
+        "Tarjetas y cuadros en Apariencia: color, transparencia, desenfoque, borde e intensidad de sombra para todas las tarjetas (incluida la verde de la rutina), con Restaurar diseño original; la transparencia solo afecta al fondo.",
+        "Calculadora de alimentación (Mifflin-St Jeor) en Comida y Calculadora de objetivo (diferencia, conversión, IMC de referencia y tiempo estimado) en Peso; plegadas por defecto, guardan los datos, validan entradas y permiten copiar resultados."
+      ],
+      "cambios": [
+        "El encabezado queda limpio: el número de versión y el Puente Cloudflare ya no se muestran (ahora viven en Diagnóstico).",
+        "Rutinas guardadas: se recuperan del almacenamiento local si la sincronización llega vacía, se muestra Cargando rutinas… durante la hidratación y el contador coincide con la lista real.",
+        "El nombre de la rutina tiene su propia caja con borde y fondo distinguibles (legible con fondos claros u oscuros).",
+        "Progreso y Rutinas guardadas no ocupan pantalla completa ni mandan al usuario al final de la página."
+      ],
+      "errores": [
+        "Corregido que el encabezado mostrara la versión y el control técnico del puente al usuario normal.",
+        "Corregido que la interfaz dijera que no había rutinas guardadas cuando sí las había.",
+        "Corregido que el Modo rápido obligara a hacer scroll por tarjetas y controles que no se necesitan para entrenar."
+      ]
+    },
+    {
+      "version": "1.198.0",
+      "date": "2026-09-21",
+      "type": "recomendada",
+      "nuevas": [
+        "Fitness en iPhone: Modo rápido de un ejercicio por pantalla (nombre, Ejercicio X de N, músculo, series y repeticiones, descanso, equipo, último registro, rueditas S1-Sn, peso y repeticiones grandes, Registrar serie, cronómetro compacto y Anterior/Siguiente) con selector ⚡ Modo rápido / 📖 Modo informativo que se recuerda.",
+        "Entrada directa a la rutina al abrir Fitness en móvil: la rutina y su selector van primero; el héroe y las herramientas quedan debajo.",
+        "Cada ejercicio muestra su equipo real desde la biblioteca (Mancuernas · peso por mancuerna, Barra · peso total, Peso corporal, Máquina, Polea, Banda elástica, Sin equipo) y su técnica.",
+        "Registrar serie ahora guarda UNA serie a la vez con el peso y las repeticiones tecleados (pesos distintos por serie); los ejercicios de peso corporal y tiempo se registran con peso 0."
+      ],
+      "cambios": [
+        "Los campos de peso y repeticiones llevan etiqueta (Peso en lb o kg, último peso usado y peso a registrar), tamaño cómodo para el dedo y ya no quedan cortados ni debajo de otros elementos.",
+        "Anterior/Siguiente reemplazan la tarjeta sin mover la pantalla; en el primer ejercicio Anterior se desactiva y en el último aparece Finalizar rutina; el usuario decide cuándo avanzar.",
+        "Al regresar a un ejercicio se conservan series, peso tecleado, repeticiones, estado, descanso y cambios de ejercicio; alternar entre modos no pierde ni duplica registros (una sola fuente de datos).",
+        "La barra inferior no tapa los controles del entrenamiento."
+      ],
+      "errores": [
+        "Corregido que el campo de peso quedara cortado o poco visible en algunas pantallas de Fitness.",
+        "Corregido que los ejercicios de peso corporal no se pudieran registrar (peso 0 se descartaba)."
+      ]
+    },
+    {
+      "version": "1.197.0",
+      "date": "2026-09-21",
+      "type": "recomendada",
+      "nuevas": [
+        "Sección Peso completa en iPhone: al tocar Peso se abre el seguimiento completo (peso actual, formulario con fecha y unidad lb/kg, botón Guardar peso, último registro, historial y progreso desde el registro anterior); si no hay registros muestra \"Todavía no has registrado tu peso\"."
+      ],
+      "cambios": [
+        "El fondo personalizado se restaura al abrir la app: la imagen se guarda como Blob en IndexedDB (nunca en localStorage) y se reconstruye su URL al arrancar, sin destello blanco y funcionando sin conexión; se conserva al cerrar, recargar o cambiar de sección.",
+        "Si existe un fondo guardado con el sistema anterior (dataURL en la configuración), se migra automáticamente a IndexedDB sin borrarlo.",
+        "El Puente Cloudflare ya no tapa los botones ni las etiquetas de la barra inferior del iPhone.",
+        "La sección Peso nunca queda en blanco: si falla la lectura de datos se muestra un error visible con botón Reintentar (los registros no se tocan)."
+      ],
+      "errores": [
+        "Corregido que la sección Peso quedara en blanco al cambiar de grupo (referencia a una función de arranque no disponible en la versión publicada).",
+        "Corregido que el fondo personalizado desapareciera al cerrar y reabrir la PWA.",
+        "Corregido que el aviso flotante Puente Cloudflare cubriera el nombre del botón Peso."
+      ]
+    },
+    {
+      "version": "1.196.0",
+      "date": "2026-09-20",
+      "type": "recomendada",
+      "nuevas": [
+        "Menú lateral por gestos en iPhone (solo Modo completo): desliza desde el borde izquierdo hacia la derecha o desde el derecho hacia la izquierda para abrir el menú de la sección actual; se cierra con el gesto contrario, tocando fuera, con ✕ o con Escape.",
+        "Pestaña ☰ visible en el borde izquierdo como alternativa a los gestos (por si Safari reserva el gesto del borde para volver atrás).",
+        "El menú muestra los minibotones de la sección actual (p. ej. en Comer: Contador, Recetas, Nevera, Aparatos) y al tocarlos abre la sección y sube hasta arriba con scroll suave.",
+        "iPhone en horizontal: la navegación móvil se mantiene a cualquier ancho (antes, a más de 768 px se activaba el diseño de escritorio).",
+        "Áreas seguras laterales (notch en horizontal) en encabezado, contenido y barra inferior, y aviso si Safari muestra la versión de escritorio de la página."
+      ],
+      "cambios": [
+        "Los gestos no roban el scroll vertical ni los carruseles, formularios, videos o componentes arrastrables (solo se confirman como gesto si son horizontales y empiezan cerca del borde).",
+        "Accesibilidad del menú: botones de al menos 44 px, aria-label, aria-expanded y aria-hidden, bloqueo del scroll de fondo, foco devuelto al abrir el menú y soporte de prefers-reduced-motion.",
+        "Sin desplazamiento horizontal en 320–430 px y textos, botones y tarjetas que se acomodan sin cortarse."
+      ],
+      "errores": [
+        "Corregido que el iPhone en horizontal mostrara el encabezado, textos, botones y tarjetas con medidas de escritorio.",
+        "Corregido que las insignias del encabezado (versión, logo y estado de sincronización) pudieran salirse del encabezado en pantallas estrechas."
+      ]
+    },
     {
       "version": "1.195.3",
       "date": "2026-09-19",

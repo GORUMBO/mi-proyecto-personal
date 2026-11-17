@@ -1,5 +1,5 @@
-const CACHE='mi-proyecto-v1-206-1';
-const FILES=['./','./index.html',
+const CACHE='mi-proyecto-v1-206-2';
+const FILES=['./','./index.html','./assets/fitness-exercise-catalog.js',
  './assets/recetas/agua-jamaica.jpg',
  './assets/recetas/chilaquiles.jpg',
  './assets/recetas/elote-esquite.jpg',
