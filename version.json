@@ -1,8 +1,18 @@
 {
-  "latest": "1.206.2",
+  "latest": "1.206.3",
   "date": "2026-11-16",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.206.3",
+      "date": "2026-11-16",
+      "type": "recomendada",
+      "cambios": [
+        "Restauradas demostraciones originales y corregidas asociaciones de ejercicios; 534 nombres y variantes con demostración y 53 pendientes.",
+        "Demostraciones disponibles en ejercicios individuales, rutinas y Modo rápido; recursos nuevos con atribución.",
+        "Conservados identificadores, rutinas, historial y configuraciones; caché actualizado para los nuevos recursos."
+      ]
+    },
     {
       "version": "1.206.2",
       "date": "2026-11-16",

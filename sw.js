@@ -1,5 +1,5 @@
-const CACHE='mi-proyecto-v1-206-2';
-const FILES=['./','./index.html','./assets/fitness-exercise-catalog.js',
+const CACHE='mi-proyecto-v1-206-3';
+const FILES=["./assets/exercise-demos/Band_Skull_Crusher/0.jpg","./assets/exercise-demos/Band_Skull_Crusher/1.jpg","./assets/exercise-demos/Cable_Crossover/0.jpg","./assets/exercise-demos/Cable_Crossover/1.jpg","./assets/exercise-demos/Cross_Over_-_With_Bands/0.jpg","./assets/exercise-demos/Cross_Over_-_With_Bands/1.jpg","./assets/exercise-demos/Dumbbell_Lunges/0.jpg","./assets/exercise-demos/Dumbbell_Lunges/1.jpg","./assets/exercise-demos/final-attributions.json","./assets/exercise-demos/Hyperextensions_Back_Extensions/0.jpg","./assets/exercise-demos/Hyperextensions_Back_Extensions/1.jpg","./assets/exercise-demos/sources.json","./assets/exercise-demos/Speed_Band_Overhead_Triceps/0.jpg","./assets/exercise-demos/Speed_Band_Overhead_Triceps/1.jpg","./assets/exercise-demos/Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/0.jpg","./assets/exercise-demos/Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/1.jpg","./assets/exercise-demos/WGER_203/wger-328.jpeg","./assets/exercise-demos/WGER_377/wger-139.png","./assets/exercise-demos/WGER_377/wger-140.png","./assets/exercise-demos/WGER_82/rear-delt.MOV",'./','./index.html','./assets/fitness-exercise-catalog.js',
  './assets/recetas/agua-jamaica.jpg',
  './assets/recetas/chilaquiles.jpg',
  './assets/recetas/elote-esquite.jpg',
@@ -185,11 +185,32 @@ self.addEventListener('fetch',function(e){
   // version.json siempre desde la red (para detectar versiones nuevas sin cache).
   if(/version\.json(\?|$)/.test(url))return;
   if(e.request.method!=='GET')return;
+  // Safari solicita fragmentos del video. Responder 206 desde la copia completa
+  // permite reproducirlo sin red; este caso no afecta otros recursos ni datos.
+  if(/\/assets\/exercise-demos\/WGER_82\/rear-delt\.MOV(?:\?|$)/.test(url) && e.request.headers.has('range')){
+    e.respondWith((async function(){
+      var c=await caches.open(CACHE),hit=await c.match(url);
+      if(!hit)return fetch(e.request);
+      var bytes=await hit.arrayBuffer(),length=bytes.byteLength;
+      var match=/^bytes=(\d*)-(\d*)$/.exec(e.request.headers.get('range')||'');
+      if(!match||(!match[1]&&!match[2]))return fetch(e.request);
+      var start=match[1]?Number(match[1]):Math.max(0,length-Number(match[2]));
+      var end=match[1]?(match[2]?Math.min(Number(match[2]),length-1):length-1):length-1;
+      if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>=length||end<start){
+        return new Response(null,{status:416,headers:{'Content-Range':'bytes */'+length}});
+      }
+      var headers=new Headers(hit.headers);headers.delete('Content-Encoding');headers.set('Content-Type','video/quicktime');
+      headers.set('Accept-Ranges','bytes');headers.set('Content-Range','bytes '+start+'-'+end+'/'+length);
+      headers.set('Content-Length',String(end-start+1));
+      return new Response(bytes.slice(start,end+1),{status:206,headers:headers});
+    })());
+    return;
+  }
   // Stale-while-revalidate: responde AL INSTANTE desde la caché (app rápida) y actualiza en segundo plano.
   // Antes era network-first: bajaba ~2.5MB en cada carga antes de mostrar nada (lento en el teléfono).
   // Las versiones nuevas se siguen detectando con version.json (siempre red) + el aviso de "Actualizar".
   e.respondWith(
-    caches.match(e.request).then(function(cached){
+    caches.open(CACHE).then(function(c){return c.match(e.request);}).then(function(cached){
       const fromNet=fetch(e.request).then(function(r){
         if(r&&r.status===200){let copy=r.clone();caches.open(CACHE).then(function(c){c.put(e.request,copy);});}
         return r;

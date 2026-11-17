@@ -1,0 +1,71 @@
+{
+  "scope": "Recursos originales restaurados con autorización del usuario para esta publicación. Licencias individuales de estas fotos no acreditadas; se conservan las referencias de origen.",
+  "source": "https://github.com/yuhonas/free-exercise-db",
+  "licenseCaveat": "https://github.com/yuhonas/free-exercise-db/issues/2",
+  "associations": {
+    "Cruce de poleas": "Cable_Crossover",
+    "Cruce con bandas": "Cross_Over_-_With_Bands",
+    "Aperturas con bandas": "Cross_Over_-_With_Bands",
+    "Band pull apart": "Band_Pull_Apart",
+    "Remo inclinado con mancuernas": "Bent_Over_Two-Dumbbell_Row",
+    "Sentadilla búlgara con mancuernas": "Split_Squat_with_Dumbbells",
+    "Zancadas con mancuernas": "Dumbbell_Lunges",
+    "Hiperextensión en banco": "Hyperextensions_Back_Extensions",
+    "Elevación de piernas en banco": "Flat_Bench_Lying_Leg_Raise",
+    "Rompecraneos con mancuernas": "Lying_Dumbbell_Tricep_Extension",
+    "Rompecraneos con banda": "Band_Skull_Crusher",
+    "Pallof press en polea": "Pallof_Press"
+  },
+  "files": [
+    {
+      "path": "Cable_Crossover/0.jpg",
+      "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Crossover/0.jpg",
+      "sha256": "a0d37cf03da0a31acb010620ed4203498fbe83b82e4af298cd28b7fe4435144b"
+    },
+    {
+      "path": "Cable_Crossover/1.jpg",
+      "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Crossover/1.jpg",
+      "sha256": "ebaf5aa26a4c7502364fcd5c64d8af8d9ba368f190914eee14ec445f9adef2ca"
+    },
+    {
+      "path": "Cross_Over_-_With_Bands/0.jpg",
+      "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cross_Over_-_With_Bands/0.jpg",
+      "sha256": "ec8a37b4286962c922d8a15ddd758f3d21e382bcb7f97c7deaf75bbe08443716"
+    },
+    {
+      "path": "Cross_Over_-_With_Bands/1.jpg",
+      "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cross_Over_-_With_Bands/1.jpg",
+      "sha256": "85e2c3bb4d7a04484ed38b36a32a2992a9cf9f99ff6b784dc9302a5289b72604"
+    },
+    {
+      "path": "Dumbbell_Lunges/0.jpg",
+      "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg",
+      "sha256": "ab3d56b0b44e82d189dfd88de2838220445cb245fae8a0f1586daa67355604d4"
+    },
+    {
+      "path": "Dumbbell_Lunges/1.jpg",
+      "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/1.jpg",
+      "sha256": "138a08303cb955b1f4867cf6eaeab1664c32079dcbd7fac871eccf7d9597d671"
+    },
+    {
+      "path": "Hyperextensions_Back_Extensions/0.jpg",
+      "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hyperextensions_Back_Extensions/0.jpg",
+      "sha256": "48f077fe32d2b839a2cff82450d36f50141559a8008d562495df2e6a21f8aa37"
+    },
+    {
+      "path": "Hyperextensions_Back_Extensions/1.jpg",
+      "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hyperextensions_Back_Extensions/1.jpg",
+      "sha256": "1e1d6c7131444657b0c53ca9ef05449fc7a10600af9b73a18b67d0379d97c867"
+    },
+    {
+      "path": "Band_Skull_Crusher/0.jpg",
+      "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Band_Skull_Crusher/0.jpg",
+      "sha256": "96094529fe698463c40603fce3e5f0048b6c8190b243db8996500b1fdc17501e"
+    },
+    {
+      "path": "Band_Skull_Crusher/1.jpg",
+      "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Band_Skull_Crusher/1.jpg",
+      "sha256": "0981454f029833fddf5cd89f7a8e4ed62cff9c31d3111fa81b0b4008ec40e665"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "note": "Licencias declaradas por la API de wger. Archivos sin modificación. Conservar atribución y licencia; no se acredita una licencia distinta para los originales.",
+  "sources": [
+    {
+      "id": "WGER_377",
+      "en": "Leg Raises, Lying",
+      "eq": "body only",
+      "m": [
+        "abdomen"
+      ],
+      "visual": {
+        "kind": "images",
+        "files": [
+          "assets/exercise-demos/WGER_377/wger-139.png",
+          "assets/exercise-demos/WGER_377/wger-140.png"
+        ],
+        "author": "Everkinetic",
+        "source": "https://wger.de/api/v2/exerciseinfo/377/",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      }
+    },
+    {
+      "id": "WGER_203",
+      "en": "Dumbbell Goblet Squat",
+      "eq": "dumbbell",
+      "m": [
+        "cuadriceps"
+      ],
+      "visual": {
+        "kind": "images",
+        "files": [
+          "assets/exercise-demos/WGER_203/wger-328.jpeg"
+        ],
+        "author": "philip (wger)",
+        "source": "https://wger.de/api/v2/exerciseinfo/203/",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    },
+    {
+      "id": "WGER_82",
+      "en": "Bent-over Lateral Raises",
+      "eq": "dumbbell",
+      "m": [
+        "hombros"
+      ],
+      "visual": {
+        "kind": "video",
+        "files": [
+          "assets/exercise-demos/WGER_82/rear-delt.MOV"
+        ],
+        "author": "Goulart",
+        "source": "https://wger.de/api/v2/exerciseinfo/82/",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    }
+  ]
+}

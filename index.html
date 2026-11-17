@@ -718,7 +718,7 @@ body.fit-modo-rapido .fit-leyenda{display:none} /* en rápido la leyenda estorba
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.206.2';
+  window.HM_APP_VERSION='1.206.3';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -4340,11 +4340,13 @@ const EX_FOTOS={"Ab_Roller":["/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAsICAoIBwsKCQoNDA
 /* La foto: primero la que traigo adentro (siempre funciona, sin internet).
    Si ese ejercicio no la trae, la baja de internet. */
 function exFoto(id, k){
-  if(typeof FitnessExerciseCatalog==='undefined'||!FitnessExerciseCatalog.mediaVerified(id))return '';
+  var added=typeof FitnessExerciseCatalog!=='undefined'&&FitnessExerciseCatalog.localMedia?FitnessExerciseCatalog.localMedia(id,k):'';
+  if(added)return added;
+  if(!id || ![0,1].includes(k) || !Object.values(EX_MAPA).some(function(e){return e.id===id;}))return ''; // Originales, no implica licencia verificada.
   if(typeof EX_FOTOS!=='undefined' && EX_FOTOS[id]) return 'data:image/jpeg;base64,'+EX_FOTOS[id][k];
   return EX_BASE + id + '/' + k + '.jpg';
 }
-function exTieneFoto(id){ return typeof FitnessExerciseCatalog!=='undefined' && FitnessExerciseCatalog.mediaVerified(id) && typeof EX_FOTOS!=='undefined' && !!EX_FOTOS[id]; }
+function exTieneFoto(id){ return Object.values(EX_MAPA).some(function(e){return e.id===id;}) && typeof EX_FOTOS!=='undefined' && !!(EX_FOTOS[id] && EX_FOTOS[id][0] && EX_FOTOS[id][1]); }
 
 function exNormal(s){
   return String(s||'').toLowerCase()
@@ -4412,6 +4414,8 @@ function exAnimar(cajaId, id, ms){
   if(_exTimers[cajaId]) clearInterval(_exTimers[cajaId]);
   let n = 0;
   _exTimers[cajaId] = setInterval(()=>{
+    if(!a.isConnected || !b.isConnected){exParar(cajaId);return;}
+    if(!a.complete || !b.complete || !a.naturalWidth || !b.naturalWidth)return;
     n = 1 - n;
     a.style.opacity = n ? '0' : '1';
     b.style.opacity = n ? '1' : '0';
@@ -4425,13 +4429,13 @@ function exParar(cajaId){
 function exImgFallo(img){
   try{
     if(!img)return;
-    if(img.dataset.try!=='2'){
+    if(img.dataset.try!=='2' && String(img.src).startsWith(EX_BASE)){
       img.dataset.try='2';
       img.src=String(img.src).replace('raw.githubusercontent.com/yuhonas/free-exercise-db/main','cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main');
       return;
     }
     if(String(img.id||'').slice(-2)==='_0'){img.parentElement.innerHTML='<div style="padding:20px;text-align:center" class="muted">No cargó la imagen.<br>Revisa tu internet.</div>';}
-    else img.style.display='none';
+    else {img.style.display='none';var first=document.getElementById(String(img.id).replace(/_1$/,'_0'));if(first)first.style.opacity='1';}
   }catch(e){}
 }
 
@@ -4442,7 +4446,16 @@ function exAnimacionHTML(nombre, cajaId){
       return '<div style="position:relative;width:100%;height:230px;background:#f4fbf6;border-radius:14px;overflow:hidden;border:2px solid #cfe6d8"><img src="'+fotoP+'" alt="'+safeText(nombre)+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain"><div style="position:absolute;bottom:6px;left:6px;background:#0d6043;color:#fff;font-size:11px;font-weight:900;padding:3px 8px;border-radius:999px">🖼️ Tu imagen</div></div>';
     }
   }catch(e){}
-  return exTextoSeguroHTML(nombre);
+  var e=exBuscarDemo(nombre);
+  if(!e)return exTextoSeguroHTML(nombre);
+  var box=String(cajaId||'exDemo').replace(/[^a-zA-Z0-9_-]/g,'_');
+  var visual=FitnessExerciseCatalog.visual?FitnessExerciseCatalog.visual(e.id):null;
+  if(visual){
+    var credit='<small style="display:block;padding:4px"><a target="_blank" rel="noopener" href="'+safeText(visual.source)+'">'+safeText(visual.author)+'</a> · <a target="_blank" rel="noopener" href="'+safeText(visual.licenseUrl)+'">'+safeText(visual.license)+'</a></small>';
+    var content=visual.kind==='video'?'<video id="'+box+'_video" controls playsinline preload="metadata" onclick="event.stopPropagation()" style="width:100%;height:230px;object-fit:contain" src="'+safeText(visual.files[0])+'" aria-label="'+safeText(nombre)+'" onerror="this.outerHTML=\'<p>No cargó el video de demostración.</p>\'"></video>':'<div style="position:relative;height:230px;background:#fff">'+visual.files.map(function(src,k){return '<img id="'+box+'_'+k+'" src="'+safeText(src)+'" alt="'+safeText(nombre)+(visual.files.length>1?' · posición '+(k+1):' · demostración')+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain!important;opacity:'+(k===0?1:0)+'" onload="exAnimar(\''+box+'\',null,900)" onerror="exImgFallo(this)">';}).join('')+'</div>';
+    return '<div style="aspect-ratio:auto!important;overflow:visible!important" data-exercise-demo="'+safeText(e.id)+'">'+content+credit+'</div>';
+  }
+  return '<div style="position:relative;width:100%;height:230px;background:#fff;border-radius:14px;overflow:hidden" data-exercise-demo="'+safeText(e.id)+'">'+[0,1].map(function(k){return '<img id="'+box+'_'+k+'" src="'+exFoto(e.id,k)+'" alt="'+safeText(nombre)+' · posición '+(k+1)+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:'+(k===0?1:0)+'" onload="exAnimar(\''+box+'\',null,900)" onerror="exImgFallo(this)">';}).join('')+'</div>';
 }
 
 function exImgLink(e){return 'https://www.bing.com/images/search?q='+encodeURIComponent(e+' ejercicio gym');}
@@ -33087,6 +33100,7 @@ function f3ToggleDemo(i){
   var b=document.getElementById('fitDemoBtn_'+i);if(b)b.textContent=show?'▲ Ocultar demostración':'▶ Ver demostración';
 }
 function f3DemoPlayPause(i){
+  var video=document.getElementById('fitDemo_'+i+'_video');if(video){if(video.paused)video.play().catch(function(){});else video.pause();return;}
   var caja='fitDemo_'+i;
   var b=document.getElementById('fitDemoPlay_'+i);
   if(typeof _exTimers!=='undefined'&&_exTimers[caja]){exParar(caja);if(b)b.textContent='▶ Reproducir';return;}
@@ -33096,6 +33110,7 @@ function f3DemoPlayPause(i){
   if(e&&typeof exAnimar==='function'){exAnimar(caja,e.id,(_fitDemoVel[i])||900);if(b)b.textContent='⏸ Pausar';}
 }
 function f3DemoVelocidad(i,ms){
+  var video=document.getElementById('fitDemo_'+i+'_video');if(video){video.playbackRate=900/ms;return;}
   _fitDemoVel[i]=ms;
   var caja='fitDemo_'+i;
   var estaba=(typeof _exTimers!=='undefined'&&_exTimers[caja]);
@@ -33108,6 +33123,7 @@ function f3DemoVelocidad(i,ms){
   }
 }
 function f3DemoReiniciar(i){
+  var video=document.getElementById('fitDemo_'+i+'_video');if(video){video.currentTime=0;video.play().catch(function(){});return;}
   var caja='fitDemo_'+i;
   var a=document.getElementById(caja+'_0'),b=document.getElementById(caja+'_1');
   exParar(caja);
@@ -33828,7 +33844,7 @@ function f3TarjetaRapidaHTML(idx,pack){
     // La demo es válida si el nombre es un ejercicio real de la biblioteca
     // (cualquier variante). Si no existe, se avisa en vez de mostrar otro ejercicio.
     var idNombre=(typeof f3IdPorNombre==='function')?f3IdPorNombre(x.name):null;
-    var coincideDemo=!!(eDemo&&idNombre&&EX_LIB&&EX_LIB[idNombre]);
+    var coincideDemo=!!eDemo; // La resolución exacta ya comprueba la variante; no exige una familia de EX_LIB.
     if(eDemo&&typeof exAnimacionHTML==='function'&&coincideDemo){gifHTML=exAnimacionHTML(x.name,'fitDemo_'+i);}
     else if(eDemo&&typeof exAnimacionHTML==='function'){gifHTML='<div style="text-align:center;padding:14px;color:#1f3a30;font-weight:800;font-size:13px">📹 Sin demostración disponible para esta variante.</div>';}
     else if(fotoPropia||fotoReal){gifHTML='<div class="fit-demo-imggrande"><img src="'+(fotoPropia||fotoReal)+'" alt="'+safeText(x.name)+'" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:10px"></div>';}
